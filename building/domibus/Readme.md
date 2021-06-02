@@ -15,10 +15,9 @@ Run `docker stats` and check the `MEM USAGE / LIMIT` column's `LIMIT` value for 
 
 Sample commands to build Domibus without running the tests:
 
-`mkdir /app
-cd /app
-git clone https://ec.europa.eu/cefdigital/code/scm/edelivery/domibus.git
-cd domibus
-git checkout master
-
-mvn clean install -Ptomcat -Pdefault-plugins -Pdatabase -Psample-configuration -PUI -Pdistribution -Dmaven.test.skip=true`
+`mkdir /app`
+`cd /app`
+`git clone https://ec.europa.eu/cefdigital/code/scm/edelivery/domibus.git`
+`cd domibus`
+`git checkout master`
+`mvn clean install -Ptomcat -Pdefault-plugins -Pdatabase -Psample-configuration -PUI -Pdistribution -Dmaven.test.skip=true`
