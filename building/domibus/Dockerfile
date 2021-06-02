@@ -1,5 +1,5 @@
 FROM ubuntu:20.04
-LABEL maintainer="LABEL Nordic Institute for Interoperability Solutions <info@niis.org>"
+LABEL maintainer="Nordic Institute for Interoperability Solutions <info@niis.org>"
 
 ARG MAVEN_VERSION=3.8.1
 ARG USER_HOME_DIR="/root"
