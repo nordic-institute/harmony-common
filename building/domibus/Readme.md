@@ -13,4 +13,12 @@ If using Docker check if there is enough memory allocated for the virtual machin
 
 Run `docker stats` and check the `MEM USAGE / LIMIT` column's `LIMIT` value for this.
 
+Sample commands to build Domibus without running the tests:
 
+`mkdir /app
+cd /app
+git clone https://ec.europa.eu/cefdigital/code/scm/edelivery/domibus.git
+cd domibus
+git checkout master
+
+mvn clean install -Ptomcat -Pdefault-plugins -Pdatabase -Psample-configuration -PUI -Pdistribution -Dmaven.test.skip=true`
