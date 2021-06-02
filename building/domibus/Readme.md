@@ -9,7 +9,8 @@ Git (latest)
 
 Build process is tested to succeed with at least 8GB of RAM.
 
-If using Docker check if there is enough memory allocated for the virtual machine in which Docker runs.
-Run `docker stats` and check the `MEM USAGE / LIMIT' column LIMIT for the memory allocated for the container.
+If using Docker check if there is enough memory allocated for the virtual machine in which Docker runs and also for the container.
+
+Run `docker stats` and check the `MEM USAGE / LIMIT` column's `LIMIT` value for this.
 
 
