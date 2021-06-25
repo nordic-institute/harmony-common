@@ -1,7 +1,7 @@
 FROM ubuntu:20.04
 LABEL maintainer="Nordic Institute for Interoperability Solutions <info@niis.org>"
 
-ARG MAVEN_VERSION=3.0.5
+ARG MAVEN_VERSION=3.1.1
 ARG USER_HOME_DIR="/root"
 ARG BASE_URL=https://apache.osuosl.org/maven/maven-3/${MAVEN_VERSION}/binaries
 
