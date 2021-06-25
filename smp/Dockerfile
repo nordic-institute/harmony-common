@@ -1,15 +1,15 @@
 FROM ubuntu:20.04
 LABEL maintainer="Nordic Institute for Interoperability Solutions <info@niis.org>"
 
-ARG MAVEN_VERSION=3.1.1
+ARG MAVEN_VERSION=3.8.1
 ARG USER_HOME_DIR="/root"
 ARG BASE_URL=https://apache.osuosl.org/maven/maven-3/${MAVEN_VERSION}/binaries
 
 RUN apt-get -y update
 
 # Install Java
-RUN DEBIAN_FRONTEND=noninteractive apt-get -y install openjdk-8-jdk
-ENV JAVA_HOME /usr/lib/jvm/java-8-openjdk-amd64/
+RUN DEBIAN_FRONTEND=noninteractive apt-get -y install openjdk-11-jdk
+ENV JAVA_HOME /usr/lib/jvm/java-11-openjdk-amd64/
 RUN export JAVA_HOME
 RUN apt-get install ca-certificates-java && \
     apt-get clean && \
