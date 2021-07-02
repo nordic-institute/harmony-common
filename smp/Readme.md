@@ -1,7 +1,7 @@
 eDelivery SMP has been tested to run with the following configuration:
 
 Ubuntu 20.04
-OpenJDK 8
+OpenJDK 11
 Maven 3.8.1
 MySQL (latest)
 Ca-certificates-java package (latest)
