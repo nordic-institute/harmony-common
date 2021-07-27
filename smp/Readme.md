@@ -22,5 +22,17 @@ cd /app
 git clone https://ec.europa.eu/cefdigital/code/scm/edelivery/smp.git
 cd smp
 git checkout master
+mvn clean install
+```
+
+Integration tests can be skipped using `skipITs` property
+
+```
+mvn clean install -DskipITs=true
+```
+
+All tests can be skipped using `maven.test.skip` property
+
+```
 mvn clean install -Dmaven.test.skip=true
 ```
