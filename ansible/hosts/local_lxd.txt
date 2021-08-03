@@ -1,0 +1,7 @@
+#container host
+[lxd_servers]
+localhost ansible_connection=local
+
+[bdmsl_servers]
+sml ansible_connection=lxd
+

@@ -1,0 +1,81 @@
+---
+- name: add tomcat group
+  group:
+    name: tomcat
+
+- name: add tomcat user
+  user:
+    name: tomcat
+    group: tomcat
+    home: /user/share/tomcat
+    createhome: no
+
+- name: create /opt/tomcat directory
+  file:
+    path: /opt/tomcat
+    state: directory
+  register: tomcat_exists
+
+- name: download & unarchive
+  unarchive:
+    src: "{{playbook_dir}}/files/binary/apache-tomcat-9.0.50.tar.gz"
+    dest: /opt/tomcat
+    extra_opts: [--strip-components=1]
+  when: tomcat_exists.changed
+
+- name: copy connector jar
+  copy:
+    src: "{{playbook_dir}}/files/binary/mysql-connector-java-8.0.26.jar"
+    dest: /opt/tomcat/lib
+  when: tomcat_exists.changed
+
+- name: create custom conf folder
+  file:
+    path: /opt/tomcat/custom_conf
+    state: directory
+    owner: tomcat
+    group: tomcat
+  when: tomcat_exists.changed
+
+- name: add custom conf folder to classpath
+  copy:
+    src: "{{playbook_dir}}/files/setenv.sh"
+    dest: /opt/tomcat/bin
+  when: tomcat_exists.changed
+
+- name: delete unnecessary webapps
+  file:
+    state: absent
+    path: /opt/tomcat/webapps
+  when: tomcat_exists.changed
+
+- name: recreate empty webapps directory
+  file:
+    path: /opt/tomcat/webapps
+    state: directory
+  when: tomcat_exists.changed
+
+- name: change ownership
+  file:
+    path: /opt/tomcat
+    owner: tomcat
+    group: tomcat
+    mode: "u+rwx,g+rx,o=r"
+    recurse: yes
+    state: directory
+  when: tomcat_exists.changed
+
+- name: copy Tomcat service from local to remote
+  copy:
+    src: "{{playbook_dir}}/files/tomcat.service.txt"
+    dest: /etc/systemd/system/tomcat.service
+    mode: 0755
+  when: tomcat_exists.changed
+
+- name: start and enable Tomcat service
+  systemd:
+    name: tomcat
+    state: started
+    enabled: true
+    daemon_reload: true
+  when: tomcat_exists.changed

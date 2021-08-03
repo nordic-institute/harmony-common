@@ -1,0 +1,19 @@
+---
+- name: Ready all containers
+  with_inventory_hostnames: all:!lxd_servers
+  lxd_container:
+    name: "{{item}}"
+    state: started
+    source:
+      type: image
+      mode: pull
+      server: https://cloud-images.ubuntu.com/releases
+      protocol: simplestreams
+      alias: "bionic"
+    profiles: ["default"]
+    wait_for_ipv4_addresses: true
+    timeout: 600
+  tags:
+    - ubuntu-container-init
+
+

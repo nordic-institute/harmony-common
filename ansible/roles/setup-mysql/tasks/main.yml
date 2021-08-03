@@ -1,0 +1,25 @@
+---
+- name: install mysql
+  become: true
+  become_user: root
+  apt:
+    cache_valid_time: 3600
+    name: ['mysql-server', 'mysql-client', 'python3-pymysql']
+    state: latest
+  register: mysql_installed
+
+- name: start mysql
+  service:
+    name: mysql
+    state: started
+    enabled: yes
+  when: mysql_installed.changed
+
+- name: setting root password
+  mysql_user:
+    name: root
+    password: "root"
+    check_implicit_admin: true
+    login_unix_socket: /var/run/mysqld/mysqld.sock
+  when: mysql_installed.changed
+
