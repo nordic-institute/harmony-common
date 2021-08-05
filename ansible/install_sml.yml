@@ -14,6 +14,7 @@
     - init-lxd
 
 - hosts: bdmsl_servers
+  become: yes
   roles:
     - common
     - setup-mysql

@@ -1,0 +1,7 @@
+#container host
+[lxd_servers]
+
+
+[bdmsl_servers]
+test-sml.neds.x-road.rocks
+
