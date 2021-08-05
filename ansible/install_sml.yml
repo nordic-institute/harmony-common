@@ -3,11 +3,16 @@
   roles:
     - local
   tasks:
+    - name: check BDMSL war exists
+      stat:
+        path="{{playbook_dir}}/files/binary/mysql-connector-java-8.0.26.jar"
+      register: bdmslwar
+
     - name: download BDMSL to local cache
       get_url:
         url=https://ec.europa.eu/cefdigital/artifact/repository/public/eu/europa/ec/bdmsl/bdmsl-webapp/4.1.0/bdmsl-webapp-4.1.0.war
         dest="{{playbook_dir}}/files/binary/bdmsl-webapp-4.1.0.war"
-
+      when: not bdmslwar.stat.exists
 
 - hosts: lxd_servers
   roles:
@@ -25,8 +30,6 @@
         login_user: root
         login_password: root
       register: db_state
-
-    - debug: var=db_state
 
     - name: copy ddl file
       copy:

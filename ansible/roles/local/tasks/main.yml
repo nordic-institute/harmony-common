@@ -1,10 +1,22 @@
 ---
+- name: check tomcat gz exists
+  stat:
+    path="{{playbook_dir}}/files/binary/apache-tomcat-9.0.50.tar.gz"
+  register: tmc
+
 - name: download tomcat to local cache
   get_url:
     url="https://downloads.apache.org/tomcat/tomcat-9/v9.0.50/bin/apache-tomcat-9.0.50.tar.gz"
     dest="{{playbook_dir}}/files/binary"
+  when: not tmc.stat.exists
+
+- name: check mysql connector exists
+  stat:
+    path="{{playbook_dir}}/files/binary/mysql-connector-java-8.0.26.jar"
+  register: connector
 
 - name: download mysql connector to local cache
   get_url:
     url="https://repo1.maven.org/maven2/mysql/mysql-connector-java/8.0.26/mysql-connector-java-8.0.26.jar"
     dest="{{playbook_dir}}/files/binary"
+  when: not connector.stat.exists
