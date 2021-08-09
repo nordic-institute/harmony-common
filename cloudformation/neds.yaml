@@ -18,16 +18,11 @@ Parameters:
   SsRootVolumeSize:
     Description: The root volume size for SML instances
     Type: String
-    Default: 16
+    Default: 8
     AllowedValues:
       - 8
       - 16
       - 32
-      - 64
-      - 128
-      - 256
-      - 512
-      - 1024
     ConstraintDescription: must be a valid gp2 volume size.
   KeyName:
     Description: Name of an existing EC2 KeyPair to enable SSH access to the instances

@@ -3,5 +3,5 @@
 
 
 [bdmsl_servers]
-test-sml.neds.x-road.rocks
+neds-sml.i.x-road.rocks
 

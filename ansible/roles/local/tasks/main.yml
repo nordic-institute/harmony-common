@@ -1,12 +1,12 @@
 ---
 - name: check tomcat gz exists
   stat:
-    path="{{playbook_dir}}/files/binary/apache-tomcat-9.0.50.tar.gz"
+    path="{{playbook_dir}}/files/binary/apache-tomcat-8.5.69.tar.gz"
   register: tmc
 
 - name: download tomcat to local cache
   get_url:
-    url="https://downloads.apache.org/tomcat/tomcat-9/v9.0.50/bin/apache-tomcat-9.0.50.tar.gz"
+    url="https://downloads.apache.org/tomcat/tomcat-8/v8.5.69/bin/apache-tomcat-8.5.69.tar.gz"
     dest="{{playbook_dir}}/files/binary"
   when: not tmc.stat.exists
 

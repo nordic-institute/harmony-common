@@ -5,7 +5,7 @@
   tasks:
     - name: check BDMSL war exists
       stat:
-        path="{{playbook_dir}}/files/binary/mysql-connector-java-8.0.26.jar"
+        path="{{playbook_dir}}/files/binary/bdmsl-webapp-4.1.0.war"
       register: bdmslwar
 
     - name: download BDMSL to local cache
@@ -33,7 +33,7 @@
 
     - name: copy ddl file
       copy:
-        src: "{{playbook_dir}}/files/bdmsl-sql/mysql5innodb.ddl"
+        src: "{{playbook_dir}}/files/bdmsl-sql/bdsml_schema.ddl"
         dest: /root
       when: db_state.databases.bdmsl is not defined
 
@@ -44,12 +44,12 @@
         encoding: utf8
         login_user: root
         login_password: root
-        target: /root/mysql5innodb.ddl
+        target: /root/bdsml_schema.ddl
       when: db_state.databases.bdmsl is not defined
 
     - name: copy db settings file
       copy:
-        src: "{{playbook_dir}}/files/bdmsl-sql/mysql5innodb-data.sql"
+        src: "{{playbook_dir}}/files/bdmsl-sql/bdsml_configuration.sql"
         dest: /root
 
     - name: load settings into db
@@ -59,7 +59,7 @@
         encoding: utf8
         login_user: root
         login_password: root
-        target: /root/mysql5innodb-data.sql
+        target: /root/bdsml_configuration.sql
 
     - name: create sml folder
       file:
@@ -86,7 +86,7 @@
     - name: copy bdsml war to webapps
       copy:
         src: "{{playbook_dir}}/files/binary/bdmsl-webapp-4.1.0.war"
-        dest: /opt/tomcat/webapps
+        dest: /opt/tomcat/webapps/ROOT.war
         owner: tomcat
         group: tomcat
 

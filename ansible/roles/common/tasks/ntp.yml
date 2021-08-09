@@ -1,0 +1,24 @@
+---
+- name: Install NTP daemon
+  package: name=chrony state=present
+
+- name: Use AWS time source
+  lineinfile:
+    path: "{{ conf[ansible_os_family] }}"
+    line: 'server 169.254.169.123 prefer iburst'
+    insertafter: '^server '
+    state: present
+  vars:
+    conf:
+      RedHat: "/etc/chrony.conf"
+      Debian: "/etc/chrony/chrony.conf"
+  when: "('Amazon EC2' in ansible_system_vendor or 'amazon' in ansible_bios_version)"
+
+- name: Restart ntp service
+  service:
+    name: "{{ ntp[ansible_os_family] }}"
+    state: restarted
+  vars:
+    ntp:
+      RedHat: "chronyd"
+      Debian: "chrony"
