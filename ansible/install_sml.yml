@@ -24,6 +24,10 @@
     - common
     - setup-mysql
     - tomcat
+    - bind9
+    - private_dns
+  vars:
+    private_dns: 127.0.0.1
   tasks:
     - name: collect info about database
       mysql_info:

@@ -1,10 +1,4 @@
 ---
-# file: roles/common/tasks/main.yml
-
-# wait for port 22 to become open
-- name: Wait until SSH is available
-  wait_for_connection:
-
 - name: Ensure that all packages are configured
   shell: dpkg --configure -a
   ignore_errors: yes
@@ -15,7 +9,6 @@
     upgrade: "yes"
     cache_valid_time: 3600
 
-# includes
 - import_tasks: timezone.yml
 - import_tasks: ntp.yml
 - import_tasks: rngtools.yml

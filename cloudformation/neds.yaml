@@ -147,6 +147,10 @@ Resources:
 Outputs:
   SMLHostname:
     Condition: CreateSML
-    Description: Hostname of CS
+    Description: Hostname of SML
     Value: !Ref SMLPrivateIPDNSRecord
+  SMLIpAddress:
+    Condition: CreateSML
+    Description: Ip Address of SML
+    Value: !GetAtt SMLInstance.PrivateIp
 

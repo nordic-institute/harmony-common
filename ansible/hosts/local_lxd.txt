@@ -3,5 +3,5 @@
 localhost ansible_connection=local
 
 [bdmsl_servers]
-sml ansible_connection=lxd
+sml2 ansible_connection=lxd forward_dns=8.8.8.8
 

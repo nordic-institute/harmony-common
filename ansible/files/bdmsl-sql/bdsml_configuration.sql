@@ -15,7 +15,7 @@ insert into bdmsl_configuration(property, value, description, created_on, last_u
 ('encriptionPrivateKey','encriptionPrivateKey.private','Name of the 256 bit AES secret key to encrypt or decrypt passwords.', NOW(), NOW()),
 ('dnsClient.server','127.0.0.1','The DNS server', NOW(), NOW()),
 ('dnsClient.publisherPrefix','publisher','This is the prefix for the publishers (SMP). This is to be concatenated with the associated DNS domain in the table bdmsl_certificate_domain', NOW(), NOW()),
-('dnsClient.enabled','false','true if registration of DNS records is required. Must be true in production. Possible values: true/false', NOW(), NOW()),
+('dnsClient.enabled','true','true if registration of DNS records is required. Must be true in production. Possible values: true/false', NOW(), NOW()),
 ('dnsClient.show.entries','true','if true than service ListDNS transfer and show the DNS entries. (Not recommended for large zones)  Possible VALUES: true/false', NOW(), NOW()),
 ('dnsClient.SIG0PublicKeyName','sig0.acc.edelivery.tech.ec.europa.eu.','The public key name of the SIG0 key', NOW(), NOW()),
 ('dnsClient.SIG0KeyFileName','SIG0.private','The actual SIG0 key file. Should be just the filename if the file is in the classpath or in the configurationDir', NOW(), NOW()),
@@ -38,17 +38,11 @@ DELETE FROM bdmsl_certificate_domain;
 DELETE FROM bdmsl_subdomain;
 
 insert into bdmsl_subdomain(subdomain_id, subdomain_name,dns_zone, description, participant_id_regexp, dns_record_types, smp_url_schemas, created_on, last_updated_on) values
-(1, 'peppol.test.edelivery.local', 'test.edelivery.local','Domain for OpenPeppol ', '^((((0002|0007|0009|0037|0060|0088|0096|0097|0106|0135|0142|9901|9902|9904|9905|9906|9907|9908|9909|9910|9912|9913|9914|9915|9916|9917|9918|9919|9920|9921|9922|9923|9924|9925|9926|9927|9928|9929|9930|9931|9932|9933|9934|9935|9936|9937|9938|9939|9940|9941|9942|9943|9944|9945|9946|9947|9948|9949|9950|9951|9952|9953|9954|9955|9956|9957|0184):).*)|(\\*))$','all','all', TIMESTAMP '2019-01-24 19:09:05.943', TIMESTAMP '2019-01-24 19:09:05.943'),
-(2, 'ehealth.test.edelivery.local','test.edelivery.local','Domain for eHealth ','^.*$','all','all',TIMESTAMP '2019-01-24 19:09:06.345', TIMESTAMP '2019-01-24 19:09:06.345'),
-(3, 'isaitb.test.edelivery.local','test.edelivery.local','Domain for isaitb ','^.*$','all','all',TIMESTAMP '2019-01-24 19:09:06.345', TIMESTAMP '2019-01-24 19:09:06.345');
+(1, 'test.neds','neds','Domain for test.neds','^.*$','all','all',TIMESTAMP '2019-01-24 19:09:06.345', TIMESTAMP '2019-01-24 19:09:06.345');
 
 
 INSERT INTO bdmsl_certificate_domain(certificate, crl_url,  is_root_ca, fk_subdomain_id, created_on, last_updated_on, is_admin) VALUES
-('CN=unsecure_root,O=delete_in_production,C=only_for_testing','',1, 2, NOW(), NOW(),1),
-('CN=unsecure_root_testTeam,O=delete_in_production,C=only_for_testing','',1, 2, NOW(), NOW(),1),
-('CN=rootCNTest,OU=B4,O=DIGIT,L=Brussels,ST=BE,C=BE','',1, 1, NOW(), NOW(),0),
-('CN=rootCNIsa,OU=B4,O=DIGIT,L=Brussels,ST=BE,C=BE','',1, 3, NOW(), NOW(),1),
-('CN=AdministratorSML,OU=B4,O=DIGIT,C=BE','',0, 2, NOW(), NOW(),1);
+('CN=unsecure_root,O=delete_in_production,C=only_for_testing','',1, 1, NOW(), NOW(),1);
 
 
 
