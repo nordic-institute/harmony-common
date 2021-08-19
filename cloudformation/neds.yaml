@@ -31,6 +31,7 @@ Parameters:
   Environment:
     Description: Environment name (string, just letters, plz)
     Type: String
+    Default: neds
   HostedZone:
     Description: Route53 hosted zone
     Default: x-road.rocks
