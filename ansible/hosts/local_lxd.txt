@@ -1,0 +1,7 @@
+#container host
+[lxd_servers]
+localhost ansible_connection=local
+
+[bdmsl_servers]
+sml2 ansible_connection=lxd forward_dns=8.8.8.8
+

@@ -1,0 +1,44 @@
+---
+# file: roles/common/tasks/admins.yml
+- name: admin group
+  group:
+    name: admin
+    state: present
+
+- name: add admin group to sudoers
+  copy:
+    dest: /etc/sudoers.d/admin
+    src: admin.sudoers
+    mode: 0440
+    owner: root
+    group: root
+
+- name: admin users
+  user:
+    name: "{{ item.username }}"
+    comment: '{{ item.fullname }}'
+    password: '{{ item.password }}'
+    append: yes
+    state: present
+    groups: admin
+    shell: "/bin/bash"
+  with_items: "{{ admins }}"
+  no_log: True
+
+- name: admin authorized_keys
+  authorized_key:
+    user: "{{ item.0.username }}"
+    key: '{{ item.1 }}'
+  with_subelements:
+    - "{{ admins }}"
+    - ssh_keys
+  no_log: True
+
+- name: remove deprecated users
+  user:
+    name: "{{ item.username }}"
+    state: absent
+    remove: yes
+  with_items: "{{ exits }}"
+  when: exits is defined
+  no_log: True

@@ -1,0 +1,157 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: >-
+  NIIS eDelivery solution test and development environment (2021-08-05).
+Parameters:
+  AvailabilityZone:
+    Type: AWS::EC2::AvailabilityZone::Name
+    Description: AZ, sync with subnet!
+    Default: eu-west-1a
+  SMLInstanceType:
+    Description: SML instance type
+    Type: String
+    Default: t3a.small
+    AllowedValues:
+      - none
+      - t3a.small
+      - t3a.medium
+    ConstraintDescription: must be a valid EC2 instance type.
+  SsRootVolumeSize:
+    Description: The root volume size for SML instances
+    Type: String
+    Default: 8
+    AllowedValues:
+      - 8
+      - 16
+      - 32
+    ConstraintDescription: must be a valid gp2 volume size.
+  KeyName:
+    Description: Name of an existing EC2 KeyPair to enable SSH access to the instances
+    Type: AWS::EC2::KeyPair::KeyName
+    ConstraintDescription: must be the name of an existing EC2 KeyPair.
+  Environment:
+    Description: Environment name (string, just letters, plz)
+    Type: String
+    Default: neds
+  HostedZone:
+    Description: Route53 hosted zone
+    Default: x-road.rocks
+    Type: String
+  VpcId:
+    Description: VPC to use
+    Type: AWS::EC2::VPC::Id
+    Default: vpc-aff03bc9
+  SubnetID:
+    Description: Subnet ID, sync with AZ!
+    Type: AWS::EC2::Subnet::Id
+    Default: subnet-6fb00609
+  JenkinsSecurityGroup:
+    Description: Security group of Jenkins server(s) (e.g. jenkins-sg)
+    Type: AWS::EC2::SecurityGroup::Id
+    Default: sg-8cc0aaf1
+  BastionSecurityGroup:
+    Description: Security group of bastion server (e.g. bastion-sg)
+    Type: AWS::EC2::SecurityGroup::Id
+    Default: sg-14670669
+  AutoStopStart:
+    Description: Start and stop instances automatically?
+    Type: String
+    Default: 'False'
+    AllowedValues:
+      - 'True'
+      - 'False'
+    ConstraintDescription: must be true or false.
+  AutoStop:
+    Description: Stop instances automatically?
+    Type: String
+    Default: 'True'
+    AllowedValues:
+      - 'True'
+      - 'False'
+    ConstraintDescription: must be true or false.
+  AutoSnapshot:
+    Description: Snapshot instances automatically?
+    Type: String
+    Default: 'False'
+    AllowedValues:
+      - 'True'
+      - 'False'
+    ConstraintDescription: must be true or false.
+  UbuntuFocalAMI:
+    Description: Ubuntu 20.04 AMI ID
+    Type: AWS::EC2::Image::Id
+    Default: ami-03caf24deed650e2c
+Conditions:
+  CreateSML: !Not [!Equals [!Ref SMLInstanceType, none]]
+Resources:
+  SMLInstance:
+    Type: AWS::EC2::Instance
+    Condition: CreateSML
+    Properties:
+      AvailabilityZone: !Ref AvailabilityZone
+      KeyName: !Ref KeyName
+      ImageId: !Ref UbuntuFocalAMI
+      SecurityGroupIds:
+        - !Ref SSHSecurityGroup
+      InstanceType: !Ref SMLInstanceType
+      Monitoring: false
+      SubnetId: !Ref SubnetID
+      Tags:
+        - Key: Name
+          Value: !Sub ${Environment}-sml
+        - Key: env
+          Value: !Ref Environment
+        - Key: role
+          Value: sml
+        - Key: AutoStopStart
+          Value: !Ref AutoStopStart
+        - Key: AutoStop
+          Value: !Ref AutoStop
+        - Key: AutoSnapshot
+          Value: !Ref AutoSnapshot
+      UserData: !Base64 |
+        #!/bin/bash -xe
+        DEBIAN_FRONTEND=noninteractive apt-get update -y
+        apt-get install -y aptitude
+        useradd -c 'NIIS Team User' -d /home/niis -s /bin/bash niis
+        echo 'niis ALL=(ALL) NOPASSWD: ALL' > /etc/sudoers.d/niis
+        mkdir -p /home/niis/.ssh
+        curl -o /home/niis/.ssh/authorized_keys https://s3-eu-west-1.amazonaws.com/niis-xroad-ci-files/niis-authorized-ssh-keys
+        chown -R niis:niis /home/niis
+        chmod 0700 /home/niis
+        chmod 0700 /home/niis/.ssh
+        chmod 0600 /home/niis/.ssh/authorized_keys
+  SSHSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: SSH from bastion and CI, UI and from bastion
+      VpcId: !Ref VpcId
+      SecurityGroupIngress:
+        - SourceSecurityGroupId: !Ref BastionSecurityGroup
+          IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+        - SourceSecurityGroupId: !Ref BastionSecurityGroup
+          IpProtocol: tcp
+          FromPort: 8080
+          ToPort: 8080
+  SMLPrivateIPDNSRecord:
+    Type: AWS::Route53::RecordSet
+    Condition: CreateSML
+    Properties:
+      HostedZoneName: !Sub ${HostedZone}.
+      Comment: DNS name for CS instance's private IP
+      Name: !Sub ${Environment}-sml.i.${HostedZone}.
+      Type: A
+      TTL: 900
+      ResourceRecords:
+        - !GetAtt SMLInstance.PrivateIp
+Outputs:
+  SMLHostname:
+    Condition: CreateSML
+    Description: Hostname of SML
+    Value: !Ref SMLPrivateIPDNSRecord
+  SMLIpAddress:
+    Condition: CreateSML
+    Description: Ip Address of SML
+    Value: !GetAtt SMLInstance.PrivateIp
+

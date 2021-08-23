@@ -1,0 +1,16 @@
+---
+- name: copy 50-cloud-init.yaml
+  template:
+    src: 50-cloud-init.yaml.j2
+    dest: /etc/netplan/50-cloud-init.yaml
+  register: cloudinit
+
+- name: copy 99-disable-network-config.cfg
+  copy:
+    src: 99-disable-network-config.cfg
+    dest: /etc/cloud/cloud.cfg.d
+  register: disablenetwork
+
+- name: apply netplan changes
+  command: netplan apply
+  when: cloudinit.changed or disablenetwork.changed

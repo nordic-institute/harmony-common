@@ -1,0 +1,96 @@
+- hosts: localhost
+  gather_facts: no
+  roles:
+    - local
+  tasks:
+    - name: check BDMSL war exists
+      stat:
+        path="{{playbook_dir}}/files/binary/bdmsl-webapp-4.1.0.war"
+      register: bdmslwar
+
+    - name: download BDMSL to local cache
+      get_url:
+        url=https://ec.europa.eu/cefdigital/artifact/repository/public/eu/europa/ec/bdmsl/bdmsl-webapp/4.1.0/bdmsl-webapp-4.1.0.war
+        dest="{{playbook_dir}}/files/binary/bdmsl-webapp-4.1.0.war"
+      when: not bdmslwar.stat.exists
+
+- hosts: lxd_servers
+  roles:
+    - init-lxd
+
+- hosts: bdmsl_servers
+  become: yes
+  roles:
+    - common
+    - setup-mysql
+    - tomcat
+    - bind9
+    - private_dns
+  vars:
+    private_dns: 127.0.0.1
+  tasks:
+    - name: collect info about database
+      mysql_info:
+        login_user: root
+        login_password: root
+      register: db_state
+
+    - name: copy ddl file
+      copy:
+        src: "{{playbook_dir}}/files/bdmsl-sql/bdsml_schema.ddl"
+        dest: /root
+      when: db_state.databases.bdmsl is not defined
+
+    - name: create database
+      mysql_db:
+        name: bdmsl
+        state: import
+        encoding: utf8
+        login_user: root
+        login_password: root
+        target: /root/bdsml_schema.ddl
+      when: db_state.databases.bdmsl is not defined
+
+    - name: copy db settings file
+      copy:
+        src: "{{playbook_dir}}/files/bdmsl-sql/bdsml_configuration.sql"
+        dest: /root
+
+    - name: load settings into db
+      mysql_db:
+        name: bdmsl
+        state: import
+        encoding: utf8
+        login_user: root
+        login_password: root
+        target: /root/bdsml_configuration.sql
+
+    - name: create sml folder
+      file:
+        path: /opt/smlconf
+        state: directory
+        owner: tomcat
+        group: tomcat
+      when: tomcat_exists.changed
+
+    - name: copy bdsml conf file
+      copy:
+        src: "{{playbook_dir}}/files/sml.config.properties"
+        dest: /opt/tomcat/custom_conf
+        owner: tomcat
+        group: tomcat
+
+    - name: copy bdsml context.xml file
+      copy:
+        src: "{{playbook_dir}}/files/bdmsl_context.xml"
+        dest: /opt/tomcat/conf/context.xml
+        owner: tomcat
+        group: tomcat
+
+    - name: copy bdsml war to webapps
+      copy:
+        src: "{{playbook_dir}}/files/binary/bdmsl-webapp-4.1.0.war"
+        dest: /opt/tomcat/webapps/ROOT.war
+        owner: tomcat
+        group: tomcat
+
