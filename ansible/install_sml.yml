@@ -1,5 +1,11 @@
 - hosts: localhost
   gather_facts: no
+  pre_tasks:
+    - name: create "{{playbook_dir}}/files/binary directory
+      file:
+        path: "{{playbook_dir}}/files/binary"
+        state: directory
+        register: binary_exists
   roles:
     - local
   tasks:
