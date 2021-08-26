@@ -5,7 +5,7 @@
       file:
         path: "{{playbook_dir}}/files/binary"
         state: directory
-        register: binary_exists
+      register: binary_exists
   roles:
     - local
   tasks:
