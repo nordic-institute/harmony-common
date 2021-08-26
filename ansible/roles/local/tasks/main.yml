@@ -7,7 +7,7 @@
 - name: download tomcat to local cache
   get_url:
     url="https://archive.apache.org/dist/tomcat/tomcat-8/v8.5.69/bin/apache-tomcat-8.5.69.tar.gz"
-    dest="{{playbook_dir}}/files/binary"
+    dest="{{playbook_dir}}/files/binary/apache-tomcat-8.5.69.tar.gz"
   when: not tmc.stat.exists
 
 - name: check mysql connector exists
@@ -18,5 +18,5 @@
 - name: download mysql connector to local cache
   get_url:
     url="https://repo1.maven.org/maven2/mysql/mysql-connector-java/8.0.26/mysql-connector-java-8.0.26.jar"
-    dest="{{playbook_dir}}/files/binary"
+    dest="{{playbook_dir}}/files/binary/mysql-connector-java-8.0.26.jar"
   when: not connector.stat.exists
