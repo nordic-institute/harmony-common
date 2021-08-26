@@ -6,7 +6,7 @@
 
 - name: download tomcat to local cache
   get_url:
-    url="https://downloads.apache.org/tomcat/tomcat-8/v8.5.69/bin/apache-tomcat-8.5.69.tar.gz"
+    url="https://archive.apache.org/dist/tomcat/tomcat-8/v8.5.69/bin/apache-tomcat-8.5.69.zip"
     dest="{{playbook_dir}}/files/binary"
   when: not tmc.stat.exists
 
