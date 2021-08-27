@@ -25,3 +25,19 @@
     dest: /etc/bind/db.neds
   when: bind_installed.changed
 
+- name: restart BIND service
+  systemd:
+    name: bind9
+    state: restarted
+    enabled: true
+  when: bind_installed.changed
+
+
+- name: restart BIND service
+  systemd:
+    name: bind9
+    state: restarted
+    enabled: true
+  when: bind_installed.changed
+
+

@@ -1,0 +1,45 @@
+#
+# Copyright 2018 European Commission | CEF eDelivery
+#
+# Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent versions of the EUPL (the "Licence");
+# You may not use this work except in compliance with the Licence.
+#
+# You may obtain a copy of the Licence attached in file: LICENCE-EUPL-v1.2.pdf
+#
+# Unless required by applicable law or agreed to in writing, software distributed under the Licence is distributed on an "AS IS" basis,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the Licence for the specific language governing permissions and limitations under the Licence.
+
+
+hibernate.dialect=org.hibernate.dialect.MySQL5InnoDBDialect
+datasource.jndi=java:comp/env/jdbc/smp
+
+# smp log folder
+log.folder=/opt/tomcat/logs
+
+# custom log4j configuration file
+# log.configuration.file=smp-log4j.properties
+
+
+# **************************************************************************
+# Following attributes can be used only when initialize database
+# configuration table. Then they are ignored and database configuration
+# is used.
+# **************************************************************************
+
+bdmsl.integration.enabled=true
+bdmsl.integration.url=http://{{sml_hostname}}:8080/
+bdmsl.integration.tls.disableCNCheck=true
+bdmsl.integration.logical.address=http://{{smp_hostname}}:8080/
+bdmsl.integration.physical.address={{smp_ip}}
+bdmsl.integration.tls.serverSubjectRegex=
+
+authentication.blueCoat.enabled=true
+
+# Path to the folder containing all the configuration files (keystore and encryption key)
+configuration.dir=/opt/tomcat/custom_conf/
+
+
+
+
+

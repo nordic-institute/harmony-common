@@ -98,6 +98,7 @@ admins:
     fullname: Märten Soo (Gofore)
     ssh_keys:
       - "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQD2n+F7sO+peF2c36wFGxkzX/SuHMoKV86rIfig/EvMEYMvXOUiFe0DnWrBpo1mykm9LWT1V8w+40j9+93mmUrLRhW79geYD7PUdF0tAPEH6WzNdIwRTCkgo9o1XVofZ/5I6kxIFUW944RN99l4swPLmRd9DznSGrFAd+imus5VhrEPLhz2Q/azdnM+wpOyHrp7c+l2Jdjj21AbhaMi3C7Gknh6EvHXTPGtrVt+CbsZAFhJHh4BiwwvK3xefqzeaqQrVvqVo9TZHkk2n1095AiDDFimSKyQJEqxI+XxWwv9nK51M/k/GgG0LWyEwOEgBSOr88wGsdMeM8iv4iBd/75cdTMmcQqN4gwnD0/9O7dtm5l6NXsHVQLqBikHEohZ0Ig+3N0GadMnjZjNG+4ituqKZQGj+/HSnEmxJhTxii0EsaaV/SBaPg+hI2fJUOvkyaXKbyT9vG27ONbiwtlkT7Kx9mcAx4Y+oKh9hVpvsEVQVr59k5qlOhGbSDjt3KUGpck= marten.soo@G0588.local"
+    password: "*"
 
 
 #

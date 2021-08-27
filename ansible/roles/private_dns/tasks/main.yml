@@ -4,6 +4,7 @@
     src: 50-cloud-init.yaml.j2
     dest: /etc/netplan/50-cloud-init.yaml
   register: cloudinit
+  when: private_dns is defined
 
 - name: copy 99-disable-network-config.cfg
   copy:

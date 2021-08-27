@@ -1,0 +1,130 @@
+- hosts: localhost
+  gather_facts: no
+  roles:
+    - local
+  tasks:
+    - name: check SMP war exists
+      stat:
+        path="{{playbook_dir}}/files/binary/smp-4.1.1.war"
+      register: smpwar
+
+    - name: download SMP war to local cache
+      get_url:
+        url=https://ec.europa.eu/cefdigital/artifact/repository/public/eu/europa/ec/edelivery/smp/4.1.1/smp-4.1.1.war
+        dest="{{playbook_dir}}/files/binary/smp-4.1.1.war"
+      when: not smpwar.stat.exists
+
+- hosts: lxd_servers
+  roles:
+    - init-lxd
+
+- hosts: smp_servers
+  become: yes
+  pre_tasks:
+    - name: find sml hostname
+      set_fact:
+        sml_hostname: "{{ groups.bdmsl_servers.0 if lxd_suffix is undefined or not lxd_suffix else groups.bdmsl_servers.0 + '.lxd' }}"
+
+    - name: find sml ip (dig)
+      set_fact:
+        private_dns: "{{ lookup('dig', sml_hostname) }}"
+      when: private_dns is undefined
+
+    - name: find sml ip (/etc/hosts)
+      set_fact:
+        private_dns: "{{ (lookup('file', '/etc/hosts').splitlines()|
+                             list|
+                             select('search', sml_hostname)|
+                             list|
+                             first).split().0 }}"
+      when: private_dns is undefined or (private_dns|length == 0)
+
+    - name: find smp hostname
+      set_fact:
+        smp_hostname: "{{ inventory_hostname if lxd_suffix is undefined or not lxd_suffix else inventory_hostname + '.lxd' }}"
+
+    - name: find smp ip (dig)
+      set_fact:
+        smp_ip : "{{ lookup('dig', smp_hostname) }}"
+
+    - name: find sml ip (/etc/hosts)
+      set_fact:
+        smp_ip: "{{ (lookup('file', '/etc/hosts').splitlines()|
+                             list|
+                             select('search', smp_hostname)|
+                             list|
+                             first).split().0 }}"
+      when: smp_ip is undefined or (smp_ip|length == 0)
+
+  roles:
+    - common
+    - setup-mysql
+    - tomcat
+    - private_dns
+
+  tasks:
+    - name: collect info about database
+      mysql_info:
+        login_user: root
+        login_password: root
+      register: db_state
+
+    - name: copy ddl file
+      copy:
+        src: "{{playbook_dir}}/files/smp/smp_schema.ddl"
+        dest: /root
+      when: db_state.databases.smp is not defined
+
+    - name: create database
+      mysql_db:
+        name: smp
+        state: import
+        encoding: utf8
+        login_user: root
+        login_password: root
+        target: /root/smp_schema.ddl
+      when: db_state.databases.smp is not defined
+
+    - name: copy db settings file
+      copy:
+        src: "{{playbook_dir}}/files/smp/smp_configuration.sql"
+        dest: /root
+
+    - name: load settings into db
+      mysql_db:
+        name: smp
+        state: import
+        encoding: utf8
+        login_user: root
+        login_password: root
+        target: /root/smp_configuration.sql
+
+    - name: create sml folder
+      file:
+        path: /opt/smlconf
+        state: directory
+        owner: tomcat
+        group: tomcat
+      when: tomcat_exists.changed
+
+    - name: copy smp conf file
+      template:
+        src: "{{playbook_dir}}/files/smp/smp.config.properties.j2"
+        dest: /opt/tomcat/custom_conf/smp.config.properties
+        owner: tomcat
+        group: tomcat
+
+    - name: copy smp context.xml file
+      copy:
+        src: "{{playbook_dir}}/files/smp/smp_context.xml"
+        dest: /opt/tomcat/conf/context.xml
+        owner: tomcat
+        group: tomcat
+
+    - name: copy smp war to webapps
+      copy:
+        src: "{{playbook_dir}}/files/binary/smp-4.1.1.war"
+        dest: /opt/tomcat/webapps/ROOT.war
+        owner: tomcat
+        group: tomcat
+

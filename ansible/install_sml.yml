@@ -37,7 +37,7 @@
 
     - name: copy ddl file
       copy:
-        src: "{{playbook_dir}}/files/bdmsl-sql/bdsml_schema.ddl"
+        src: "{{playbook_dir}}/files/bdmsl/bdsml_schema.ddl"
         dest: /root
       when: db_state.databases.bdmsl is not defined
 
@@ -53,7 +53,7 @@
 
     - name: copy db settings file
       copy:
-        src: "{{playbook_dir}}/files/bdmsl-sql/bdsml_configuration.sql"
+        src: "{{playbook_dir}}/files/bdmsl/bdsml_configuration.sql"
         dest: /root
 
     - name: load settings into db
@@ -75,14 +75,14 @@
 
     - name: copy bdsml conf file
       copy:
-        src: "{{playbook_dir}}/files/sml.config.properties"
+        src: "{{playbook_dir}}/files/bdmsl/sml.config.properties"
         dest: /opt/tomcat/custom_conf
         owner: tomcat
         group: tomcat
 
     - name: copy bdsml context.xml file
       copy:
-        src: "{{playbook_dir}}/files/bdmsl_context.xml"
+        src: "{{playbook_dir}}/files/bdmsl/bdmsl_context.xml"
         dest: /opt/tomcat/conf/context.xml
         owner: tomcat
         group: tomcat

@@ -45,7 +45,7 @@
 
 - name: add custom conf folder to classpath
   copy:
-    src: "{{playbook_dir}}/files/setenv.sh"
+    src: setenv.sh
     dest: /opt/tomcat/bin
   when: tomcat_exists.changed
 

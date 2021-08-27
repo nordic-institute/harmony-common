@@ -13,7 +13,16 @@
     profiles: ["default"]
     wait_for_ipv4_addresses: true
     timeout: 600
+  register: lxdcreate
   tags:
     - ubuntu-container-init
 
-
+- name: Add lxc containers to hosts file
+  become: true
+  with_items: "{{lxdcreate.results}}"
+  lineinfile:
+    path: /etc/hosts
+    regexp: ".*{{item.item}}.lxd # automatically added by ansible"
+    line: "{{item.addresses.eth0.0}} {{item.item}}.lxd # automatically added by ansible"
+  ignore_errors: true
+  when: lxdcreate.changed
