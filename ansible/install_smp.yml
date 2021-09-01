@@ -20,6 +20,8 @@
 
 - hosts: smp_servers
   become: yes
+  vars:
+    certs_dir: /root/certs
   pre_tasks:
     - name: find sml hostname
       set_fact:
@@ -63,6 +65,66 @@
     - private_dns
 
   tasks:
+    - name: check if jks exists
+      raw: test -e /opt/tomcat/custom_conf/smp-keystore.jks && echo true || echo false
+      register: jks_exists
+
+    - name: Ensure directory exists for local self-signed TLS certs.
+      file:
+        path: "{{ certs_dir }}"
+        state: directory
+      when: not jks_exists|bool
+
+    - name: Generate an OpenSSL private key.
+      openssl_privatekey:
+        path: "{{ certs_dir }}/{{ inventory_hostname }}_privkey.key"
+        force: true
+      register: privkey
+      when: not jks_exists|bool
+
+    - name: Generate an OpenSSL CSR.
+      openssl_csr:
+        path: "{{ certs_dir }}/{{ inventory_hostname }}.csr"
+        privatekey_path: "{{ certs_dir }}/{{ inventory_hostname }}_privkey.key"
+        common_name: "{{ inventory_hostname }}"
+        organization_name: NIIS
+        country_name: FI
+        force: true
+      when: not jks_exists|bool
+
+    - name: Generate a Self Signed OpenSSL certificate.
+      openssl_certificate:
+        path: "{{ certs_dir }}/{{ inventory_hostname }}_certificate.crt"
+        privatekey_path: "{{ certs_dir }}/{{ inventory_hostname }}_privkey.key"
+        csr_path: "{{ certs_dir }}/{{ inventory_hostname }}.csr"
+        # smp does not handle not_before and not_after fields correctly (timezone is changed to gmt)
+        selfsigned_not_before: -3d
+        provider: selfsigned
+        selfsigned_version: 3
+      register: cert
+      when: not jks_exists|bool
+
+    - name: Slurp key file
+      slurp:
+        src: "{{ certs_dir }}/{{ inventory_hostname }}_privkey.key"
+      register: keyfile
+      when: not jks_exists|bool
+
+    - name: Slurp certificate file
+      slurp:
+        src: "{{ certs_dir }}/{{ inventory_hostname }}_certificate.crt"
+      register: certfile
+      when: not jks_exists|bool
+
+    - name: Create Java keystore
+      java_keystore:
+        name: "{{ inventory_hostname }}"
+        certificate: "{{certfile.content | b64decode }}"
+        private_key: "{{keyfile.content | b64decode }}"
+        password: password
+        dest: /opt/tomcat/custom_conf/smp-keystore.jks
+      when: not jks_exists|bool
+
     - name: collect info about database
       mysql_info:
         login_user: root
@@ -85,10 +147,10 @@
         target: /root/smp_schema.ddl
       when: db_state.databases.smp is not defined
 
-    - name: copy db settings file
-      copy:
+    - name: create db settings file
+      template:
         src: "{{playbook_dir}}/files/smp/smp_configuration.sql"
-        dest: /root
+        dest: /root/smp_configuration.sql
 
     - name: load settings into db
       mysql_db:
@@ -99,17 +161,9 @@
         login_password: root
         target: /root/smp_configuration.sql
 
-    - name: create sml folder
-      file:
-        path: /opt/smlconf
-        state: directory
-        owner: tomcat
-        group: tomcat
-      when: tomcat_exists.changed
-
     - name: copy smp conf file
-      template:
-        src: "{{playbook_dir}}/files/smp/smp.config.properties.j2"
+      copy:
+        src: "{{playbook_dir}}/files/smp/smp.config.properties"
         dest: /opt/tomcat/custom_conf/smp.config.properties
         owner: tomcat
         group: tomcat

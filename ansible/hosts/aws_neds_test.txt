@@ -1,5 +1,8 @@
 [bdmsl_servers]
 neds-sml.i.x-road.rocks forward_dns=172.31.0.2
 
+[smp_servers]
+neds-smp.i.x-road.rocks
+
 
 

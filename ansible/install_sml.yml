@@ -65,6 +65,23 @@
         login_password: root
         target: /root/bdsml_configuration.sql
 
+    - name: prepare smp subdomains sql file
+      with_inventory_hostnames: smp_servers
+      lineinfile:
+        path: /root/certificate_domains.sql
+        create: true
+        regexp: ".*CN={{item}}"
+        line: INSERT INTO bdmsl_certificate_domain(certificate, crl_url, fk_subdomain_id, created_on, last_updated_on, is_root_ca, is_admin) VALUES ('CN={{item}},O=NIIS,C=FI','', 1, NOW(), NOW(), 0, 1);
+
+    - name: add bdmsl_certificate_domain records
+      mysql_db:
+        name: bdmsl
+        state: import
+        encoding: utf8
+        login_user: root
+        login_password: root
+        target: /root/certificate_domains.sql
+
     - name: create sml folder
       file:
         path: /opt/smlconf

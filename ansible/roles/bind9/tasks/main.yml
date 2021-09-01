@@ -22,7 +22,8 @@
 - name: copy db.neds
   template:
     src: db.neds.j2
-    dest: /etc/bind/db.neds
+    # we have to use this folder for dynamic zone because bind does not have permissions to write to /etc/bind
+    dest: /var/lib/bind/db.neds
   when: bind_installed.changed
 
 - name: restart BIND service

@@ -36,14 +36,11 @@ insert into bdmsl_configuration(property, value, description, created_on, last_u
 
 DELETE FROM bdmsl_certificate_domain;
 
-DELETE FROM bdmsl_subdomain;
+INSERT INTO bdmsl_subdomain(subdomain_id, subdomain_name,dns_zone, description, participant_id_regexp, dns_record_types, smp_url_schemas, created_on, last_updated_on) values
+(1, 'smpa.neds','neds','Domain for smpa.neds','^.*$','all','all', NOW(), NOW())
+  ON DUPLICATE KEY UPDATE subdomain_name='smpa.neds', dns_zone = 'neds', participant_id_regexp='^.*$', dns_record_types='all', smp_url_schemas='all', last_updated_on=NOW();
 
-insert into bdmsl_subdomain(subdomain_id, subdomain_name,dns_zone, description, participant_id_regexp, dns_record_types, smp_url_schemas, created_on, last_updated_on) values
-(1, 'test.neds','neds','Domain for test.neds','^.*$','all','all',TIMESTAMP '2019-01-24 19:09:06.345', TIMESTAMP '2019-01-24 19:09:06.345');
 
-
-INSERT INTO bdmsl_certificate_domain(certificate, crl_url,  is_root_ca, fk_subdomain_id, created_on, last_updated_on, is_admin) VALUES
-('CN=unsecure_root,O=delete_in_production,C=only_for_testing','',1, 1, NOW(), NOW(),1);
 
 
 

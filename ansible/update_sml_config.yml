@@ -2,17 +2,10 @@
   vars:
     lxd_suffix: true
   tasks:
+    - name: Slurp host file
+      slurp:
+        src: /etc/hosts
+      register: keyfile
+
     - debug:
-        msg: "{{ inventory_hostname if lxd_suffix is undefined or not lxd_suffix else inventory_hostname + '.lxd' }}"
-
-
-
-- hosts: lxd_servers
-  vars:
-    lxd_suffix: true
-  tasks:
-    - debug:
-        msg: "{{ inventory_hostname if lxd_suffix is undefined or not lxd_suffix else inventory_hostname + '.lxd' }}"
-
-
-
+        msg: "{{keyfile.content | b64decode }}"
