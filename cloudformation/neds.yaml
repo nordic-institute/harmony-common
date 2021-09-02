@@ -16,7 +16,7 @@ Parameters:
       - t3a.medium
     ConstraintDescription: must be a valid EC2 instance type.
   SMPInstanceType:
-    Description: SML instance type
+    Description: SMP instance type
     Type: String
     Default: t3a.small
     AllowedValues:
@@ -24,8 +24,8 @@ Parameters:
       - t3a.small
       - t3a.medium
     ConstraintDescription: must be a valid EC2 instance type.
-  SsRootVolumeSize:
-    Description: The root volume size for SML instances
+  RootVolumeSize:
+    Description: The root volume size for instances
     Type: String
     Default: 8
     AllowedValues:
@@ -141,16 +141,16 @@ Resources:
       SecurityGroupIds:
         - !Ref SSHSecurityGroup
         - !Ref NEDSSecurityGroup
-      InstanceType: !Ref SMLInstanceType
+      InstanceType: !Ref SMPInstanceType
       Monitoring: false
       SubnetId: !Ref SubnetID
       Tags:
         - Key: Name
-          Value: !Sub ${Environment}-sml
+          Value: !Sub ${Environment}-smp
         - Key: env
           Value: !Ref Environment
         - Key: role
-          Value: sml
+          Value: smp
         - Key: AutoStopStart
           Value: !Ref AutoStopStart
         - Key: AutoStop
