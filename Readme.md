@@ -30,3 +30,8 @@ can be created using AWS Console. Make sure that you have access to SSH key used
 hostnames match the ones configured in `hosts/aws_neds_test.txt`. Adjust as necessary. For creating or recreating
 initial test environment default values should be suitable. When setting up AWS environment user user ubuntu ie add `-u ubuntu`
 to ansible commandline.
+
+## SMP users and credentials
+
+Initially SMP is configured with three users - system, smp and user. Initial password for all users is 123456. Different
+user roles have different permissions. Note that system user can not do smp user actions and vice versa.

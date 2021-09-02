@@ -102,6 +102,7 @@ Resources:
       ImageId: !Ref UbuntuFocalAMI
       SecurityGroupIds:
         - !Ref SSHSecurityGroup
+        - !Ref SMLSecurityGroup
       InstanceType: !Ref SMLInstanceType
       Monitoring: false
       SubnetId: !Ref SubnetID
@@ -139,6 +140,7 @@ Resources:
       ImageId: !Ref UbuntuFocalAMI
       SecurityGroupIds:
         - !Ref SSHSecurityGroup
+        - !Ref NEDSSecurityGroup
       InstanceType: !Ref SMLInstanceType
       Monitoring: false
       SubnetId: !Ref SubnetID
@@ -167,6 +169,11 @@ Resources:
         chmod 0700 /home/niis
         chmod 0700 /home/niis/.ssh
         chmod 0600 /home/niis/.ssh/authorized_keys
+  NEDSSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Group for all instances in stack
+      VpcId: !Ref VpcId
   SSHSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
@@ -181,6 +188,21 @@ Resources:
           IpProtocol: tcp
           FromPort: 8080
           ToPort: 8080
+  SMLSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Enable DNS queries from other stack hosts
+      VpcId: !Ref VpcId
+      Tags:
+        - Key: StackName
+          Value: !Ref "AWS::StackName"
+        - Key: Name
+          Value: !Sub ${AWS::StackName}-smlsecuritygroup
+      SecurityGroupIngress:
+        - SourceSecurityGroupId: !Ref NEDSSecurityGroup
+          IpProtocol: -1
+          FromPort: 53
+          ToPort: 53
   SMLPrivateIPDNSRecord:
     Type: AWS::Route53::RecordSet
     Condition: CreateSML
