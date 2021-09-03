@@ -1,0 +1,11 @@
+- hosts: lxd_servers
+  vars:
+    lxd_suffix: true
+  tasks:
+    - name: Slurp host file
+      slurp:
+        src: /etc/hosts
+      register: keyfile
+
+    - debug:
+        msg: "{{keyfile.content | b64decode }}"

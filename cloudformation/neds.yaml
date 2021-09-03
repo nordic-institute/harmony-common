@@ -15,8 +15,17 @@ Parameters:
       - t3a.small
       - t3a.medium
     ConstraintDescription: must be a valid EC2 instance type.
-  SsRootVolumeSize:
-    Description: The root volume size for SML instances
+  SMPInstanceType:
+    Description: SMP instance type
+    Type: String
+    Default: t3a.small
+    AllowedValues:
+      - none
+      - t3a.small
+      - t3a.medium
+    ConstraintDescription: must be a valid EC2 instance type.
+  RootVolumeSize:
+    Description: The root volume size for instances
     Type: String
     Default: 8
     AllowedValues:
@@ -82,6 +91,7 @@ Parameters:
     Default: ami-03caf24deed650e2c
 Conditions:
   CreateSML: !Not [!Equals [!Ref SMLInstanceType, none]]
+  CreateSMP: !Not [!Equals [!Ref SMPInstanceType, none]]
 Resources:
   SMLInstance:
     Type: AWS::EC2::Instance
@@ -92,6 +102,7 @@ Resources:
       ImageId: !Ref UbuntuFocalAMI
       SecurityGroupIds:
         - !Ref SSHSecurityGroup
+        - !Ref SMLSecurityGroup
       InstanceType: !Ref SMLInstanceType
       Monitoring: false
       SubnetId: !Ref SubnetID
@@ -120,6 +131,49 @@ Resources:
         chmod 0700 /home/niis
         chmod 0700 /home/niis/.ssh
         chmod 0600 /home/niis/.ssh/authorized_keys
+  SMPInstance:
+    Type: AWS::EC2::Instance
+    Condition: CreateSMP
+    Properties:
+      AvailabilityZone: !Ref AvailabilityZone
+      KeyName: !Ref KeyName
+      ImageId: !Ref UbuntuFocalAMI
+      SecurityGroupIds:
+        - !Ref SSHSecurityGroup
+        - !Ref NEDSSecurityGroup
+      InstanceType: !Ref SMPInstanceType
+      Monitoring: false
+      SubnetId: !Ref SubnetID
+      Tags:
+        - Key: Name
+          Value: !Sub ${Environment}-smp
+        - Key: env
+          Value: !Ref Environment
+        - Key: role
+          Value: smp
+        - Key: AutoStopStart
+          Value: !Ref AutoStopStart
+        - Key: AutoStop
+          Value: !Ref AutoStop
+        - Key: AutoSnapshot
+          Value: !Ref AutoSnapshot
+      UserData: !Base64 |
+        #!/bin/bash -xe
+        DEBIAN_FRONTEND=noninteractive apt-get update -y
+        apt-get install -y aptitude
+        useradd -c 'NIIS Team User' -d /home/niis -s /bin/bash niis
+        echo 'niis ALL=(ALL) NOPASSWD: ALL' > /etc/sudoers.d/niis
+        mkdir -p /home/niis/.ssh
+        curl -o /home/niis/.ssh/authorized_keys https://s3-eu-west-1.amazonaws.com/niis-xroad-ci-files/niis-authorized-ssh-keys
+        chown -R niis:niis /home/niis
+        chmod 0700 /home/niis
+        chmod 0700 /home/niis/.ssh
+        chmod 0600 /home/niis/.ssh/authorized_keys
+  NEDSSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Group for all instances in stack
+      VpcId: !Ref VpcId
   SSHSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
@@ -134,17 +188,43 @@ Resources:
           IpProtocol: tcp
           FromPort: 8080
           ToPort: 8080
+  SMLSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Enable DNS queries from other stack hosts
+      VpcId: !Ref VpcId
+      Tags:
+        - Key: StackName
+          Value: !Ref "AWS::StackName"
+        - Key: Name
+          Value: !Sub ${AWS::StackName}-smlsecuritygroup
+      SecurityGroupIngress:
+        - SourceSecurityGroupId: !Ref NEDSSecurityGroup
+          IpProtocol: -1
+          FromPort: 53
+          ToPort: 53
   SMLPrivateIPDNSRecord:
     Type: AWS::Route53::RecordSet
     Condition: CreateSML
     Properties:
       HostedZoneName: !Sub ${HostedZone}.
-      Comment: DNS name for CS instance's private IP
+      Comment: DNS name for SML instance's private IP
       Name: !Sub ${Environment}-sml.i.${HostedZone}.
       Type: A
       TTL: 900
       ResourceRecords:
         - !GetAtt SMLInstance.PrivateIp
+  SMPPrivateIPDNSRecord:
+    Type: AWS::Route53::RecordSet
+    Condition: CreateSMP
+    Properties:
+      HostedZoneName: !Sub ${HostedZone}.
+      Comment: DNS name for SMP instance's private IP
+      Name: !Sub ${Environment}-smp.i.${HostedZone}.
+      Type: A
+      TTL: 900
+      ResourceRecords:
+        - !GetAtt SMPInstance.PrivateIp
 Outputs:
   SMLHostname:
     Condition: CreateSML
@@ -154,4 +234,12 @@ Outputs:
     Condition: CreateSML
     Description: Ip Address of SML
     Value: !GetAtt SMLInstance.PrivateIp
+  SMPHostname:
+    Condition: CreateSMP
+    Description: Hostname of SMP
+    Value: !Ref SMPPrivateIPDNSRecord
+  SMLIpAddress:
+    Condition: CreateSMP
+    Description: Ip Address of SMP
+    Value: !GetAtt SMPInstance.PrivateIp
 

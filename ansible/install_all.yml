@@ -1,0 +1,2 @@
+- import_playbook: install_sml.yml
+- import_playbook: install_smp.yml
