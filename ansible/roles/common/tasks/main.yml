@@ -16,4 +16,3 @@
   tags:
     - admins
   when: skip_admins is undefined or not skip_admins
-  when: skip_admins is undefined or not skip_admins
