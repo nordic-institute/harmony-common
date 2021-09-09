@@ -1,17 +1,19 @@
 - hosts: localhost
   gather_facts: no
   roles:
-    - local
+    - role: local
+      vars:
+        tomcat_version: '8'
   tasks:
     - name: check SMP war exists
       stat:
-        path="{{playbook_dir}}/files/binary/smp-4.1.1.war"
+        path: "{{playbook_dir}}/files/binary/smp-4.1.1.war"
       register: smpwar
 
     - name: download SMP war to local cache
       get_url:
-        url=https://ec.europa.eu/cefdigital/artifact/repository/public/eu/europa/ec/edelivery/smp/4.1.1/smp-4.1.1.war
-        dest="{{playbook_dir}}/files/binary/smp-4.1.1.war"
+        url: https://ec.europa.eu/cefdigital/artifact/repository/public/eu/europa/ec/edelivery/smp/4.1.1/smp-4.1.1.war
+        dest: "{{playbook_dir}}/files/binary/smp-4.1.1.war"
       when: not smpwar.stat.exists
 
 - hosts: lxd_servers
@@ -19,27 +21,10 @@
     - init-lxd
 
 - hosts: smp_servers
-  become: yes
   vars:
     certs_dir: /root/certs
   pre_tasks:
-    - name: find sml hostname
-      set_fact:
-        sml_hostname: "{{ groups.bdmsl_servers.0 if lxd_suffix is undefined or not lxd_suffix else groups.bdmsl_servers.0 + '.lxd' }}"
-
-    - name: find sml ip (dig)
-      set_fact:
-        private_dns: "{{ lookup('dig', sml_hostname) }}"
-      when: private_dns is undefined
-
-    - name: find sml ip (/etc/hosts)
-      set_fact:
-        private_dns: "{{ (lookup('file', '/etc/hosts').splitlines()|
-                             list|
-                             select('search', sml_hostname)|
-                             list|
-                             first).split().0 }}"
-      when: private_dns is undefined or (private_dns|length == 0)
+    - import_tasks: tasks/find_sml_ip.yml
 
     - name: find smp hostname
       set_fact:
@@ -56,12 +41,15 @@
                              select('search', smp_hostname)|
                              list|
                              first).split().0 }}"
-      when: smp_ip is undefined or (smp_ip|length == 0)
+      when: smp_ip is undefined or smp_ip|length == 0 or smp_ip=='NXDOMAIN'
 
   roles:
     - common
-    - setup-mysql
-    - tomcat
+    - mysql
+    - role: tomcat
+      vars:
+        tomcat_version: '8'
+        setenv_file: "{{playbook_dir}}/files/smp/setenv.sh"
     - private_dns
 
   tasks:
@@ -161,10 +149,18 @@
         login_password: root
         target: /root/smp_configuration.sql
 
+    - name: create conf folder
+      file:
+        path: /opt/tomcat/custom_conf
+        state: directory
+        owner: tomcat
+        group: tomcat
+
     - name: copy smp conf file
       copy:
         src: "{{playbook_dir}}/files/smp/smp.config.properties"
         dest: /opt/tomcat/custom_conf/smp.config.properties
+        force: true
         owner: tomcat
         group: tomcat
 
@@ -172,6 +168,7 @@
       copy:
         src: "{{playbook_dir}}/files/smp/smp_context.xml"
         dest: /opt/tomcat/conf/context.xml
+        force: true
         owner: tomcat
         group: tomcat
 

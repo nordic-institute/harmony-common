@@ -1,0 +1,113 @@
+- hosts: localhost
+  gather_facts: no
+  roles:
+    - role: local
+      vars:
+        tomcat_version: '9'
+  tasks:
+    - name: check Domibus war exists
+      stat:
+        path: "{{playbook_dir}}/files/binary/domibus-MSH-tomcat-4.2.4.war"
+      register: domibuswar
+
+    - name: download and unpack Domibus war
+      unarchive:
+        remote_src: true
+        src: https://ec.europa.eu/cefdigital/artifact/content/repositories/public/eu/domibus/domibus-distribution/4.2.4/domibus-distribution-4.2.4-tomcat-war.zip
+        dest: "{{playbook_dir}}/files/binary/"
+      when: not domibuswar.stat.exists
+
+    - name: check ws plugin jar exists
+      stat:
+        path: "{{playbook_dir}}/files/binary/conf/domibus/plugins/lib/domibus-default-ws-plugin-4.2.4.jar"
+      register: wspluginjar
+
+    - name: download and unpack ws plugin jar
+      unarchive:
+        remote_src: true
+        src: https://ec.europa.eu/cefdigital/artifact/content/repositories/public/eu/domibus/domibus-distribution/4.2.4/domibus-distribution-4.2.4-default-ws-plugin.zip
+        dest: "{{playbook_dir}}/files/binary/"
+      when: not wspluginjar.stat.exists
+
+- hosts: lxd_servers
+  roles:
+    - init-lxd
+
+- hosts: domibus_servers
+  become: yes
+  vars:
+    certs_dir: /root/certs
+
+  pre_tasks:
+    - import_tasks: tasks/find_sml_ip.yml
+
+  roles:
+    - common
+    - mysql
+    - private_dns
+    - role: tomcat
+      vars:
+        tomcat_version: '9'
+        setenv_file: "{{playbook_dir}}/files/domibus/setenv.sh"
+
+  tasks:
+    - name: collect info about database
+      mysql_info:
+        login_user: root
+        login_password: root
+      register: db_state
+
+    - name: copy ddl file
+      copy:
+        src: "{{playbook_dir}}/files/domibus/domibus_schema.ddl"
+        dest: /root
+        force: yes
+      when: db_state.databases.domibus is not defined
+
+    - name: create database
+      mysql_db:
+        name: domibus
+        state: import
+        encoding: utf8
+        login_user: root
+        login_password: root
+        target: /root/domibus_schema.ddl
+      when: db_state.databases.domibus is not defined
+
+    - name: create db settings file
+      template:
+        src: "{{playbook_dir}}/files/domibus/domibus_configuration.sql"
+        dest: /root/domibus_configuration.sql
+        force: yes
+
+    - name: load settings into db
+      mysql_db:
+        name: domibus
+        state: import
+        encoding: utf8
+        login_user: root
+        login_password: root
+        target: /root/domibus_configuration.sql
+
+    - name: copy domibus configuration files
+      copy:
+        src: "{{playbook_dir}}/files/domibus/conf/"
+        dest: /opt/tomcat/conf/domibus
+        force: yes
+        owner: tomcat
+        group: tomcat
+
+    - name: copy domibus war to webapps
+      copy:
+        src: "{{playbook_dir}}/files/binary/conf/domibus/plugins/lib/domibus-default-ws-plugin-4.2.4.jar"
+        dest: /opt/tomcat/conf/domibus/plugins/lib
+        owner: tomcat
+        group: tomcat
+
+    - name: copy domibus war to webapps
+      copy:
+        src: "{{playbook_dir}}/files/binary/domibus-MSH-tomcat-4.2.4.war"
+        dest: /opt/tomcat/webapps/domibus.war
+        owner: tomcat
+        group: tomcat
+
