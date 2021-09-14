@@ -26,7 +26,7 @@
   pre_tasks:
     - import_tasks: tasks/find_sml_ip.yml
 
-    - name: find smp hostname
+    - name: store smp hostname
       set_fact:
         smp_hostname: "{{ inventory_hostname if lxd_suffix is undefined or not lxd_suffix else inventory_hostname + '.lxd' }}"
 
@@ -54,21 +54,25 @@
 
   tasks:
     - name: check if jks exists
-      raw: test -e /opt/tomcat/custom_conf/smp-keystore.jks && echo true || echo false
-      register: jks_exists
+      stat:
+        path: /opt/tomcat/custom_conf/smp-keystore.jks
+      register: jks
 
+    - debug:
+        msg: "{{jks}}"
+        
     - name: Ensure directory exists for local self-signed TLS certs.
       file:
         path: "{{ certs_dir }}"
         state: directory
-      when: not jks_exists|bool
+      when: not jks.stat.exists|bool
 
     - name: Generate an OpenSSL private key.
       openssl_privatekey:
         path: "{{ certs_dir }}/{{ inventory_hostname }}_privkey.key"
         force: true
       register: privkey
-      when: not jks_exists|bool
+      when: not jks.stat.exists|bool
 
     - name: Generate an OpenSSL CSR.
       openssl_csr:
@@ -78,7 +82,7 @@
         organization_name: NIIS
         country_name: FI
         force: true
-      when: not jks_exists|bool
+      when: not jks.stat.exists|bool
 
     - name: Generate a Self Signed OpenSSL certificate.
       openssl_certificate:
@@ -90,19 +94,19 @@
         provider: selfsigned
         selfsigned_version: 3
       register: cert
-      when: not jks_exists|bool
+      when: not jks.stat.exists|bool
 
     - name: Slurp key file
       slurp:
         src: "{{ certs_dir }}/{{ inventory_hostname }}_privkey.key"
       register: keyfile
-      when: not jks_exists|bool
+      when: not jks.stat.exists|bool
 
     - name: Slurp certificate file
       slurp:
         src: "{{ certs_dir }}/{{ inventory_hostname }}_certificate.crt"
       register: certfile
-      when: not jks_exists|bool
+      when: not jks.stat.exists|bool
 
     - name: Create Java keystore
       java_keystore:
@@ -111,7 +115,7 @@
         private_key: "{{keyfile.content | b64decode }}"
         password: password
         dest: /opt/tomcat/custom_conf/smp-keystore.jks
-      when: not jks_exists|bool
+      when: not jks.stat.exists|bool
 
     - name: collect info about database
       mysql_info:

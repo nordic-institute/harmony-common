@@ -1,3 +1,8 @@
 - hosts: localhost
-  roles:
-    - init-lxd
+  tasks:
+    - stat:
+        path: /opt/tomcat/conf/server.xml
+      register: pass_exists
+
+    - debug:
+        msg: "{{pass_exists}}"

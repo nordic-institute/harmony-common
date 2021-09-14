@@ -3,14 +3,14 @@
   debconf:
     name: mysql-community-server
     question: mysql-community-server/root-pass
-    value: "{{ root_password }}"
+    value: root
     vtype: password
 
 - name: Confirm MySQL root password
   debconf:
     name: mysql-community-server
     question: mysql-community-server/re-root-pass
-    value: "{{ root_password }}"
+    value: root
     vtype: password
 
 - name: Enable Legacy Authentication Method

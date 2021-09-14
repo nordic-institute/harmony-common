@@ -13,7 +13,7 @@ AWS environment is set up using `hosts/aws_neds_test.txt` host file. Local LXD e
 
 Command to set up local LXC environment is shown below.
 
-    ansible-playbook --ask-become-pass -i hosts/local_lxd_sml.txt install_all.yml
+    ansible-playbook --ask-become-pass -i hosts/local_lxd.txt install_all.yml
 
 `--ask-become-pass` switch is needed so created container ip-addresses can be
 automatically added to `/etc/hosts` file. If you dont want that to happen this switch can be omitted. This switch has no effect

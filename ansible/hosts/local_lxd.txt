@@ -9,7 +9,7 @@ sml ansible_connection=lxd forward_dns=10.204.119.1
 smp ansible_connection=lxd
 
 [domibus_servers]
-ap ansible_connection=lxd root_password=root
+cef-ap ansible_connection=lxd
 
 [all:vars]
 lxd_suffix=true
