@@ -1,5 +1,6 @@
 ---
 - name: Ready all containers
+  become: yes
   with_inventory_hostnames: all:!lxd_servers
   lxd_container:
     name: "{{item}}"
@@ -19,10 +20,12 @@
 
 - name: Add lxc containers to hosts file
   become: true
-  with_items: "{{lxdcreate.results}}"
   lineinfile:
     path: /etc/hosts
     regexp: ".*{{item.item}}.lxd # automatically added by ansible"
     line: "{{item.addresses.eth0.0}} {{item.item}}.lxd # automatically added by ansible"
   ignore_errors: true
+  loop: "{{lxdcreate.results}}"
+  loop_control:
+    label: "{{item.item}}"
   when: lxdcreate.changed

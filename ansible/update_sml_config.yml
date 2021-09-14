@@ -1,7 +1,3 @@
-- hosts: bdmsl_servers
-  become: yes
+- hosts: localhost
   roles:
-    - role: tomcat
-      vars:
-        tomcat_version: 8
-        setenv_file: "{{playbook_dir}}/files/bdmsl/setenv.sh"
+    - init-lxd
