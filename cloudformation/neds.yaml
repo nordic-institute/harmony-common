@@ -25,7 +25,7 @@ Parameters:
       - t3a.medium
     ConstraintDescription: must be a valid EC2 instance type.
   APInstanceType:
-    Description: SMP instance type
+    Description: AP instance type
     Type: String
     Default: t3a.small
     AllowedValues:
@@ -194,7 +194,7 @@ Resources:
       SubnetId: !Ref SubnetID
       Tags:
         - Key: Name
-          Value: !Sub ${Environment}-smp
+          Value: !Sub ${Environment}-cef-ap
         - Key: env
           Value: !Ref Environment
         - Key: role
@@ -268,7 +268,7 @@ Resources:
     Properties:
       HostedZoneName: !Sub ${HostedZone}.
       Comment: DNS name for SMP instance's private IP
-      Name: !Sub ${Environment}-smp.i.${HostedZone}.
+      Name: !Sub ${Environment}-cef-smp.i.${HostedZone}.
       Type: A
       TTL: 900
       ResourceRecords:
@@ -283,7 +283,7 @@ Resources:
       Type: A
       TTL: 900
       ResourceRecords:
-        - !GetAtt SMPInstance.PrivateIp
+        - !GetAtt APInstance.PrivateIp
 Outputs:
   SMLHostname:
     Condition: CreateSML

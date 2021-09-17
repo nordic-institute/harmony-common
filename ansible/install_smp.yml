@@ -21,6 +21,7 @@
     - init-lxd
 
 - hosts: smp_servers
+  become: yes
   vars:
     certs_dir: /root/certs
   pre_tasks:

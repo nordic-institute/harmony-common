@@ -1,8 +1,8 @@
 #!/bin/bash
 
-if [ -z "$1" ]
+if [ -z "$1" ] || [ -z "$2" ]
   then
-    echo "Hostname is required"
+    echo "Usage: generate_cert.sh <hostname> <CommonName>"
     exit
 fi
 
@@ -24,7 +24,7 @@ touch ./work/neds-ca.index
 openssl rand -hex 16 > ./work/neds-ca.serial
 
 # generate key and certificate request
-openssl req -newkey rsa:2048 -nodes -keyout  work/"$1".key.pem -out work/"$1".csr.pem -subj "/CN=$1"
+openssl req -newkey rsa:2048 -nodes -keyout  work/"$1".key.pem -out work/"$1".csr.pem -subj "/CN=$2"
 
 # generate certificate
 openssl ca -config neds-ca.cnf -batch -in work/"$1".csr.pem -out work/"$1".crt.pem -extensions server_ext
