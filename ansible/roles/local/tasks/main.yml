@@ -1,14 +1,27 @@
 ---
-- name: check tomcat gz exists
+- name: check tomcat 8 gz exists
   stat:
     path="{{playbook_dir}}/files/binary/apache-tomcat-8.5.69.tar.gz"
-  register: tmc
+  register: tmc8
+  when: tomcat_version=='8.5'
 
-- name: download tomcat to local cache
+- name: download tomcat 8 to local cache
   get_url:
     url="https://archive.apache.org/dist/tomcat/tomcat-8/v8.5.69/bin/apache-tomcat-8.5.69.tar.gz"
     dest="{{playbook_dir}}/files/binary"
-  when: not tmc.stat.exists
+  when: tomcat_version=='8.5' and not tmc8.stat.exists
+
+- name: check tomcat 9 gz exists
+  stat:
+    path="{{playbook_dir}}/files/binary/apache-tomcat-9.0.52.tar.gz"
+  register: tmc9
+  when: tomcat_version=='9.0'
+
+- name: download tomcat 9 to local cache
+  get_url:
+    url="https://archive.apache.org/dist/tomcat/tomcat-9/v9.0.52/bin/apache-tomcat-9.0.52.tar.gz"
+    dest="{{playbook_dir}}/files/binary"
+  when: tomcat_version=='9.0' and not tmc9.stat.exists
 
 - name: check mysql connector exists
   stat:

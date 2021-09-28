@@ -1,17 +1,19 @@
 - hosts: localhost
   gather_facts: no
   roles:
-    - local
+    - role: local
+      vars:
+        tomcat_version: '8'
   tasks:
     - name: check BDMSL war exists
       stat:
-        path="{{playbook_dir}}/files/binary/bdmsl-webapp-4.1.0.war"
+        path: "{{playbook_dir}}/files/binary/bdmsl-webapp-4.1.0.war"
       register: bdmslwar
 
     - name: download BDMSL to local cache
       get_url:
-        url=https://ec.europa.eu/cefdigital/artifact/repository/public/eu/europa/ec/bdmsl/bdmsl-webapp/4.1.0/bdmsl-webapp-4.1.0.war
-        dest="{{playbook_dir}}/files/binary/bdmsl-webapp-4.1.0.war"
+        url: https://ec.europa.eu/cefdigital/artifact/repository/public/eu/europa/ec/bdmsl/bdmsl-webapp/4.1.0/bdmsl-webapp-4.1.0.war
+        dest: "{{playbook_dir}}/files/binary/bdmsl-webapp-4.1.0.war"
       when: not bdmslwar.stat.exists
 
 - hosts: lxd_servers
@@ -22,8 +24,11 @@
   become: yes
   roles:
     - common
-    - setup-mysql
-    - tomcat
+    - mysql
+    - role: tomcat
+      vars:
+        tomcat_version: '8'
+        setenv_file: "{{playbook_dir}}/files/bdmsl/setenv.sh"
     - bind9
     - private_dns
   vars:
@@ -55,6 +60,7 @@
       copy:
         src: "{{playbook_dir}}/files/bdmsl/bdsml_configuration.sql"
         dest: /root
+        force: true
 
     - name: load settings into db
       mysql_db:
@@ -90,10 +96,18 @@
         group: tomcat
       when: tomcat_exists.changed
 
+    - name: create conf folder
+      file:
+        path: /opt/tomcat/custom_conf
+        state: directory
+        owner: tomcat
+        group: tomcat
+
     - name: copy bdsml conf file
       copy:
         src: "{{playbook_dir}}/files/bdmsl/sml.config.properties"
         dest: /opt/tomcat/custom_conf
+        force: true
         owner: tomcat
         group: tomcat
 
@@ -101,6 +115,7 @@
       copy:
         src: "{{playbook_dir}}/files/bdmsl/bdmsl_context.xml"
         dest: /opt/tomcat/conf/context.xml
+        force: true
         owner: tomcat
         group: tomcat
 

@@ -1,10 +1,4 @@
 ---
-- name: install openjdk
-  become: true
-  apt:
-    name: openjdk-8-jre-headless
-    state: latest
-
 - name: add tomcat group
   group:
     name: tomcat
@@ -22,12 +16,19 @@
     state: directory
   register: tomcat_exists
 
-- name: download & unarchive
+- name: upload & unarchive tomcat 8
   unarchive:
     src: "{{playbook_dir}}/files/binary/apache-tomcat-8.5.69.tar.gz"
     dest: /opt/tomcat
     extra_opts: [--strip-components=1]
-  when: tomcat_exists.changed
+  when: tomcat_exists.changed and tomcat_version == '8'
+
+- name: upload & unarchive tomcat 9
+  unarchive:
+    src: "{{playbook_dir}}/files/binary/apache-tomcat-9.0.52.tar.gz"
+    dest: /opt/tomcat
+    extra_opts: [--strip-components=1]
+  when: tomcat_exists.changed and tomcat_version == '9'
 
 - name: copy connector jar
   copy:
@@ -43,9 +44,9 @@
     group: tomcat
   when: tomcat_exists.changed
 
-- name: add custom conf folder to classpath
+- name: copy tomcat startup script
   copy:
-    src: setenv.sh
+    src: "{{setenv_file}}"
     dest: /opt/tomcat/bin
   when: tomcat_exists.changed
 
@@ -73,7 +74,7 @@
 
 - name: copy Tomcat service from local to remote
   copy:
-    src: "{{playbook_dir}}/files/tomcat.service.sml"
+    src: tomcat.service
     dest: /etc/systemd/system/tomcat.service
     mode: 0755
   when: tomcat_exists.changed

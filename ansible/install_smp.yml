@@ -1,17 +1,19 @@
 - hosts: localhost
   gather_facts: no
   roles:
-    - local
+    - role: local
+      vars:
+        tomcat_version: '8'
   tasks:
     - name: check SMP war exists
       stat:
-        path="{{playbook_dir}}/files/binary/smp-4.1.1.war"
+        path: "{{playbook_dir}}/files/binary/smp-4.1.1.war"
       register: smpwar
 
     - name: download SMP war to local cache
       get_url:
-        url=https://ec.europa.eu/cefdigital/artifact/repository/public/eu/europa/ec/edelivery/smp/4.1.1/smp-4.1.1.war
-        dest="{{playbook_dir}}/files/binary/smp-4.1.1.war"
+        url: https://ec.europa.eu/cefdigital/artifact/repository/public/eu/europa/ec/edelivery/smp/4.1.1/smp-4.1.1.war
+        dest: "{{playbook_dir}}/files/binary/smp-4.1.1.war"
       when: not smpwar.stat.exists
 
 - hosts: lxd_servers
@@ -23,25 +25,9 @@
   vars:
     certs_dir: /root/certs
   pre_tasks:
-    - name: find sml hostname
-      set_fact:
-        sml_hostname: "{{ groups.bdmsl_servers.0 if lxd_suffix is undefined or not lxd_suffix else groups.bdmsl_servers.0 + '.lxd' }}"
+    - import_tasks: tasks/find_sml_ip.yml
 
-    - name: find sml ip (dig)
-      set_fact:
-        private_dns: "{{ lookup('dig', sml_hostname) }}"
-      when: private_dns is undefined
-
-    - name: find sml ip (/etc/hosts)
-      set_fact:
-        private_dns: "{{ (lookup('file', '/etc/hosts').splitlines()|
-                             list|
-                             select('search', sml_hostname)|
-                             list|
-                             first).split().0 }}"
-      when: private_dns is undefined or (private_dns|length == 0)
-
-    - name: find smp hostname
+    - name: store smp hostname
       set_fact:
         smp_hostname: "{{ inventory_hostname if lxd_suffix is undefined or not lxd_suffix else inventory_hostname + '.lxd' }}"
 
@@ -56,31 +42,38 @@
                              select('search', smp_hostname)|
                              list|
                              first).split().0 }}"
-      when: smp_ip is undefined or (smp_ip|length == 0)
+      when: smp_ip is undefined or smp_ip|length == 0 or smp_ip=='NXDOMAIN'
 
   roles:
     - common
-    - setup-mysql
-    - tomcat
+    - mysql
+    - role: tomcat
+      vars:
+        tomcat_version: '8'
+        setenv_file: "{{playbook_dir}}/files/smp/setenv.sh"
     - private_dns
 
   tasks:
     - name: check if jks exists
-      raw: test -e /opt/tomcat/custom_conf/smp-keystore.jks && echo true || echo false
-      register: jks_exists
+      stat:
+        path: /opt/tomcat/custom_conf/smp-keystore.jks
+      register: jks
 
+    - debug:
+        msg: "{{jks}}"
+        
     - name: Ensure directory exists for local self-signed TLS certs.
       file:
         path: "{{ certs_dir }}"
         state: directory
-      when: not jks_exists|bool
+      when: not jks.stat.exists|bool
 
     - name: Generate an OpenSSL private key.
       openssl_privatekey:
         path: "{{ certs_dir }}/{{ inventory_hostname }}_privkey.key"
         force: true
       register: privkey
-      when: not jks_exists|bool
+      when: not jks.stat.exists|bool
 
     - name: Generate an OpenSSL CSR.
       openssl_csr:
@@ -90,7 +83,7 @@
         organization_name: NIIS
         country_name: FI
         force: true
-      when: not jks_exists|bool
+      when: not jks.stat.exists|bool
 
     - name: Generate a Self Signed OpenSSL certificate.
       openssl_certificate:
@@ -102,19 +95,19 @@
         provider: selfsigned
         selfsigned_version: 3
       register: cert
-      when: not jks_exists|bool
+      when: not jks.stat.exists|bool
 
     - name: Slurp key file
       slurp:
         src: "{{ certs_dir }}/{{ inventory_hostname }}_privkey.key"
       register: keyfile
-      when: not jks_exists|bool
+      when: not jks.stat.exists|bool
 
     - name: Slurp certificate file
       slurp:
         src: "{{ certs_dir }}/{{ inventory_hostname }}_certificate.crt"
       register: certfile
-      when: not jks_exists|bool
+      when: not jks.stat.exists|bool
 
     - name: Create Java keystore
       java_keystore:
@@ -123,7 +116,7 @@
         private_key: "{{keyfile.content | b64decode }}"
         password: password
         dest: /opt/tomcat/custom_conf/smp-keystore.jks
-      when: not jks_exists|bool
+      when: not jks.stat.exists|bool
 
     - name: collect info about database
       mysql_info:
@@ -161,10 +154,18 @@
         login_password: root
         target: /root/smp_configuration.sql
 
+    - name: create conf folder
+      file:
+        path: /opt/tomcat/custom_conf
+        state: directory
+        owner: tomcat
+        group: tomcat
+
     - name: copy smp conf file
       copy:
         src: "{{playbook_dir}}/files/smp/smp.config.properties"
         dest: /opt/tomcat/custom_conf/smp.config.properties
+        force: true
         owner: tomcat
         group: tomcat
 
@@ -172,6 +173,7 @@
       copy:
         src: "{{playbook_dir}}/files/smp/smp_context.xml"
         dest: /opt/tomcat/conf/context.xml
+        force: true
         owner: tomcat
         group: tomcat
 

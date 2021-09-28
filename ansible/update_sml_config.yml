@@ -1,11 +1,8 @@
-- hosts: lxd_servers
-  vars:
-    lxd_suffix: true
+- hosts: localhost
   tasks:
-    - name: Slurp host file
-      slurp:
-        src: /etc/hosts
-      register: keyfile
+    - stat:
+        path: /opt/tomcat/conf/server.xml
+      register: pass_exists
 
     - debug:
-        msg: "{{keyfile.content | b64decode }}"
+        msg: "{{pass_exists}}"
