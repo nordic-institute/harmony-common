@@ -1,0 +1,14 @@
+Source: harmony-niis
+Section: NIIS-Harmony
+Priority: extra
+Maintainer: NIIS <info@niis.org>
+Build-Depends: debhelper (>= 12)
+Standards-Version: 3.8.3
+
+Package: harmony-ap
+Architecture: all
+Depends: openjdk-8-jre-headless | java8-runtime-headless | java8-runtime, mysql-server, mysql-client
+Description: Harmony eDelivery gateway
+
+
+

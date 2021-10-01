@@ -1,0 +1,14 @@
+Template: harmony-ap/adminuser
+Type: string
+Default: harmony
+Description: Harmony Accesspoint administator user name
+
+Template: harmony-ap/adminpassword
+Type: password
+Default: harmony
+Description: Harmony Accesspoint administator initial password
+
+Template: harmony-ap/servercn
+Type: string
+Default: selfsigned
+Description: Common name of generated server certificate (selfsigned)

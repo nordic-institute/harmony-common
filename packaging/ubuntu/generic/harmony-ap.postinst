@@ -1,0 +1,78 @@
+#!/bin/bash
+set -e
+set -x
+
+. /usr/share/debconf/confmodule
+
+escape_for_sed() {
+    printf '%s\n' "$1" | sed -e 's/[\/&]/\\&/g'
+}
+
+case "$1" in
+ configure)
+  db_get harmony-ap/adminuser
+  AUSER="$RET"
+  db_get harmony-ap/adminpassword
+  APASSWORD="$RET"
+  db_get harmony-ap/servercn
+  SERVERNAME="$RET"
+  db_stop
+
+  DBUSER=harmony
+  DBPASSWORD=$(openssl rand -base64 12)
+  mysql -e \
+    "create schema harmony_ap; \
+    alter database harmony_ap charset=utf8mb4 collate=utf8mb4_bin; \
+    create user $DBUSER@localhost identified by '$DBPASSWORD'; \
+    grant all on harmony_ap.* to $DBUSER@localhost; \
+    grant xa_recover_admin on *.* to $DBUSER@localhost;"
+
+  mysql harmony_ap < /opt/harmony-ap/setup/harmony_ap_schema.ddl
+
+  # todo how to "encrypt" password?
+  APASSWORD='$2a$10$5uKS72xK2ArGDgb2CwjYnOzQcOmB7CPxK6fz2MGcDBM9vJ4rUql36'
+
+  mysql -e "INSERT INTO harmony_ap.TB_USER (ID_PK, USER_NAME, USER_PASSWORD, USER_ENABLED, USER_DELETED, DEFAULT_PASSWORD) \
+     VALUES ('1', '$AUSER', '$APASSWORD', 1, 0, 0);
+      INSERT INTO harmony_ap.TB_USER_ROLES (USER_ID, ROLE_ID) VALUES ('1', '1');"
+
+
+  KEYSTOREPASS=$(openssl rand -base64 12)
+  TRUSTSTOREPASS=$(openssl rand -base64 12)
+  TLSKEYPASS=$(openssl rand -base64 12)
+
+  keytool -genkeypair -keyalg RSA -alias selfsigned -keystore /etc/harmony-ap/ap-keystore.jks -storepass $KEYSTOREPASS \
+    -keypass $KEYSTOREPASS -validity 333 -keysize 3096 -dname "CN=$SERVERNAME"
+
+  keytool -genkeypair -keyalg RSA -alias selfsigned -keystore /etc/harmony-ap/tls-keystore.jks -storepass $TLSKEYPASS \
+    -keypass $TLSKEYPASS -validity 333 -keysize 3096 -dname "CN=$SERVERNAME"
+
+  keytool -genkeypair -alias mock -keystore /etc/harmony-ap/ap-truststore.jks -storepass $TRUSTSTOREPASS \
+    -keypass $TRUSTSTOREPASS -dname "CN=mock"
+  keytool -delete -alias mock -keystore /etc/harmony-ap/ap-truststore.jks -storepass $TRUSTSTOREPASS
+
+  E_KEYSTOREPASS=$(escape_for_sed "$KEYSTOREPASS")
+  E_TRUSTSTOREPASS=$(escape_for_sed "$TRUSTSTOREPASS")
+  E_DBUSER=$(escape_for_sed "$DBUSER")
+  E_DBPASSWORD=$(escape_for_sed "$DBPASSWORD")
+  sed -e "s/{{keystorepass}}/$E_KEYSTOREPASS/" -e "s/{{truststorepass}}/$E_TRUSTSTOREPASS/" \
+    -e "s/{{dbuser}}/$E_DBUSER/" -e "s/{{dbpassword}}/$E_DBPASSWORD/" \
+      /opt/harmony-ap/setup/domibus.properties.template > /etc/harmony-ap/domibus.properties
+
+  E_TLSKEYPASS=$(escape_for_sed "$TLSKEYPASS")
+  sed -e "s/{{tls_keystore_password}}/$TLSKEYPASS/" /opt/harmony-ap/setup/server.xml.template > /opt/harmony-ap/conf/server.xml
+
+ ;;
+
+ # todo add cleanup
+
+ abort-upgrade|abort-remove|abort-deconfigure)
+ ;;
+
+ *)
+    log "postinst called with unknown argument \`$1'" >&2
+    exit 1
+ ;;
+esac
+
+exit 0
