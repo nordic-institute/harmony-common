@@ -1,5 +1,7 @@
 ../../../../commonbin/mysql-connector-java-8.0.26.jar /opt/harmony-ap/lib/
-../../../../commonbin/domibus-MSH-tomcat-4.2.4.war /opt/harmony-ap/webapps/domibus.war
+../../../../commonbin/domibus.war /opt/harmony-ap/webapps/
+../../../../commonbin/ws-plugin.jar /etc/harmony-ap/plugins/lib
+../../../../commonbin/ws-plugin.jar /etc/harmony-ap/plugins/config
 ../../../../commonbin/tomcat9/bin/*.sh /opt/harmony-ap/bin/
 ../../../../commonbin/tomcat9/bin/*.jar /opt/harmony-ap/bin/
 ../../../../commonbin/tomcat9/lib/* /opt/harmony-ap/lib/
@@ -7,6 +9,7 @@
 ../../../../common/logging.properties /opt/harmony-ap/conf/
 ../../../../common/setenv.sh /opt/harmony-ap/bin/
 ../../../../common/activemq.xml /etc/harmony-ap/internal/
+../../../../common/logback.xml /etc/harmony-ap/
 ../../../../common/harmony_ap_schema.ddl /opt/harmony-ap/setup/
-../../../../common/domibus.properties /opt/harmony-ap/setup/
-../../../../common/server.xml /opt/harmony-ap/setup/
+../../../../common/domibus.properties.template /opt/harmony-ap/setup/
+../../../../common/server.xml.template /opt/harmony-ap/setup/

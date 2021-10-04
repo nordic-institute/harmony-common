@@ -37,14 +37,15 @@ rm -rf build/*
 mkdir -p build/harmony
 cp -a ubuntu build/harmony
 
+
 mkdir -p commonbin/tomcat9
 tar -xvzf commonbin/apache-tomcat-9.0.52.tar.gz -C commonbin/tomcat9 --strip-components=1
 rm commonbin/tomcat9/conf/logging.properties
 rm commonbin/tomcat9/conf/server.xml
 
-# copy domibus war
-
-# copy ws plugin war
+# copy domibus war and ws plugin jar
+cp ../../domibus/Domibus-MSH-tomcat/target/domibus-MSH-tomcat-4.2.3.war commonbin/domibus.war
+cp ../../domibus/Domibus-default-ws-plugin/target/domibus-default-ws-plugin-4.2.3.jar commonbin/ws-plugin.jar
 
 prepare ubuntu20.04
 builddeb build/harmony/ubuntu focal ubuntu20.04

@@ -69,7 +69,7 @@ domibus.database.port=3306
 
 #Domibus schema. If Domibus is configured in multi-tenancy mode this property is used to define the schema for the default domain.
 #Please comment this property, if Domibus is configured in single-tenancy mode with Oracle database.
-domibus.database.schema=harmony-ap
+domibus.database.schema=harmony_ap
 
 #XA Datasource
 #MySQL
@@ -89,7 +89,7 @@ domibus.datasource.xa.property.user={{dbuser}}
 domibus.datasource.xa.property.password={{dbpassword}}
 
 #MySQL
-domibus.datasource.xa.property.url=jdbc:mysql://${domibus.database.serverName}:${domibus.database.port}/${domibus.database.schema}?pinGlobalTxToPhysicalConnection=true&useSSL=false
+domibus.datasource.xa.property.url=jdbc:mysql://${domibus.database.serverName}:${domibus.database.port}/${domibus.database.schema}?pinGlobalTxToPhysicalConnection=true&useSSL=false&allowPublicKeyRetrieval=true
 
 #Non-XA Datasource
 #MySQL

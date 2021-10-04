@@ -82,7 +82,7 @@
                protocol="org.apache.coyote.http11.Http11NioProtocol"
                port="8443" maxThreads="200"
                scheme="https" secure="true"
-               keystoreFile="etc/harmony-ap/tls_keystore.jks"
+               keystoreFile="/etc/harmony-ap/tls-keystore.jks"
                keystorePass="{{tls_keystore_password}}"
                clientAuth="false" sslProtocol="TLS" />
     
@@ -154,7 +154,7 @@
         <!-- Access log processes all example.
              Documentation at: /docs/config/valve.html
              Note: The pattern used is equivalent to using pattern="common" -->
-        <Valve className="org.apache.catalina.valves.AccessLogValve" directory="logs"
+        <Valve className="org.apache.catalina.valves.AccessLogValve" directory="/var/log/harmony-ap"
                prefix="localhost_access_log" suffix=".txt"
                pattern="%h %l %u %t &quot;%r&quot; %s %b" />
 

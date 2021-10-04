@@ -1,0 +1,17 @@
+#!/bin/bash
+if [[ "$1" == "remove" ]]; then
+  rm -f /etc/harmony-ap/ap-keystore.jks
+  rm -f /etc/harmony-ap/ap-truststore.jks
+  rm -f /etc/harmony-ap/tls-keystore.jks
+  rm -f /etc/harmony-ap/domibus.properties
+
+  rm -f /opt/harmony-ap/conf/server.xml
+  rm -rf /opt/harmony-ap/conf/Catalina
+
+  rm -rf /opt/harmony-ap/webapps/domibus
+  rm -f /opt/harmony-ap/webapps/domibus.war
+
+  rm -rf /opt/harmony-ap/temp
+  rm -rf /opt/harmony-ap/work
+fi
+exit 0
