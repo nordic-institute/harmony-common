@@ -257,10 +257,10 @@ domibus.entityManagerFactory.jpaProperty.hibernate.transaction.jta.platform=com.
 # ---------------------------------- Dynamic Discovery -------------------------
 
 #Whether to use dynamic discovery or not
-domibus.dynamicdiscovery.useDynamicDiscovery=true
+domibus.dynamicdiscovery.useDynamicDiscovery={{dynamicdiscovery}}
 
 #The SML zone
-domibus.smlzone=neds
+domibus.smlzone={{smlzone}}
 
 #The dynamic discovery client to be used for the dynamic process. Possible values: OASIS and PEPPOL. Defaults to OASIS.
 #domibus.dynamicdiscovery.client.specification=OASIS

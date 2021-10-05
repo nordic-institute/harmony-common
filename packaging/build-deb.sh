@@ -37,6 +37,16 @@ rm -rf build/*
 mkdir -p build/harmony
 cp -a ubuntu build/harmony
 
+if [ ! -f commonbin/apache-tomcat-9.0.52.tar.gz ]; then
+  echo "Fetching tomcat 9"
+  wget -Pcommonbin/ https://archive.apache.org/dist/tomcat/tomcat-9/v9.0.52/bin/apache-tomcat-9.0.52.tar.gz
+fi
+
+if [ ! -f commonbin/mysql-connector-java-8.0.26.jar ]; then
+  echo "Fetching mysql connector"
+  wget -Pcommonbin/ https://repo1.maven.org/maven2/mysql/mysql-connector-java/8.0.26/mysql-connector-java-8.0.26.jar
+fi
+
 
 mkdir -p commonbin/tomcat9
 tar -xvzf commonbin/apache-tomcat-9.0.52.tar.gz -C commonbin/tomcat9 --strip-components=1

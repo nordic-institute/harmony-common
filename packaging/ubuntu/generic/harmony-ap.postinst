@@ -14,7 +14,7 @@ DROPDBONERROR=false
 cleanup() {
   if [ ! "$SUCCESS" = true ]; then
     rm -f /etc/harmony-ap/*.jks
-    if [ "$DROPDBONERROR" ]; then
+    if [ "$DROPDBONERROR" = true ]; then
       mysql -e "DROP SCHEMA harmony_ap; DROP USER harmony@localhost"
     fi;
   fi
@@ -25,19 +25,26 @@ case "$1" in
 
   trap cleanup EXIT
 
+  db_get harmony-ap/usedynamicdiscovery
+  USEDYNAMIC="$RET"
+  if [ ! "$USEDYNAMIC" = true ]; then
+    USEDYNAMIC=false
+  fi
+  db_get harmony-ap/smlzone
+  SMLZONE="$RET"
   db_get harmony-ap/adminuser
   AUSER="$RET"
-  db_get harmony-ap/adminpassword
-  APASSWORD="$RET"
+  #db_get harmony-ap/adminpassword
+  #APASSWORD="$RET"
   db_get harmony-ap/servercn
   SERVERNAME="$RET"
   db_stop
 
+  DBUSER=harmony
   SCHEMA_EXISTS=$(mysql -s -N -e "SELECT SCHEMA_NAME FROM INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME='harmony_ap'");
   if [ -z "$SCHEMA_EXISTS" ]; then
     DROPDBONERROR=true
     echo "Creating database schema harmony_ap" >&2
-    DBUSER=harmony
     DBPASSWORD=$(openssl rand -base64 12)
     mysql -e \
       "create schema harmony_ap; \
@@ -52,10 +59,14 @@ case "$1" in
     APASSWORD='$2a$10$5uKS72xK2ArGDgb2CwjYnOzQcOmB7CPxK6fz2MGcDBM9vJ4rUql36'
 
     mysql -e "INSERT INTO harmony_ap.TB_USER (ID_PK, USER_NAME, USER_PASSWORD, USER_ENABLED, USER_DELETED, DEFAULT_PASSWORD) \
-       VALUES ('1', '$AUSER', '$APASSWORD', 1, 0, 0);
+       VALUES ('1', '$AUSER', '$APASSWORD', 1, 0, 1);
         INSERT INTO harmony_ap.TB_USER_ROLES (USER_ID, ROLE_ID) VALUES ('1', '1');"
   else
     echo "Schema harmony_ap already exists. Skipping schema creation" >&2
+    DBPASSWORD=$(openssl rand -base64 12)
+    mysql -e \
+      "ALTER USER $DBUSER@localhost IDENTIFIED BY '$DBPASSWORD'; \
+       FLUSH PRIVILEGES;"
   fi
 
   if [ ! -f /etc/harmony-ap/domibus.properties ]; then
@@ -80,11 +91,14 @@ case "$1" in
     E_DBUSER=$(escape_for_sed "$DBUSER")
     E_DBPASSWORD=$(escape_for_sed "$DBPASSWORD")
     E_TLSKEYPASS=$(escape_for_sed "$TLSKEYPASS")
+    E_SMLZONE=$(escape_for_sed "$SMLZONE")
+
 
     sed -e "s/{{tls_keystore_password}}/$E_TLSKEYPASS/" /opt/harmony-ap/setup/server.xml.template > /opt/harmony-ap/conf/server.xml
 
     sed -e "s/{{keystorepass}}/$E_KEYSTOREPASS/" -e "s/{{truststorepass}}/$E_TRUSTSTOREPASS/" \
       -e "s/{{dbuser}}/$E_DBUSER/" -e "s/{{dbpassword}}/$E_DBPASSWORD/" \
+      -e "s/{{dynamicdiscovery}}/$USEDYNAMIC" -e "s/{{smlzone}}/$E_SMLZONE" \
         /opt/harmony-ap/setup/domibus.properties.template > /etc/harmony-ap/domibus.properties
   fi
 
