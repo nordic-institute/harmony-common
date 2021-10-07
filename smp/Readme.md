@@ -36,3 +36,6 @@ All tests can be skipped using `maven.test.skip` property
 ```
 mvn clean install -Dmaven.test.skip=true
 ```
+
+Building deb packages assumes that domibus and smp repos are cloned besides harmony-common repository and maven builds
+are successfully run - war and jar files are copied from these folders.

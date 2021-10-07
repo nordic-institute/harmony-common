@@ -1,0 +1,25 @@
+Template: harmony-smp/integratewithsml
+Type: boolean
+Default: true
+Description: Integrate with SML zone?
+
+Template: harmony-smp/smlurl
+Type: string
+Description: Full URL of SML server
+
+Template: harmony-smp/smpurl
+Type: string
+Description: Full URL of this SMP server
+
+Template: harmony-smp/smpip
+Type: string
+Description: IP address of this SMP server
+
+Template: harmony-smp/adminuser
+Type: string
+Default: harmony
+Description: Harmony Accesspoint administator user name
+
+Template: harmony-smp/adminpassword
+Type: password
+Description: Harmony Accesspoint administator initial password

@@ -1,0 +1,166 @@
+#!/bin/bash
+set -e
+set -x
+
+. /usr/share/debconf/confmodule
+
+escape_for_sed() {
+    printf '%s\n' "$1" | sed -e 's/[\/&]/\\&/g'
+}
+
+SUCCESS=false
+DROPDBONERROR=false
+
+cleanup() {
+  db_stop
+  if [ ! "$SUCCESS" = true ]; then
+    if [ "$DROPDBONERROR" = true ]; then
+      mysql -e "DROP SCHEMA harmony_smp; DROP USER harmony_smp@localhost"
+    fi;
+  fi
+}
+
+trap cleanup EXIT
+
+case "$1" in
+ configure)
+
+  db_get harmony-smp/integratewithsml
+  INTEGRATESML="$RET"
+  if [ ! "$INTEGRATESML" = true ]; then
+    INTEGRATESML=false
+  fi
+  db_get harmony-smp/smlurl
+  SMLURL="$RET"
+  db_get harmony-smp/smpurl
+  SMPURL="$RET"
+  db_get harmony-smp/smpip
+  SMPIP="$RET"
+
+  DBUSER=harmony_smp
+  DBPASSWORD=$(openssl rand -base64 12)
+
+  mkdir -p /opt/harmony-smp/webapps
+  rm -rf /opt/harmony-smp/webapps/ROOT/
+
+  unzip -qq /opt/harmony-smp/setup/smp.war -d /opt/harmony-smp/webapps/ROOT
+
+  SCHEMA_EXISTS=$(mysql -s -N -e "SELECT SCHEMA_NAME FROM INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME='harmony_smp'");
+  if [ -z "$SCHEMA_EXISTS" ]; then
+
+    db_input high harmony-smp/adminuser
+    db_input high harmony-smp/adminpassword
+    db_go
+
+    db_get harmony-smp/adminuser
+    AUSER="$RET"
+    db_get harmony-smp/adminpassword
+    APASSWORD="$RET"
+    db_reset harmony-smp/adminpassword
+
+    echo "Creating database schema harmony_smp" >&2
+
+    mysql -e \
+      "create schema harmony_smp; \
+      alter database harmony_ap charset=utf8mb4 collate=utf8mb4_bin; \
+      create user $DBUSER@localhost identified by '$DBPASSWORD'; \
+      grant all on harmony_smp.* to $DBUSER@localhost;"
+    DROPDBONERROR=true
+
+
+    mysql harmony_smp < /opt/harmony-smp/setup/harmony_smp_schema.ddl
+
+    HASHEDPASSWORD=$(java -cp "/opt/harmony-smp/webapps/ROOT/WEB-INF/lib/*" \
+      eu.europa.ec.edelivery.smp.utils.BCryptPasswordHash "$APASSWORD")
+
+    mysql harmony_smp -e \
+      "INSERT INTO SMP_USER (ID, USERNAME, PASSWORD, ROLE, ACTIVE, CREATED_ON, LAST_UPDATED_ON, PASSWORD_CHANGED) \
+         VALUES(1, '$AUSER', '$HASHEDPASSWORD', 'SYSTEM_ADMIN', 1, NOW(), NOW(), NOW());
+       INSERT INTO SMP_CONFIGURATION (PROPERTY, VALUE, CREATED_ON, LAST_UPDATED_ON)
+         VALUES ('contextPath.output', 'true', NOW(), NOW());
+       INSERT INTO SMP_CONFIGURATION (PROPERTY, VALUE, CREATED_ON, LAST_UPDATED_ON)
+         VALUES ('bdmsl.integration.enabled', '$INTEGRATESML', NOW(), NOW());
+       INSERT INTO SMP_CONFIGURATION (PROPERTY, VALUE, CREATED_ON, LAST_UPDATED_ON)
+         VALUES ('bdmsl.integration.url', '$SMLURL', NOW(), NOW());
+       INSERT INTO SMP_CONFIGURATION (PROPERTY, VALUE, CREATED_ON, LAST_UPDATED_ON)
+         VALUES ('bdmsl.integration.tls.disableCNCheck', 'true', NOW(), NOW());
+       INSERT INTO SMP_CONFIGURATION (PROPERTY, VALUE, CREATED_ON, LAST_UPDATED_ON)
+         VALUES ('bdmsl.integration.logical.address', '$SMPURL', NOW(), NOW());
+       INSERT INTO SMP_CONFIGURATION (PROPERTY, VALUE, CREATED_ON, LAST_UPDATED_ON)
+         VALUES ('bdmsl.integration.physical.address', '$SMPIP', NOW(), NOW());
+       INSERT INTO SMP_CONFIGURATION (PROPERTY, VALUE, CREATED_ON, LAST_UPDATED_ON)
+         VALUES ('bdmsl.integration.tls.serverSubjectRegex', '', NOW(), NOW());
+       INSERT INTO SMP_CONFIGURATION (PROPERTY, VALUE, CREATED_ON, LAST_UPDATED_ON)
+         VALUES ('smp.keystore.filename', 'smp-keystore.jks', NOW(), NOW());
+       INSERT INTO SMP_CONFIGURATION (PROPERTY, VALUE, CREATED_ON, LAST_UPDATED_ON)
+         VALUES ('authentication.blueCoat.enabled', 'false', NOW(), NOW());
+       INSERT INTO SMP_CONFIGURATION (PROPERTY, VALUE, CREATED_ON, LAST_UPDATED_ON)
+         VALUES ('configuration.dir', '/etc/harmony-smp/', NOW(), NOW());"
+  else
+    echo "Schema harmony_smp already exists. Skipping schema creation" >&2
+    mysql -e \
+      "ALTER USER $DBUSER@localhost IDENTIFIED BY '$DBPASSWORD'; \
+       FLUSH PRIVILEGES;"
+  fi
+
+  KEYSTOREPASS=$(openssl rand -base64 12)
+  keytool -genkeypair -keyalg RSA -alias selfsigned -keystore /etc/harmony-smp/smp-keystore.jks -storepass $KEYSTOREPASS \
+    -keypass $KEYSTOREPASS -validity 333 -keysize 3096 -dname "CN=$SERVERNAME"
+
+  mysql harmony_smp -e  "INSERT INTO SMP_CONFIGURATION (PROPERTY, VALUE, CREATED_ON, LAST_UPDATED_ON)
+         VALUES ('smp.keystore.password', '{DEC}{$KEYSTOREPASS}', NOW(), NOW())
+         ON DUPLICATE KEY UPDATE VALUE='{DEC}{$KEYSTOREPASS}', LAST_UPDATED_ON=NOW();"
+
+  TLSKEYPASS=$(openssl rand -base64 12)
+  keytool -genkeypair -keyalg RSA -alias selfsigned -keystore /etc/harmony-smp/tls-keystore.jks -storepass $TLSKEYPASS \
+    -keypass $TLSKEYPASS -validity 333 -keysize 3096 -dname "CN=$SERVERNAME"
+
+  E_TLSKEYPASS=$(escape_for_sed "$TLSKEYPASS")
+  sed -e "s/{{tls_keystore_password}}/$E_TLSKEYPASS/" /opt/harmony-smp/setup/server.xml.template > /opt/harmony-smp/conf/server.xml
+
+  E_DBUSER=$(escape_for_sed "$DBUSER")
+  E_DBPASSWORD=$(escape_for_sed "$DBPASSWORD")
+  sed -e "s/{{dbuser}}/$E_DBUSER/" \
+      -e "s/{{dbpassword}}/$E_DBPASSWORD/" \
+    /opt/harmony-smp/setup/context.xml.template > /opt/harmony-smp/conf/context.xml
+
+  adduser --system --quiet --no-create-home --shell /usr/sbin/nologin --group --gecos "Harmony user" harmony_smp
+
+  # check validity of user and group
+  if [ "`id -u harmony_smp`" -eq 0 ]; then
+      echo "The Harmony SMP system user 'harmony_smp' must not have uid 0 (root).Please fix this and reinstall this package." >&2
+      exit 1
+  fi
+  if [ "`id -g harmony_smp`" -eq 0 ]; then
+      echo "The Harmony SMP system user 'harmony_smp' must not have root as primary group. Please fix this and reinstall this package." >&2
+      exit 1
+  fi
+
+  mkdir -p /opt/harmony-smp/temp
+
+  chown -R harmony_smp:harmony_smp /opt/harmony-smp
+  chmod -R 0755 /opt/harmony-smp
+
+  # nicer log directory permissions
+  mkdir -p /var/log/harmony-smp
+  chmod 1770 /var/log/harmony-smp
+  chown harmony_smp:adm /var/log/harmony-smp
+
+  # config folder permissions
+  chown -R harmony_smp:harmony_smp /etc/harmony-smp
+  chmod -R 0751 /etc/harmony-smp
+
+  SUCCESS=true
+ ;;
+
+
+ abort-upgrade|abort-remove|abort-deconfigure)
+ ;;
+
+ *)
+    log "postinst called with unknown argument \`$1'" >&2
+    exit 1
+ ;;
+esac
+
+exit 0

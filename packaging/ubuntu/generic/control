@@ -10,5 +10,9 @@ Architecture: all
 Depends: openjdk-8-jre-headless | java8-runtime-headless | java8-runtime, mysql-server, mysql-client
 Description: Harmony eDelivery gateway
 
+Package: harmony-smp
+Architecture: all
+Depends: openjdk-8-jre-headless | java8-runtime-headless | java8-runtime, mysql-server, mysql-client
+Description: Harmony eDelivery Service Metadata Provider
 
 
