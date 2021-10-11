@@ -9,6 +9,6 @@ domain. Local LXC environment uses "lxd" as top level domain.
 
 Example:
 
-    bash generate_cert.sh cef_ap.neds
+    bash generate_cert.sh cef-ap.neds
 
-will generate cef_ap.neds.key.pem and cef_ap.neds.crt.pem into host_certc folder.
+will generate cef-ap.neds.key.pem and cef-ap.neds.crt.pem into host_certc folder.

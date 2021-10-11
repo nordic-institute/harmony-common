@@ -6,7 +6,7 @@ localhost ansible_connection=local
 sml ansible_connection=lxd forward_dns=10.204.119.1
 
 [smp_servers]
-smp ansible_connection=lxd
+cef-smp ansible_connection=lxd
 
 [domibus_servers]
 cef-ap ansible_connection=lxd
