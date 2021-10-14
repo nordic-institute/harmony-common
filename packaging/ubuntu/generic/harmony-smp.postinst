@@ -48,8 +48,8 @@ case "$1" in
   SCHEMA_EXISTS=$(mysql -s -N -e "SELECT SCHEMA_NAME FROM INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME='harmony_smp'");
   if [ -z "$SCHEMA_EXISTS" ]; then
 
-    db_input high harmony-smp/adminuser
-    db_input high harmony-smp/adminpassword
+    db_input high harmony-smp/adminuser || true
+    db_input high harmony-smp/adminpassword || true
     db_go
 
     db_get harmony-smp/adminuser
@@ -62,7 +62,7 @@ case "$1" in
 
     mysql -e \
       "create schema harmony_smp; \
-      alter database harmony_ap charset=utf8mb4 collate=utf8mb4_bin; \
+      alter database harmony_smp charset=utf8mb4 collate=utf8mb4_bin; \
       create user $DBUSER@localhost identified by '$DBPASSWORD'; \
       grant all on harmony_smp.* to $DBUSER@localhost;"
     DROPDBONERROR=true

@@ -51,6 +51,12 @@
         setenv_file: "{{playbook_dir}}/files/domibus/setenv.sh"
 
   tasks:
+    - name: install openjdk
+      become: true
+      apt:
+        name: openjdk-8-jre-headless
+        state: latest
+
     - name: store ap hostname
       set_fact:
         ap_hostname: "{{ inventory_hostname if lxd_suffix is undefined or not lxd_suffix else inventory_hostname + '.lxd' }}"

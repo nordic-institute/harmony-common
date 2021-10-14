@@ -179,6 +179,44 @@ Resources:
         chmod 0700 /home/niis
         chmod 0700 /home/niis/.ssh
         chmod 0600 /home/niis/.ssh/authorized_keys
+  NIISSMPInstance:
+    Type: AWS::EC2::Instance
+    Condition: CreateSMP
+    Properties:
+      AvailabilityZone: !Ref AvailabilityZone
+      KeyName: !Ref KeyName
+      ImageId: !Ref UbuntuFocalAMI
+      SecurityGroupIds:
+        - !Ref SSHSecurityGroup
+        - !Ref NEDSSecurityGroup
+      InstanceType: !Ref SMPInstanceType
+      Monitoring: false
+      SubnetId: !Ref SubnetID
+      Tags:
+        - Key: Name
+          Value: !Sub ${Environment}-smp
+        - Key: env
+          Value: !Ref Environment
+        - Key: role
+          Value: smp
+        - Key: AutoStopStart
+          Value: !Ref AutoStopStart
+        - Key: AutoStop
+          Value: !Ref AutoStop
+        - Key: AutoSnapshot
+          Value: !Ref AutoSnapshot
+      UserData: !Base64 |
+        #!/bin/bash -xe
+        DEBIAN_FRONTEND=noninteractive apt-get update -y
+        apt-get install -y aptitude
+        useradd -c 'NIIS Team User' -d /home/niis -s /bin/bash niis
+        echo 'niis ALL=(ALL) NOPASSWD: ALL' > /etc/sudoers.d/niis
+        mkdir -p /home/niis/.ssh
+        curl -o /home/niis/.ssh/authorized_keys https://s3-eu-west-1.amazonaws.com/niis-xroad-ci-files/niis-authorized-ssh-keys
+        chown -R niis:niis /home/niis
+        chmod 0700 /home/niis
+        chmod 0700 /home/niis/.ssh
+        chmod 0600 /home/niis/.ssh/authorized_keys
   APInstance:
     Type: AWS::EC2::Instance
     Condition: CreateAP
@@ -273,6 +311,17 @@ Resources:
       TTL: 900
       ResourceRecords:
         - !GetAtt SMPInstance.PrivateIp
+  NIISSMPPrivateIPDNSRecord:
+    Type: AWS::Route53::RecordSet
+    Condition: CreateSMP
+    Properties:
+      HostedZoneName: !Sub ${HostedZone}.
+      Comment: DNS name for SMP instance's private IP
+      Name: !Sub ${Environment}-niis-smp.i.${HostedZone}.
+      Type: A
+      TTL: 900
+      ResourceRecords:
+        - !GetAtt NIISSMPInstance.PrivateIp
   APPrivateIPDNSRecord:
     Type: AWS::Route53::RecordSet
     Condition: CreateAP
@@ -295,12 +344,20 @@ Outputs:
     Value: !GetAtt SMLInstance.PrivateIp
   SMPHostname:
     Condition: CreateSMP
-    Description: Hostname of SMP
+    Description: Hostname of CEF SMP
     Value: !Ref SMPPrivateIPDNSRecord
+  NIISSMPHostname:
+    Condition: CreateSMP
+    Description: Hostname of Harmony SMP
+    Value: !Ref NIISSMPPrivateIPDNSRecord
   SMPIpAddress:
     Condition: CreateSMP
     Description: Ip Address of SMP
     Value: !GetAtt SMPInstance.PrivateIp
+  NIISSMPIpAddress:
+    Condition: CreateSMP
+    Description: Ip Address of SMP
+    Value: !GetAtt NIISSMPInstance.PrivateIp
   APHostname:
     Condition: CreateAP
     Description: Hostname of AP

@@ -17,9 +17,4 @@
     - admins
   when: skip_admins is undefined or not skip_admins
 
-- name: install openjdk
-  become: true
-  apt:
-    name: openjdk-8-jre-headless
-    state: latest
 

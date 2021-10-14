@@ -5,8 +5,11 @@ localhost ansible_connection=local
 [bdmsl_servers]
 sml ansible_connection=lxd forward_dns=10.204.119.1
 
-[smp_servers]
+[cef_smp_servers]
 cef-smp ansible_connection=lxd
+
+[niis_smp_servers]
+niis-smp ansible_connection=lxd
 
 [domibus_servers]
 cef-ap ansible_connection=lxd
