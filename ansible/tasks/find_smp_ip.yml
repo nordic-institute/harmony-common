@@ -6,7 +6,7 @@
   set_fact:
     smp_ip : "{{ lookup('dig', smp_hostname) }}"
 
-- name: find sml ip (/etc/hosts)
+- name: find smp ip (/etc/hosts)
   set_fact:
     smp_ip: "{{ (lookup('file', '/etc/hosts').splitlines()|
                              list|

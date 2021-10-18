@@ -274,6 +274,10 @@ Resources:
           IpProtocol: tcp
           FromPort: 8080
           ToPort: 8080
+        - SourceSecurityGroupId: !Ref BastionSecurityGroup
+          IpProtocol: tcp
+          FromPort: 8443
+          ToPort: 8443
   SMLSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:

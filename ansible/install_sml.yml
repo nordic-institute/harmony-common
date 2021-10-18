@@ -27,19 +27,12 @@
     - mysql
     - role: tomcat
       vars:
-        tomcat_version: '8'
         setenv_file: "{{playbook_dir}}/files/bdmsl/setenv.sh"
     - bind9
     - private_dns
   vars:
     private_dns: 127.0.0.1
   tasks:
-    - name: install openjdk
-      become: true
-      apt:
-        name: openjdk-8-jre-headless
-        state: latest
-
     - name: collect info about database
       mysql_info:
         login_user: root
@@ -78,7 +71,9 @@
         target: /root/bdsml_configuration.sql
 
     - name: prepare smp subdomains sql file
-      with_inventory_hostnames: smp_servers
+      with_inventory_hostnames:
+        - cef_smp_servers
+        - niis_smp_servers
       lineinfile:
         path: /root/certificate_domains.sql
         create: true
@@ -131,4 +126,12 @@
         dest: /opt/tomcat/webapps/ROOT.war
         owner: tomcat
         group: tomcat
+
+    - name: start and enable Tomcat service
+      systemd:
+        name: tomcat
+        state: started
+        enabled: true
+        daemon_reload: true
+      when: tomcat_exists.changed
 

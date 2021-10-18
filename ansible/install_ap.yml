@@ -47,16 +47,9 @@
     - private_dns
     - role: tomcat
       vars:
-        tomcat_version: '9'
         setenv_file: "{{playbook_dir}}/files/domibus/setenv.sh"
 
   tasks:
-    - name: install openjdk
-      become: true
-      apt:
-        name: openjdk-8-jre-headless
-        state: latest
-
     - name: store ap hostname
       set_fact:
         ap_hostname: "{{ inventory_hostname if lxd_suffix is undefined or not lxd_suffix else inventory_hostname + '.lxd' }}"
@@ -145,4 +138,13 @@
         dest: /opt/tomcat/webapps/domibus.war
         owner: tomcat
         group: tomcat
+
+    - name: start and enable Tomcat service
+      systemd:
+        name: tomcat
+        state: started
+        enabled: true
+        daemon_reload: true
+      when: tomcat_exists.changed
+
 
