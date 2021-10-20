@@ -1,6 +1,6 @@
 - name: find sml hostname
   set_fact:
-    sml_hostname: "{{ groups.bdmsl_servers.0 if lxd_suffix is undefined or not lxd_suffix else groups.bdmsl_servers.0 + '.lxd' }}"
+    sml_hostname: "{{ groups.bdmsl_servers.0 if using_lxd is undefined or not using_lxd else groups.bdmsl_servers.0 + '.lxd' }}"
 
 - name: find sml ip (dig)
   set_fact:

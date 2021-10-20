@@ -29,19 +29,19 @@
         dest: "{{playbook_dir}}/files/binary/"
       when: not wspluginjar.stat.exists
 
-- hosts: lxd_servers
+- hosts: cef_ap_servers
+  gather_facts: no
   roles:
     - init-lxd
 
-- hosts: domibus_servers
+- hosts: cef_ap_servers
   become: yes
-  vars:
-    certs_dir: /root/certs
 
   pre_tasks:
     - import_tasks: tasks/find_sml_ip.yml
 
   roles:
+    - mock_cert
     - common
     - mysql
     - private_dns
@@ -114,8 +114,8 @@
     - name: create ap keystore
       java_keystore:
         name: "{{ inventory_hostname }}"
-        certificate: "{{lookup('file', playbook_dir + '/neds_ca/host_certs/' + ap_hostname + '.crt.pem') }}"
-        private_key: "{{lookup('file', playbook_dir + '/neds_ca/host_certs/' + ap_hostname + '.key.pem') }}"
+        certificate: "{{lookup('file', playbook_dir + '/neds_ca/host_certs/' + inventory_hostname + '.crt.pem') }}"
+        private_key: "{{lookup('file', playbook_dir + '/neds_ca/host_certs/' + inventory_hostname + '.key.pem') }}"
         password: password
         dest: /opt/tomcat/conf/domibus/keystores/ap-keystore.jks
 

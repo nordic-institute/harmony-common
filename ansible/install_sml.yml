@@ -16,7 +16,8 @@
         dest: "{{playbook_dir}}/files/binary/bdmsl-webapp-4.1.0.war"
       when: not bdmslwar.stat.exists
 
-- hosts: lxd_servers
+- hosts: bdmsl_servers
+  gather_facts: no
   roles:
     - init-lxd
 

@@ -255,6 +255,44 @@ Resources:
         chmod 0700 /home/niis
         chmod 0700 /home/niis/.ssh
         chmod 0600 /home/niis/.ssh/authorized_keys
+  NIISAPInstance:
+    Type: AWS::EC2::Instance
+    Condition: CreateAP
+    Properties:
+      AvailabilityZone: !Ref AvailabilityZone
+      KeyName: !Ref KeyName
+      ImageId: !Ref UbuntuFocalAMI
+      SecurityGroupIds:
+        - !Ref SSHSecurityGroup
+        - !Ref NEDSSecurityGroup
+      InstanceType: !Ref APInstanceType
+      Monitoring: false
+      SubnetId: !Ref SubnetID
+      Tags:
+        - Key: Name
+          Value: !Sub ${Environment}-cef-ap
+        - Key: env
+          Value: !Ref Environment
+        - Key: role
+          Value: ap
+        - Key: AutoStopStart
+          Value: !Ref AutoStopStart
+        - Key: AutoStop
+          Value: !Ref AutoStop
+        - Key: AutoSnapshot
+          Value: !Ref AutoSnapshot
+      UserData: !Base64 |
+        #!/bin/bash -xe
+        DEBIAN_FRONTEND=noninteractive apt-get update -y
+        apt-get install -y aptitude
+        useradd -c 'NIIS Team User' -d /home/niis -s /bin/bash niis
+        echo 'niis ALL=(ALL) NOPASSWD: ALL' > /etc/sudoers.d/niis
+        mkdir -p /home/niis/.ssh
+        curl -o /home/niis/.ssh/authorized_keys https://s3-eu-west-1.amazonaws.com/niis-xroad-ci-files/niis-authorized-ssh-keys
+        chown -R niis:niis /home/niis
+        chmod 0700 /home/niis
+        chmod 0700 /home/niis/.ssh
+        chmod 0600 /home/niis/.ssh/authorized_keys
   NEDSSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
@@ -337,6 +375,17 @@ Resources:
       TTL: 900
       ResourceRecords:
         - !GetAtt APInstance.PrivateIp
+  NIISAPPrivateIPDNSRecord:
+    Type: AWS::Route53::RecordSet
+    Condition: CreateAP
+    Properties:
+      HostedZoneName: !Sub ${HostedZone}.
+      Comment: DNS name for AP instance's private IP
+      Name: !Sub ${Environment}-niis-ap.i.${HostedZone}.
+      Type: A
+      TTL: 900
+      ResourceRecords:
+        - !GetAtt NIISAPInstance.PrivateIp
 Outputs:
   SMLHostname:
     Condition: CreateSML
@@ -370,4 +419,12 @@ Outputs:
     Condition: CreateAP
     Description: Ip Address of AP
     Value: !GetAtt APInstance.PrivateIp
+  NIISAPHostname:
+    Condition: CreateAP
+    Description: Hostname of AP
+    Value: !Ref NIISAPPrivateIPDNSRecord
+  NIISAPIpAddress:
+    Condition: CreateAP
+    Description: Ip Address of AP
+    Value: !GetAtt NIISAPInstance.PrivateIp
 

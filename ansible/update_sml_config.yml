@@ -1,8 +1,4 @@
-- hosts: localhost
+- hosts: niis_smp_servers
   gather_facts: no
-  tasks:
-    - name: check smp deb exists
-      stat:
-        path: "{{playbook_dir}}/../packaging/build/ubuntu20.04/harmony-smp_1.0.0-0.ubuntu20.04_al.deb"
-      register: smpdeb
-      failed_when: not smpdeb.stat.exists
+  roles:
+    - init-lxd

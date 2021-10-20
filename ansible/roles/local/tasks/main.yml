@@ -21,8 +21,3 @@
     dest: "{{playbook_dir}}/files/binary"
   when: not connector.stat.exists
 
-- name: check smp deb exists
-  stat:
-    path: "{{playbook_dir}}/../packaging/build/ubuntu20.04/harmony-smp_1.0.0-0.ubuntu20.04_all.deb"
-  register: smpdeb
-  failed_when: not smpdeb.stat.exists

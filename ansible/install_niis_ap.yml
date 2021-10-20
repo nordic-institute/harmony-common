@@ -1,0 +1,159 @@
+- hosts: localhost
+  gather_facts: no
+  roles:
+    - role: local
+      vars:
+        tomcat_version: '9'
+  tasks:
+    - name: check ap deb exists
+      stat:
+        path: "{{playbook_dir}}/../packaging/build/ubuntu20.04/harmony-ap_{{ap_version}}.ubuntu20.04_all.deb"
+      register: apdeb
+      failed_when: not apdeb.stat.exists
+
+- hosts: niis_ap_servers
+  gather_facts: no
+  roles:
+    - init-lxd
+
+- hosts: niis_ap_servers
+  become: yes
+
+  pre_tasks:
+    - import_tasks: tasks/find_sml_ip.yml
+
+  roles:
+    - mock_cert
+    - common
+    - private_dns
+
+  tasks:
+    - name: set harmony-ap/usedynamicdiscovery
+      debconf:
+        name: harmony-ap
+        question: harmony-ap/usedynamicdiscovery
+        value: "true"
+        vtype: boolean
+
+    - name: set harmony-ap/smlzone
+      debconf:
+        name: harmony-ap
+        question: harmony-ap/smlzone
+        value: neds
+        vtype: string
+
+    - name: set harmony-ap/adminuser
+      debconf:
+        name: harmony-ap
+        question: harmony-ap/adminuser
+        value: admin
+        vtype: string
+
+    - name: set harmony-ap/adminpassword
+      debconf:
+        name: harmony-ap
+        question: harmony-ap/adminpassword
+        value: admin
+        vtype: password
+
+    # value here is not important, we overwrite certificate anyway
+    - name: set harmony-ap/servercn
+      debconf:
+        name: harmony-ap
+        question: harmony-ap/servercn
+        value: "{{inventory_hostname}}"
+        vtype: string
+
+    - name: copy deb file
+      copy:
+        src: "{{playbook_dir}}/../packaging/build/ubuntu20.04/harmony-ap_{{ap_version}}.ubuntu20.04_all.deb"
+        dest: /root/
+
+    - name: install deb file
+      apt:
+        deb: "/root/harmony-ap_{{ap_version}}.ubuntu20.04_all.deb"
+        state: present
+
+    - name: delete ap keystore
+      file:
+        path: /etc/harmony-ap/ap-keystore.jks
+        state: absent
+
+    - name: replace ap keystore
+      java_keystore:
+        name: "{{ inventory_hostname }}"
+        certificate: "{{lookup('file', playbook_dir + '/neds_ca/host_certs/' + inventory_hostname + '.crt.pem') }}"
+        private_key: "{{lookup('file', playbook_dir + '/neds_ca/host_certs/' + inventory_hostname + '.key.pem') }}"
+        password: password
+        dest: /etc/harmony-ap/ap-keystore.jks
+        owner: harmony
+        group: harmony
+        mode: 0600
+
+    - name: copy truststore
+      copy:
+        src: "{{playbook_dir}}/neds_ca/neds-ca-trusted.jks"
+        dest: /etc/harmony-ap/ap-truststore.jks
+        force: yes
+        owner: harmony
+        group: harmony
+        mode: 0600
+
+    - name: change keystore and truststore passwords in properties file
+      lineinfile:
+        path: /etc/harmony-ap/domibus.properties
+        regexp: "{{item.reg}}"
+        line: "{{item.line}}"
+        state: present
+      with_items:
+        - { reg: ^domibus.security.keystore.password, line: domibus.security.keystore.password=password }
+        - { reg: ^domibus.security.key.private.alias, line: "domibus.security.key.private.alias={{ inventory_hostname }}" }
+        - { reg: ^domibus.security.key.private.password, line: domibus.security.key.private.password=password }
+        - { reg: ^domibus.security.truststore.password, line: domibus.security.truststore.password=password }
+
+    - name: delete tls keystore
+      file:
+        path: /etc/harmony-ap/tls-keystore.jks
+        state: absent
+
+    - name: replace tls keystore
+      java_keystore:
+        name: "{{ inventory_hostname }}"
+        certificate: "{{lookup('file', playbook_dir + '/neds_ca/host_certs/' + inventory_hostname + '_tls.crt.pem') }}"
+        private_key: "{{lookup('file', playbook_dir + '/neds_ca/host_certs/' + inventory_hostname + '_tls.key.pem') }}"
+        password: password
+        dest: /etc/harmony-ap/tls-keystore.jks
+        owner: harmony
+        group: harmony
+        mode: 0600
+
+    - name: delete tls truststore
+      file:
+        path: /etc/harmony-ap/tls-truststore.jks
+        state: absent
+
+    - name: copy truststore
+      copy:
+        src: "{{playbook_dir}}/neds_ca/neds-ca-trusted.jks"
+        dest: /etc/harmony-ap/tls-truststore.jks
+        force: yes
+        owner: harmony
+        group: harmony
+        mode: 0600
+
+    - name: replace server.xml
+      copy:
+        src: "{{playbook_dir}}/files/harmony_ap/server.xml"
+        dest: /opt/harmony-ap/conf/server.xml
+        owner: harmony
+        group: harmony
+        mode: 0600
+
+    - name: enable and start harmony-ap
+      service:
+        name: harmony-ap
+        enabled: true
+        state: restarted
+
+
+

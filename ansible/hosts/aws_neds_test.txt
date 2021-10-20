@@ -7,8 +7,14 @@ neds-cef-smp.i.x-road.rocks
 [niis_smp_servers]
 neds-niis-smp.i.x-road.rocks
 
-[domibus_servers]
+[cef_ap_servers]
 neds-cef-ap.i.x-road.rocks
 
+[niis_ap_servers]
+neds-niis-ap.i.x-road.rocks
+
+[all:vars]
+smp_version=1.0.0-0
+ap_version=1.0.0-0
 
 

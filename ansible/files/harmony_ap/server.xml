@@ -86,7 +86,9 @@
                scheme="https"
                secure="true"
                keystoreFile="/etc/harmony-ap/tls-keystore.jks"
-               keystorePass="{{tls_keystore_password}}"
+               keystorePass="password"
+               truststoreFile="/etc/harmony-ap/tls-truststore.jks"
+               truststorePass="password"
                clientAuth="want"
                sslProtocol="TLS"
     />

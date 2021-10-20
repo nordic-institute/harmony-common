@@ -2,8 +2,15 @@
   gather_facts: no
   roles:
     - role: local
+  tasks:
+    - name: check smp deb exists
+      stat:
+        path: "{{playbook_dir}}/../packaging/build/ubuntu20.04/harmony-smp_{{smp_version}}.ubuntu20.04_all.deb"
+      register: smpdeb
+      failed_when: not smpdeb.stat.exists
 
-- hosts: lxd_servers
+- hosts: niis_smp_servers
+  gather_facts: no
   roles:
     - init-lxd
 
@@ -14,6 +21,7 @@
     - import_tasks: tasks/find_smp_ip.yml
 
   roles:
+    - mock_cert
     - common
     - private_dns
 
@@ -28,7 +36,7 @@
       debconf:
         name: harmony-smp
         question: harmony-smp/integratewithsml
-        value: true
+        value: "true"
         vtype: boolean
     - name: set harmony-smp/smlurl
       debconf:
@@ -64,12 +72,12 @@
 
     - name: copy deb file
       copy:
-        src: "{{playbook_dir}}/../packaging/build/ubuntu20.04/harmony-smp_1.0.0-0.ubuntu20.04_all.deb"
+        src: "{{playbook_dir}}/../packaging/build/ubuntu20.04/harmony-smp_{{smp_version}}.ubuntu20.04_all.deb"
         dest: /root/
 
     - name: install deb file
       apt:
-        deb: "/root/harmony-smp_1.0.0-0.ubuntu20.04_all.deb"
+        deb: "/root/harmony-smp_{{smp_version}}.ubuntu20.04_all.deb"
         state: present
 
     - name: delete smp keystore
@@ -80,8 +88,8 @@
     - name: replace smp keystore
       java_keystore:
         name: "{{ inventory_hostname }}"
-        certificate: "{{lookup('file', playbook_dir + '/neds_ca/host_certs/' + smp_hostname + '.crt.pem') }}"
-        private_key: "{{lookup('file', playbook_dir + '/neds_ca/host_certs/' + smp_hostname + '.key.pem') }}"
+        certificate: "{{lookup('file', playbook_dir + '/neds_ca/host_certs/' + inventory_hostname + '.crt.pem') }}"
+        private_key: "{{lookup('file', playbook_dir + '/neds_ca/host_certs/' + inventory_hostname + '.key.pem') }}"
         password: password
         dest: /etc/harmony-smp/smp-keystore.jks
         owner: harmony_smp
@@ -113,8 +121,8 @@
     - name: replace tls keystore
       java_keystore:
         name: "{{ inventory_hostname }}"
-        certificate: "{{lookup('file', playbook_dir + '/neds_ca/host_certs/' + smp_hostname + '_tls.crt.pem') }}"
-        private_key: "{{lookup('file', playbook_dir + '/neds_ca/host_certs/' + smp_hostname + '_tls.key.pem') }}"
+        certificate: "{{lookup('file', playbook_dir + '/neds_ca/host_certs/' + inventory_hostname + '_tls.crt.pem') }}"
+        private_key: "{{lookup('file', playbook_dir + '/neds_ca/host_certs/' + inventory_hostname + '_tls.key.pem') }}"
         password: password
         dest: /etc/harmony-smp/tls-keystore.jks
         owner: harmony_smp

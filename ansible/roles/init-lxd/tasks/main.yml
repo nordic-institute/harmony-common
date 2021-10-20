@@ -1,9 +1,9 @@
 ---
-- name: Ready all containers
+- name: Ready lxd container
   become: yes
-  with_inventory_hostnames: all:!lxd_servers
+  delegate_to: 127.0.0.1
   lxd_container:
-    name: "{{item}}"
+    name: "{{inventory_hostname}}"
     state: started
     source:
       type: image
@@ -15,17 +15,16 @@
     wait_for_ipv4_addresses: true
     timeout: 600
   register: lxdcreate
+  when: using_lxd is defined and using_lxd
   tags:
     - ubuntu-container-init
 
 - name: Add lxc containers to hosts file
   become: true
+  delegate_to: 127.0.0.1
   lineinfile:
     path: /etc/hosts
-    regexp: ".*{{item.item}}.lxd # automatically added by ansible"
-    line: "{{item.addresses.eth0.0}} {{item.item}}.lxd # automatically added by ansible"
+    regexp: ".*{{inventory_hostname}}.lxd # automatically added by ansible"
+    line: "{{lxdcreate.addresses.eth0.0}} {{inventory_hostname}}.lxd # automatically added by ansible"
   ignore_errors: true
-  loop: "{{lxdcreate.results}}"
-  loop_control:
-    label: "{{item.item}}"
-  when: lxdcreate.changed
+  when: using_lxd is defined and using_lxd and lxdcreate.changed
