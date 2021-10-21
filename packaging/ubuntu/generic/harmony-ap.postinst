@@ -1,0 +1,144 @@
+#!/bin/bash
+set -e
+set -x
+
+. /usr/share/debconf/confmodule
+
+escape_for_sed() {
+    printf '%s\n' "$1" | sed -e 's/[\/&]/\\&/g'
+}
+
+SUCCESS=false
+DROPDBONERROR=false
+
+cleanup() {
+  if [ ! "$SUCCESS" = true ]; then
+    rm -f /etc/harmony-ap/*.jks
+    if [ "$DROPDBONERROR" = true ]; then
+      mysql -e "DROP SCHEMA harmony_ap; DROP USER harmony@localhost"
+    fi;
+  fi
+}
+
+case "$1" in
+ configure)
+
+  trap cleanup EXIT
+
+  db_get harmony-ap/usedynamicdiscovery
+  USEDYNAMIC="$RET"
+  if [ ! "$USEDYNAMIC" = true ]; then
+    USEDYNAMIC=false
+  fi
+  db_get harmony-ap/smlzone
+  SMLZONE="$RET"
+  db_get harmony-ap/adminuser
+  AUSER="$RET"
+  #db_get harmony-ap/adminpassword
+  #APASSWORD="$RET"
+  db_get harmony-ap/servercn
+  SERVERNAME="$RET"
+  db_stop
+
+  DBUSER=harmony
+  SCHEMA_EXISTS=$(mysql -s -N -e "SELECT SCHEMA_NAME FROM INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME='harmony_ap'");
+  if [ -z "$SCHEMA_EXISTS" ]; then
+    DROPDBONERROR=true
+    echo "Creating database schema harmony_ap" >&2
+    DBPASSWORD=$(openssl rand -base64 12)
+    mysql -e \
+      "create schema harmony_ap; \
+      alter database harmony_ap charset=utf8mb4 collate=utf8mb4_bin; \
+      create user $DBUSER@localhost identified by '$DBPASSWORD'; \
+      grant all on harmony_ap.* to $DBUSER@localhost; \
+      grant xa_recover_admin on *.* to $DBUSER@localhost;"
+
+    mysql harmony_ap < /opt/harmony-ap/setup/harmony_ap_schema.ddl
+
+    # todo how to "encrypt" password?
+    APASSWORD='$2a$10$5uKS72xK2ArGDgb2CwjYnOzQcOmB7CPxK6fz2MGcDBM9vJ4rUql36'
+
+    mysql -e "INSERT INTO harmony_ap.TB_USER (ID_PK, USER_NAME, USER_PASSWORD, USER_ENABLED, USER_DELETED, DEFAULT_PASSWORD) \
+       VALUES ('1', '$AUSER', '$APASSWORD', 1, 0, 1);
+        INSERT INTO harmony_ap.TB_USER_ROLES (USER_ID, ROLE_ID) VALUES ('1', '1');"
+  else
+    echo "Schema harmony_ap already exists. Skipping schema creation" >&2
+    DBPASSWORD=$(openssl rand -base64 12)
+    mysql -e \
+      "ALTER USER $DBUSER@localhost IDENTIFIED BY '$DBPASSWORD'; \
+       FLUSH PRIVILEGES;"
+  fi
+
+  if [ ! -f /etc/harmony-ap/domibus.properties ]; then
+    rm -f /etc/harmony-ap/*.jks
+
+    KEYSTOREPASS=$(openssl rand -base64 12)
+    TRUSTSTOREPASS=$(openssl rand -base64 12)
+    TLSKEYPASS=$(openssl rand -base64 12)
+
+    keytool -genkeypair -keyalg RSA -alias selfsigned -keystore /etc/harmony-ap/ap-keystore.jks -storepass $KEYSTOREPASS \
+      -keypass $KEYSTOREPASS -validity 333 -keysize 3096 -dname "CN=$SERVERNAME"
+
+    keytool -genkeypair -keyalg RSA -alias selfsigned -keystore /etc/harmony-ap/tls-keystore.jks -storepass $TLSKEYPASS \
+      -keypass $TLSKEYPASS -validity 333 -keysize 3096 -dname "CN=$SERVERNAME"
+
+    keytool -genkeypair -alias mock -keystore /etc/harmony-ap/ap-truststore.jks -storepass $TRUSTSTOREPASS \
+      -keypass $TRUSTSTOREPASS -dname "CN=mock"
+    keytool -delete -alias mock -keystore /etc/harmony-ap/ap-truststore.jks -storepass $TRUSTSTOREPASS
+
+    E_KEYSTOREPASS=$(escape_for_sed "$KEYSTOREPASS")
+    E_TRUSTSTOREPASS=$(escape_for_sed "$TRUSTSTOREPASS")
+    E_DBUSER=$(escape_for_sed "$DBUSER")
+    E_DBPASSWORD=$(escape_for_sed "$DBPASSWORD")
+    E_TLSKEYPASS=$(escape_for_sed "$TLSKEYPASS")
+    E_SMLZONE=$(escape_for_sed "$SMLZONE")
+
+
+    sed -e "s/{{tls_keystore_password}}/$E_TLSKEYPASS/" /opt/harmony-ap/setup/server.xml.template > /opt/harmony-ap/conf/server.xml
+
+    sed -e "s/{{keystorepass}}/$E_KEYSTOREPASS/" -e "s/{{truststorepass}}/$E_TRUSTSTOREPASS/" \
+      -e "s/{{dbuser}}/$E_DBUSER/" -e "s/{{dbpassword}}/$E_DBPASSWORD/" \
+      -e "s/{{dynamicdiscovery}}/$USEDYNAMIC" -e "s/{{smlzone}}/$E_SMLZONE" \
+        /opt/harmony-ap/setup/domibus.properties.template > /etc/harmony-ap/domibus.properties
+  fi
+
+  adduser --system --quiet --no-create-home --shell /usr/sbin/nologin --group --gecos "Harmony user" harmony
+
+  # check validity of user and group
+  if [ "`id -u harmony`" -eq 0 ]; then
+      echo "The Harmony AP system user must not have uid 0 (root).Please fix this and reinstall this package." >&2
+      exit 1
+  fi
+  if [ "`id -g harmony`" -eq 0 ]; then
+      echo "The Harmony AP system user must not have root as primary group. Please fix this and reinstall this package." >&2
+      exit 1
+  fi
+
+  mkdir -p /opt/harmony-ap/temp
+
+  chown -R harmony:harmony /opt/harmony-ap
+  chmod -R 0755 /opt/harmony-ap
+
+  # nicer log directory permissions
+  mkdir -p /var/log/harmony-ap
+  chmod 1770 /var/log/harmony-ap
+  chown harmony:adm /var/log/harmony-ap
+
+  # config folder permissions
+  chown -R harmony:harmony /etc/harmony-ap
+  chmod -R 0751 /etc/harmony-ap
+
+  SUCCESS=true
+ ;;
+
+
+ abort-upgrade|abort-remove|abort-deconfigure)
+ ;;
+
+ *)
+    log "postinst called with unknown argument \`$1'" >&2
+    exit 1
+ ;;
+esac
+
+exit 0

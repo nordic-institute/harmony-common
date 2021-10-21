@@ -1,0 +1,22 @@
+Template: harmony-ap/usedynamicdiscovery
+Type: boolean
+Default: true
+Description: Configure dynamic discovery?
+
+Template: harmony-ap/smlzone
+Type: string
+Description: eDelivery SML zone
+
+Template: harmony-ap/adminuser
+Type: string
+Default: harmony
+Description: Harmony Accesspoint administator user name
+
+Template: harmony-ap/adminpassword
+Type: password
+Description: Harmony Accesspoint administator initial password
+
+Template: harmony-ap/servercn
+Type: string
+Default: selfsigned
+Description: Common name of generated server certificate (selfsigned)

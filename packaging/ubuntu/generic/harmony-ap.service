@@ -1,0 +1,25 @@
+[Unit]
+Description=Harmony eDelivery Gateway
+After=network.target
+
+[Service]
+Type=forking
+
+Environment=JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64
+Environment=CATALINA_PID=/opt/harmony-ap/temp/harmony-ap.pid
+Environment=CATALINA_HOME=/opt/harmony-ap
+Environment=CATALINA_BASE=/opt/harmony-ap
+Environment=CATALINA_OUT=/var/log/harmony-ap/catalina.out
+Environment='CATALINA_OPTS=-Xms256M -Xmx512M -server -XX:+UseParallelGC'
+Environment='JAVA_OPTS=-Djava.awt.headless=true -Djava.security.egd=file:/dev/./urandom'
+ExecStart=/opt/harmony-ap/bin/startup.sh
+ExecStop=/opt/harmony-ap/bin/shutdown.sh
+
+User=harmony
+Group=harmony
+UMask=0007
+RestartSec=10
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
