@@ -28,6 +28,10 @@
     - private_dns
 
   tasks:
+    - name: store ap hostname
+      set_fact:
+        ap_hostname: "{{ inventory_hostname if using_lxd is undefined or not using_lxd else inventory_hostname + '.lxd' }}"
+
     - name: set harmony-ap/usedynamicdiscovery
       debconf:
         name: harmony-ap
@@ -82,8 +86,8 @@
     - name: replace ap keystore
       java_keystore:
         name: "{{ inventory_hostname }}"
-        certificate: "{{lookup('file', playbook_dir + '/neds_ca/host_certs/' + inventory_hostname + '.crt.pem') }}"
-        private_key: "{{lookup('file', playbook_dir + '/neds_ca/host_certs/' + inventory_hostname + '.key.pem') }}"
+        certificate: "{{lookup('file', playbook_dir + '/neds_ca/host_certs/' + ap_hostname + '.crt.pem') }}"
+        private_key: "{{lookup('file', playbook_dir + '/neds_ca/host_certs/' + ap_hostname + '.key.pem') }}"
         password: password
         dest: /etc/harmony-ap/ap-keystore.jks
         owner: harmony
@@ -119,8 +123,8 @@
     - name: replace tls keystore
       java_keystore:
         name: "{{ inventory_hostname }}"
-        certificate: "{{lookup('file', playbook_dir + '/neds_ca/host_certs/' + inventory_hostname + '_tls.crt.pem') }}"
-        private_key: "{{lookup('file', playbook_dir + '/neds_ca/host_certs/' + inventory_hostname + '_tls.key.pem') }}"
+        certificate: "{{lookup('file', playbook_dir + '/neds_ca/host_certs/' + ap_hostname + '_tls.crt.pem') }}"
+        private_key: "{{lookup('file', playbook_dir + '/neds_ca/host_certs/' + ap_hostname + '_tls.key.pem') }}"
         password: password
         dest: /etc/harmony-ap/tls-keystore.jks
         owner: harmony

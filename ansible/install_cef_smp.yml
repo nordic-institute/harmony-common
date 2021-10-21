@@ -45,8 +45,8 @@
     - name: create smp keystore
       java_keystore:
         name: "{{ inventory_hostname }}"
-        certificate: "{{lookup('file', playbook_dir + '/neds_ca/host_certs/' + inventory_hostname + '.crt.pem') }}"
-        private_key: "{{lookup('file', playbook_dir + '/neds_ca/host_certs/' + inventory_hostname + '.key.pem') }}"
+        certificate: "{{lookup('file', playbook_dir + '/neds_ca/host_certs/' + smp_hostname + '.crt.pem') }}"
+        private_key: "{{lookup('file', playbook_dir + '/neds_ca/host_certs/' + smp_hostname + '.key.pem') }}"
         password: password
         dest: /opt/tomcat/custom_conf/smp-keystore.jks
 
@@ -59,8 +59,8 @@
     - name: replace tls keystore
       java_keystore:
         name: "{{ inventory_hostname }}"
-        certificate: "{{lookup('file', playbook_dir + '/neds_ca/host_certs/' + inventory_hostname + '_tls.crt.pem') }}"
-        private_key: "{{lookup('file', playbook_dir + '/neds_ca/host_certs/' + inventory_hostname + '_tls.key.pem') }}"
+        certificate: "{{lookup('file', playbook_dir + '/neds_ca/host_certs/' + smp_hostname + '_tls.crt.pem') }}"
+        private_key: "{{lookup('file', playbook_dir + '/neds_ca/host_certs/' + smp_hostname + '_tls.key.pem') }}"
         password: password
         dest: /opt/tomcat/custom_conf/tls-keystore.jks
 

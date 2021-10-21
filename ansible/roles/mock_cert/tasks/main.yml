@@ -3,38 +3,8 @@
   set_fact:
     full_hostname: "{{ inventory_hostname if using_lxd is undefined or not using_lxd else inventory_hostname + '.lxd' }}"
 
-- name: check key file exists
-  stat:
-    path: "{{playbook_dir}}/neds_ca/host_certs/{{inventory_hostname}}.key.pem"
-  delegate_to: 127.0.0.1
-  register: keyexists
-
-- name: check crt file exists
-  stat:
-    path: "{{playbook_dir}}/neds_ca/host_certs/{{inventory_hostname}}.crt.pem"
-  delegate_to: 127.0.0.1
-  register: crtexists
-
-- name: check tls key file exists
-  stat:
-    path: "{{playbook_dir}}/neds_ca/host_certs/{{inventory_hostname}}_tls.key.pem"
-  delegate_to: 127.0.0.1
-  register: tlskeyexists
-
-- name: check tls crt file exists
-  stat:
-    path: "{{playbook_dir}}/neds_ca/host_certs/{{inventory_hostname}}_tls.crt.pem"
-  delegate_to: 127.0.0.1
-  register: tlscrtexists
-
-- name: generate key and certificate
+- name: generate keys and certificates if missing
   become: no
-  command: "{{playbook_dir}}/neds_ca/generate_cert.sh {{inventory_hostname}}"
+  command: "{{playbook_dir}}/neds_ca/generate_cert.sh {{full_hostname}}"
   delegate_to: 127.0.0.1
-  when: not keyexists.stat.exists or not crtexists.stat.exists
 
-- name: generate tls key and certificate
-  become: no
-  command: "{{playbook_dir}}/neds_ca/generate_cert.sh {{inventory_hostname}}_tls"
-  delegate_to: 127.0.0.1
-  when: not tlskeyexists.stat.exists or not tlscrtexists.stat.exists

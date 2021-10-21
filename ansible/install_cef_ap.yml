@@ -52,7 +52,7 @@
   tasks:
     - name: store ap hostname
       set_fact:
-        ap_hostname: "{{ inventory_hostname if lxd_suffix is undefined or not lxd_suffix else inventory_hostname + '.lxd' }}"
+        ap_hostname: "{{ inventory_hostname if using_lxd is undefined or not using_lxd else inventory_hostname + '.lxd' }}"
 
     - name: collect info about database
       mysql_info:
@@ -114,8 +114,8 @@
     - name: create ap keystore
       java_keystore:
         name: "{{ inventory_hostname }}"
-        certificate: "{{lookup('file', playbook_dir + '/neds_ca/host_certs/' + inventory_hostname + '.crt.pem') }}"
-        private_key: "{{lookup('file', playbook_dir + '/neds_ca/host_certs/' + inventory_hostname + '.key.pem') }}"
+        certificate: "{{lookup('file', playbook_dir + '/neds_ca/host_certs/' + ap_hostname + '.crt.pem') }}"
+        private_key: "{{lookup('file', playbook_dir + '/neds_ca/host_certs/' + ap_hostname + '.key.pem') }}"
         password: password
         dest: /opt/tomcat/conf/domibus/keystores/ap-keystore.jks
 
