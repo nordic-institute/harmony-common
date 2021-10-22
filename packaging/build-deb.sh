@@ -57,5 +57,8 @@ rm commonbin/tomcat9/conf/server.xml
 cp ../../domibus/Domibus-MSH-tomcat/target/domibus-MSH-tomcat-4.2.3.war commonbin/domibus.war
 cp ../../domibus/Domibus-default-ws-plugin/target/domibus-default-ws-plugin-4.2.3.jar commonbin/ws-plugin.jar
 
+# copy smp war
+cp ../../smp/smp-webapp/target/smp.war commonbin/smp.war
+
 prepare ubuntu20.04
 builddeb build/harmony/ubuntu focal ubuntu20.04

@@ -1,4 +1,10 @@
 ---
+- name: install openjdk
+  become: true
+  apt:
+    name: openjdk-8-jre-headless
+    state: latest
+
 - name: add tomcat group
   group:
     name: tomcat
@@ -16,24 +22,17 @@
     state: directory
   register: tomcat_exists
 
-- name: upload & unarchive tomcat 8
-  unarchive:
-    src: "{{playbook_dir}}/files/binary/apache-tomcat-8.5.69.tar.gz"
-    dest: /opt/tomcat
-    extra_opts: [--strip-components=1]
-  when: tomcat_exists.changed and tomcat_version == '8'
-
 - name: upload & unarchive tomcat 9
   unarchive:
     src: "{{playbook_dir}}/files/binary/apache-tomcat-9.0.52.tar.gz"
     dest: /opt/tomcat
     extra_opts: [--strip-components=1]
-  when: tomcat_exists.changed and tomcat_version == '9'
+  when: tomcat_exists.changed
 
 - name: copy connector jar
   copy:
     src: "{{playbook_dir}}/files/binary/mysql-connector-java-8.0.26.jar"
-    dest: /opt/tomcat/lib
+    dest: /opt/tomcat/lib/
   when: tomcat_exists.changed
 
 - name: create custom conf folder
@@ -47,7 +46,7 @@
 - name: copy tomcat startup script
   copy:
     src: "{{setenv_file}}"
-    dest: /opt/tomcat/bin
+    dest: /opt/tomcat/bin/
   when: tomcat_exists.changed
 
 - name: delete unnecessary webapps
@@ -79,10 +78,3 @@
     mode: 0755
   when: tomcat_exists.changed
 
-- name: start and enable Tomcat service
-  systemd:
-    name: tomcat
-    state: started
-    enabled: true
-    daemon_reload: true
-  when: tomcat_exists.changed

@@ -29,31 +29,30 @@
         dest: "{{playbook_dir}}/files/binary/"
       when: not wspluginjar.stat.exists
 
-- hosts: lxd_servers
+- hosts: cef_ap_servers
+  gather_facts: no
   roles:
     - init-lxd
 
-- hosts: domibus_servers
+- hosts: cef_ap_servers
   become: yes
-  vars:
-    certs_dir: /root/certs
 
   pre_tasks:
     - import_tasks: tasks/find_sml_ip.yml
 
   roles:
+    - mock_cert
     - common
     - mysql
     - private_dns
     - role: tomcat
       vars:
-        tomcat_version: '9'
         setenv_file: "{{playbook_dir}}/files/domibus/setenv.sh"
 
   tasks:
     - name: store ap hostname
       set_fact:
-        ap_hostname: "{{ inventory_hostname if lxd_suffix is undefined or not lxd_suffix else inventory_hostname + '.lxd' }}"
+        ap_hostname: "{{ inventory_hostname if using_lxd is undefined or not using_lxd else inventory_hostname + '.lxd' }}"
 
     - name: collect info about database
       mysql_info:
@@ -139,4 +138,13 @@
         dest: /opt/tomcat/webapps/domibus.war
         owner: tomcat
         group: tomcat
+
+    - name: start and enable Tomcat service
+      systemd:
+        name: tomcat
+        state: started
+        enabled: true
+        daemon_reload: true
+      when: tomcat_exists.changed
+
 

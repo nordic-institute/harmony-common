@@ -1,16 +1,20 @@
-#container host
-[lxd_servers]
-localhost ansible_connection=local
-
 [bdmsl_servers]
 sml ansible_connection=lxd forward_dns=10.204.119.1
 
-[smp_servers]
-smp ansible_connection=lxd
+[cef_smp_servers]
+cef-smp ansible_connection=lxd
 
-[domibus_servers]
+[niis_smp_servers]
+niis-smp ansible_connection=lxd
+
+[cef_ap_servers]
 cef-ap ansible_connection=lxd
 
+[niis_ap_servers]
+niis-ap ansible_connection=lxd
+
 [all:vars]
-lxd_suffix=true
+using_lxd=true
 skip_admins=true
+smp_version=1.0.0-0
+ap_version=1.0.0-0

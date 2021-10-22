@@ -1,8 +1,4 @@
-- hosts: localhost
-  tasks:
-    - stat:
-        path: /opt/tomcat/conf/server.xml
-      register: pass_exists
-
-    - debug:
-        msg: "{{pass_exists}}"
+- hosts: niis_smp_servers
+  gather_facts: no
+  roles:
+    - init-lxd

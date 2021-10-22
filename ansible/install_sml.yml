@@ -16,7 +16,8 @@
         dest: "{{playbook_dir}}/files/binary/bdmsl-webapp-4.1.0.war"
       when: not bdmslwar.stat.exists
 
-- hosts: lxd_servers
+- hosts: bdmsl_servers
+  gather_facts: no
   roles:
     - init-lxd
 
@@ -27,7 +28,6 @@
     - mysql
     - role: tomcat
       vars:
-        tomcat_version: '8'
         setenv_file: "{{playbook_dir}}/files/bdmsl/setenv.sh"
     - bind9
     - private_dns
@@ -72,7 +72,9 @@
         target: /root/bdsml_configuration.sql
 
     - name: prepare smp subdomains sql file
-      with_inventory_hostnames: smp_servers
+      with_inventory_hostnames:
+        - cef_smp_servers
+        - niis_smp_servers
       lineinfile:
         path: /root/certificate_domains.sql
         create: true
@@ -125,4 +127,12 @@
         dest: /opt/tomcat/webapps/ROOT.war
         owner: tomcat
         group: tomcat
+
+    - name: start and enable Tomcat service
+      systemd:
+        name: tomcat
+        state: started
+        enabled: true
+        daemon_reload: true
+      when: tomcat_exists.changed
 

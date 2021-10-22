@@ -1,0 +1,140 @@
+- hosts: localhost
+  gather_facts: no
+  roles:
+    - role: local
+      vars:
+        tomcat_version: '8'
+  tasks:
+    - name: check SMP war exists
+      stat:
+        path: "{{playbook_dir}}/files/binary/smp-4.1.1.war"
+      register: smpwar
+
+    - name: download SMP war to local cache
+      get_url:
+        url: https://ec.europa.eu/cefdigital/artifact/repository/public/eu/europa/ec/edelivery/smp/4.1.1/smp-4.1.1.war
+        dest: "{{playbook_dir}}/files/binary/smp-4.1.1.war"
+      when: not smpwar.stat.exists
+
+- hosts: cef_smp_servers
+  gather_facts: no
+  roles:
+    - init-lxd
+
+- hosts: cef_smp_servers
+  become: yes
+  pre_tasks:
+    - import_tasks: tasks/find_sml_ip.yml
+    - import_tasks: tasks/find_smp_ip.yml
+
+  roles:
+    - mock_cert
+    - common
+    - mysql
+    - role: tomcat
+      vars:
+        setenv_file: "{{playbook_dir}}/files/smp/setenv.sh"
+    - private_dns
+
+  tasks:
+    - name: ensure certificates directory exists
+      file:
+        path: /opt/tomcat/conf/domibus/keystores
+        state: directory
+
+    - name: create smp keystore
+      java_keystore:
+        name: "{{ inventory_hostname }}"
+        certificate: "{{lookup('file', playbook_dir + '/neds_ca/host_certs/' + smp_hostname + '.crt.pem') }}"
+        private_key: "{{lookup('file', playbook_dir + '/neds_ca/host_certs/' + smp_hostname + '.key.pem') }}"
+        password: password
+        dest: /opt/tomcat/custom_conf/smp-keystore.jks
+
+    - name: copy truststore
+      copy:
+        src: "{{playbook_dir}}/neds_ca/neds-ca-trusted.jks"
+        dest: /opt/tomcat/custom_conf/smp-truststore.jks
+        force: yes
+
+    - name: replace tls keystore
+      java_keystore:
+        name: "{{ inventory_hostname }}"
+        certificate: "{{lookup('file', playbook_dir + '/neds_ca/host_certs/' + smp_hostname + '_tls.crt.pem') }}"
+        private_key: "{{lookup('file', playbook_dir + '/neds_ca/host_certs/' + smp_hostname + '_tls.key.pem') }}"
+        password: password
+        dest: /opt/tomcat/custom_conf/tls-keystore.jks
+
+    - name: collect info about database
+      mysql_info:
+        login_user: root
+        login_password: root
+      register: db_state
+
+    - name: copy ddl file
+      copy:
+        src: "{{playbook_dir}}/files/smp/smp_schema.ddl"
+        dest: /root
+      when: db_state.databases.smp is not defined
+
+    - name: create database
+      mysql_db:
+        name: smp
+        state: import
+        encoding: utf8
+        login_user: root
+        login_password: root
+        target: /root/smp_schema.ddl
+      when: db_state.databases.smp is not defined
+
+    - name: create db settings file
+      template:
+        src: "{{playbook_dir}}/files/smp/smp_configuration.sql"
+        dest: /root/smp_configuration.sql
+
+    - name: load settings into db
+      mysql_db:
+        name: smp
+        state: import
+        encoding: utf8
+        login_user: root
+        login_password: root
+        target: /root/smp_configuration.sql
+
+    - name: create conf folder
+      file:
+        path: /opt/tomcat/custom_conf
+        state: directory
+        owner: tomcat
+        group: tomcat
+
+    - name: copy smp conf file
+      copy:
+        src: "{{playbook_dir}}/files/smp/smp.config.properties"
+        dest: /opt/tomcat/custom_conf/smp.config.properties
+        force: true
+        owner: tomcat
+        group: tomcat
+
+    - name: copy smp context.xml file
+      copy:
+        src: "{{playbook_dir}}/files/smp/smp_context.xml"
+        dest: /opt/tomcat/conf/context.xml
+        force: true
+        owner: tomcat
+        group: tomcat
+
+    - name: copy smp war to webapps
+      copy:
+        src: "{{playbook_dir}}/files/binary/smp-4.1.1.war"
+        dest: /opt/tomcat/webapps/ROOT.war
+        owner: tomcat
+        group: tomcat
+
+    - name: start and enable Tomcat service
+      systemd:
+        name: tomcat
+        state: started
+        enabled: true
+        daemon_reload: true
+      when: tomcat_exists.changed
+

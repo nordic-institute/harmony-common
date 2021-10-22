@@ -78,13 +78,20 @@
                connectionTimeout="20000"
                redirectPort="8443" />
     -->
-    <Connector SSLEnabled="true"
+    <Connector
+               SSLEnabled="true"
                protocol="org.apache.coyote.http11.Http11NioProtocol"
-               port="8443" maxThreads="200"
-               scheme="https" secure="true"
+               port="8443"
+               maxThreads="200"
+               scheme="https"
+               secure="true"
                keystoreFile="/etc/harmony-ap/tls-keystore.jks"
-               keystorePass="{{tls_keystore_password}}"
-               clientAuth="false" sslProtocol="TLS" />
+               keystorePass="password"
+               truststoreFile="/etc/harmony-ap/tls-truststore.jks"
+               truststorePass="password"
+               clientAuth="want"
+               sslProtocol="TLS"
+    />
     
     <!-- Define an SSL/TLS HTTP/1.1 Connector on port 8443 with HTTP/2
          This connector uses the APR/native implementation which always uses
