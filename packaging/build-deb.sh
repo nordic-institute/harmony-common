@@ -54,8 +54,8 @@ rm commonbin/tomcat9/conf/logging.properties
 rm commonbin/tomcat9/conf/server.xml
 
 # copy domibus war and ws plugin jar
-cp ../../domibus/Domibus-MSH-tomcat/target/domibus-MSH-tomcat-4.2.3.war commonbin/domibus.war
-cp ../../domibus/Domibus-default-ws-plugin/target/domibus-default-ws-plugin-4.2.3.jar commonbin/ws-plugin.jar
+cp ../../domibus/Domibus-MSH-tomcat/target/domibus-MSH-tomcat-4.2.4.war commonbin/domibus.war
+cp ../../domibus/Domibus-default-ws-plugin/target/domibus-default-ws-plugin-4.2.4.jar commonbin/ws-plugin.jar
 
 # copy smp war
 cp ../../smp/smp-webapp/target/smp.war commonbin/smp.war

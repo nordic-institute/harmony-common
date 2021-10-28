@@ -1,103 +1,19 @@
 ---
-### this file is copied from xroad-utils repo
 admins:
   - username: petteri.kivimaki
     fullname: Petteri Kivimäki (NIIS)
     ssh_keys:
       - "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDOZvnzSKKn4XeeIrfqFVHebL+T21tJMY9qU/rqf2wV4LgXDUSxVz4yHYi6zH7HjjfIqH1DrScMBWUv1fO/AM4D6PVx15DxERV5qpHfnVyMsjx/44KW/w3rilIXW2TciL9KL9kprN9m4dz8t7QCsmEyzlfU2hfdIh81rv3dugXvBUDaIlXKYY0BtAtsgzPXkQxtL6NE8HoSN8gudHMbzPmg9/BIA5nqe9Toejcpy6oxfZ1cs+eJo16jLTssmjQhBRuhfL1d31pRPvubnfLmizBVslctn9YrNz0EPJJ6NfRHX2yosbRNqg4yGg7J47RfN3iBQPmjFCiQPm/g21Ajgh5J petteri.kivimaki@Petteris-MacBook-Pro.local"
     password: "*"
-  - username: ilkka
-    fullname: Ilkka Seppälä (Gofore)
-    ssh_keys:
-      - "ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEAqqe+igQgmKX7P+z6MXBZYpYyaaAed8+c2PJc6HdflJNKtOydX19LqjZut5+u3C/PBxWfa0I1KVmiW5c2yCsj+wkonRY/OXeqnyq4rMW2/R1qivsMagToEzZMlVt7DzgqZUX+rnKoQjRG7+nMnW2dulP36THgqxEw9fa4z3ngCCXsxyoUh91a2R/YJ4WfmcGjx6sRrD2qi8bH/nVhUQc//MjtVsxtJUPDnpLYCQ0eehvjyjlrBbrkzLrcEzp+vXTadMJ573sUnTQC1BzBua5PVvo2lOAEv/6dNE1cOBwBtcF/BnTTRhPzKgkxG77jAUHwOJ+TP33gkyC9SuKxUt1xJw== ilkka@BIGBANG"
-    password: "*"
-  - username: hyoty
-    fullname: Jarkko Hyöty (Gofore)
-    ssh_keys:
-      - "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQDB1d6B4hJy6PuNy2aoE9/b8g7AM11a1VWx/9IKUnMDwjhI/84AL3ODx3JQWqM5INkbMP8F5fDxfl7q1SZ9gOzTo0PrM56lmlZ+GsWf7L2oyf23E3G0y1r06BXUduz8hMliK+pIGc8MK39lUY2vhUMdVWJ0rm+3Ktc2s5txoTwo3nW9lx95l3gi64fGyXYZKdVATEoA3G6ro3hRAqPO6zK3tqrYGIMUM1XwiPc4iYXYP3Q1Ut4YMgUuuFudXoD/mvjS9tYYWO/rFhpFeLGJdySxPL2Djg8ymoStohukeTTFRdWOCryDAaOJGauwG+Jk0QldhKjgmMPXc2h7JtyHf44kMyaCrPa6MVVfz4C7hmKwhGvQbSE9QHMA2aQywDPKKKGgobXcxp17PL72jtpEpeVX2LedHBsL600sC8UMrqDksxpfLLnQ0IuNGqYI3ngE455T1qz56wgEH5mxTCfhfwklSxgFDVjV3rkiGItcKBXBMMrP7PgzfUxyOKpQl5kLIwubk/HNKgMuvgR8EQoA3X4kRJ3s2Si+GqOhfKQsQoTE8IiBN9SGTKIjiTEFdYKc7msXxx+NyI7AylGus2IInY2bBhDN/vSD32o7LXAYo66889tOaaQ2Khg2tftM4592nsGsYfVBBtp1cWrNkk2zJ61mLkXKOcVYgyndDIS+5+hrQw== hyoty@jhyoty"
-    password: "*"
-  - username: jenkins
-    fullname: Teppo Jenkins
-    ssh_keys:
-      - "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQCkNXS/+sWYNWFSVTS51lCl3sFIVxaPQqjIU0sUlkl33xy8e0wmoJUGY4opsdrJW7KzDEw4i2PSMhlfx2Ib9CVBLMWpAReyrg+BAMya7sDVNPuJOSWq6x3F34NqWTktM9I3uVJdAjbwioSjo2BWIy4jDdnOOUQsK1RqxQGLVHkPURhD7ZyegfZugEVzx0ACM9Gj+lQAri7OBTuWKHDav9GDi1LH9JQAXdPR27e+QwQ18fEvHPQLXlV/69waKw4iSUA4JmLnXb0Q3/NX94qh9TQiiBcV0w9XlZHHg3n0SRrIvX7GTbPt+Nic7NH650XVsfK/l9KBVX8tSUbpTo91XjCF+hkEjAUz6AmJ+X3jnUe4XmwxMcp/R3sIHiGEnWrIpau4Tw8DxvPlGXaK5TdsmxB27mCHvZAuOg0yqLgg36zIpZtcfp1eiEijtF5iY8ua1YyYbcwNg6nnaWRFYUNWWn5yz7baHWDw6C0UFIQBY961l87OO58K1tgwXC5DNIcd8VZrJ8bHv35oCA8a3U172BfhLyZDt1+pGPfeRmQV/mA6hIVh7ndW0TpD/U2PMN8Pt5YyysJhosvcfnZ8yi0AWY9YhLPEa5ZzkHoEfSKT6fwW54SfrVqCl9tDMQEWCll0V8GXJRpgYYNkTY41nQSQaeQqXIq00eFDMTjLXHJzonsdDQ== jenkins@jenkins.hosting.niis"
-    password: "*"
-  - username: janne
-    fullname: Janne Mattila (Gofore)
-    ssh_keys:
-      - "ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEAtkJU7VEg2ucaYWUFH5Z382D+BI10u4juFVsZMG50XXeeNxbVwuY1Ld2IzMratzJZjf22ti/vdZCN9ExCdbWyj5ExjQ57Q6WGJHNz2i45VsfDXjw/MT5F/SYUMw1pTrhKNJlzlsnfdvYqgsyQTL7FrkHY4vp3MvVJuZFQWF62owgNMvv5JlwQ2Vplk2QtnDvU0+jUm8INt+iH6UjNmWh7pHKO8V9+EK6C4EleumdhFNtJFLUC3FTLHTYiuZ8twQBWIWMvs11cXEBRtrN9eyUFI1HGCfNap/wBaA9Xnj154GLmCsWqFAaEhJdGleRPaTPl4Zxfu6lt7lvka9bnXGYrlQ== janne.mattila@gofore.com"
-    password: "*"
-  - username: caro
-    fullname: Caro Hautamäki (Gofore)
-    ssh_keys:
-      - "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDOLVFqXaJTepFnGNKc2SZzS2KoWXLasO4lfoKAA7upZ0LDjpiZkSg3KxpTLZSe9782Ujvxsel1I1UYult9mrsEg1Cw00o6QyfHffDrVARNhK+KcbGUQ0va6DI5Bc3u1L8tdcpwgeE538Mv9GZSaxlEh0wbna2gKO5hIg793oxUBRCJmTBIlzIJgdsmFxx3DJOtt/5Di3nlgvwhYCinb23/EMSRiuh3tHo8e9dHJevwNRgo+9rVEDefUNDn/g2ZbU+YKAnNs3HiEfP7l+WopSA/YqtCEoTY468nc3KbcZUHzgLIc2pvfeoNzWkXDThbcLhsSQT5cETOSOkWLN0vX5bb caro.hautamaki@gofore.com"
-    password: "*"
-  - username: mikko
-    fullname: Mikko Riippi (Gofore)
-    ssh_keys:
-      - "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCfn37kHextly34FfunxnMhYhueU73DHdA5y6zgo4ldy033V9kNsT52k1XQFBGuojy09sA0LicJXAPZclQontbqESPTwMAnQGYKKvKIIa1jeaxV7ylUK8tbU5I4RbvRTJdix+AMmSVrGPkO/S2Blr8aVSk9JZKrTDpJOIu8FA7mitqP+oPYQ/gmyTUgdOaOCH8OzFwiuKet+tX5sUfFYQi/c7+DclgQA6psFoeTFfltIrnweu5Q++Z+RSq2ZCC7EigdfqvIuIsM7lPP5u1Jm0nFYvmAG5xY0tUeOn8ZjYalyYTzo08rodX3J1ICVyhefRfYzIvVWhktuJHldsfRD4U7 mikko.riippi@G0029"
-    password: "*"
-  - username: geroli.peedu
-    fullname: Geroli Peedu (NIIS)
-    ssh_keys:
-      - "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCtRp/E2WKqj8EVJqo8ILPJjDPzs/Geru6daAdHN7pyeYQwyWat9B7kv9WbGWiDh8u3mc+UwpE8mzBTyvA0WPOB/gZ6tZP4OglffHFEynDZJHa69J/rjjQbpOcbaat6eqPnKyvNGL966Awb/oYMwwq7fh0XJrmGjU2IddlhGljRHr+nZk8D6CosQwM4VtKFKQ4AFbseZiWnL/3gXs2A9MdZBhKFDAsQy7ebmzfJGmCqNho/WntrJQmpVUeiVzexkl4B+xILmaOaBP7IpXxSKMblVhEAo4cPNmnQS7V1xHYnj3SP2eVQzFtnNWxrK+o07e4493IHjWeELHAtTQKWf1kb geroli@Kristis-MacBook-Pro.local"
-      - "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDYvG2NqlSn7zblAb6h9OhxKqHR1vAj8T9/Ee5w6Zsu5IiXBx2ov9r8c9xtLVVNZXe1dGumWdNtNaaV/ZFfRWkhlDuXDHQ/Z2ZZo+1PCrIDw/Y6zQ7LJWcfgAaPDz6NdsJpZ1arOAvGKZlMgrNoAiUolspFQuZl0vISIqy3x8Vm9SR1ElbV0bgbcixuGods+tzpz+qZrcLhgtfohou+M+PD3yq6Iko2bNr6ALOW4LXB7Uhj/mX/CRzVDO492fG6ADgVXLOXktx6tAQDhh0aIpYP9FnB4ZWJsZEvvMnOYThwuv2tgx6XmYNH3JtovChn/iUoNICOBH0p/Qvdr6e/N58V geroli@Kristis-MacBook-Pro.local"
-    password: "*"
   - username: raido.kaju
     fullname: Raido Kaju (NIIS)
     ssh_keys:
       - "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCyFMnFEipm2exf59vXr+TloE+9ZrHVUzNyiidAOqrTlHSheGyUUs6o4GxoU9pERfU+7gFbZmbPudWLjUo1J4DA4Xhz/8xBI/xd//zOdikpzFGNYxHfB/5/SI+dZSNntc6yhARbnWrVLyRFGytimKGQ3LoydO2kem4wpGfVGN1SdBnbBejJjRKik47rlCJ9UTn5UcVOUgVC0bVnM5CQzPswE9VFt9qyuazqYCGa9l4SbnWUhhNZ9XlejydPKEdNTyDyTz1o+Ncezrw2DRTNVcPvJaEk10JtGP14vFg6GqcOT3/GR5hsUsemSyj17BFhzykUqNdSxLJuJrz/wxIcekkR raits@raidos-mac.local"
     password: "*"
-  - username: alberto
-    fullname: Alberto Fernandez Lorenzo (Gofore)
-    ssh_keys:
-      - "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCqvXtOeKVWIR2YHqmBhzlA5YYqM0VSlcebio7HH2kW5uj9vR5uhquFYa1aRGuNCfdZwfbz6PIQdDlGIwJb1+m8a9ZVhUyuMuknnExDMcjc8LQZSkODOwfM2dOVtLxOFyz68RkM/H2BBSXRU11AEqaE8MYGOpbmCGikDd2Uffc4E+5i5AibnHlJukaGew0wXeQZVMvPyqowiZnUAUBqnAYcW0Rgxdg4CxRPPthlPlLJWCGJ5A4S2SdbNYRSRVKLLwiR0tHy6WVj0UhkplwJ3Kyb4S0N8iaasup4CxZVKzCo6fT/I145Z0xZ9T+VBWS2bYQ88pUVpgHcoFVOSIDr5+1r root@alberto-ThinkPad-X1-Carbon-7th"
-      - "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCqvXtOeKVWIR2YHqmBhzlA5YYqM0VSlcebio7HH2kW5uj9vR5uhquFYa1aRGuNCfdZwfbz6PIQdDlGIwJb1+m8a9ZVhUyuMuknnExDMcjc8LQZSkODOwfM2dOVtLxOFyz68RkM/H2BBSXRU11AEqaE8MYGOpbmCGikDd2Uffc4E+5i5AibnHlJukaGew0wXeQZVMvPyqowiZnUAUBqnAYcW0Rgxdg4CxRPPthlPlLJWCGJ5A4S2SdbNYRSRVKLLwiR0tHy6WVj0UhkplwJ3Kyb4S0N8iaasup4CxZVKzCo6fT/I145Z0xZ9T+VBWS2bYQ88pUVpgHcoFVOSIDr5+1r root@alberto-ThinkPad-X1-Carbon-7th"
-    password: "*"
-  - username: raul
-    fullname: Raul Martinez (Gofore)
-    ssh_keys:
-      - "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDUQcAOHKHnKVYBiS0SJgfjCf29e4ifp2NoFgEzN8ay1Rh1epPrPtDwR0yGuoNd8bfz+4dV+OMJG6lc63InW1NH2ssMuRITrkjtpFPpJXjgf2+C5KsuUEXYNlpONb6GFkswg2FVYBLaU++dl7y07w0S7x57qc4vzeNJ7fJO4BL1lZhxevC/ZQhnEzyFQLNl5zdBThvP2qgkruIN+Ow1FNAjiLneZCk2lMKt+Kp0AGFErTvNgg4h/HKlg1RQaovW9IRHxOmFx2yVjjSkS5qQNp9k7Ba1Xb7dIxoKKkUq2/8laJTvPDt9GwCq4hgZM4jiJJ2ojvxGDwpq8GtR71FKYCi3 raul@G0052.local"
-      - "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQCt+dGhL2zDV8EsksHMgo/PfTMsJQH1ccw/cOnaAo0aLlHNx0jFoWFMTVp4t8UyKJfEFeLt49i7cERnA3kbW7klj6Mxwh91QYyNBzBbe+U5rYkNTae9kdCox2BTdj3+WmDQHNsEU/xW/UxyoGDYhXJzAxdcqsQG4fjcwPDE1ITpYaEk5VwZD4ksqEUQIoBquhriGzhqTy3OShtSAo033wvGY413bZn95igu6BEIfohklYjTYBtLb4A2j5rEwUNH2L0/0BcgEW44ePHEzzREZAFXxu5q2kW0fm0Wp9DZfDghJ0vKOWaHsL6wbVEheoXcHWI4ZN2BiJnTvVdpB2v+goOfO/zzS416OtXQP7pVnn4fTHByMfOfY+nh/PElKZZJOisZ4NSNGu4KKtUKpg49HH2wCeNFxDlAKjFa7ZIlveIJ/09nQYNKi5k/rGAf9SaIGGbEB1XH7SVP+CRz/fv6KTjHjoLV3MfKRnLoz6S60USpnHoaTN6KG4j+PmV6ytnRQ4f0n+AkjUXIy/gxKNJvpZLKCOqIE7H3lFDEmrlp5JjwHIdivTH8m8kPQK1rFVIcR62nV5hbc7VbQ69gwt8MSp9vdjUeM5m/06HNftcuc2K7Iar5uhhM8/khPOgLTnvZLoj4tMYfWjfZyD/RNulDd+VCYla57gxo8z93paTxrj2Jtw== raul@G0052"
-    password: "*"
-  - username: mvjseppa
-    fullname: Mikko Seppälä (Gofore)
-    ssh_keys:
-      - "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDIjXdGoNgoWTr8gnxm3cPkAskcflhJWtaPeYrRg2v7XRMLFkRCk5pJ3K3OVtVEuCzpupiOoAFXbYL0wrfQDoC5lEJnAPQvUjCvIWm7LjSJ/42l1jlOVztDzz/nY8Jq3t/dnKA7YPxY8TS2pP+tcExKd7MhdAb9T7h2Smozoef+uZvbuCnFBky+q/korZNZVhk37Q4WMcroYQcfLWE7lSYpHqfFiIqeUTjCBok9Fi3dRCUUqvBdAF9uicIcq0SSvfvyG+/aApaGsPi/BL7dHuXNEmLuy2uaP7coAIU/D0UEG3qYl7UR93HtOwO+TNS+mYrXrhsk/pJ1RC7Vq7nBPssR mvjseppa@MacBook-Pro.home"
-    password: "*"
-  - username: teemu.kurki
-    fullname: Teemu Kurki (Gofore)
-    ssh_keys:
-      - "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQC4ql2TAjd/hae6hHrg5maGeS6V2F2snWAhzm4r8HtbAlh/TB7L59BLS0/Cj86ze4GPEfBGcXT5GGHltsM3/Ffi+uK9VqCwVYK2sigjcOfEJHuwuQByZN0yTY0qxgRzKhQhd3peWuYmPB/IZDxXrOJ/eY5iKmlAFENJgkvvvTRRAcWSFf4/IAXBdZOJJ7BZwBVdj+EnAwbDSGuaXeYkj2AFPVjWaJJ9vcPwRl1RCM2dcK15j6SAgFgXcDtWs6MClL4c+IOil9QqFZUqWMPyB3u7AGNiBEbFzQiGl+64TUK1NPb3Slna1CbgnhZVsk22KQkfo+nMyc/UtAzirRaaISR4RWNVSteMQIcKSL605/2YfxKiVmqhTV9Vm0FliwaS9kJmhQiZdjJtiUDDt0O696L0UORV43UNJ3oVxdJJM8RcQz3paGF+Bj49pTmY1zMBeR96+5/ypVfrDIMLX3/IaWg10aD1aVVMViPXEsBZcXUbVXDhpxClTo9xYre2HdnjCeeVKp0xO4292q394+n/UgxTrk2R44rzg9uoKAxI+2SAC1W5OhfFpqcypWxbzBSi2ayh0NcFnvvfuGl/r4qUrM38HEF4nXScyDaSohbetm9n2Iz4PVLYEWjMTLNVhs/9lAIcby7LTMH6U4X1Pvmw/vp1CEeLYljPXTE9F5WQKrLXtw== teemu.kurki@gofore.com"
-    password: "*"
-  - username: kristel.kadajane
-    fullname: Kristel Kadajane (NOPE)
-    ssh_keys:
-      - "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQDFJpjeal2OMfEoiLf8a7vn06S6qvGyis9w4GOxFbiytXV3tstYfkxaHpGcGj2AAZsuLG/TortcHOfW8pQZ+38Xkk8ThxC9Wg9v/mRiZYaWLnuW+eGb3dJmIlI5C82W1QM16zWNHzqXoZbPThdx/mZTyU+BIDp0XyBPikzsM+gcKKv3030YYUj4u12psOE18gSZ3cKw6l9XNHbzxlC39pos0Bo4lyzixJQDHDyH7AsAtTqZnLpKA0dE9oqfHL7CLFqmrPIDRbPQdyakEYgCpO7p1/6Fgn5FP43uDfcOF3QPBTCRmuCagU8ModDuv0xhHEUVqMI06wQ4jC9BIlawtVDYlOh4o7Yupj9KhoRLJNYd8nNfqkTTV7KnDb3OqsAwid3emNyWmS18wF0MdSyBUoqo7vFErQJdYWM851hj6biVcFjc7J3PyivkFZsyqpmXxadQaMa/cjwbxCuys+f5sJrdC76ZcoAJfg4pjkG0N/Z95jvWz0sY/7Bi6Pv1HMhz1EM= kristel@KristelariasMBP.lan"
-    password: "*"
-  - username: janeli.oun
-    fullname: Janeli Õun (NOPE)
-    ssh_keys:
-      - "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQC2kzlFQg7StAnorBvn1o21LYJl+YdrUJYEaMN/nPyGzhTj0efKb8OPaWMm2O5FxKdKuz4RXHojAi86hwImwyShUJRgycb/m37472GZ+VmEnf8k0VPGAC6XIdlYbeVqxGIE1NfEq75n1SJfyZ+uCkl5V9jzVPEt9YuJ6TxDBf6X5EoeeYsYE9SSolrj30uM3jiVP01gOt4z+sG36KteFLjcsDlf6w+R3e/YaaxyrazSFQWU3iY9g0o+aXoWSKpXB7jEi5QdacJ/Vt7lYVOlmEEiyUH+jhjrnKN1et1afaW2sv4ZkjVn6XwpL+Cbimw3T0bbpE7HFDC1J0eo8yNbOdPJSA6vUWiKjmuv9zNUtEbAiitA38PLQBPRTykswfxfOhrOqMTcGBJzv4OLg9lG2SaiInl0VQZd2WGHGKaeSw810LeFVyz4wOWvx4XIM70WOCENwLQm0kXoj/e8+Y9bxTjvL6Izt9c9Gp6ssSFLxEHtDX3yargiVlKlEf1060ZGysU= janeli@Janelis-MacBook-Pro.local"
-    password: "*"
-  - username: bert
-    fullname: Bert Viikmäe (Gofore)
-    ssh_keys:
-      - "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQCXL0+Uk9doua1e4QwlTrS/phYzUmqBUlLZFXw2lcnsxUm2T4G55/OKatzQ21g5N+3BLMfs2tKwY4Qo26d19y+RmHZQj10mwEFl1z6Ljg0MYECum4pKWpB6A2P7DtnSMH34iM5ZnlVJx4Y0v498XuSIk0rJCJT8mCYJ3ItzmgMx5UUq9QHUyl86Tqrx0BozgvIffc+cnJYKOCAwTtpGeQULcNxwWGhvqlE2VlyG+b+woM3WgLlN060eZgvVpeKoq85x2VhVefqb18i8tEU1XwkWcRFMvkBMvfnzkYL1jM6rbZSj0zxmGw9N4TedyS0L6dMWmdm2wm4tIIUr+7+rrxTjlxHAX+MMIe/ydgaG1bb9cShbegyGdEWl9QHjHictAxbxhLptFAY107ex2Djz5r/4mMX3wz9rjivpx1IamPL3RarrgtDRBz6IUykJpzitOW9U5P28ylMfveEDsoCU9ZQXlObesO8xoN081SbA6f3Hk0gMjaQ2FK/cpoKkodNvdvE= bert@bert-laptop"
-    password: "*"
   - username: andres.allkivi
     fullname: Andres Allkivi (Gofore)
     ssh_keys:
       - "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQC4poAJDrz4nhcKsI6S6nd3JBHfEf87aPq4QJ78/yXTFmypHbCGZRii+ZIfdXaMCP90lEDE+2AszdobikQpxlvxrwP35CiW2wLg7V2AO6LNzUJuTA7FRn61pScbrroHi+Jz/t2iSw1Vmnegn1BE1pC1qjAArkghWgLxPY6DeLRb1dDuyeEf3NxYlZr2sSQHVD7tLqP/f1pWvwaLy0XEl2W7rbJnx13prJmUR7KDgU/rFFhlLKc6lm/Dy4NBMhRO9l42qC/LwH2oixKzLwdu94gUaQPvDkZKS34oHGyKpxqWNqm1FZkM+3jz2ZILg+koEMuyzCHY2pJvBDYgvf9RIR7/QPnEq42olgCZRV4LJYi/EH6yf37Hlx1vzL1RDmoJ2ayrmoQBobIc9a68i4wTHjSeGehwZCX2zwQt92MzpngXdeaWe0qgqtUq3sQmmBM4x/xxOzEujUX/GqM0SYk9Skl/Uw146hdnbuZ7kFSsIvWOXmD2DclJ25rSZ9Du1dNdxrE= andres.allkivi@gofore.com"
-    password: "*"
-  - username: turkka.holmqvist
-    fullname: Turkka Holmqvist (Q-Factory)
-    ssh_keys:
-      - "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDCRYkG0zO/n4KERQxVpa0dGA3zV+AhOf2JpXzIZchz5Bm6b5p2ANIjQ5iZ3c4piQ8KnBuuoluSkMJqGYYxfP0Tcw3FrZhkgLFYNJnE3QezIBbI0iI5E9y2JF2mzx/cM0XugOE+GBibECFWXgAKIc4RBGYtMh/cPDIMOrlvTyEQdVomsUZl6pI1kPV2CJcD6u25ogrdQMJIKFHT9Yh2N8egyo669VzfAW3A5/soEyGp6/BgPdwWiN9X6sEog72LP+VbNLgrtsYto66gO3gCdrum5b5SuBPFGrE+J6/VdveFNMqoMRaSY4Rtgu1Zfe8UEaclksXLyQuAvH79wee3+sON turkkaholmqvist@Q-Factory"
-    password: "*"
-  - username: marten.soo
-    fullname: Märten Soo (Gofore)
-    ssh_keys:
-      - "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQD2n+F7sO+peF2c36wFGxkzX/SuHMoKV86rIfig/EvMEYMvXOUiFe0DnWrBpo1mykm9LWT1V8w+40j9+93mmUrLRhW79geYD7PUdF0tAPEH6WzNdIwRTCkgo9o1XVofZ/5I6kxIFUW944RN99l4swPLmRd9DznSGrFAd+imus5VhrEPLhz2Q/azdnM+wpOyHrp7c+l2Jdjj21AbhaMi3C7Gknh6EvHXTPGtrVt+CbsZAFhJHh4BiwwvK3xefqzeaqQrVvqVo9TZHkk2n1095AiDDFimSKyQJEqxI+XxWwv9nK51M/k/GgG0LWyEwOEgBSOr88wGsdMeM8iv4iBd/75cdTMmcQqN4gwnD0/9O7dtm5l6NXsHVQLqBikHEohZ0Ig+3N0GadMnjZjNG+4ituqKZQGj+/HSnEmxJhTxii0EsaaV/SBaPg+hI2fJUOvkyaXKbyT9vG27ONbiwtlkT7Kx9mcAx4Y+oKh9hVpvsEVQVr59k5qlOhGbSDjt3KUGpck= marten.soo@G0588.local"
     password: "*"
 
 
@@ -111,23 +27,3 @@ admins:
 exits:
   - username: alberto.fernandez 
     fullname: Alberto Fernandez (NIIS)
-  - username: anssi
-    fullname: Anssi Pekkarinen (Q-Factory)
-  - username: lasse
-    fullname: Lasse Matikainen (Q-Factory)
-  - username: toni.huttunen
-    fullname: Toni Huttunen (F-Secure)
-  - username: henri
-    fullname: Henri Haapakanni (Gofore)
-  - username: lauri
-    fullname: Lauri Koutaniemi (Gofore)
-  - username: guido
-    fullname: Guido Casalegno (Gofore)
-  - username: andreskostiv
-    fullname: Andres Kostiv (Gofore)
-  - username: olli
-    fullname: Olli Ruotsalainen (Q-Factory)
-  - username: tapio
-    fullname: Tapio Jaakkola (Gofore)
-  - username: opmon-audit
-    fullname: F-Secure Auditor
