@@ -15,7 +15,26 @@ admins:
     ssh_keys:
       - "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQC4poAJDrz4nhcKsI6S6nd3JBHfEf87aPq4QJ78/yXTFmypHbCGZRii+ZIfdXaMCP90lEDE+2AszdobikQpxlvxrwP35CiW2wLg7V2AO6LNzUJuTA7FRn61pScbrroHi+Jz/t2iSw1Vmnegn1BE1pC1qjAArkghWgLxPY6DeLRb1dDuyeEf3NxYlZr2sSQHVD7tLqP/f1pWvwaLy0XEl2W7rbJnx13prJmUR7KDgU/rFFhlLKc6lm/Dy4NBMhRO9l42qC/LwH2oixKzLwdu94gUaQPvDkZKS34oHGyKpxqWNqm1FZkM+3jz2ZILg+koEMuyzCHY2pJvBDYgvf9RIR7/QPnEq42olgCZRV4LJYi/EH6yf37Hlx1vzL1RDmoJ2ayrmoQBobIc9a68i4wTHjSeGehwZCX2zwQt92MzpngXdeaWe0qgqtUq3sQmmBM4x/xxOzEujUX/GqM0SYk9Skl/Uw146hdnbuZ7kFSsIvWOXmD2DclJ25rSZ9Du1dNdxrE= andres.allkivi@gofore.com"
     password: "*"
-
+  - username: marten.soo
+    fullname: Märten Soo (Gofore)
+    ssh_keys:
+      - "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQD2n+F7sO+peF2c36wFGxkzX/SuHMoKV86rIfig/EvMEYMvXOUiFe0DnWrBpo1mykm9LWT1V8w+40j9+93mmUrLRhW79geYD7PUdF0tAPEH6WzNdIwRTCkgo9o1XVofZ/5I6kxIFUW944RN99l4swPLmRd9DznSGrFAd+imus5VhrEPLhz2Q/azdnM+wpOyHrp7c+l2Jdjj21AbhaMi3C7Gknh6EvHXTPGtrVt+CbsZAFhJHh4BiwwvK3xefqzeaqQrVvqVo9TZHkk2n1095AiDDFimSKyQJEqxI+XxWwv9nK51M/k/GgG0LWyEwOEgBSOr88wGsdMeM8iv4iBd/75cdTMmcQqN4gwnD0/9O7dtm5l6NXsHVQLqBikHEohZ0Ig+3N0GadMnjZjNG+4ituqKZQGj+/HSnEmxJhTxii0EsaaV/SBaPg+hI2fJUOvkyaXKbyT9vG27ONbiwtlkT7Kx9mcAx4Y+oKh9hVpvsEVQVr59k5qlOhGbSDjt3KUGpck= marten.soo@G0588.local"
+    password: "*"
+  - username: heikki.stark
+    fullname: Heikki Stark (F-Secure)
+    ssh_keys:
+      - "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQDPPQjIbK7HiLGeWSrSTdB7upq2t9JkIUJip8qZOFI//WsumChi1+0rpQT7nhVmYQV1MdfO8BxU38szseDMprZv7z7HDRRhgEMl2hdS2xRVkgqsTUfxtoIXaztrlzCCEHBTeCEE5TxKIJeOfdA+nYbmV00Ee5leJaQUQZm0bhaK8tBy4FzhuOBaybzwuSvTLOyTLA9YkR5IvQnqh7xDw43VK9xuYcQPZNrZTI69k0TGFCRRhTDLqUX7W1W4ir4WjmNtreWCU+GKsJzOTmb2ZpoXuRjzBaXedlh1hM9hGN3ykI+NXA+Kct6sNvfm2wOW4ad8nMxMKAo4TZYHBEKuLwNIZAuL3YzmH0lo3HEg7uKIXTCOCJ2N4n7VwAHf/Um9bVZrM5SpcSoAKQVOwGyGsZN8eeX46WXTbQy1vTBNTbBVTfGzKxnaIhtB9sB4VwG/hfMs7bWrXK+ZsoMtzuTn3IaL7aObDUrRQbdXtiB2qBIpacqkNu3TiDRq770/VQO8jptr3+8PxtcLWiY2c+a3PFsxg72e5GWFWv6EF8uXvgSdQ+2pbXoH3Xd7in+btvAB7Lhu6yNpFP+HKUL0fR+bBGV/AJaKh0WJIx+Dz9iaIOS5MwA7HUdE0zpu2+iolfGvHfEls1+YOMGGyfrlKQrLrGr5sO/wX3SkUZGCYTqJAiQ9NQ== heikki.stark@f-secure.com"
+    password: "*"
+  - username: max.lassila
+    fullname: Max Lassila (F-Secure)
+    ssh_keys:
+      - "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQDOJqjynkfMBliBnThQsh+tQRgVPkAzpFF3csuqY40OefqGTjo8Y8j9RMpMEWXjxcG2ygsCfU79ZUwHJk8KwTiKMrjZaxFA+THDNkPYZ/4FltUY175pKBHE9Fbw1UUac/KQ49QNRNX7vxNCoAD1yVaNfFruJhk0pOjWp309gMoxGY0DtgzrfRGmgLIuliNeC6pg6+yXjSxS+EIIcAMD1ZYT5aBuPaUcbazqNNQ35HhzMab1qtkWimt7N4coMabUjE2NOENKLgsBDtw7tHZTSWaw+m45D3xdlSjd6IljQVe4zOiseybrNhg/QBFRqJCP5gI42Tiu3Xvg1AH71OXrZlhBTySi9ege8ZH+LIGjebJtpMdDd5QDymuhZdY64ATpP/5uJB6RwD4iEybj0bga6H2b0fy4pnCjZys8sKoY/azcWPYYuNNI3hFna0eds64PcrYKSCkQ0dUlz+YfaOtMGX/MbFyPRzH49ezzfuoWX7VMPl3+9CXeVNiZpPO6+gwT17JlrODWejZ1BFOHsdlMycd6TsI1DOAARO/dOq8hAb5FbUtJeuRdRmvmQTMk/nZBvdGMeMz2g2KctUMzqWCMyx/GK5WHmSsbmTCYXE3gg9gnzTM3equvwikYZ95Rz4Q8+F5sgPKHe1uGOwpuQ42/7Vn7fkL9KGzeSBvt3dSP0ZZWhQ== kali@kali"
+    password: "*"
+  - username: willem.van.der.schoot
+    fullname: Willem van der Schoot (F-Secure)
+    ssh_keys:
+      - "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAINRA6IL/4K8H8Aa0dAsKOzPYqwIrP2vUgfP8CRikUoPZ willem.van.der.schoot@f-secure.com"
+    password: "*"
 
 #
 # People who have left the ship
@@ -24,6 +43,7 @@ admins:
 #  - username: foo
 #    fullname: Foo Bar (Snake Oil Company)
 
+# this list can not be empty!
 exits:
-  - username: alberto.fernandez 
-    fullname: Alberto Fernandez (NIIS)
+  - username: placeholder
+    fullname: Foo Bar
