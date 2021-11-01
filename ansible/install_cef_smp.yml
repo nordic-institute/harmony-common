@@ -27,6 +27,10 @@
     - import_tasks: tasks/find_sml_ip.yml
     - import_tasks: tasks/find_smp_ip.yml
 
+  post_tasks:
+    # change dns as last move, otherwise setup depends on sml working
+    - import_tasks: tasks/private_dns.yml
+
   roles:
     - mock_cert
     - common
@@ -34,7 +38,6 @@
     - role: tomcat
       vars:
         setenv_file: "{{playbook_dir}}/files/smp/setenv.sh"
-    - private_dns
 
   tasks:
     - name: ensure certificates directory exists

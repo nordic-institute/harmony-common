@@ -53,12 +53,20 @@ tar -xvzf commonbin/apache-tomcat-9.0.52.tar.gz -C commonbin/tomcat9 --strip-com
 rm commonbin/tomcat9/conf/logging.properties
 rm commonbin/tomcat9/conf/server.xml
 
-# copy domibus war and ws plugin jar
-cp ../../domibus/Domibus-MSH-tomcat/target/domibus-MSH-tomcat-4.2.3.war commonbin/domibus.war
-cp ../../domibus/Domibus-default-ws-plugin/target/domibus-default-ws-plugin-4.2.3.jar commonbin/ws-plugin.jar
+# explode domibus war
+mkdir -p commonbin/harmony-ap
+rm -rf commonbin/harmony-ap
 
-# copy smp war
-cp ../../smp/smp-webapp/target/smp.war commonbin/smp.war
+unzip ../../domibus/Domibus-MSH-tomcat/target/domibus-MSH-tomcat-4.2.4.war -d commonbin/harmony-ap
+
+# copy ws plugin jar
+cp ../../domibus/Domibus-default-ws-plugin/target/domibus-default-ws-plugin-4.2.4.jar commonbin/ws-plugin.jar
+
+# explode smp war
+mkdir -p commonbin/harmony-smp
+rm -rf commonbin/harmony-smp
+
+unzip ../../smp/smp-webapp/target/smp.war -d commonbin/harmony-smp
 
 prepare ubuntu20.04
 builddeb build/harmony/ubuntu focal ubuntu20.04

@@ -34,8 +34,8 @@ case "$1" in
   SMLZONE="$RET"
   db_get harmony-ap/adminuser
   AUSER="$RET"
-  #db_get harmony-ap/adminpassword
-  #APASSWORD="$RET"
+  db_get harmony-ap/adminpassword
+  APASSWORD="$RET"
   db_get harmony-ap/servercn
   SERVERNAME="$RET"
   db_stop
@@ -55,11 +55,11 @@ case "$1" in
 
     mysql harmony_ap < /opt/harmony-ap/setup/harmony_ap_schema.ddl
 
-    # todo how to "encrypt" password?
-    APASSWORD='$2a$10$5uKS72xK2ArGDgb2CwjYnOzQcOmB7CPxK6fz2MGcDBM9vJ4rUql36'
+    HASHEDPASSWORD=$(java -cp "/opt/harmony-ap/webapps/domibus/WEB-INF/lib/*" \
+      eu.domibus.api.util.BCryptPasswordHash "$APASSWORD")
 
     mysql -e "INSERT INTO harmony_ap.TB_USER (ID_PK, USER_NAME, USER_PASSWORD, USER_ENABLED, USER_DELETED, DEFAULT_PASSWORD) \
-       VALUES ('1', '$AUSER', '$APASSWORD', 1, 0, 1);
+       VALUES ('1', '$AUSER', '$HASHEDPASSWORD', 1, 0, 1);
         INSERT INTO harmony_ap.TB_USER_ROLES (USER_ID, ROLE_ID) VALUES ('1', '1');"
   else
     echo "Schema harmony_ap already exists. Skipping schema creation" >&2
