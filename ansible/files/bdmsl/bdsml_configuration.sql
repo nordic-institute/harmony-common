@@ -36,7 +36,7 @@ insert into bdmsl_configuration(property, value, description, created_on, last_u
 DELETE FROM bdmsl_certificate_domain;
 
 INSERT INTO bdmsl_subdomain(subdomain_id, subdomain_name,dns_zone, description, participant_id_regexp, dns_record_types, smp_url_schemas, created_on, last_updated_on) values
-(1, 'niis.neds','neds','Domain for smpa.neds','^.*$','all','all', NOW(), NOW())
+(1, 'niis.neds','neds','Domain for niis.neds','^.*$','all','all', NOW(), NOW())
   ON DUPLICATE KEY UPDATE subdomain_name='niis.neds', dns_zone = 'neds', participant_id_regexp='^.*$', dns_record_types='all', smp_url_schemas='all', last_updated_on=NOW();
 
 
