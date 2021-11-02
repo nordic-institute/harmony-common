@@ -40,11 +40,6 @@ case "$1" in
   DBUSER=harmony_smp
   DBPASSWORD=$(openssl rand -base64 12)
 
-  mkdir -p /opt/harmony-smp/webapps
-  rm -rf /opt/harmony-smp/webapps/ROOT/
-
-  unzip -qq /opt/harmony-smp/setup/smp.war -d /opt/harmony-smp/webapps/ROOT
-
   SCHEMA_EXISTS=$(mysql -s -N -e "SELECT SCHEMA_NAME FROM INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME='harmony_smp'");
   if [ -z "$SCHEMA_EXISTS" ]; then
 

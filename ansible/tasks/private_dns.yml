@@ -1,14 +1,14 @@
 ---
 - name: copy 50-cloud-init.yaml
   template:
-    src: 50-cloud-init.yaml.j2
+    src: "{{playbook_dir}}/files/private_dns/50-cloud-init.yaml.j2"
     dest: /etc/netplan/50-cloud-init.yaml
   register: cloudinit
   when: private_dns is defined
 
 - name: copy 99-disable-network-config.cfg
   copy:
-    src: 99-disable-network-config.cfg
+    src: "{{playbook_dir}}/files/private_dns/99-disable-network-config.cfg"
     dest: /etc/cloud/cloud.cfg.d
   register: disablenetwork
 

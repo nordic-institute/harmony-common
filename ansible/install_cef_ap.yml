@@ -40,11 +40,14 @@
   pre_tasks:
     - import_tasks: tasks/find_sml_ip.yml
 
+  post_tasks:
+    # change dns as last move, otherwise setup depends on sml working
+    - import_tasks: tasks/private_dns.yml
+
   roles:
     - mock_cert
     - common
     - mysql
-    - private_dns
     - role: tomcat
       vars:
         setenv_file: "{{playbook_dir}}/files/domibus/setenv.sh"
