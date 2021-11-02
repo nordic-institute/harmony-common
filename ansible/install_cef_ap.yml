@@ -108,11 +108,15 @@
         src: "{{playbook_dir}}/files/domibus/domibus.properties"
         dest: /opt/tomcat/conf/domibus/domibus.properties
         force: yes
+        owner: tomcat
+        group: tomcat
 
     - name: ensure certificates directory exists
       file:
         path: /opt/tomcat/conf/domibus/keystores
         state: directory
+        owner: tomcat
+        group: tomcat
 
     - name: create ap keystore
       java_keystore:
@@ -121,14 +125,18 @@
         private_key: "{{lookup('file', playbook_dir + '/neds_ca/host_certs/' + ap_hostname + '.key.pem') }}"
         password: password
         dest: /opt/tomcat/conf/domibus/keystores/ap-keystore.jks
+        owner: tomcat
+        group: tomcat
 
     - name: copy truststore
       copy:
         src: "{{playbook_dir}}/neds_ca/neds-ca-trusted.jks"
         dest: /opt/tomcat/conf/domibus/keystores/ap-truststore.jks
         force: yes
+        owner: tomcat
+        group: tomcat
 
-    - name: copy domibus war to webapps
+    - name: copy domibus ws plugin to lib
       copy:
         src: "{{playbook_dir}}/files/binary/conf/domibus/plugins/lib/domibus-default-ws-plugin-4.2.4.jar"
         dest: /opt/tomcat/conf/domibus/plugins/lib
