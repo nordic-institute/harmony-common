@@ -1,6 +1,6 @@
 AWSTemplateFormatVersion: 2010-09-09
 Description: >-
-  NIIS eDelivery solution test and development environment (2021-08-05).
+  NIIS eDelivery solution pentesting environemnt (2021-10-28).
 Parameters:
   AvailabilityZone:
     Type: AWS::EC2::AvailabilityZone::Name
@@ -49,7 +49,7 @@ Parameters:
   Environment:
     Description: Environment name (string, just letters, plz)
     Type: String
-    Default: neds
+    Default: nedspen
   HostedZone:
     Description: Route53 hosted zone
     Default: x-road.rocks
@@ -62,10 +62,6 @@ Parameters:
     Description: Subnet ID, sync with AZ!
     Type: AWS::EC2::Subnet::Id
     Default: subnet-6fb00609
-  JenkinsSecurityGroup:
-    Description: Security group of Jenkins server(s) (e.g. jenkins-sg)
-    Type: AWS::EC2::SecurityGroup::Id
-    Default: sg-8cc0aaf1
   BastionSecurityGroup:
     Description: Security group of bastion server (e.g. bastion-sg)
     Type: AWS::EC2::SecurityGroup::Id
@@ -141,7 +137,7 @@ Resources:
         chmod 0700 /home/niis
         chmod 0700 /home/niis/.ssh
         chmod 0600 /home/niis/.ssh/authorized_keys
-  SMPInstance:
+  SMPBlueInstance:
     Type: AWS::EC2::Instance
     Condition: CreateSMP
     Properties:
@@ -156,7 +152,7 @@ Resources:
       SubnetId: !Ref SubnetID
       Tags:
         - Key: Name
-          Value: !Sub ${Environment}-cef-smp
+          Value: !Sub ${Environment}-blue-smp
         - Key: env
           Value: !Ref Environment
         - Key: role
@@ -179,7 +175,7 @@ Resources:
         chmod 0700 /home/niis
         chmod 0700 /home/niis/.ssh
         chmod 0600 /home/niis/.ssh/authorized_keys
-  NIISSMPInstance:
+  SMPRedInstance:
     Type: AWS::EC2::Instance
     Condition: CreateSMP
     Properties:
@@ -194,7 +190,7 @@ Resources:
       SubnetId: !Ref SubnetID
       Tags:
         - Key: Name
-          Value: !Sub ${Environment}-niis-smp
+          Value: !Sub ${Environment}-red-smp
         - Key: env
           Value: !Ref Environment
         - Key: role
@@ -217,7 +213,7 @@ Resources:
         chmod 0700 /home/niis
         chmod 0700 /home/niis/.ssh
         chmod 0600 /home/niis/.ssh/authorized_keys
-  APInstance:
+  APBlueInstance:
     Type: AWS::EC2::Instance
     Condition: CreateAP
     Properties:
@@ -232,7 +228,7 @@ Resources:
       SubnetId: !Ref SubnetID
       Tags:
         - Key: Name
-          Value: !Sub ${Environment}-cef-ap
+          Value: !Sub ${Environment}-blue-ap
         - Key: env
           Value: !Ref Environment
         - Key: role
@@ -255,7 +251,7 @@ Resources:
         chmod 0700 /home/niis
         chmod 0700 /home/niis/.ssh
         chmod 0600 /home/niis/.ssh/authorized_keys
-  NIISAPInstance:
+  APRedInstance:
     Type: AWS::EC2::Instance
     Condition: CreateAP
     Properties:
@@ -270,7 +266,7 @@ Resources:
       SubnetId: !Ref SubnetID
       Tags:
         - Key: Name
-          Value: !Sub ${Environment}-niis-ap
+          Value: !Sub ${Environment}-red-ap
         - Key: env
           Value: !Ref Environment
         - Key: role
@@ -309,7 +305,7 @@ Resources:
   SSHSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
-      GroupDescription: SSH from bastion and CI, UI and from bastion
+      GroupDescription: ssh, http and soap from/to bastion
       VpcId: !Ref VpcId
       SecurityGroupIngress:
         - SourceSecurityGroupId: !Ref BastionSecurityGroup
@@ -350,50 +346,50 @@ Resources:
       TTL: 900
       ResourceRecords:
         - !GetAtt SMLInstance.PrivateIp
-  SMPPrivateIPDNSRecord:
+  SMPBluePrivateIPDNSRecord:
     Type: AWS::Route53::RecordSet
     Condition: CreateSMP
     Properties:
       HostedZoneName: !Sub ${HostedZone}.
       Comment: DNS name for SMP instance's private IP
-      Name: !Sub ${Environment}-cef-smp.i.${HostedZone}.
+      Name: !Sub ${Environment}-blue-smp.i.${HostedZone}.
       Type: A
       TTL: 900
       ResourceRecords:
-        - !GetAtt SMPInstance.PrivateIp
-  NIISSMPPrivateIPDNSRecord:
+        - !GetAtt SMPBlueInstance.PrivateIp
+  SMPRedPrivateIPDNSRecord:
     Type: AWS::Route53::RecordSet
     Condition: CreateSMP
     Properties:
       HostedZoneName: !Sub ${HostedZone}.
       Comment: DNS name for SMP instance's private IP
-      Name: !Sub ${Environment}-niis-smp.i.${HostedZone}.
+      Name: !Sub ${Environment}-red-smp.i.${HostedZone}.
       Type: A
       TTL: 900
       ResourceRecords:
-        - !GetAtt NIISSMPInstance.PrivateIp
-  APPrivateIPDNSRecord:
+        - !GetAtt SMPRedInstance.PrivateIp
+  APBluePrivateIPDNSRecord:
     Type: AWS::Route53::RecordSet
     Condition: CreateAP
     Properties:
       HostedZoneName: !Sub ${HostedZone}.
       Comment: DNS name for AP instance's private IP
-      Name: !Sub ${Environment}-cef-ap.i.${HostedZone}.
+      Name: !Sub ${Environment}-blue-ap.i.${HostedZone}.
       Type: A
       TTL: 900
       ResourceRecords:
-        - !GetAtt APInstance.PrivateIp
-  NIISAPPrivateIPDNSRecord:
+        - !GetAtt APBlueInstance.PrivateIp
+  APRedPrivateIPDNSRecord:
     Type: AWS::Route53::RecordSet
     Condition: CreateAP
     Properties:
       HostedZoneName: !Sub ${HostedZone}.
       Comment: DNS name for AP instance's private IP
-      Name: !Sub ${Environment}-niis-ap.i.${HostedZone}.
+      Name: !Sub ${Environment}-red-ap.i.${HostedZone}.
       Type: A
       TTL: 900
       ResourceRecords:
-        - !GetAtt NIISAPInstance.PrivateIp
+        - !GetAtt APRedInstance.PrivateIp
 Outputs:
   SMLHostname:
     Condition: CreateSML
@@ -403,36 +399,36 @@ Outputs:
     Condition: CreateSML
     Description: Ip Address of SML
     Value: !GetAtt SMLInstance.PrivateIp
-  SMPHostname:
+  SMPBlueHostname:
     Condition: CreateSMP
     Description: Hostname of CEF SMP
-    Value: !Ref SMPPrivateIPDNSRecord
-  NIISSMPHostname:
+    Value: !Ref SMPBluePrivateIPDNSRecord
+  SMPRedHostname:
     Condition: CreateSMP
     Description: Hostname of Harmony SMP
-    Value: !Ref NIISSMPPrivateIPDNSRecord
-  SMPIpAddress:
+    Value: !Ref SMPRedPrivateIPDNSRecord
+  SMPBlueIpAddress:
     Condition: CreateSMP
     Description: Ip Address of SMP
-    Value: !GetAtt SMPInstance.PrivateIp
-  NIISSMPIpAddress:
+    Value: !GetAtt SMPBlueInstance.PrivateIp
+  SMPRedIpAddress:
     Condition: CreateSMP
     Description: Ip Address of SMP
-    Value: !GetAtt NIISSMPInstance.PrivateIp
-  APHostname:
+    Value: !GetAtt SMPRedInstance.PrivateIp
+  APBlueHostname:
     Condition: CreateAP
     Description: Hostname of AP
-    Value: !Ref APPrivateIPDNSRecord
-  APIpAddress:
+    Value: !Ref APBluePrivateIPDNSRecord
+  APBlueIpAddress:
     Condition: CreateAP
     Description: Ip Address of AP
-    Value: !GetAtt APInstance.PrivateIp
-  NIISAPHostname:
+    Value: !GetAtt APBlueInstance.PrivateIp
+  APRedHostname:
     Condition: CreateAP
     Description: Hostname of AP
-    Value: !Ref NIISAPPrivateIPDNSRecord
-  NIISAPIpAddress:
+    Value: !Ref APRedPrivateIPDNSRecord
+  APRedIpAddress:
     Condition: CreateAP
     Description: Ip Address of AP
-    Value: !GetAtt NIISAPInstance.PrivateIp
+    Value: !GetAtt APRedInstance.PrivateIp
 

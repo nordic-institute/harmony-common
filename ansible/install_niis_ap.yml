@@ -153,6 +153,22 @@
         group: harmony
         mode: 0600
 
+    - name: replace setenv.sh
+      copy:
+        src: "{{playbook_dir}}/files/harmony_ap/setenv.sh"
+        dest: /opt/harmony-ap/bin/setenv.sh
+        owner: harmony
+        group: harmony
+        mode: 0700
+
+    - name: copy clientauthentication.xml
+      copy:
+        src: "{{playbook_dir}}/files/harmony_ap/clientauthentication.xml"
+        dest: /etc/harmony-ap/clientauthentication.xml
+        owner: harmony
+        group: harmony
+        mode: 0600
+
     - name: enable and start harmony-ap
       service:
         name: harmony-ap

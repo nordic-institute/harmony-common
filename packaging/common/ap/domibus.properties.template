@@ -131,7 +131,7 @@ domibus.entityManagerFactory.jpaProperty.hibernate.transaction.jta.platform=com.
 #domibus.password.encryption.key.location=${domibus.config.location}/internal/encrypt
 
 #To activate security set this to false
-#domibus.auth.unsecureLoginAllowed=true
+domibus.auth.unsecureLoginAllowed=false
 
 #Number of console login attempt before the user is deactivated (default 5)
 #domibus.console.login.maximum.attempt=5

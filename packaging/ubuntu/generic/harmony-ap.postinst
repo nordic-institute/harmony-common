@@ -59,7 +59,7 @@ case "$1" in
     APASSWORD='$2a$10$5uKS72xK2ArGDgb2CwjYnOzQcOmB7CPxK6fz2MGcDBM9vJ4rUql36'
 
     mysql -e "INSERT INTO harmony_ap.TB_USER (ID_PK, USER_NAME, USER_PASSWORD, USER_ENABLED, USER_DELETED, DEFAULT_PASSWORD) \
-       VALUES ('1', '$AUSER', '$APASSWORD', 1, 0, 1);
+       VALUES ('1', '$AUSER', '$APASSWORD', 1, 0, 0);
         INSERT INTO harmony_ap.TB_USER_ROLES (USER_ID, ROLE_ID) VALUES ('1', '1');"
   else
     echo "Schema harmony_ap already exists. Skipping schema creation" >&2

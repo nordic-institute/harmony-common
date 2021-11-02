@@ -37,10 +37,12 @@ gencert() {
   openssl rand -hex 16 > ./work/neds-ca.serial
 
   # generate key and certificate request
-  openssl req -newkey rsa:2048 -nodes -keyout  work/"$FILE_NAME".key.pem -out work/"$1".csr.pem -subj "/CN=$FQDN"
+  openssl req -newkey rsa:2048 -nodes -keyout  work/"$FILE_NAME".key.pem -out work/"$1".csr.pem \
+    -subj "/CN=$FQDN/C=FI/O=NIIS"
 
   # generate certificate
-  openssl ca -config neds-ca.cnf -batch -in work/"$FILE_NAME".csr.pem -out work/"$FILE_NAME".crt.pem -extensions server_ext
+  openssl ca -config neds-ca.cnf -batch -in work/"$FILE_NAME".csr.pem -out work/"$FILE_NAME".crt.pem \
+    -extensions server_ext -startdate 211001000000Z
 
   # move files
   mv work/"$1".key.pem host_certs/

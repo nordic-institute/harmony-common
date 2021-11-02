@@ -25,7 +25,7 @@ insert into bdmsl_configuration(property, value, description, created_on, last_u
 ('dataInconsistencyAnalyzer.cronJobExpression','0 0 3 ? * *','Cron expression for dataInconsistencyChecker job. Example: 0 0 3 ? * * (everyday at 3:00 am)', NOW(), NOW()),
 ('configurationDir','/opt/smlconf/','The absolute path to the folder containing all the configuration files (keystore and sig0 key)', NOW(), NOW()),
 ('certificateChangeCronExpression','0 0 2 ? * *','Cron expression for the changeCertificate job. Example: 0 0 2 ? * * (everyday at 2:00 am)', NOW(), NOW()),
-('authorization.smp.certSubjectRegex','^.*(CN=SMP_|OU=PEPPOL TEST SMP).*$','User with ROOT-CA is granted SMP_ROLE only if its certificates Subject matches configured regexp', NOW(), NOW()),
+('authorization.smp.certSubjectRegex','^.*$','User with ROOT-CA is granted SMP_ROLE only if its certificates Subject matches configured regexp', NOW(), NOW()),
 ('authentication.bluecoat.enabled','true','Enables reverse proxy authentication.', NOW(), NOW()),
 ('authorization.domain.legacy.enabled','true','Enables reverse proxy authentication.', NOW(), NOW()),
 ('adminPassword','$2a$10$9RzbkquhBYRkHUoKMTNZhOPJmevTbUKWf549MEiCWUd.1LdblMhBi','BCrypt Hashed password to access admin services', NOW(), NOW()),
@@ -33,12 +33,11 @@ insert into bdmsl_configuration(property, value, description, created_on, last_u
 ('mail.smtp.port','25','BCrypt Hashed password to access admin services', NOW(), NOW()),
 ('sml.property.refresh.cronJobExpression','5 */1 * * * *','Properies update', NOW(), NOW());
 
-
 DELETE FROM bdmsl_certificate_domain;
 
 INSERT INTO bdmsl_subdomain(subdomain_id, subdomain_name,dns_zone, description, participant_id_regexp, dns_record_types, smp_url_schemas, created_on, last_updated_on) values
-(1, 'smpa.neds','neds','Domain for smpa.neds','^.*$','all','all', NOW(), NOW())
-  ON DUPLICATE KEY UPDATE subdomain_name='smpa.neds', dns_zone = 'neds', participant_id_regexp='^.*$', dns_record_types='all', smp_url_schemas='all', last_updated_on=NOW();
+(1, 'niis.neds','neds','Domain for niis.neds','^.*$','all','all', NOW(), NOW())
+  ON DUPLICATE KEY UPDATE subdomain_name='niis.neds', dns_zone = 'neds', participant_id_regexp='^.*$', dns_record_types='all', smp_url_schemas='all', last_updated_on=NOW();
 
 
 

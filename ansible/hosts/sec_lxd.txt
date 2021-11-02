@@ -1,0 +1,16 @@
+[bdmsl_servers]
+sml ansible_connection=lxd forward_dns=10.204.119.1
+
+[niis_smp_servers]
+blue-smp ansible_connection=lxd
+red-smp ansible_connection=lxd
+
+[niis_ap_servers]
+blue-ap ansible_connection=lxd
+red-ap ansible_connection=lxd
+
+[all:vars]
+using_lxd=true
+skip_admins=true
+smp_version=1.0.0-0
+ap_version=1.0.0-0
