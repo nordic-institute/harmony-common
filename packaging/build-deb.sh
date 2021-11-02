@@ -54,17 +54,20 @@ rm commonbin/tomcat9/conf/logging.properties
 rm commonbin/tomcat9/conf/server.xml
 
 # explode domibus war
-mkdir -p commonbin/harmony-ap
 rm -rf commonbin/harmony-ap
+
+mkdir -p commonbin/harmony-ap
 
 unzip ../../domibus/Domibus-MSH-tomcat/target/domibus-MSH-tomcat-4.2.4.war -d commonbin/harmony-ap
 
 # copy ws plugin jar
 cp ../../domibus/Domibus-default-ws-plugin/target/domibus-default-ws-plugin-4.2.4.jar commonbin/ws-plugin.jar
 
+# cleanup
+rm -rf commonbin/harmony-smp
+
 # explode smp war
 mkdir -p commonbin/harmony-smp
-rm -rf commonbin/harmony-smp
 
 unzip ../../smp/smp-webapp/target/smp.war -d commonbin/harmony-smp
 
