@@ -55,7 +55,7 @@ case "$1" in
 
     mysql harmony_ap < /opt/harmony-ap/setup/harmony_ap_schema.ddl
 
-    HASHEDPASSWORD=$(java -cp "/opt/harmony-ap/webapps/domibus/WEB-INF/lib/*" \
+    HASHEDPASSWORD=$(java -cp "/opt/harmony-ap/webapps/ROOT/WEB-INF/lib/*" \
       eu.domibus.api.util.BCryptPasswordHash "$APASSWORD")
 
     mysql -e "INSERT INTO harmony_ap.TB_USER (ID_PK, USER_NAME, USER_PASSWORD, USER_ENABLED, USER_DELETED, DEFAULT_PASSWORD) \
