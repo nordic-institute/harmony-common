@@ -21,18 +21,18 @@ cd /app
 git clone https://ec.europa.eu/cefdigital/code/scm/edelivery/domibus.git
 cd domibus
 git checkout master
-mvn clean install -Ptomcat -Pdefault-plugins -Pdatabase -Psample-configuration -PUI -Pdistribution 
+mvn clean install -Ptomcat -Pdefault-plugins -Pdatabase -PUI 
 ```
 Note that tests run takes long time.
 
 Integration tests can be skipped using `skipITs` property
 
 ```
-mvn clean install -Ptomcat -Pdefault-plugins -Pdatabase -Psample-configuration -PUI -Pdistribution -DskipITs=true
+mvn clean install -Ptomcat -Pdefault-plugins -Pdatabase -PUI -DskipITs=true
 ```
 
 All tests can be skipped using `maven.test.skip` property
 
 ```
-mvn clean install -Ptomcat -Pdefault-plugins -Pdatabase -Psample-configuration -PUI -Pdistribution -Dmaven.test.skip=true
+mvn clean install -Ptomcat -Pdefault-plugins -Pdatabase -PUI -Dmaven.test.skip=true
 ```
