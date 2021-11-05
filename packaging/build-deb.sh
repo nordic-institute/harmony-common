@@ -1,6 +1,24 @@
 #!/bin/bash
 set -e
 
+# CHANGE VERSION NUMBERS BELOW AS NEEDED
+# version of harmony accesspoint
+APVERSION=0.0.1
+
+# version of harmony smp
+SMPVERSION=0.0.1
+
+# NO VERSIONING RELATED MODIFICATIONS ARE NECESSARY AFTER THIS POINT!
+
+# DO NOT change variables below, instead if needed assign values externally
+if [ -z "$HARMONY_AP_REPO_PATH" ]; then
+  HARMONY_AP_REPO_PATH=../../harmony-access-point
+fi
+
+if [ -z "$HARMONY_SMP_REPO_PATH" ]; then
+  HARMONY_SMP_REPO_PATH=../../harmony-smp
+fi
+
 function builddeb {
     local root="$1"
     local dist="$2"
@@ -58,10 +76,10 @@ rm -rf commonbin/harmony-ap
 
 mkdir -p commonbin/harmony-ap
 
-unzip ../../domibus/Domibus-MSH-tomcat/target/domibus-MSH-tomcat-4.2.4.war -d commonbin/harmony-ap
+unzip "$HARMONY_AP_REPO_PATH/Domibus-MSH-tomcat/target/harmony-MSH-tomcat-$APVERSION.war" -d commonbin/harmony-ap
 
 # copy ws plugin jar
-cp ../../domibus/Domibus-default-ws-plugin/target/domibus-default-ws-plugin-4.2.4.jar commonbin/ws-plugin.jar
+cp "$HARMONY_AP_REPO_PATH/Domibus-default-ws-plugin/target/harmony-default-ws-plugin-$APVERSION.jar" commonbin/ws-plugin.jar
 
 # cleanup
 rm -rf commonbin/harmony-smp
@@ -69,7 +87,7 @@ rm -rf commonbin/harmony-smp
 # explode smp war
 mkdir -p commonbin/harmony-smp
 
-unzip ../../smp/smp-webapp/target/smp.war -d commonbin/harmony-smp
+unzip "$HARMONY_SMP_REPO_PATH/smp-webapp/target/harmonysmp-$SMPVERSION.war" -d commonbin/harmony-smp
 
 prepare ubuntu20.04
 builddeb build/harmony/ubuntu focal ubuntu20.04
