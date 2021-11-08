@@ -16,3 +16,5 @@
 ../../../../common/ap/eDeliveryAS4Policy_BST.xml /etc/harmony-ap/policies/
 ../../../../common/ap/eDeliveryAS4Policy_BST_PKIP.xml /etc/harmony-ap/policies/
 ../../../../common/ap/eDeliveryAS4Policy_IS.xml /etc/harmony-ap/policies/
+../../../../common/ap/LICENSE.txt /usr/share/doc/harmony-ap/
+../../../../common/ap/3RD-PARTY-NOTICES.txt /usr/share/doc/harmony-ap/
