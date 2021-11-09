@@ -8,11 +8,11 @@ Standards-Version: 3.8.3
 Package: harmony-ap
 Architecture: all
 Depends: openjdk-8-jre-headless | java8-runtime-headless | java8-runtime, mysql-server, mysql-client
-Description: Harmony eDelivery Access gateway
+Description: Harmony eDelivery Access - Access Point
 
 Package: harmony-smp
 Architecture: all
 Depends: openjdk-8-jre-headless | java8-runtime-headless | java8-runtime, mysql-server, mysql-client
-Description: Harmony eDelivery Access Service Metadata Provider
+Description: Harmony eDelivery Access - Service Metadata Provider
 
 
