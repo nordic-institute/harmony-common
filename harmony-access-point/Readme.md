@@ -13,13 +13,13 @@ If using Docker check if there is enough memory allocated for the virtual machin
 
 Run `docker stats` and check the `MEM USAGE / LIMIT` column's `LIMIT` value for this.
 
-Sample commands to build Domibus without running the tests (note that we are using separate neds-pom.xml build tree):
+Sample commands to build Harmony eDelivery Gateway (note that we are using separate neds-pom.xml build tree):
 
 ```
 mkdir /app
 cd /app
-git clone https://ec.europa.eu/cefdigital/code/scm/edelivery/domibus.git
-cd domibus
+git clone https://bitbucket.niis.org/scm/neds/harmony-access-point.git
+cd harmony-access-point
 git checkout master
 mvn -f neds-pom.xml clean install -Ptomcat -Pdefault-plugins -Pdatabase -PUI 
 ```

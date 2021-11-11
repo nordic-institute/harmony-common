@@ -14,13 +14,13 @@ If using Docker check if there is enough memory allocated for the virtual machin
 
 Run `docker stats` and check the `MEM USAGE / LIMIT` column's `LIMIT` value for this.
 
-Sample commands to build SMP without running the tests (note that we are using separate neds-pom.xml build tree):
+Sample commands to build Harmony SMP (note that we are using separate neds-pom.xml build tree):
 
 ```
 mkdir /app
 cd /app
-git clone https://ec.europa.eu/cefdigital/code/scm/edelivery/smp.git
-cd smp
+git clone https://bitbucket.niis.org/scm/neds/harmony-smp.git
+cd harmony-smp
 git checkout master
 mvn -f neds-pom.xml clean install
 ```
@@ -36,6 +36,3 @@ All tests can be skipped using `maven.test.skip` property
 ```
 mvn -f neds-pom.xml clean install -Dmaven.test.skip=true
 ```
-
-Building deb packages assumes that domibus and smp repos are cloned besides harmony-common repository and maven builds
-are successfully run - war and jar files are copied from these folders.
