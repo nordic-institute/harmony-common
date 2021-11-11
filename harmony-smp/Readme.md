@@ -36,6 +36,3 @@ All tests can be skipped using `maven.test.skip` property
 ```
 mvn -f neds-pom.xml clean install -Dmaven.test.skip=true
 ```
-
-Building deb packages assumes that Harmony eDelivery Gateway and Harmony SMP repos are cloned besides harmony-common repository and maven builds
-are successfully run - war and jar files are copied from these folders.
