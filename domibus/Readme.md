@@ -1,7 +1,7 @@
 eDelivery Domibus has been tested to run with the following configuration:
 
 Ubuntu 20.04
-OpenJDK 11
+OpenJDK 8 (1.8.0_292)
 Maven 3.8.1
 Ca-certificates-java package (latest)
 Curl (latest)
@@ -13,7 +13,7 @@ If using Docker check if there is enough memory allocated for the virtual machin
 
 Run `docker stats` and check the `MEM USAGE / LIMIT` column's `LIMIT` value for this.
 
-Sample commands to build Domibus without running the tests:
+Sample commands to build Domibus without running the tests (note that we are using separate neds-pom.xml build tree):
 
 ```
 mkdir /app
@@ -21,18 +21,18 @@ cd /app
 git clone https://ec.europa.eu/cefdigital/code/scm/edelivery/domibus.git
 cd domibus
 git checkout master
-mvn clean install -Ptomcat -Pdefault-plugins -Pdatabase -PUI 
+mvn -f neds-pom.xml clean install -Ptomcat -Pdefault-plugins -Pdatabase -PUI 
 ```
 Note that tests run takes long time.
 
 Integration tests can be skipped using `skipITs` property
 
 ```
-mvn clean install -Ptomcat -Pdefault-plugins -Pdatabase -PUI -DskipITs=true
+mvn -f neds-pom.xml clean install -Ptomcat -Pdefault-plugins -Pdatabase -PUI -DskipITs=true
 ```
 
 All tests can be skipped using `maven.test.skip` property
 
 ```
-mvn clean install -Ptomcat -Pdefault-plugins -Pdatabase -PUI -Dmaven.test.skip=true
+mvn -f neds-pom.xml clean install -Ptomcat -Pdefault-plugins -Pdatabase -PUI -Dmaven.test.skip=true
 ```
