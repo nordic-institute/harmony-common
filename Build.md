@@ -1,0 +1,38 @@
+# Building Harmony eDelivery Access
+
+Running the Harmony eDelivery Access software requires Ubuntu 20.04. As a development environment, only Ubuntu 20.04 is currently supported. Alternatively the software can be built entirely inside Docker containers (see below) making the build host distribution agnostic but also a bit slower. If you are using some other operating system (e.g. Windows or macOS), the easiest option is to first install Ubuntu into a virtual machine.
+
+**Tools**
+
+*Required for deb packaging and/or building in Docker*
+* Docker
+
+*Required for building natively (without Docker)*
+* OpenJDK / JDK version 8
+* Maven
+* GCC
+
+## Dependency installation and instructions for building in Docker
+
+* Install Docker
+
+* Build the software and installation packages:
+
+    `./build_packages.sh -d`
+
+    Note that the `build_package.sh` script's behaviour is controlled by its first command line argument.
+    All subsequent arguments will simply be passed to whatever build script it calls to perform the actual build.
+
+## Dependency installation and instructions for building natively (without Docker)
+
+* Requires Ubuntu 20.04.
+
+* Execute the following command once to install the required dependencies on a clean building host. The script is supposed to be run as the user who will build the source. The script will ask for user password (using sudo) for installing some new packages as well.
+
+    `./prepare_buildhost.sh`
+
+* Build the software and installation packages:
+
+    `./build_packages.sh`
+
+Once you have successfully built the software, please see [README.md](Readme.md) for installation instructions.
