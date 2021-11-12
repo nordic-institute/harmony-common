@@ -11,10 +11,11 @@ errorExit() {
 usage () {
     echo "Usage: $0 [option for $0...] [other options]"
     echo "Options for $0:"
-    echo " -s, --skip-tests      Skip tests, just compile code and build packages"
-    echo " -d, --docker-compile  Compile in Docker container instead of native Maven build"
+    echo " -d, --docker-compile  Compile in Docker container instead of native Maven build."
     echo " -h, --help            This help text."
     echo "The option for $0, if present, must come fist, before other options."
+    echo "Other options:"
+    echo " -s, --skip-tests      Skip tests, just compile code and build packages."
     test -z "$1" || exit "$1"
 }
 

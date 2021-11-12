@@ -19,6 +19,10 @@ Running the Harmony eDelivery Access software requires Ubuntu 20.04. As a develo
 * Build the software and installation packages:
 
     `./build_packages.sh -d`
+    
+* Tests can be skipped by adding `-s` to the command:
+
+  `./build_packages.sh -d -s`
 
 ## Dependency installation and instructions for building natively (without Docker)
 
@@ -32,4 +36,8 @@ Running the Harmony eDelivery Access software requires Ubuntu 20.04. As a develo
 
     `./build_packages.sh`
 
+* Tests can be skipped by adding `-s` to the command:
+
+  `./build_packages.sh -s`
+  
 Once you have successfully built the software, please see [README.md](Readme.md) for installation instructions.
