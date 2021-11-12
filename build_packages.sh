@@ -40,7 +40,7 @@ buildInDocker() {
     echo "Building in docker..."
 
     # Build Docker image for compiling the code
-    docker build -q -f Dockerfile-compile -t harmony-compile --build-arg uid=$(id -u) --build-arg gid=$(id -g) .
+    docker build -q -f docker/Dockerfile-compile -t harmony-compile --build-arg uid=$(id -u) --build-arg gid=$(id -g) .
 
     # Compile AP
     docker run -it --rm \
@@ -57,7 +57,7 @@ buildInDocker() {
        mvn clean -f neds-pom.xml install "${SMP_ARGUMENTS[@]}"
 
     # Build Docker image for the build
-    docker build -q -f Dockerfile-build -t harmony-build --build-arg uid=$(id -u) --build-arg gid=$(id -g) .
+    docker build -q -f docker/Dockerfile-build -t harmony-build --build-arg uid=$(id -u) --build-arg gid=$(id -g) .
 
     # Build packages using the image
      docker run -it --rm \
