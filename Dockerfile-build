@@ -1,0 +1,19 @@
+FROM ubuntu:20.04
+LABEL maintainer="Nordic Institute for Interoperability Solutions <info@niis.org>"
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+RUN apt-get -qq update \
+  && apt-get -qq upgrade \
+  && apt-get -qq install dpkg-dev devscripts debhelper \
+  && apt-get -qq autoremove \
+  && apt-get -qq clean
+
+ARG uid
+ARG gid
+
+RUN groupadd -g $gid builder && useradd -m -u $uid -g $gid builder
+
+USER builder
+
+WORKDIR /mnt

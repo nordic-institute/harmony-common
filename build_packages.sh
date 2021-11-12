@@ -38,6 +38,33 @@ fi
 buildInDocker() {
     test -n "$HAS_DOCKER" || errorExit "Error, docker is not installed/running."
     echo "Building in docker..."
+
+    # Build Docker image for compiling the code
+    docker build -q -f Dockerfile-compile -t harmony-compile --build-arg uid=$(id -u) --build-arg gid=$(id -g) .
+
+    # Compile AP
+    docker run -it --rm \
+       --user builder \
+       -v "$(pwd)/../harmony-access-point/":/mnt \
+       harmony-compile \
+       mvn clean -f neds-pom.xml install "${AP_ARGUMENTS[@]}"
+
+    # Compile SMP
+    docker run -it --rm \
+       -u builder \
+       -v "$(pwd)/../harmony-smp/":/mnt \
+       harmony-compile \
+       mvn clean -f neds-pom.xml install "${SMP_ARGUMENTS[@]}"
+
+    # Build Docker image for the build
+    docker build -q -f Dockerfile-build -t harmony-build --build-arg uid=$(id -u) --build-arg gid=$(id -g) .
+
+    # Build packages using the image
+     docker run -it --rm \
+       -u builder \
+       -v "$(pwd)/..":/mnt \
+       harmony-build \
+       /bin/bash -c "cd /mnt/harmony-common/packaging/ && ./build-deb.sh"
 }
 
 buildLocally() {
@@ -58,7 +85,7 @@ if command -v docker &>/dev/null; then
 fi
 
 case "$1" in
-    --docker-compile|-d) buildInDocker "$@";;
+    --docker-compile|-d) shift; buildInDocker "$@";;
     --help|-h) usage 0;;
     *) buildLocally "$@";;
 esac
