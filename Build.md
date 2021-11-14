@@ -12,6 +12,19 @@ Running the Harmony eDelivery Access software requires Ubuntu 20.04. As a develo
 * Maven
 * GCC
 
+**Prerequisites**
+
+* Checkout `harmony-common`, `harmony-access-point` and `harmony-smp` repositories in the same base directory.
+* The directory structure should look like this:
+
+    ```
+    - <BASE_DIR>
+     |-- harmony-access-point
+     |-- harmony-common
+     |-- harmony-smp
+    ```
+* The build script assumes the above directory structure regardless of the build type (native / Docker).
+
 ## Dependency installation and instructions for building in Docker
 
 * Install Docker

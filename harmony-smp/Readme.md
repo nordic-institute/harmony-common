@@ -1,12 +1,14 @@
-eDelivery SMP has been tested to run with the following configuration:
+# Compiling Harmony eDelivery Access - SMP
 
-Ubuntu 20.04
-OpenJDK 8 (1.8.0_292)
-Maven 3.8.1
-MySQL (latest)
-Ca-certificates-java package (latest)
-Curl (latest)
-Git (latest)
+Harmony eDelivery Access SMP has been tested to run with the following configuration:
+
+- Ubuntu 20.04
+- OpenJDK 8 (1.8.0_292)
+- Maven 3.8.1
+- MySQL (latest)
+- `ca-certificates-java` package (latest)
+- curl (latest)
+- git (latest)
 
 Build process is tested to succeed with at least 8GB of RAM.
 
@@ -14,7 +16,7 @@ If using Docker check if there is enough memory allocated for the virtual machin
 
 Run `docker stats` and check the `MEM USAGE / LIMIT` column's `LIMIT` value for this.
 
-Sample commands to build Harmony SMP (note that we are using separate neds-pom.xml build tree):
+Sample commands to build Harmony eDelivery Access SMP (note that we are using separate `neds-pom.xml` build tree):
 
 ```
 mkdir /app

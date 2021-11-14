@@ -1,6 +1,6 @@
-# Harmony common repository
+# Harmony eDelivery Access Common Repository
 
-This repository contains tools to help build and package NIIS Harmony eDelivery packages and to set up development and
+This repository contains tools to build Harmony eDelivery Access packages and to set up development and
 testing environments.
 
 ## Setting up AWS testing environment
