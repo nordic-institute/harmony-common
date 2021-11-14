@@ -1,2 +1,0 @@
-- name: set time zone in /etc/timezone, /etc/localtime
-  command: /usr/bin/timedatectl set-timezone Europe/Helsinki

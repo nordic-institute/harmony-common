@@ -53,4 +53,4 @@ Running the Harmony eDelivery Access software requires Ubuntu 20.04. As a develo
 
   `./build_packages.sh -s`
   
-Once you have successfully built the software, please see [README.md](Readme.md) for installation instructions.
+Once you have successfully built the software, please see the installation instructions.

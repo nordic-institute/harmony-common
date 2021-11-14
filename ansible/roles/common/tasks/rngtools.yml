@@ -1,3 +1,0 @@
-- name: install rng-tools for entropy
-  package: name=rng-tools state=present
-

@@ -1,8 +1,0 @@
-<http-conf:tlsClientParameters disableCNCheck="false" secureSocketProtocol="TLSv1.2"
-                               xmlns:http-conf="http://cxf.apache.org/transports/http/configuration"
-                               xmlns:security="http://cxf.apache.org/configuration/security">
-    <security:trustManagers>
-        <security:keyStore type="JKS" password="password"
-                           file="${domibus.config.location}/keystores/ap-trustore.jks"/>
-    </security:trustManagers>
-</http-conf:tlsClientParameters>

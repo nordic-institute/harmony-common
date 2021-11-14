@@ -1,7 +1,0 @@
-// neds dynamic zone configuration
-zone "neds" {
-        type master;
-        file "/var/lib/bind/db.neds";
-        allow-update { 127.0.0.1; };
-};
-

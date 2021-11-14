@@ -1,4 +1,0 @@
-- hosts: niis_smp_servers
-  gather_facts: no
-  roles:
-    - init-lxd
