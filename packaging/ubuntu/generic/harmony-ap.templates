@@ -16,7 +16,6 @@ Template: harmony-ap/adminpassword
 Type: password
 Description: Harmony Accesspoint administator initial password
 
-Template: harmony-ap/servercn
+Template: harmony-ap/serverdn
 Type: string
-Default: selfsigned
-Description: Common name of generated server certificate (selfsigned)
+Description: Distinguished name of generated selfsigned server certificate

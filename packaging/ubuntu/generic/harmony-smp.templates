@@ -23,3 +23,7 @@ Description: Harmony Accesspoint administator user name
 Template: harmony-smp/adminpassword
 Type: password
 Description: Harmony Accesspoint administator initial password
+
+Template: harmony-smp/serverdn
+Type: string
+Description: Distinguished name of generated selfsigned server certificate

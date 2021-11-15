@@ -25,6 +25,8 @@ trap cleanup EXIT
 case "$1" in
  configure)
 
+  db_get harmony-smp/serverdn
+  SERVERDN="$RET"
   db_get harmony-smp/integratewithsml
   INTEGRATESML="$RET"
   if [ ! "$INTEGRATESML" = true ]; then
@@ -102,7 +104,7 @@ case "$1" in
 
   KEYSTOREPASS=$(openssl rand -base64 12)
   keytool -genkeypair -keyalg RSA -alias selfsigned -keystore /etc/harmony-smp/smp-keystore.jks -storepass $KEYSTOREPASS \
-    -keypass $KEYSTOREPASS -validity 333 -keysize 3096 -dname "CN=$SERVERNAME"
+    -keypass $KEYSTOREPASS -validity 333 -keysize 3096 -dname "$SERVERDN"
 
   mysql harmony_smp -e  "INSERT INTO SMP_CONFIGURATION (PROPERTY, VALUE, CREATED_ON, LAST_UPDATED_ON)
          VALUES ('smp.keystore.password', '{DEC}{$KEYSTOREPASS}', NOW(), NOW())
@@ -110,7 +112,7 @@ case "$1" in
 
   TLSKEYPASS=$(openssl rand -base64 12)
   keytool -genkeypair -keyalg RSA -alias selfsigned -keystore /etc/harmony-smp/tls-keystore.jks -storepass $TLSKEYPASS \
-    -keypass $TLSKEYPASS -validity 333 -keysize 3096 -dname "CN=$SERVERNAME"
+    -keypass $TLSKEYPASS -validity 333 -keysize 3096 -dname "$SERVERDN"
 
   E_TLSKEYPASS=$(escape_for_sed "$TLSKEYPASS")
   sed -e "s/{{tls_keystore_password}}/$E_TLSKEYPASS/" /opt/harmony-smp/setup/server.xml.template > /opt/harmony-smp/conf/server.xml
