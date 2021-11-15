@@ -45,7 +45,7 @@ Upon the first installation of the access point, the system asks for the followi
   - SML zone that you want to use 
 - user name of administrative SMP user - username to use to log in to SMP administrative UI
 - initial password for administrative SMP user
-- Common Name for generated self signed content and transport certificates
+- Distinguished Name for generated self signed content and transport certificates
 
 ### 2.4 Changes made to system during package installation
 

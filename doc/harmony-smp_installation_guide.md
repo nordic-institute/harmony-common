@@ -39,6 +39,7 @@ sudo apt install harmony-smp
 
 Upon the first installation of the service metadata publisher, the system asks for the following information.
 
+- Distinguished Name for generated self signed content and transport certificates
 - whether you want your SMP installation to publish information to some Service Metadata Locator (SML)
   
   If yes then: 
