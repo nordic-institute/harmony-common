@@ -36,7 +36,7 @@ To view a copy of this license, visit <https://creativecommons.org/licenses/by-s
 
 This guide describes installation and post-installation procedures for Harmony eDelivery Access Access Point, referenced below as AP.
 
-The intended audience of this Installation Guide are AP server system administrators responsible for installing and using Harmony eDelivery Access software.
+The intended audience of this Installation Guide are Access Point server system administrators responsible for installing and using Harmony eDelivery Access software.
 
 The document is intended for readers with a moderate knowledge of Linux server management, computer networks, and the eDelivery working principles.
  
@@ -44,7 +44,7 @@ The document is intended for readers with a moderate knowledge of Linux server m
 
 ### 2.1 Prerequisites to Installation
 
-The AP is officially supported on the following platforms:
+The Access Point is officially supported on the following platforms:
 
 * Ubuntu Server 20.04 Long-Term Support (LTS) operating system on a x86-64 platform.
 
@@ -92,8 +92,8 @@ Minimum recommended hardware parameters:
 Requirements to software and settings:
 
 * an installed and configured Ubuntu 20.04 LTS x86-64 operating system;
-* if the AP is separated from other networks by a firewall and/or NAT, the necessary connections to and from the AP are allowed. The enabling of auxiliary services which are necessary for the functioning and management of the operating system (such as DNS, NTP, and SSH) stay outside the scope of this guide;
-* if the AP has a private IP address, a corresponding NAT record must be created in the firewall.
+* if the Access Point is separated from other networks by a firewall and/or NAT, the necessary connections to and from the Access Point are allowed. The enabling of auxiliary services which are necessary for the functioning and management of the operating system (such as DNS, NTP, and SSH) stay outside the scope of this guide;
+* if the Access Point has a private IP address, a corresponding NAT record must be created in the firewall.
 
 ### 2.4 Setup Package Repository
 
@@ -127,10 +127,10 @@ sudo apt install harmony-ap
 
 Upon the first installation of the Access Point, the system asks for the following information.
 
-- do you want the AP installation to use dynamic discovery:
+- do you want the Access Point installation to use dynamic discovery:
   - if yes: SML zone that you want to use;
-- username of the administrative AP user - username to use to log in to AP administrative UI;
-- initial password for the administrative AP user;
+- username of the administrative user - username to use to log in to administrative UI;
+- initial password for the administrative user;
 - `Distinguished Name` for generated self signed content and transport certificates.
 
 ### 2.6 Starting harmony-ap Service and Enabling Automatic Startup 
@@ -173,7 +173,7 @@ Custom plugins can be installed by following the steps below:
 ### 2.9 Changes Made to System During Installation
 
 In addition to installing needed dependencies, the installation scripts:
-- creates linux user `harmony` that is used to run the AP service;
+- creates linux user `harmony` that is used to run the Access Point service;
 - creates MySQL database user `harmony` and generates random password for it;
 - creates MySQL database schema `harmony_ap` and populates it with needed metadata;
 - loads initial configuration into database;
@@ -182,7 +182,7 @@ In addition to installing needed dependencies, the installation scripts:
 
 ### 2.10 Location of Configuration and Generated Passwords 
 
-All AP configuration files are located at `/etc/harmony-ap`.
+All Access Point configuration files are located at `/etc/harmony-ap`.
 
 During the installation process, multiple random passwords are generated.
 
