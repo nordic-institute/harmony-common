@@ -129,8 +129,8 @@ Upon the first installation of the Access Point, the system asks for the followi
 
 - do you want the AP installation to use dynamic discovery:
   - if yes: SML zone that you want to use;
-- username of administrative AP user - username to use to log in to AP administrative UI;
-- initial password for administrative AP user;
+- username of the administrative AP user - username to use to log in to AP administrative UI;
+- initial password for the administrative AP user;
 - `Distinguished Name` for generated self signed content and transport certificates.
 
 ### 2.6 Starting harmony-ap Service and Enabling Automatic Startup 
