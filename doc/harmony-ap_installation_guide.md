@@ -66,9 +66,9 @@ The table below lists the required connections between different components.
 Out | Access Point | Data Exchange Partner Access Point | 443, 8443, other | tcp | |
 Out | Access Point | SMP | 443, 8443, other | tcp | |
 Out | Access Point | Backend (push) | 80, 443, other | tcp | Target in the internal network |
-In  | Data Exchange Partner Access Point | Access Point | 8443 | tcp | URL path: `/harmony/services/msh` |
-In | Backend (pull) | Access Point | 8443 | tcp | Source in the internal network<br /><br />URL path: `/harmony/services/backend` |
-In | Admin | Access Point | 8443 | tcp | Source in the internal network<br /><br />URL path: `/harmony` |
+In  | Data Exchange Partner Access Point | Access Point | 8443 | tcp | URL path: `/services/msh` |
+In | Backend (submit, pull) | Access Point | 8443 | tcp | Source in the internal network<br /><br />URL path: `/services/backend` |
+In | Admin | Access Point | 8443 | tcp | Source in the internal network<br /><br />URL path: `/` |
 
 It is strongly recommended to protect the Access Point from unwanted access using a firewall (hardware or software based). The firewall can be applied to both incoming and outgoing connections depending on the security requirements of the environment where the Access Point is deployed. It is recommended to allow incoming traffic to specific ports only from explicitly defined sources using IP filtering. **Special attention should be paid with the firewall configuration since incorrect configuration may leave the Access Point vulnerable to exploits and attacks.**
 
@@ -76,9 +76,9 @@ In addition, it's strongly recommended to use URL path filtering for the Access 
 
 **Port** | **URL Path** | **Description** |
 ---------|----------|-----------------|
- 8443    | `/harmony` | Admin UI for managing the Access Point. |
- 8443    | `/harmony/services/backend` |  Webservice interface between the Access Point and backend. |
- 8443    | `/harmony/services/msh` | AS4 interface between Access Points. | 
+ 8443    | `/` | Admin UI for managing the Access Point. |
+ 8443    | `/services/backend` |  Webservice interface (submit requests, pull messages) between the Access Point and backend. |
+ 8443    | `/services/msh` | AS4 interface between Access Points. | 
 
 ### 2.3 Requirements for the Access Point
 
