@@ -34,7 +34,7 @@ To view a copy of this license, visit <https://creativecommons.org/licenses/by-s
  
 ## 1 Introduction
 
-This guide describes installation and post-installation procedures for Harmony eDelivery Access Access Point, referenced below as AP.
+This guide describes installation and post-installation procedures for Harmony eDelivery Access Access Point.
 
 The intended audience of this Installation Guide are Access Point server system administrators responsible for installing and using Harmony eDelivery Access software.
 
