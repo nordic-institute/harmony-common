@@ -36,8 +36,8 @@ case "$1" in
   AUSER="$RET"
   db_get harmony-ap/adminpassword
   APASSWORD="$RET"
-  db_get harmony-ap/servercn
-  SERVERNAME="$RET"
+  db_get harmony-ap/serverdn
+  SERVERDN="$RET"
   db_stop
 
   DBUSER=harmony
@@ -77,10 +77,10 @@ case "$1" in
     TLSKEYPASS=$(openssl rand -base64 12)
 
     keytool -genkeypair -keyalg RSA -alias selfsigned -keystore /etc/harmony-ap/ap-keystore.jks -storepass $KEYSTOREPASS \
-      -keypass $KEYSTOREPASS -validity 333 -keysize 3096 -dname "CN=$SERVERNAME"
+      -keypass $KEYSTOREPASS -validity 333 -keysize 3096 -dname "$SERVERDN"
 
     keytool -genkeypair -keyalg RSA -alias selfsigned -keystore /etc/harmony-ap/tls-keystore.jks -storepass $TLSKEYPASS \
-      -keypass $TLSKEYPASS -validity 333 -keysize 3096 -dname "CN=$SERVERNAME"
+      -keypass $TLSKEYPASS -validity 333 -keysize 3096 -dname "$SERVERDN"
 
     keytool -genkeypair -alias mock -keystore /etc/harmony-ap/ap-truststore.jks -storepass $TRUSTSTOREPASS \
       -keypass $TRUSTSTOREPASS -dname "CN=mock"
