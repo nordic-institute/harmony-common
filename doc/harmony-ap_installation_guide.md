@@ -20,6 +20,9 @@ To view a copy of this license, visit <https://creativecommons.org/licenses/by-s
 
 - [License](#license)
 - [1 Introduction](#1-introduction)
+  - [1.1 Target Audience](#11-target-audience)
+  - [1.2 Terms and abbreviations](#12-terms-and-abbreviations)
+  - [1.3 References](#13-references)
 - [2 Installation](#2-installation)
   - [2.1 Prerequisites to Installation](#21-prerequisites-to-installation)
   - [2.2 Network Diagram](#22-network-diagram)
@@ -34,12 +37,27 @@ To view a copy of this license, visit <https://creativecommons.org/licenses/by-s
  
 ## 1 Introduction
 
+Harmony eDelivery Access Access Point is an AS4 Access Point for joining eDelivery policy domains. The Access Point is based on the Domibus open source project by the European Commission.
+
+### 1.1 Target Audience
+
 This guide describes installation and post-installation procedures for Harmony eDelivery Access Access Point.
 
 The intended audience of this Installation Guide are Access Point system administrators responsible for installing and using the Access Point software.
 
 The document is intended for readers with a moderate knowledge of Linux server management, computer networks, and the eDelivery working principles.
- 
+
+### 1.2 Terms and abbreviations
+
+See eDelivery definitions documentation \[[TERMS](#Ref_TERMS)\].
+
+### 1.3 References
+
+1. <a id="Ref_TERMS" class="anchor"></a>\[TERMS\] CEF Definitions - eDelivery Definitions, <https://ec.europa.eu/cefdigital/wiki/display/CEFDIGITAL/CEF+Definitions#CEFDefinitions-eDeliveryDefinitions>
+2. <a id="Ref_DOMIBUS_ADMIN_GUIDE" class="anchor"></a>\[DOMIBUS_ADMIN_GUIDE\] Access Point Administration Guide - Domibus 4.2.5, <https://ec.europa.eu/cefdigital/wiki/download/attachments/447677321/%28eDelivery%29%28AP%29%28AG%29%284.2.5%29%288.9.6%29.pdf>
+3. <a id="Ref_WS_PLUGIN" class="anchor"></a>\[WS_PLUGIN\] Access Point Interface Control Document - WS Plugin, <https://ec.europa.eu/cefdigital/wiki/download/attachments/447677321/%28eDelivery%29%28AP%29%28ICD%29%28WS%20plugin%29%281.7%29.pdf>
+4. <a id="Ref_PLUGIN_COOKBOOK" class="anchor"></a>\[PLUGIN_COOKBOOK\] Domibus Plugin Cookbook, <https://ec.europa.eu/cefdigital/wiki/download/attachments/447677321/%28eDelivery%29%28AP%29%28Plugin-CB%29%28Domibus.4.2.5%29%284.5%29.pdf>
+
 ## 2. Installation
 
 ### 2.1 Prerequisites to Installation
@@ -162,7 +180,7 @@ Ensure that the administrative user interface at `https://<host>:8443/` can be o
 
 ### 2.8 Installing Custom Plugins
 
-The Access Point comes with one default plugin - the webservice plugin.
+The Access Point comes with one default plugin - the Web Service (WS) Plugin. See the WS Plugin documentation \[[WS_PLUGIN](#Ref_WS_PLUGIN)\] for more details.
 
 Custom plugins can be installed by following the steps below:
 
@@ -170,6 +188,8 @@ Custom plugins can be installed by following the steps below:
 2. copy the custom plugin `jar` file to the plugins folder (`/etc/harmony-ap/plugins/lib`);
 3. copy the custom plugin configuration files to the config folder (`/etc/harmony-ap/plugins/lib/config`);
 4. start the `harmony-ap` service (`sudo systemctl start harmony-ap`).
+
+See the Domibus Plugin Cookbook \[[PLUGIN_COOKBOOK](#Ref_PLUGIN_COOKBOOK)\] for more information on developing custom plugins.
 
 ### 2.9 Changes Made to System During Installation
 
@@ -183,7 +203,7 @@ In addition to installing needed dependencies, the installation scripts:
 
 ### 2.10 Location of Configuration and Generated Passwords 
 
-All Access Point configuration files are located in `/etc/harmony-ap` directory.
+All Access Point configuration files are located in the `/etc/harmony-ap` directory. See the Domibus Administration Guide \[[TERMS](#Ref_DOMIBUS_ADMIN_GUIDE])\] for more details.
 
 During the installation process, multiple random passwords are generated.
 
