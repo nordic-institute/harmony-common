@@ -36,7 +36,7 @@ To view a copy of this license, visit <https://creativecommons.org/licenses/by-s
 
 This guide describes installation and post-installation procedures for Harmony eDelivery Access Access Point.
 
-The intended audience of this Installation Guide are Access Point server system administrators responsible for installing and using Harmony eDelivery Access software.
+The intended audience of this Installation Guide are Access Point system administrators responsible for installing and using the Access Point software.
 
 The document is intended for readers with a moderate knowledge of Linux server management, computer networks, and the eDelivery working principles.
  
@@ -50,12 +50,12 @@ The Access Point is officially supported on the following platforms:
 
 The software can be installed both on physical and virtualized hardware.
 
-*Note*: If MySQL database engine is already installed then installation requires that root user can access database using UNIX
+*Note*: If MySQL database engine is already installed then installation requires that `root` user can access database using UNIX
 socket peer authentication without password.
 
 ### 2.2 Network Diagram
 
-The network diagram below provides an example of a basic Access Point setup.
+The network diagram below provides an example of an Access Point setup when dynamic discovery is used.
 
 ![network diagram](img/ig-as_network_diagram.svg)
 
@@ -92,8 +92,9 @@ Minimum recommended hardware parameters:
 Requirements to software and settings:
 
 * an installed and configured Ubuntu 20.04 LTS x86-64 operating system;
-* if the Access Point is separated from other networks by a firewall and/or NAT, the necessary connections to and from the Access Point are allowed. The enabling of auxiliary services which are necessary for the functioning and management of the operating system (such as DNS, NTP, and SSH) stay outside the scope of this guide;
-* if the Access Point has a private IP address, a corresponding NAT record must be created in the firewall.
+* if the Access Point is separated from other networks by a firewall and/or NAT, the necessary connections to and from the Access Point are allowed;
+* if the Access Point has a private IP address, a corresponding NAT record must be created in the firewall;
+* enabling auxiliary services which are necessary for the functioning and management of the operating system (such as DNS, NTP, and SSH) stay outside the scope of this guide.
 
 ### 2.4 Setup Package Repository
 
@@ -157,7 +158,7 @@ Ensure that the `harmony-ap` service is in the `running` state (example output f
   harmony-ap.service             loaded active running Harmony eDelivery Access - Access Point
   ```
 
-Ensure that the security server user interface at `https://<host>:8443/harmony/` can be opened in a Web browser. To log in, use the administrative username and password chosen during the installation. While the user interface is still starting up, the Web browser may display a connection refused -error.
+Ensure that the administrative user interface at `https://<host>:8443/` can be opened in a Web browser. To log in, use the administrative username and password chosen during the installation. While the user interface is still starting up, the Web browser may display a connection refused -error.
 
 ### 2.8 Installing Custom Plugins
 
@@ -182,13 +183,13 @@ In addition to installing needed dependencies, the installation scripts:
 
 ### 2.10 Location of Configuration and Generated Passwords 
 
-All Access Point configuration files are located at `/etc/harmony-ap`.
+All Access Point configuration files are located in `/etc/harmony-ap` directory.
 
 During the installation process, multiple random passwords are generated.
 
 | **Password purpose** | **Password location** 
 |---|---|
 | Password for `harmony` MySQL user | Configuration file: `/etc/harmony-ap/domibus.properties`<br /><br />Properties: `domibus.datasource.xa.property.password` and `domibus.datasource.password`. |
-| Content encryption keystore (`/etc/harmony-ap/ap-keystore.jks`) password | Configuration file: `/etc/harmony-ap/domibus.properties`<br /><br />Properties: domibus.security.keystore.password` and `domibus.security.key.private.password`. Content of this keystore can be changed using UI. |
+| Content encryption keystore (`/etc/harmony-ap/ap-keystore.jks`) password | Configuration file: `/etc/harmony-ap/domibus.properties`<br /><br />Properties: `domibus.security.keystore.password` and `domibus.security.key.private.password`. Content of this keystore can be changed using the administrative UI. |
 | Content encryption truststore (`/etc/harmony-ap/ap-truststore.jks`) password | `Configuration file: /etc/harmony-ap/domibus.properties`<br /><br />Properties: `domibus.security.truststore.password`. Content of this keystore can be changed using UI. |
 | TLS keystore (`/etc/harmony-ap/tls-keystore.jks`) password | Configuration file: `/etc/harmony-ap/conf/server.xml` |
