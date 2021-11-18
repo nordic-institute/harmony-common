@@ -154,8 +154,6 @@ Upon the first installation of the Access Point, the system asks for the followi
 
 ### 2.6 Starting harmony-ap Service and Enabling Automatic Startup 
 
-Before starting the `harmony-ap` service the first time please do any necessary configuration changes.
-
 To start `harmony-ap` service issue the following command:
 ```
 sudo systemctl start harmony-ap
@@ -193,7 +191,7 @@ See the Domibus Plugin Cookbook \[[PLUGIN_COOKBOOK](#Ref_PLUGIN_COOKBOOK)\] for 
 
 ### 2.9 Changes Made to System During Installation
 
-In addition to installing needed dependencies, the installation scripts:
+In addition to installing required dependencies, the installation process completes the following steps:
 - creates linux user `harmony` that is used to run the Access Point service;
 - creates MySQL database user `harmony` and generates random password for it;
 - creates MySQL database schema `harmony_ap` and populates it with needed metadata;
@@ -203,11 +201,11 @@ In addition to installing needed dependencies, the installation scripts:
 
 ### 2.10 Location of Configuration and Generated Passwords 
 
-All Access Point configuration files are located in the `/etc/harmony-ap` directory. See the Domibus Administration Guide \[[TERMS](#Ref_DOMIBUS_ADMIN_GUIDE])\] for more details.
+All Access Point configuration files are located in the `/etc/harmony-ap` directory. See the Domibus Administration Guide \[[DOMIBUS_ADMIN_GUIDE](#Ref_DOMIBUS_ADMIN_GUIDE])\] for more details.
 
 During the installation process, multiple random passwords are generated.
 
-| **Password purpose** | **Password location** 
+| **Password purpose** | **Password location** |
 |---|---|
 | Password for `harmony` MySQL user | Configuration file: `/etc/harmony-ap/domibus.properties`<br /><br />Properties: `domibus.datasource.xa.property.password` and `domibus.datasource.password`. |
 | Content encryption keystore (`/etc/harmony-ap/ap-keystore.jks`) password | Configuration file: `/etc/harmony-ap/domibus.properties`<br /><br />Properties: `domibus.security.keystore.password` and `domibus.security.key.private.password`. Content of this keystore can be changed using the administrative UI. |
