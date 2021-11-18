@@ -90,7 +90,7 @@ In | Admin | Access Point | 8443 | tcp | Source in the internal network<br /><br
 
 It is strongly recommended to protect the Access Point from unwanted access using a firewall (hardware or software based). The firewall can be applied to both incoming and outgoing connections depending on the security requirements of the environment where the Access Point is deployed. It is recommended to allow incoming traffic to specific ports only from explicitly defined sources using IP filtering. **Special attention should be paid with the firewall configuration since incorrect configuration may leave the Access Point vulnerable to exploits and attacks.**
 
-In addition, it's strongly recommended to use URL path filtering for the Access Point Since the admin UI, backend interface and AS4 interface all run on port `8443`.
+In addition, it's strongly recommended to use URL path filtering for the Access Point since the admin UI, backend interface and AS4 interface all run on port `8443`.
 
 **Port** | **URL Path** | **Description** |
 ---------|----------|-----------------|
