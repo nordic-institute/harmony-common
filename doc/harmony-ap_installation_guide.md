@@ -161,7 +161,7 @@ sudo systemctl start harmony-ap
 
 If you want `harmony-ap` service start at system startup issue the following command:
 ```
-sudo apt enable harmony-ap
+sudo systemctl enable harmony-ap
 ```
 
 ### 2.7 Post-Installation Checks
