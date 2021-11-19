@@ -79,7 +79,7 @@ The table below lists the required connections between different components.
 **Connection Type** | **Source** | **Target** | **Target Ports** | **Protocol** | **Note** |
 -----------|------------|-----------|-----------|-----------|-----------|
 Out | SMP | SML | 443, 8443, other | tcp | |
-In  | Data Exchange Partner Access Point | SMP | 8443 | tcp | URL path: `/{participantIdentifier}/services/{documentIdentifier}` |
+In  | Data Exchange Partner Access Point | SMP | 8443 | tcp | URL paths: `/{participantIdentifier}` and `/{participantIdentifier}/services/{documentIdentifier}` |
 In | Admin | SMP | 8443 | tcp | Source in the internal network<br /><br />URL paths: `/` and `/ui` |
 
 It is strongly recommended to protect the SMP from unwanted access using a firewall (hardware or software based). The firewall can be applied to both incoming and outgoing connections depending on the security requirements of the environment where the SMP is deployed. It is recommended to allow incoming traffic to specific ports only from explicitly defined sources using IP filtering. **Special attention should be paid with the firewall configuration since incorrect configuration may leave the SMP vulnerable to exploits and attacks.**
@@ -90,6 +90,7 @@ In addition, it's strongly recommended to use URL path filtering for the SMP sin
 ---------|----------|-----------------|
  8443    | `/` | Landing page. |
  8443    | `/ui` | Admin UI for managing the SMP. |
+ 8443    | `/{participantIdentifier}` |  Service group query interface. |
  8443    | `/{participantIdentifier}/services/{documentIdentifier}` |  Metadata query interface. |
 
 ### 2.3 Requirements for the SMP
