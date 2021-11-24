@@ -94,7 +94,7 @@ case "$1" in
     E_SMLZONE=$(escape_for_sed "$SMLZONE")
 
 
-    sed -e "s/{{tls_keystore_password}}/$E_TLSKEYPASS/" /opt/harmony-ap/setup/server.xml.template > /opt/harmony-ap/conf/server.xml
+    sed -e "s/{{tls_keystore_password}}/$E_TLSKEYPASS/" /opt/harmony-ap/setup/server.xml.template > /etc/harmony-ap/tomcat-conf/server.xml
 
     sed -e "s/{{keystorepass}}/$E_KEYSTOREPASS/" -e "s/{{truststorepass}}/$E_TRUSTSTOREPASS/" \
       -e "s/{{dbuser}}/$E_DBUSER/" -e "s/{{dbpassword}}/$E_DBPASSWORD/" \

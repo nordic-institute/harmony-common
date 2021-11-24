@@ -115,13 +115,13 @@ case "$1" in
     -keypass $TLSKEYPASS -validity 333 -keysize 3096 -dname "$SERVERDN"
 
   E_TLSKEYPASS=$(escape_for_sed "$TLSKEYPASS")
-  sed -e "s/{{tls_keystore_password}}/$E_TLSKEYPASS/" /opt/harmony-smp/setup/server.xml.template > /opt/harmony-smp/conf/server.xml
+  sed -e "s/{{tls_keystore_password}}/$E_TLSKEYPASS/" /opt/harmony-smp/setup/server.xml.template > /etc/harmony-smp/tomcat-conf/server.xml
 
   E_DBUSER=$(escape_for_sed "$DBUSER")
   E_DBPASSWORD=$(escape_for_sed "$DBPASSWORD")
   sed -e "s/{{dbuser}}/$E_DBUSER/" \
       -e "s/{{dbpassword}}/$E_DBPASSWORD/" \
-    /opt/harmony-smp/setup/context.xml.template > /opt/harmony-smp/conf/context.xml
+    /opt/harmony-smp/setup/context.xml.template > /etc/harmony-smp/tomcat-conf/context.xml
 
   adduser --system --quiet --no-create-home --shell /usr/sbin/nologin --group --gecos "Harmony user" harmony_smp
 

@@ -1,1 +1,1 @@
-/opt/harmony-smp/conf /etc/harmony-smp/tomcat-conf
+/etc/harmony-smp/tomcat-conf /opt/harmony-smp/conf
