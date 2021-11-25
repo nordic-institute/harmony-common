@@ -1,1 +1,1 @@
-/opt/harmony-ap/conf /etc/harmony-ap/tomcat-conf
+/etc/harmony-ap/tomcat-conf /opt/harmony-ap/conf
