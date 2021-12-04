@@ -40,7 +40,7 @@ case "$1" in
   SERVERDN="$RET"
   db_stop
 
-  DBUSER=harmony
+  DBUSER=harmony-ap
   SCHEMA_EXISTS=$(mysql -s -N -e "SELECT SCHEMA_NAME FROM INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME='harmony_ap'");
   if [ -z "$SCHEMA_EXISTS" ]; then
     DROPDBONERROR=true
@@ -102,10 +102,10 @@ case "$1" in
         /opt/harmony-ap/setup/domibus.properties.template > /etc/harmony-ap/domibus.properties
   fi
 
-  adduser --system --quiet --no-create-home --shell /usr/sbin/nologin --group --gecos "Harmony user" harmony
+  adduser --system --quiet --no-create-home --shell /usr/sbin/nologin --group --gecos "Harmony user" harmony-ap
 
   # check validity of user and group
-  if [ "`id -u harmony`" -eq 0 ]; then
+  if [ "`id -u harmony-ap`" -eq 0 ]; then
       echo "The Harmony AP system user must not have uid 0 (root).Please fix this and reinstall this package." >&2
       exit 1
   fi
@@ -116,16 +116,16 @@ case "$1" in
 
   mkdir -p /opt/harmony-ap/temp
 
-  chown -R harmony:harmony /opt/harmony-ap
+  chown -R harmony-ap:harmony-ap /opt/harmony-ap
   chmod -R 0755 /opt/harmony-ap
 
   # nicer log directory permissions
   mkdir -p /var/log/harmony-ap
   chmod 1770 /var/log/harmony-ap
-  chown harmony:adm /var/log/harmony-ap
+  chown harmony-ap:adm /var/log/harmony-ap
 
   # config folder permissions
-  chown -R harmony:harmony /etc/harmony-ap
+  chown -R harmony-ap:harmony-ap /etc/harmony-ap
   chmod -R 0751 /etc/harmony-ap
 
   SUCCESS=true

@@ -15,7 +15,7 @@ cleanup() {
   db_stop
   if [ ! "$SUCCESS" = true ]; then
     if [ "$DROPDBONERROR" = true ]; then
-      mysql -e "DROP SCHEMA harmony_smp; DROP USER harmony_smp@localhost"
+      mysql -e "DROP SCHEMA harmony_smp; DROP USER $DBUSER@localhost"
     fi;
   fi
 }
@@ -39,7 +39,7 @@ case "$1" in
   db_get harmony-smp/smpip
   SMPIP="$RET"
 
-  DBUSER=harmony_smp
+  DBUSER=harmony-smp
   DBPASSWORD=$(openssl rand -base64 12)
 
   SCHEMA_EXISTS=$(mysql -s -N -e "SELECT SCHEMA_NAME FROM INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME='harmony_smp'");
@@ -123,30 +123,30 @@ case "$1" in
       -e "s/{{dbpassword}}/$E_DBPASSWORD/" \
     /opt/harmony-smp/setup/context.xml.template > /etc/harmony-smp/tomcat-conf/context.xml
 
-  adduser --system --quiet --no-create-home --shell /usr/sbin/nologin --group --gecos "Harmony user" harmony_smp
+  adduser --system --quiet --no-create-home --shell /usr/sbin/nologin --group --gecos "Harmony user" harmony-smp
 
   # check validity of user and group
-  if [ "`id -u harmony_smp`" -eq 0 ]; then
-      echo "The Harmony SMP system user 'harmony_smp' must not have uid 0 (root).Please fix this and reinstall this package." >&2
+  if [ "`id -u harmony-smp`" -eq 0 ]; then
+      echo "The Harmony SMP system user 'harmony-smp' must not have uid 0 (root).Please fix this and reinstall this package." >&2
       exit 1
   fi
-  if [ "`id -g harmony_smp`" -eq 0 ]; then
-      echo "The Harmony SMP system user 'harmony_smp' must not have root as primary group. Please fix this and reinstall this package." >&2
+  if [ "`id -g harmony-smp`" -eq 0 ]; then
+      echo "The Harmony SMP system user 'harmony-smp' must not have root as primary group. Please fix this and reinstall this package." >&2
       exit 1
   fi
 
   mkdir -p /opt/harmony-smp/temp
 
-  chown -R harmony_smp:harmony_smp /opt/harmony-smp
+  chown -R harmony-smp:harmony-smp /opt/harmony-smp
   chmod -R 0755 /opt/harmony-smp
 
   # nicer log directory permissions
   mkdir -p /var/log/harmony-smp
   chmod 1770 /var/log/harmony-smp
-  chown harmony_smp:adm /var/log/harmony-smp
+  chown harmony-smp:adm /var/log/harmony-smp
 
   # config folder permissions
-  chown -R harmony_smp:harmony_smp /etc/harmony-smp
+  chown -R harmony-smp:harmony-smp /etc/harmony-smp
   chmod -R 0751 /etc/harmony-smp
 
   SUCCESS=true

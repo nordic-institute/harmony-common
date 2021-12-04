@@ -192,8 +192,8 @@ See the Domibus Plugin Cookbook \[[PLUGIN_COOKBOOK](#Ref_PLUGIN_COOKBOOK)\] for 
 ### 2.9 Changes Made to System During Installation
 
 In addition to installing required dependencies, the installation process completes the following steps:
-- creates linux user `harmony` that is used to run the Access Point service;
-- creates MySQL database user `harmony` and generates random password for it;
+- creates linux user `harmony-ap` that is used to run the Access Point service;
+- creates MySQL database user `harmony-ap` and generates random password for it;
 - creates MySQL database schema `harmony_ap` and populates it with needed metadata;
 - loads initial configuration into database;
 - generates self-signed certificates for content encryption and for transport encryption;
@@ -207,7 +207,7 @@ During the installation process, multiple random passwords are generated.
 
 | **Password purpose** | **Password location** |
 |---|---|
-| Password for `harmony` MySQL user | Configuration file: `/etc/harmony-ap/domibus.properties`<br /><br />Properties: `domibus.datasource.xa.property.password` and `domibus.datasource.password`. |
+| Password for `harmony-ap` MySQL user | Configuration file: `/etc/harmony-ap/domibus.properties`<br /><br />Properties: `domibus.datasource.xa.property.password` and `domibus.datasource.password`. |
 | Content encryption keystore (`/etc/harmony-ap/ap-keystore.jks`) password | Configuration file: `/etc/harmony-ap/domibus.properties`<br /><br />Properties: `domibus.security.keystore.password` and `domibus.security.key.private.password`. Content of this keystore can be changed using the administrative UI. |
 | Content encryption truststore (`/etc/harmony-ap/ap-truststore.jks`) password | `Configuration file: /etc/harmony-ap/domibus.properties`<br /><br />Properties: `domibus.security.truststore.password`. Content of this keystore can be changed using UI. |
 | TLS keystore (`/etc/harmony-ap/tls-keystore.jks`) password | Configuration file: `/etc/harmony-ap/conf/server.xml` |
