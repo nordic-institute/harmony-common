@@ -66,17 +66,13 @@ See eDelivery definitions documentation \[[TERMS](#Ref_TERMS)\].
 
 ## 2. Dynamic Discovery for Sending Parties
 
-Sending parties need to have a working Access Point component.
-
 ### 2.1 Prerequisites
 
 Before starting the dynamic discovery configuration process, please complete the Access Point installation according to the installation guide:
 
-- Harmony eDelivery Access - Access Point Installation Guide \[[IG-AS](harmony-ap_installation_guide.md)\]
+- Harmony eDelivery Access - Access Point Installation Guide \[[IG-AS](harmony-ap_installation_guide.md)\].
 
 ## 3. Dynamic Discovery for Receiving Parties
-
-Receiving parties need to have working Access Point and SMP components.
 
 ### 3.1 Prerequisites
 
