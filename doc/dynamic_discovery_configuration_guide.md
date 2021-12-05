@@ -30,6 +30,7 @@ To view a copy of this license, visit <https://creativecommons.org/licenses/by-s
   - [3.1 Prerequisites](#31-prerequisites)
   - [3.2 Registering SMP in SML](#32-registering-smp-in-sml)
   - [3.3 Registering Final Recipient in SML](#33-registering-final-recipient-in-sml)
+    - [3.3.1 Final Recipient in Access Point and AS4 Message](#331-final-recipient-in-access-point-and-as4-message)
   - [3.4 Registering Services in SMP](#34-registering-services-in-smp)
     - [3.4.1 Specifying Document Identifier Scheme and Document Identifier in AP PMode and AS4 Message](#341-specifying-document-identifier-scheme-and-document-identifier-in-ap-pmode-and-as4-message)
     - [3.4.2 Specifying Process Scheme and Process Identifier in AP PMode and in AS4 Message](#342-specifying-process-scheme-and-process-identifier-in-ap-pmode-and-in-as4-message)
@@ -83,18 +84,34 @@ Before starting the dynamic discovery configuration process, please complete the
 
 ### 3.2 Registering SMP in SML
 
-First, the SMP server must be registered in SML. Please note that a single SMP instance can provide metadata for multiple SML domains.
+First, the SMP server must be registered in SML. Please note that a single SMP instance can provide metadata for multiple SML domains. 
 
-Only user with the `SYSTEM` role can register, unregister and change SMP registrations in SML.
+To register SMP to SML two certificates with private keys are needed and must be present in the SMP keystore (`/etc/harmony-smp/smp-keystore.jks`):
 
-To register SMP to SML two certificates with private keys are needed and must be present in SMP keystore (`/etc/harmony-smp/smp-keystore.jks`):
+- Client certificate and private key for TLS connections to SML ("SML ClientCert" in the SMP UI)
+- Metadata signing certificate and private key for signing service metadata ("Response signature Certificate" in the SMP UI)
 
-- Client certificate and private key for TLS connections to SML (SML ClientCert in the SMP UI)
-- Metadata signing certificate and private key for signing service metadata (Response signature Certificate in the SMP UI)
+Certificates used by SMP must be trusted by SML and Access Points using the SMP. More detailed certificate requirements depend on the eDelivery network. SMP keystore can be managed in the SMP admin UI by clicking the "Edit keystore" button under the "Domain" section.
 
-SMP keystore can be managed in the SMP admin UI by clicking the "Edit keystore" button under the "Domain" section.
+An SMP server is registered in SML by completing the steps below:
 
-Certificates used by SMP must be trusted by SML and Access Points using the SMP. Requirements depend on the eDelivery network.
+- Log in to the SMP UI using a user with the `SYSTEM_ADMIN` role.
+  - Only a user with the `SYSTEM_ADMIN` role can register, unregister and change the SMP registration.
+- Open the "Domain" section.
+- Click the "New" button and the "New Domain" dialog appears.
+- Provide the following information:
+  - Domain properties:
+      - Domain Code
+      - SML domain
+      - Response signature Certificate (Signature CertAlias)
+  - SML integration data:
+    - SML SMP identifier
+    - SML ClientCert Alias
+      - SML clientCert Header is populated automatically once SML ClientCert Alias is selected.
+- Click the "OK" button to close the "New Domain" dialog.
+- Click the "Save" button to save the changes.
+  - **Note:** Changes are not saved if the "Save" button is not clicked.
+- Select the new domain and click the "Register" button to send a registration request to SML.
 
 ### 3.3 Registering Final Recipient in SML
 
@@ -102,17 +119,32 @@ Only the final recipient, corner `C4` in four corner topology, is registered in 
 original sender (`C1`), initiator (`C2`) and responder (`C3`) - don't need to be registered in SML. Note that `C1` and
 `C2`, as well as `C3` and `C4` can be the same organisation.
 
-A final recipient can be registered in SML by users with the `SMP_ADMIN` role only.
+A final recipient is registered using its identifier. Allowed identifier types and values depend on the eDelivery 
+network. Identifiers consist of identifier type and identifier value. These values may be represented as two separate 
+fields or as a single field where type and value are concatenated.
 
-A final recipient is registered using its identifier. Allowed identifier types and values depend on the eDelivery network.
-
-Identifiers consist of identifier type and identifier value. These values may be represented as two separate fields
-or as a single field where type and value are concatenated.
-
-In the SMP UI and documentation a final recipient is represented by "Servicegroup". The final recipient is identified by servicegroup fields
+In the SMP UI and documentation a final recipient is represented by "ServiceGroup". The final recipient is identified by the fields
 "Participant identifier" and "Participant scheme".
 
-In the Access Point configuration, the final recipient is represented as a plugin user. The recipient is identified by single field "Original user".
+A final recipient is registered in SML by completing the steps below:
+
+- Log in to the SMP UI using a user with the `SMP_ADMIN` role.
+  - Only a user with the `SMP_ADMIN` role can add, delete and modify final recipients.
+- Open the "Edit" section.
+- Click the "New" button and the "New ServiceGroup" dialog appears.
+- Provide the following information:
+  - Participant identifier
+  - Participant scheme
+    - Must start with `urn:oasis:names:tc:ebcore:partyid-type:(iso6523:|unregistered:)` OR must be up to 25 characters long with form `[domain]-[identifierArea]-[identifierType]` (e.g.: `busdox-actorid-upis`) and may only contain the following characters: [a-z0-9]. 
+  - Owners
+  - Domains
+- Click the "OK" button to close the "New ServiceGroup" dialog.
+- Click the "Save" button to save the changes.
+  - **Note:** Changes are not saved if the "Save" button is not clicked.
+
+#### 3.3.1 Final Recipient in Access Point and AS4 Message
+
+In the Access Point (`C3`) configuration, the final recipient is represented as a plugin user. The recipient is identified by single field "Original user".
 This field must contain identifier type concatenated with identifier value, separated by `::`.
 
 In AS4 messages the final recipient (and also original sender) can be represented in two ways:
@@ -134,15 +166,30 @@ As a single identifier value without type attribute:
 
 Services provided by the final recipient are registered in SMP where interested parties can retrieve metadata about them.
 
-Services can be registered by SMP users with roles `SMP_ADMIN` or `SERVICEGROUP_ADMIN` (with permission to specific servicegroup).
+A service is registered in SMP by completing the steps below:
 
-To register a service in SMP the following fields have to be filled:
-
-- document identifier scheme and document identifier;
-- process scheme and process identifier;
-- service endpoint url - actual Access Point url where SOAP request must be sent;
-- certificate for encrypting messages - note that this is the certificate of Access Point (`C3` in four corner model), not the certificate
-of final recipient.
+- Log in to the SMP UI using a user with the `SMP_ADMIN` or `SERVICE_GROUP_ADMIN` (with permission to specific ServiceGroup) role.
+  - Only a user with the `SMP_ADMIN` or `SERVICE_GROUP_ADMIN` (with permission to specific ServiceGroup) role can add, delete and modify services.
+- Open the "Edit" section.
+- On the row of the participant who owns the service, click the "Add service metadata" icon in the "Actions" column and the "New ServiceMetada" dialog appears.
+- Click the "Metadata wizard" button and the "ServiceMetadaWizard" appears.
+- Provide the following information:
+  - Document identifier scheme
+  - Document identifier
+  - Process scheme
+  - Process identifier
+  - Transport profile
+    - The default is `bdxr-transport-ebms3-as4-v1p0`
+  - Endpoint URL
+    - The URL of the Access Point (`C3`) where SOAP requests are sent, e.g., `https://<HOST>:8443/services/msh`.
+  - Upload certificate
+    - Certificate for encrypting messages. Note that this is the content encryption certificate of Access Point (`C3`), not the certificate of the final recipient.
+  - Service description
+  - Technical Contact URL
+- Click the "OK" button to close the "ServiceMetadaWizard" dialog.
+- Click the "OK" button to close the "New ServiceMetada" dialog.
+- Click the "Save" button to save the changes.
+  - **Note:** Changes are not saved if the "Save" button is not clicked.
 
 #### 3.4.1 Specifying Document Identifier Scheme and Document Identifier in AP PMode and AS4 Message
 
