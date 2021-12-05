@@ -144,8 +144,9 @@ A final recipient is registered in SML by completing the steps below:
 
 #### 3.3.1 Final Recipient in Access Point and AS4 Message
 
-In the Access Point (`C3`) configuration, the final recipient is represented as a plugin user. The recipient is identified by single field "Original user".
-This field must contain identifier type concatenated with identifier value, separated by `::`.
+In the Access Point (`C3`) configuration, the final recipient is represented as a plugin user. The recipient is 
+identified by single field "Original user". This field must contain identifier type concatenated with identifier 
+value, separated by `::`.
 
 In AS4 messages the final recipient (and also original sender) can be represented in two ways:
 
