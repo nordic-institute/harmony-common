@@ -73,6 +73,12 @@ Before starting the dynamic discovery configuration process, please complete the
 
 - Harmony eDelivery Access - Access Point Installation Guide \[[IG-AS](harmony-ap_installation_guide.md)\].
 
+### 2.2 Configuring dynamic discovery in sender AP
+
+Sender side parties (corners `C1` and `C2`) do not have to register themselves in SML or SMP. To use dynamic discovery
+process sender AP has to configure its PMode. To use dynamic discovery `process` element in PMode must not contain `responderParties`
+element. Correspondingly in the actual AS4 message sent `/UserMessage/PartyInfo/To` element must be empty.
+
 ## 3. Dynamic Discovery for Receiving Parties
 
 ### 3.1 Prerequisites
@@ -146,7 +152,7 @@ A final recipient is registered in SML by completing the steps below:
 
 In the Access Point (`C3`) configuration, the final recipient is represented as a plugin user. The recipient is 
 identified by single field "Original user". This field must contain identifier type concatenated with identifier 
-value, separated by `::`.
+value, separated by `:`.
 
 In AS4 messages the final recipient (and also original sender) can be represented in two ways:
 
@@ -192,7 +198,12 @@ A service is registered in SMP by completing the steps below:
 - Click the "Save" button to save the changes.
   - **Note:** Changes are not saved if the "Save" button is not clicked.
 
-#### 3.4.1 Specifying Document Identifier Scheme and Document Identifier in AP PMode and AS4 Message
+### 3.5 Configuring dynamic discovery in sender AP
+
+To use dynamic discovery process receiver AP has to configure its PMode. To use dynamic discovery `process` element in PMode must not contain `responderParties`
+element. 
+
+#### 3.5.1 Specifying Document Identifier Scheme and Document Identifier in AP PMode and AS4 Message
 
 In PMode the following excerpt corresponds to document with scheme `docidscheme` and identifier `documentidvalue`:
 
@@ -212,7 +223,7 @@ In AS4 message the same document type is referenced as:
 
         </CollaborationInfo>
 
-#### 3.4.2 Specifying Process Scheme and Process Identifier in AP PMode and in AS4 Message
+#### 3.5.2 Specifying Process Scheme and Process Identifier in AP PMode and in AS4 Message
 
 In PMODE the following excerpt corresponds to process with scheme `servicetype` and identifier `bdx:noprocess`:
 
