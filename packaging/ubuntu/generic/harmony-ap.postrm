@@ -1,16 +1,17 @@
 #!/bin/bash
+
+. /usr/share/debconf/confmodule
+
 if [[ "$1" == "remove" ]]; then
-  rm -f /etc/harmony-ap/ap-keystore.jks
-  rm -f /etc/harmony-ap/ap-truststore.jks
-  rm -f /etc/harmony-ap/tls-keystore.jks
-  rm -f /etc/harmony-ap/domibus.properties
-
-  rm -f /opt/harmony-ap/conf/server.xml
-  rm -rf /opt/harmony-ap/conf/Catalina
-
-  rm -rf /opt/harmony-ap/webapps/ROOT
-
-  rm -rf /opt/harmony-ap/temp
-  rm -rf /opt/harmony-ap/work
+  rm -rf /opt/harmony-ap
+elif [[ "$1" == "purge" ]]; then
+  db_purge
+  rm -rf /etc/harmony-ap
+elif [[ "$1" == "abort-install" ]]; then
+  rm -rf /etc/harmony-ap
+  rm -rf /opt/harmony-ap
 fi
+
+db_stop
+
 exit 0
