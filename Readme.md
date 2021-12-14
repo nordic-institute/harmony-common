@@ -2,9 +2,9 @@
 [![Documentation badge](https://img.shields.io/badge/docs-latest-brightgreen.svg)](doc/)
 [![Support badge]( https://img.shields.io/badge/support-sof-yellowgreen.svg)](https://edelivery.digital/contact)
 
-# Harmony eDelivery Access Common Repository
+# Harmony eDelivery Access
 
-![Harmony eDeliver Access logo](doc/img/harmony-logo.png)
+![Harmony eDelivery Access logo](doc/img/harmony-logo.png)
 
 ## About the Repository
 
