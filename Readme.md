@@ -1,3 +1,7 @@
+[![License badge](https://img.shields.io/badge/license-EUPL-blue.svg)](License.md)
+[![Documentation badge](https://img.shields.io/badge/docs-latest-brightgreen.svg)](doc/)
+[![Support badge]( https://img.shields.io/badge/support-sof-yellowgreen.svg)](https://edelivery.digital/contact)
+
 # Harmony eDelivery Access Common Repository
 
 ![Harmony eDeliver Access logo](doc/img/harmony-logo.png)
