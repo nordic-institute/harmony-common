@@ -25,6 +25,8 @@ Harmony eDelivery Access is based on upon the [Domibus](https://ec.europa.eu/cef
  
 Please visit the Harmony eDelivery Access [website](https://edelivery.digital) for more information.
 
+Harmony eDelivery Access release notes and additional support material are available in the [Harmony Knowledge Base](https://confluence.niis.org/display/HEAKB/).
+
 ## Installation
 
 The easiest way to install Harmony is to use the installation packages provided by NIIS. The installation guides for Access Point and SMP are available here:
