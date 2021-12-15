@@ -1,6 +1,5 @@
 #!/bin/bash
 set -e
-set -x
 
 . /usr/share/debconf/confmodule
 
@@ -77,14 +76,14 @@ case "$1" in
     TLSKEYPASS=$(openssl rand -base64 12)
 
     keytool -genkeypair -keyalg RSA -alias selfsigned -keystore /etc/harmony-ap/ap-keystore.jks -storepass $KEYSTOREPASS \
-      -keypass $KEYSTOREPASS -validity 333 -keysize 3096 -dname "$SERVERDN"
+      -keypass $KEYSTOREPASS -validity 333 -keysize 3096 -dname "$SERVERDN" 2>/dev/null
 
     keytool -genkeypair -keyalg RSA -alias selfsigned -keystore /etc/harmony-ap/tls-keystore.jks -storepass $TLSKEYPASS \
-      -keypass $TLSKEYPASS -validity 333 -keysize 3096 -dname "$SERVERDN"
+      -keypass $TLSKEYPASS -validity 333 -keysize 3096 -dname "$SERVERDN" 2>/dev/null
 
     keytool -genkeypair -alias mock -keystore /etc/harmony-ap/ap-truststore.jks -storepass $TRUSTSTOREPASS \
-      -keypass $TRUSTSTOREPASS -dname "CN=mock"
-    keytool -delete -alias mock -keystore /etc/harmony-ap/ap-truststore.jks -storepass $TRUSTSTOREPASS
+      -keypass $TRUSTSTOREPASS -dname "CN=mock" 2>/dev/null
+    keytool -delete -alias mock -keystore /etc/harmony-ap/ap-truststore.jks -storepass $TRUSTSTOREPASS 2>/dev/null
 
     E_KEYSTOREPASS=$(escape_for_sed "$KEYSTOREPASS")
     E_TRUSTSTOREPASS=$(escape_for_sed "$TRUSTSTOREPASS")
