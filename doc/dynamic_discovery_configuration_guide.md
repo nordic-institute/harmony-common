@@ -26,14 +26,16 @@ To view a copy of this license, visit <https://creativecommons.org/licenses/by-s
   - [1.4 Prerequisites](#14-prerequisites)
 - [2. Dynamic Discovery for Sending Parties](#2-dynamic-discovery-for-sending-parties)
   - [2.1 Prerequisites](#21-prerequisites)
+  - [2.2 Configuring Dynamic Discovery in Sender AP](#22-configuring-dynamic-discovery-in-sender-ap)
 - [3. Dynamic Discovery for Receiving Parties](#3-dynamic-discovery-for-receiving-parties)
   - [3.1 Prerequisites](#31-prerequisites)
   - [3.2 Registering SMP in SML](#32-registering-smp-in-sml)
   - [3.3 Registering Final Recipient in SML](#33-registering-final-recipient-in-sml)
-    - [3.3.1 Final Recipient in Access Point and AS4 Message](#331-final-recipient-in-access-point-and-as4-message)
   - [3.4 Registering Services in SMP](#34-registering-services-in-smp)
-    - [3.4.1 Specifying Document Identifier Scheme and Document Identifier in AP PMode and AS4 Message](#341-specifying-document-identifier-scheme-and-document-identifier-in-ap-pmode-and-as4-message)
-    - [3.4.2 Specifying Process Scheme and Process Identifier in AP PMode and in AS4 Message](#342-specifying-process-scheme-and-process-identifier-in-ap-pmode-and-in-as4-message)
+  - [3.5 Configuring Dynamic Discovery in Receiving AP](#35-configuring-dynamic-discovery-in-receiving-ap)
+    - [3.5.1 Final Recipient in Plugin Configuration and AS4 Message](#351-final-recipient-in-plugin-configuration-and-as4-message)
+    - [3.5.2 Specifying Document Identifier Scheme and Document Identifier in AP PMode and AS4 Message](#352-specifying-document-identifier-scheme-and-document-identifier-in-ap-pmode-and-as4-message)
+    - [3.5.3 Specifying Process Scheme and Process Identifier in AP PMode and in AS4 Message](#353-specifying-process-scheme-and-process-identifier-in-ap-pmode-and-in-as4-message)
  
 ## 1 Introduction
 
@@ -64,6 +66,8 @@ See eDelivery definitions documentation \[[TERMS](#Ref_TERMS)\].
 1. <a id="Ref_TERMS" class="anchor"></a>\[TERMS\] CEF Definitions - eDelivery Definitions, <https://ec.europa.eu/cefdigital/wiki/display/CEFDIGITAL/CEF+Definitions#CEFDefinitions-eDeliveryDefinitions>
 2. <a id="Ref_IG-AP" class="anchor"></a>\[IG-AP\] Harmony eDelivery Access - Access Point Installation Guide. Document ID: [IG-AS](harmony-ap_installation_guide.md)
 3. <a id="Ref_IG-SMP" class="anchor"></a>\[IG-SMP\] Harmony eDelivery Access - Service Metadata Publisher Installation Guide. Document ID: [IG-SMP](harmony-smp_installation_guide.md)
+4. <a id="Ref_DOMIBUS_ADMIN_GUIDE" class="anchor"></a>\[DOMIBUS_ADMIN_GUIDE\] Access Point Administration Guide - Domibus 4.2.5, <https://ec.europa.eu/cefdigital/wiki/download/attachments/447677321/%28eDelivery%29%28AP%29%28AG%29%284.2.5%29%288.9.6%29.pdf>
+5. <a id="Ref_SMP_ADMIN_GUIDE" class="anchor"></a>\[SMP_ADMIN_GUIDE\] SMP Administration Guide - SMP 4.X, <https://ec.europa.eu/cefdigital/wiki/download/attachments/82773286/%28eDelivery%29%28SMP%29%28AG%29%28CEF%20SMP%204.1.1%29%283.1%29.pdf>
 
 ## 2. Dynamic Discovery for Sending Parties
 
@@ -73,11 +77,68 @@ Before starting the dynamic discovery configuration process, please complete the
 
 - Harmony eDelivery Access - Access Point Installation Guide \[[IG-AS](harmony-ap_installation_guide.md)\].
 
-### 2.2 Configuring dynamic discovery in sender AP
+### 2.2 Configuring Dynamic Discovery in Sender AP
 
-Sender side parties (corners `C1` and `C2`) do not have to register themselves in SML or SMP. To use dynamic discovery
-process sender AP has to configure its PMode. To use dynamic discovery `process` element in PMode must not contain `responderParties`
-element. Correspondingly in the actual AS4 message sent `/UserMessage/PartyInfo/To` element must be empty.
+Sending parties (corners `C1` and `C2`) do not have to be registered in SMP or SML, only receiving parties do. Instead, 
+to enable dynamic discovery, sending parties must configure the values of the following properties in the 
+`/etc/harmony-ap/domibus.properties` configuration file:
+
+```
+# Whether to use dynamic discovery or not
+domibus.dynamicdiscovery.useDynamicDiscovery=true
+
+# The SML zone
+domibus.smlzone=<SML_ZONE>
+
+# The dynamic discovery client to be used for the dynamic process. 
+# Possible values: OASIS and PEPPOL. Defaults to OASIS.
+domibus.dynamicdiscovery.client.specification=OASIS
+
+# Specifies the PEPPOL dynamic discovery client mode: PRODUCTION or TEST mode.
+# Defaults to TEST.
+#domibus.dynamicdiscovery.peppolclient.mode=TEST
+```
+
+If you're not sure about the correct values of the `domibus.smlzone`, `domibus.dynamicdiscovery.client.specification` and
+`domibus.dynamicdiscovery.peppolclient.mode` properties, please contact the domain authority of the policy domain where
+the Access Point is registered.
+
+In addition, some changes are required in the sending party's PMode. Since the receiver of the message isn't known beforehand,
+the `PMode.Responder` parameter should not be set. In practice, the `process` element in PMode must not contain 
+`responderParties` element.
+
+```
+...
+<process name="tc1Process" initiatorRole="defaultInitiatorRole" responderRole="defaultResponderRole" mep="oneway" binding="push">
+    <initiatorParties>
+        <initiatorParty name="senderalist"/>
+    </initiatorParties>
+    <!-- no responderParties element -->
+    <legs>
+        <leg name="pushTestcase1tc1Action"/>
+        <leg name="testServiceCase"/>
+    </legs>
+</process>
+...
+``` 
+
+Similarly, in the AS4 message that's sent the `/UserMessage/PartyInfo/To` element must be empty.
+
+```
+<ns:UserMessage>
+    <ns:PartyInfo>
+        <ns:From>
+            <ns:PartyId type="urn:fdc:peppol.eu:2017:identifiers:ap">senderalias</ns:PartyId>
+            <ns:Role> http://docs.oasis-open.org/ebxml-msg/ebms/v3.0/ns/core/200704/initiator</ns:Role>
+        </ns:From>
+        <ns:To>
+        </ns:To>
+    </ns:PartyInfo>
+...
+<ns:UserMessage>
+```
+
+See the Domibus Administration Guide \[[DOMIBUS_ADMIN_GUIDE](#Ref_DOMIBUS_ADMIN_GUIDE])\] for more details.
 
 ## 3. Dynamic Discovery for Receiving Parties
 
@@ -119,6 +180,8 @@ An SMP server is registered in SML by completing the steps below:
   - **Note:** Changes are not saved if the "Save" button is not clicked.
 - Select the new domain and click the "Register" button to send a registration request to SML.
 
+See the SMP Administration Guide \[[SMP_ADMIN_GUIDE](#Ref_SMP_ADMIN_GUIDE])\] for more details.
+
 ### 3.3 Registering Final Recipient in SML
 
 Only the final recipient, corner `C4` in four corner topology, is registered in SML. In other words, the other parties - 
@@ -148,26 +211,7 @@ A final recipient is registered in SML by completing the steps below:
 - Click the "Save" button to save the changes.
   - **Note:** Changes are not saved if the "Save" button is not clicked.
 
-#### 3.3.1 Final Recipient in Access Point and AS4 Message
-
-In the Access Point (`C3`) configuration, the final recipient is represented as a plugin user. The recipient is 
-identified by single field "Original user". This field must contain identifier type concatenated with identifier 
-value, separated by `:`.
-
-In AS4 messages the final recipient (and also original sender) can be represented in two ways:
-
-- as a single identifier value, like in Access Point plugin user configuration;
-- as a identifier value and corresponding type attribute.
-
-Both these excerpts are valid and equal representations of the final recipient:
-
-With type attribute:
-
-    <Property name="finalRecipient" type="urn:oasis:names:tc:ebcore:partyid-type:iso6523:0088">8735822991022</Property>
-
-As a single identifier value without type attribute:
-
-    <Property name="finalRecipient">urn:oasis:names:tc:ebcore:partyid-type:iso6523:0088:8735822991022</Property>
+See the SMP Administration Guide \[[SMP_ADMIN_GUIDE](#Ref_SMP_ADMIN_GUIDE])\] for more details.
 
 ### 3.4 Registering Services in SMP
 
@@ -198,12 +242,53 @@ A service is registered in SMP by completing the steps below:
 - Click the "Save" button to save the changes.
   - **Note:** Changes are not saved if the "Save" button is not clicked.
 
-### 3.5 Configuring dynamic discovery in sender AP
+See the SMP Administration Guide \[[SMP_ADMIN_GUIDE](#Ref_SMP_ADMIN_GUIDE])\] for more details.
 
-To use dynamic discovery process receiver AP has to configure its PMode. To use dynamic discovery `process` element in PMode must not contain `responderParties`
-element. 
+### 3.5 Configuring Dynamic Discovery in Receiving AP
 
-#### 3.5.1 Specifying Document Identifier Scheme and Document Identifier in AP PMode and AS4 Message
+To use dynamic discovery, some changes are required in the receiving party's PMode. Since the sender of the message 
+isn't known beforehand, the `PMode.Initiator` parameter should not be set. In practice, the `process` element in PMode 
+must not contain `initiatorParties` element.
+
+```
+...
+<process name="tc1Process" initiatorRole="defaultInitiatorRole" responderRole="defaultResponderRole" mep="oneway" binding="push">
+    <!-- no initiatorParties element -->
+    <responderParties>
+        <responderParty name="receiveralias"/>
+    </responderParties>
+    <legs>
+        <leg name="pushTestcase1tc1Action"/>
+        <leg name="testServiceCase"/>
+    </legs>
+</process>
+...
+``` 
+
+See the Domibus Administration Guide \[[DOMIBUS_ADMIN_GUIDE](#Ref_DOMIBUS_ADMIN_GUIDE])\] for more details.
+
+#### 3.5.1 Final Recipient in Plugin Configuration and AS4 Message
+
+In the Access Point (`C3`) configuration, the final recipient is represented as a plugin user. The recipient is 
+identified by single field `Original user`. This field must contain identifier type concatenated with identifier 
+value, separated by `:`.
+
+In AS4 messages the final recipient (and also original sender) can be represented in two ways:
+
+- as a single identifier value, like in Access Point plugin user configuration;
+- as a identifier value and corresponding type attribute.
+
+Both these excerpts are valid and equal representations of the final recipient:
+
+With type attribute:
+
+    <Property name="finalRecipient" type="urn:oasis:names:tc:ebcore:partyid-type:iso6523:0088">8735822991022</Property>
+
+As a single identifier value without type attribute:
+
+    <Property name="finalRecipient">urn:oasis:names:tc:ebcore:partyid-type:iso6523:0088:8735822991022</Property>
+
+#### 3.5.2 Specifying Document Identifier Scheme and Document Identifier in AP PMode and AS4 Message
 
 In PMode the following excerpt corresponds to document with scheme `docidscheme` and identifier `documentidvalue`:
 
@@ -223,7 +308,7 @@ In AS4 message the same document type is referenced as:
 
         </CollaborationInfo>
 
-#### 3.5.2 Specifying Process Scheme and Process Identifier in AP PMode and in AS4 Message
+#### 3.5.3 Specifying Process Scheme and Process Identifier in AP PMode and in AS4 Message
 
 In PMODE the following excerpt corresponds to process with scheme `servicetype` and identifier `bdx:noprocess`:
 
