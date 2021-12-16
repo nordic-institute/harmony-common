@@ -177,8 +177,8 @@ Ensure that the administrative user interface at `https://<host>:8443/` can be o
 ### 2.8 Changes Made to System During Installation
 
 In addition to installing required dependencies, the installation process completes the following steps:
-- creates linux user `harmony_smp` that is used to run the SMP service;
-- creates MySQL database user `harmony_smp` and generates random password for it;
+- creates linux user `harmony-smp` that is used to run the SMP service;
+- creates MySQL database user `harmony-smp` and generates random password for it;
 - creates MySQL database schema `harmony_smp` and populates it with needed metadata;
 - loads initial configuration into database;
 - generates self-signed certificates for content encryption and for transport encryption;
@@ -192,6 +192,6 @@ During the installation process, multiple random passwords are generated.
 
 | **Password purpose** | **Password location** |
 |---|---|
-| Password for `harmony_smp` MySQL user  | Configuration file: `/etc/harmony-smp/tomcat-conf/context.xml` |
+| Password for `harmony-smp` MySQL user  | Configuration file: `/etc/harmony-smp/tomcat-conf/context.xml` |
 | Content encryption keystore password | MySQL database table `SMP_CONFIGURATION` with key `smp.keystore.password`. **Note:** when the service is started the password will be encrypted. Content of this keystore can be changed using UI.|
 | TLS keystore password | Configuration file: `/etc/harmony-smp/tomcat-conf/server.xml` |

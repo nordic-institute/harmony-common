@@ -6,23 +6,13 @@ set -x
 . /usr/share/debconf/confmodule
 
 if [[ "$1" == "remove" ]]; then
-  rm -rf /opt/harmony-smp/conf/Catalina
-  rm -rf /opt/harmony-smp/webapps
-
-  rm -rf /opt/harmony-smp/temp
-  rm -rf /opt/harmony-smp/work
+  rm -rf /opt/harmony-smp
 elif [[ "$1" == "purge" ]]; then
   db_purge
-  rm -f /etc/harmony-smp/smp-keystore.jks
-  rm -f /etc/harmony-smp/tls-keystore.jks
-  rm -f /etc/harmony-smp/smp-truststore.jks
-  rm -f /etc/harmony-smp/encryptionPrivateKey.private
-
-  rm -f /opt/harmony-smp/conf/server.xml
-  rm -f /opt/harmony-smp/conf/context.xml
+  rm -rf /etc/harmony-smp
 elif [[ "$1" == "abort-install" ]]; then
-  rm -f /etc/harmony-smp/*.jks
-  rm -rf /opt/harmony-smp/webapps
+  rm -rf /etc/harmony-smp
+  rm -rf /opt/harmony-smp
 fi
 
 db_stop
