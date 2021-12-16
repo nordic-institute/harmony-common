@@ -39,7 +39,7 @@ case "$1" in
   SERVERDN="$RET"
   db_stop
 
-  DBUSER=harmony-ap
+  DBUSER=harmony_ap
   SCHEMA_EXISTS=$(mysql -s -N -e "SELECT SCHEMA_NAME FROM INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME='harmony_ap'");
   if [ -z "$SCHEMA_EXISTS" ]; then
     DROPDBONERROR=true

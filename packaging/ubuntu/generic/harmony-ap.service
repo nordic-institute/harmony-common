@@ -15,8 +15,8 @@ Environment='JAVA_OPTS=-Djava.awt.headless=true -Djava.security.egd=file:/dev/./
 ExecStart=/opt/harmony-ap/bin/startup.sh
 ExecStop=/opt/harmony-ap/bin/shutdown.sh
 
-User=harmony
-Group=harmony
+User=harmony-ap
+Group=harmony-ap
 UMask=0007
 RestartSec=10
 Restart=always

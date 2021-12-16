@@ -38,7 +38,7 @@ case "$1" in
   db_get harmony-smp/smpip
   SMPIP="$RET"
 
-  DBUSER=harmony-smp
+  DBUSER=harmony_smp
   DBPASSWORD=$(openssl rand -base64 12)
 
   SCHEMA_EXISTS=$(mysql -s -N -e "SELECT SCHEMA_NAME FROM INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME='harmony_smp'");

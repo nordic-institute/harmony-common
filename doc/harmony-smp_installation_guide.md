@@ -178,7 +178,7 @@ Ensure that the administrative user interface at `https://<host>:8443/` can be o
 
 In addition to installing required dependencies, the installation process completes the following steps:
 - creates linux user `harmony-smp` that is used to run the SMP service;
-- creates MySQL database user `harmony-smp` and generates random password for it;
+- creates MySQL database user `harmony_smp` and generates random password for it;
 - creates MySQL database schema `harmony_smp` and populates it with needed metadata;
 - loads initial configuration into database;
 - generates self-signed certificates for content encryption and for transport encryption;

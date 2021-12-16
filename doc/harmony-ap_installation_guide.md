@@ -193,7 +193,7 @@ See the Domibus Plugin Cookbook \[[PLUGIN_COOKBOOK](#Ref_PLUGIN_COOKBOOK)\] for 
 
 In addition to installing required dependencies, the installation process completes the following steps:
 - creates linux user `harmony-ap` that is used to run the Access Point service;
-- creates MySQL database user `harmony-ap` and generates random password for it;
+- creates MySQL database user `harmony_ap` and generates random password for it;
 - creates MySQL database schema `harmony_ap` and populates it with needed metadata;
 - loads initial configuration into database;
 - generates self-signed certificates for content encryption and for transport encryption;
