@@ -1,5 +1,5 @@
 [Unit]
-Description=Harmony eDelivery Gateway
+Description=Harmony eDelivery Access - Access Point
 After=network.target
 
 [Service]

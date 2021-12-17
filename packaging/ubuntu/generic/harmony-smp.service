@@ -1,5 +1,5 @@
 [Unit]
-Description=Harmony eDelivery Service Metadata Publisher
+Description=Harmony eDelivery Access - SMP
 After=network.target
 
 [Service]
