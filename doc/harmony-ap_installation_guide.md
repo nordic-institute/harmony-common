@@ -154,7 +154,8 @@ Upon the first installation of the Access Point, the system asks for the followi
 - username of the administrative user - username to use to log in to administrative UI;
 - initial password for the administrative user;
 - `Distinguished Name` for generated self signed content and transport certificates;
-  - For example: `CN=example.com, O=My Organisation, C=FI`.
+  - For example: `CN=example.com, O=My Organisation, C=FI`;
+  - **Note:** different eDelivery policy domains may have different requirements for the `Distinguished Name`. If you're not sure about the requirements, please contact the domain authority of the policy domain where the Access Point is registered.
 
 See the Dynamic Discovery Configuration Guide \[[UG-DDCG](dynamic_discovery_configuration_guide.md)\] for more information about how to configure dynamic discovery.
 
