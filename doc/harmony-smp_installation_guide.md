@@ -54,6 +54,7 @@ See eDelivery definitions documentation \[[TERMS](#Ref_TERMS)\].
 
 1. <a id="Ref_TERMS" class="anchor"></a>\[TERMS\] CEF Definitions - eDelivery Definitions, <https://ec.europa.eu/cefdigital/wiki/display/CEFDIGITAL/CEF+Definitions#CEFDefinitions-eDeliveryDefinitions>
 2. <a id="Ref_SMP_ADMIN_GUIDE" class="anchor"></a>\[SMP_ADMIN_GUIDE\] SMP Administration Guide - SMP 4.X, <https://ec.europa.eu/cefdigital/wiki/download/attachments/82773286/%28eDelivery%29%28SMP%29%28AG%29%28CEF%20SMP%204.1.1%29%283.1%29.pdf>
+3. <a id="Ref_UG-DDCG" class="anchor"></a>\[UG-DDCG\] Harmony eDelivery Access - Dynamic Discovery Configuration Guide. Document ID: [UG-DDCG](dynamic_discovery_configuration_guide.md)
 
 ## 2. Installation
 
@@ -149,6 +150,8 @@ Upon the first installation of the SMP, the system asks for the following inform
     - public IP address of this SMP server (reachable from public Internet);
 - username of the administrative user - username to use to log in to administrative UI;
 - initial password for the administrative user.
+
+See the Dynamic Discovery Configuration Guide \[[UG-DDCG](dynamic_discovery_configuration_guide.md)\] for more information about how to configure dynamic discovery.
 
 ### 2.6 Starting harmony-smp Service and Enabling Automatic Startup 
 

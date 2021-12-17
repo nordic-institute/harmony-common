@@ -57,6 +57,7 @@ See eDelivery definitions documentation \[[TERMS](#Ref_TERMS)\].
 2. <a id="Ref_DOMIBUS_ADMIN_GUIDE" class="anchor"></a>\[DOMIBUS_ADMIN_GUIDE\] Access Point Administration Guide - Domibus 4.2.5, <https://ec.europa.eu/cefdigital/wiki/download/attachments/447677321/%28eDelivery%29%28AP%29%28AG%29%284.2.5%29%288.9.6%29.pdf>
 3. <a id="Ref_WS_PLUGIN" class="anchor"></a>\[WS_PLUGIN\] Access Point Interface Control Document - WS Plugin, <https://ec.europa.eu/cefdigital/wiki/download/attachments/447677321/%28eDelivery%29%28AP%29%28ICD%29%28WS%20plugin%29%281.7%29.pdf>
 4. <a id="Ref_PLUGIN_COOKBOOK" class="anchor"></a>\[PLUGIN_COOKBOOK\] Domibus Plugin Cookbook, <https://ec.europa.eu/cefdigital/wiki/download/attachments/447677321/%28eDelivery%29%28AP%29%28Plugin-CB%29%28Domibus.4.2.5%29%284.5%29.pdf>
+5. <a id="Ref_UG-DDCG" class="anchor"></a>\[UG-DDCG\] Harmony eDelivery Access - Dynamic Discovery Configuration Guide. Document ID: [UG-DDCG](dynamic_discovery_configuration_guide.md)
 
 ## 2. Installation
 
@@ -148,9 +149,14 @@ Upon the first installation of the Access Point, the system asks for the followi
 
 - do you want the Access Point installation to use dynamic discovery:
   - if yes: SML zone that you want to use;
+  - if you're not sure about the correct value, please contact the domain authority of the policy domain where the Access Point is registered;
+  - the value can be edited later by changing the `domibus.smlzone` property in the `/etc/harmony-ap/domibus.properties` configuration file;
 - username of the administrative user - username to use to log in to administrative UI;
 - initial password for the administrative user;
-- `Distinguished Name` for generated self signed content and transport certificates.
+- `Distinguished Name` for generated self signed content and transport certificates;
+  - For example: `CN=example.com, O=My Organisation, C=FI`.
+
+See the Dynamic Discovery Configuration Guide \[[UG-DDCG](dynamic_discovery_configuration_guide.md)\] for more information about how to configure dynamic discovery.
 
 ### 2.6 Starting harmony-ap Service and Enabling Automatic Startup 
 

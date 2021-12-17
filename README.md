@@ -1,4 +1,4 @@
-[![License badge](https://img.shields.io/badge/license-EUPL-blue.svg)](License.md)
+[![License badge](https://img.shields.io/badge/license-EUPL-blue.svg)](LICENSE.md)
 [![Documentation badge](https://img.shields.io/badge/docs-latest-brightgreen.svg)](doc/)
 [![Support badge]( https://img.shields.io/badge/support-sof-yellowgreen.svg)](https://edelivery.digital/contact)
 
@@ -19,7 +19,7 @@ Source code of Harmony eDelivery Access is available in two separate repositorie
 - [Access Point](https://github.com/nordic-institute/harmony-access-point)
 - [SMP](https://github.com/nordic-institute/harmony-smp)
 
-The source code is licensed under the [EUPL 1.2](License.md) open-source license.
+The source code is licensed under the [EUPL 1.2](LICENSE.md) open-source license.
 
 ## Introduction to Harmony eDelivery Access
 
@@ -40,7 +40,7 @@ The easiest way to install Harmony is to use the installation packages provided 
 
 ## Building Packages
 
-Alternatively, it's possible to build the packages locally. The instructions for building the Harmony packages locally are available [here](Build.md).
+Alternatively, it's possible to build the packages locally. The instructions for building the Harmony packages locally are available [here](BUILD.md).
 
 ## How to Contribute?
 
