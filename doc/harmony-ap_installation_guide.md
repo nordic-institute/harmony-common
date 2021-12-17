@@ -72,6 +72,8 @@ The software can be installed both on physical and virtualized hardware.
 *Note*: If MySQL database engine is already installed then installation requires that `root` user can access database using UNIX
 socket peer authentication without password.
 
+*Note*: Access Point and SMP must not be installed on the same host because they both use port `8443`.
+
 ### 2.2 Network Diagram
 
 The network diagram below provides an example of an Access Point setup when dynamic discovery is used.
@@ -155,7 +157,7 @@ Upon the first installation of the Access Point, the system asks for the followi
 - initial password for the administrative user;
 - `Distinguished Name` for generated self signed content and transport certificates;
   - For example: `CN=example.com, O=My Organisation, C=FI`;
-  - **Note:** different eDelivery policy domains may have different requirements for the `Distinguished Name`. If you're not sure about the requirements, please contact the domain authority of the policy domain where the Access Point is registered.
+  - *Note:* different eDelivery policy domains may have different requirements for the `Distinguished Name`. If you're not sure about the requirements, please contact the domain authority of the policy domain where the Access Point is registered.
 
 See the Dynamic Discovery Configuration Guide \[[UG-DDCG](dynamic_discovery_configuration_guide.md)\] for more information about how to configure dynamic discovery.
 

@@ -69,6 +69,8 @@ The software can be installed both on physical and virtualized hardware.
 *Note*: If MySQL database engine is already installed then installation requires that `root` user can access database using UNIX
 socket peer authentication without password.
 
+*Note*: SMP and Access Point must not be installed on the same host because they both use port `8443`.
+
 ### 2.2 Network Diagram
 
 The network diagram below provides an example of an SMP setup when dynamic discovery is used.
@@ -143,6 +145,8 @@ sudo apt install harmony-smp
 Upon the first installation of the SMP, the system asks for the following information.
 
 - `Distinguished Name` for generated self-signed content and transport certificates;
+  - For example: `CN=example.com, O=My Organisation, C=FI`;
+  - *Note:* different eDelivery policy domains may have different requirements for the `Distinguished Name`. If you're not sure about the requirements, please contact the domain authority of the policy domain where the SMP is registered.
 - do you want the SMP installation to publish information to some Service Metadata Locator (SML);  
   - if yes then: 
     - full URL of the SML server;
