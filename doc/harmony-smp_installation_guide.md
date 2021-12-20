@@ -30,7 +30,7 @@ To view a copy of this license, visit <https://creativecommons.org/licenses/by-s
   - [2.3 Requirements for the Access Point](#23-requirements-for-the-smp)
   - [2.4 Preparing OS](#24-preparing-os)
   - [2.5 Setup Package Repository](#25-setup-package-repository)
-  - [2.6 Access Pointn Installation](#26-smp-installation)
+  - [2.6 SMP Installation](#26-smp-installation)
   - [2.7 Starting harmony-ap service and enabling automatic startup](#27-starting-harmony-smp-service-and-enabling-automatic-startup)
   - [2.8 Post-Installation Checks](#28-post-installation-checks)
   - [2.9 Changes made to system during installation](#29-changes-made-to-system-during-installation)
