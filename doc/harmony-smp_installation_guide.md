@@ -29,12 +29,12 @@ To view a copy of this license, visit <https://creativecommons.org/licenses/by-s
   - [2.2 Network Diagram](#22-network-diagram)
   - [2.3 Requirements for the Access Point](#23-requirements-for-the-smp)
   - [2.4 Preparing OS](#24-preparing-os)
-  - [2.5 Setup Package Repository](#24-setup-package-repository)
-  - [2.6 Access Pointn Installation](#25-smp-installation)
-  - [2.7 Starting harmony-ap service and enabling automatic startup](#26-starting-harmony-smp-service-and-enabling-automatic-startup)
-  - [2.8 Post-Installation Checks](#27-post-installation-checks)
-  - [2.9 Changes made to system during installation](#28-changes-made-to-system-during-installation)
-  - [2.10 Location of configuration and generated passwords](#29-location-of-configuration-and-generated-passwords)
+  - [2.5 Setup Package Repository](#25-setup-package-repository)
+  - [2.6 Access Pointn Installation](#26-smp-installation)
+  - [2.7 Starting harmony-ap service and enabling automatic startup](#27-starting-harmony-smp-service-and-enabling-automatic-startup)
+  - [2.8 Post-Installation Checks](#28-post-installation-checks)
+  - [2.9 Changes made to system during installation](#29-changes-made-to-system-during-installation)
+  - [2.10 Location of configuration and generated passwords](#210-location-of-configuration-and-generated-passwords)
   
 ## 1 Introduction
 
