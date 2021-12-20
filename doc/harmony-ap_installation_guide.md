@@ -28,7 +28,7 @@ To view a copy of this license, visit <https://creativecommons.org/licenses/by-s
   - [2.2 Network Diagram](#22-network-diagram)
   - [2.3 Requirements for the Access Point](#23-requirements-for-the-access-point)
   - [2.4 Setup Package Repository](#24-setup-package-repository)
-  - [2.5 Access Pointn Installation](#25-access-point-installation)
+  - [2.5 Access Point Installation](#25-access-point-installation)
   - [2.6 Starting harmony-ap service and enabling automatic startup](#26-starting-harmony-ap-service-and-enabling-automatic-startup)
   - [2.7 Post-Installation Checks](#27-post-installation-checks)
   - [2.8 Installing Custom Plugins](#28-installing-custom-plugins)

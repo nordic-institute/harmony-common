@@ -1,6 +1,6 @@
 # Harmony eDelivery Access - Service Metadata Publisher Installation Guide <!-- omit in toc -->
 
-Version: 1.0  
+Version: 1.1  
 Doc. ID: IG-SMP
 
 ---
@@ -10,6 +10,7 @@ Doc. ID: IG-SMP
  Date       | Version | Description                                                     | Author
  ---------- | ------- | --------------------------------------------------------------- | --------------------
  15.11.2021 | 1.0     | Initial version                                                 |
+ 20.12.2021 | 1.1     | Add section [2.4 Preparing OS](#24-preparing-os)                | Petteri Kivimäki
  
 ## License <!-- omit in toc -->
 
@@ -27,12 +28,13 @@ To view a copy of this license, visit <https://creativecommons.org/licenses/by-s
   - [2.1 Prerequisites to Installation](#21-prerequisites-to-installation)
   - [2.2 Network Diagram](#22-network-diagram)
   - [2.3 Requirements for the Access Point](#23-requirements-for-the-smp)
-  - [2.4 Setup Package Repository](#24-setup-package-repository)
-  - [2.5 Access Pointn Installation](#25-smp-installation)
-  - [2.6 Starting harmony-ap service and enabling automatic startup](#26-starting-harmony-smp-service-and-enabling-automatic-startup)
-  - [2.7 Post-Installation Checks](#27-post-installation-checks)
-  - [2.8 Changes made to system during installation](#28-changes-made-to-system-during-installation)
-  - [2.9 Location of configuration and generated passwords](#29-location-of-configuration-and-generated-passwords)
+  - [2.4 Preparing OS](#24-preparing-os)
+  - [2.5 Setup Package Repository](#25-setup-package-repository)
+  - [2.6 SMP Installation](#26-smp-installation)
+  - [2.7 Starting harmony-ap service and enabling automatic startup](#27-starting-harmony-smp-service-and-enabling-automatic-startup)
+  - [2.8 Post-Installation Checks](#28-post-installation-checks)
+  - [2.9 Changes made to system during installation](#29-changes-made-to-system-during-installation)
+  - [2.10 Location of configuration and generated passwords](#210-location-of-configuration-and-generated-passwords)
   
 ## 1 Introduction
 
@@ -112,7 +114,23 @@ Requirements to software and settings:
 * if the SMP has a private IP address, a corresponding NAT record must be created in the firewall;
 * enabling auxiliary services which are necessary for the functioning and management of the operating system (such as DNS, NTP, and SSH) stay outside the scope of this guide.
 
-### 2.4 Setup Package Repository
+### 2.4 Preparing OS
+
+Some virtual machines may not be able to supply enough entropy that's required in key generation. It's recommended to
+check the level of available entropy before the installation. It can be done by issuing the command below:
+
+```
+cat /proc/sys/kernel/random/entropy_avail
+```
+
+If the number returned by the command is less than 200, it indicates that there's not enough entropy available for 
+the key generation. In that case, it's strongly recommended to install the `rng-tools` package before installing SMP:
+
+```
+sudo apt-get install rng-tools
+```
+
+### 2.5 Setup Package Repository
 
 Add the Harmony eDelivery Access repository’s signing key to the list of trusted keys:
 ```
@@ -135,7 +153,7 @@ Update package repository metadata:
 sudo apt update
 ```
 
-### 2.5 SMP Installation
+### 2.6 SMP Installation
 
 Issue the following command to install the Harmony eDelivery Access SMP:
 ```
@@ -157,7 +175,7 @@ Upon the first installation of the SMP, the system asks for the following inform
 
 See the Dynamic Discovery Configuration Guide \[[UG-DDCG](dynamic_discovery_configuration_guide.md)\] for more information about how to configure dynamic discovery.
 
-### 2.6 Starting harmony-smp Service and Enabling Automatic Startup 
+### 2.7 Starting harmony-smp Service and Enabling Automatic Startup 
 
 To start `harmony-smp` service issue the following command:
 ```
@@ -169,7 +187,7 @@ If you want `harmony-smp` service start at system startup issue the following co
 sudo systemctl enable harmony-smp
 ```
 
-### 2.7 Post-Installation Checks
+### 2.8 Post-Installation Checks
 
 Ensure that the `harmony-smp` service is in the `running` state (example output follows):
   ```
@@ -181,7 +199,7 @@ Ensure that the `harmony-smp` service is in the `running` state (example output 
 
 Ensure that the administrative user interface at `https://<host>:8443/` can be opened in a Web browser. To log in, use the administrative username and password chosen during the installation. While the user interface is still starting up, the Web browser may display a connection refused -error.
 
-### 2.8 Changes Made to System During Installation
+### 2.9 Changes Made to System During Installation
 
 In addition to installing required dependencies, the installation process completes the following steps:
 - creates linux user `harmony-smp` that is used to run the SMP service;
@@ -191,7 +209,7 @@ In addition to installing required dependencies, the installation process comple
 - generates self-signed certificates for content encryption and for transport encryption;
 - installs `systemd` service `harmony-smp` but does not enable or start it.
 
-### 2.9 Location of Configuration and Generated Passwords 
+### 2.10 Location of Configuration and Generated Passwords 
 
 All SMP configuration files are located in the `/etc/harmony-smp` directory. See the SMP Administration Guide \[[SMP_ADMIN_GUIDE](#Ref_SMP_ADMIN_GUIDE])\] for more details.
 
