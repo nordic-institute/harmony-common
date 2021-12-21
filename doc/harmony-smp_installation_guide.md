@@ -1,6 +1,6 @@
 # Harmony eDelivery Access - Service Metadata Publisher Installation Guide <!-- omit in toc -->
 
-Version: 1.1  
+Version: 1.2  
 Doc. ID: IG-SMP
 
 ---
@@ -11,6 +11,7 @@ Doc. ID: IG-SMP
  ---------- | ------- | --------------------------------------------------------------- | --------------------
  15.11.2021 | 1.0     | Initial version                                                 |
  20.12.2021 | 1.1     | Add section [2.4 Preparing OS](#24-preparing-os)                | Petteri Kivimäki
+ 21.12.2021 | 1.2     | Add section [2.11 Securing SMP user interface](#211-securing-smp-user-interface) | Andres Allkivi
  
 ## License <!-- omit in toc -->
 
@@ -35,7 +36,8 @@ To view a copy of this license, visit <https://creativecommons.org/licenses/by-s
   - [2.8 Post-Installation Checks](#28-post-installation-checks)
   - [2.9 Changes made to system during installation](#29-changes-made-to-system-during-installation)
   - [2.10 Location of configuration and generated passwords](#210-location-of-configuration-and-generated-passwords)
-  
+  - [2.11 Securing SMP user interface](#211-securing-smp-user-interface)
+
 ## 1 Introduction
 
 Harmony eDelivery Access Service Metadata Publisher (SMP) enables dynamic discovery in eDelivery policy domains. Harmony eDelivery Access SMP is based on the SMP open source project by the European Commission.
@@ -220,3 +222,27 @@ During the installation process, multiple random passwords are generated.
 | Password for `harmony-smp` MySQL user  | Configuration file: `/etc/harmony-smp/tomcat-conf/context.xml` |
 | Content encryption keystore password | MySQL database table `SMP_CONFIGURATION` with key `smp.keystore.password`. **Note:** when the service is started the password will be encrypted. Content of this keystore can be changed using UI.|
 | TLS keystore password | Configuration file: `/etc/harmony-smp/tomcat-conf/server.xml` |
+
+### 2.11 Securing SMP user interface
+
+For security reasons it is highly recommended not to expose SMP user interface endpoints to public internet.
+
+To achieve this some reverse proxy should be deployed between SMP and internet. For dynamic discovery purposes only
+endpoint for reading service metadata must be publicly accessible. SMP publishes service metadata from request path
+`/{serviceGroupId}/services/{serviceMetadataId}`. Note that only GET requests should be publicly accessible, PUT and 
+DELETE request to these URLs should be protected.
+
+Example configuration excerpt for NGINX HTTP server, assuming `192.168.0.1` is address of SMP server behind reverse proxy: 
+
+```
+location ~ [^\/]*\/services\/[^\/]*$
+{
+  # this proxy_pass only applies to GET requests (all others are caught by limit_except below)
+  proxy_pass http://192.168.0.1:8443
+  
+  limit_except GET {
+    # deny all EXCEPT GET requests
+    deny all;
+  }
+}
+```
