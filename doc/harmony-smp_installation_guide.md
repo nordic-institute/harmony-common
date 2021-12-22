@@ -1,6 +1,6 @@
 # Harmony eDelivery Access - Service Metadata Publisher Installation Guide <!-- omit in toc -->
 
-Version: 1.1  
+Version: 1.2  
 Doc. ID: IG-SMP
 
 ---
@@ -11,6 +11,7 @@ Doc. ID: IG-SMP
  ---------- | ------- | --------------------------------------------------------------- | --------------------
  15.11.2021 | 1.0     | Initial version                                                 |
  20.12.2021 | 1.1     | Add section [2.4 Preparing OS](#24-preparing-os)                | Petteri Kivimäki
+ 21.12.2021 | 1.2     | Add section [2.11 Securing SMP user interface](#211-securing-smp-user-interface) | Andres Allkivi
  
 ## License <!-- omit in toc -->
 
@@ -35,7 +36,8 @@ To view a copy of this license, visit <https://creativecommons.org/licenses/by-s
   - [2.8 Post-Installation Checks](#28-post-installation-checks)
   - [2.9 Changes made to system during installation](#29-changes-made-to-system-during-installation)
   - [2.10 Location of configuration and generated passwords](#210-location-of-configuration-and-generated-passwords)
-  
+  - [2.11 Securing SMP user interface](#211-securing-smp-user-interface)
+
 ## 1 Introduction
 
 Harmony eDelivery Access Service Metadata Publisher (SMP) enables dynamic discovery in eDelivery policy domains. Harmony eDelivery Access SMP is based on the SMP open source project by the European Commission.
@@ -220,3 +222,52 @@ During the installation process, multiple random passwords are generated.
 | Password for `harmony-smp` MySQL user  | Configuration file: `/etc/harmony-smp/tomcat-conf/context.xml` |
 | Content encryption keystore password | MySQL database table `SMP_CONFIGURATION` with key `smp.keystore.password`. **Note:** when the service is started the password will be encrypted. Content of this keystore can be changed using UI.|
 | TLS keystore password | Configuration file: `/etc/harmony-smp/tomcat-conf/server.xml` |
+
+### 2.11 Securing SMP user interface
+
+For security reasons, it is highly recommended not to expose all SMP endpoints to public internet. Since all SMP endpoints
+use the port `8443`, an application level firewall or proxy is needed.
+
+To better protect SMP, a reverse proxy can be deployed between SMP and internet. For dynamic discovery purposes only
+the endpoint for reading service metadata must be publicly accessible. SMP publishes service metadata from request path
+`/{serviceGroupId}/services/{serviceMetadataId}`. Note that only `GET` requests should be publicly accessible. Instead, 
+`PUT` and `DELETE` requests to the same path should be protected.
+
+Here's an example configuration excerpt for NGINX HTTP server. The example assumes that `192.168.0.1` is address of SMP 
+server behind reverse proxy: 
+
+```
+location ~ [^\/]*\/services\/[^\/]*$
+{
+  # this proxy_pass only applies to GET requests (all others are caught by limit_except below)
+  proxy_pass http://192.168.0.1:8080
+  
+  limit_except GET {
+    # deny all EXCEPT GET requests
+    deny all;
+  }
+}
+```
+
+When SMP is behind a reverse proxy SSL connections have to be terminated at proxy and SMP reconfigured to accept plain
+HTTP connections. Edit `/etc/harmony-smp/tomcat-conf/server.xml` and add additional connector for plain http connections:
+
+```
+<Connector port="8080" protocol="org.apache.coyote.http11.Http11AprProtocol"
+           maxThreads="150"/>
+```
+
+For security reasons unencrypted connections should be used only between reverse proxy and SMP. To enforce this add
+remote address valve to `Host` element in `server.xml`, enabling HTTP port access only from proxy.
+
+Example assuming proxy IP address is 192.168.1.1:
+
+```
+<Valve className="org.apache.catalina.valves.RemoteAddrValve"
+  addConnectorPort="true"
+  allow="(.*;8443|192.168.1.1;8080)$"
+/>
+```
+
+Please note that when registering SMP with SML, the externally visible address and hostname have to be used, i.e., the
+address and hostname of reverse proxy, not address and hostname of SMP.
