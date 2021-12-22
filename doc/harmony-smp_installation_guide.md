@@ -265,7 +265,7 @@ Example assuming proxy IP address is 192.168.1.1:
 ```
 <Valve className="org.apache.catalina.valves.RemoteAddrValve"
   addConnectorPort="true"
-  allow="(.*;8443|192.168.1.1;8080)$"
+  allow="(.*;8443|192\.168\.1\.1;8080)$"
 />
 ```
 
