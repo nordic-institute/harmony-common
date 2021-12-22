@@ -240,7 +240,7 @@ server behind reverse proxy:
 location ~ [^\/]*\/services\/[^\/]*$
 {
   # this proxy_pass only applies to GET requests (all others are caught by limit_except below)
-  proxy_pass http://192.168.0.1:8443
+  proxy_pass http://192.168.0.1:8080
   
   limit_except GET {
     # deny all EXCEPT GET requests
@@ -249,25 +249,24 @@ location ~ [^\/]*\/services\/[^\/]*$
 }
 ```
 
-When SMP is behind a reverse proxy SSL connections have to be terminated at proxy and SMP reconfigured to use plain
-HTTP connections. SSL can be disabled in `/etc/harmony-smp/tomcat-conf/server.xml`. Remove or comment out the default 
-`Connector` xml element: 
-
-```
-<Connector SSLEnabled="true"
-           protocol="org.apache.coyote.http11.Http11NioProtocol"
-           port="8443" maxThreads="200"
-           scheme="https" secure="true"
-           keystoreFile="/etc/harmony-smp/tls-keystore.jks"
-           keystorePass="{{tls_keystore_password}}"
-           clientAuth="false" sslProtocol="TLS" />
-```
-
-And replace it with:
+When SMP is behind a reverse proxy SSL connections have to be terminated at proxy and SMP reconfigured to accept plain
+HTTP connections. Edit `/etc/harmony-smp/tomcat-conf/server.xml` and add additional connector for plain http connections:
 
 ```
 <Connector port="8080" protocol="org.apache.coyote.http11.Http11AprProtocol"
            maxThreads="150"/>
+```
+
+For security reasons unencrypted connections should be used only between reverse proxy and SMP. To enforce this add
+remote address valve to `Host` element in `server.xml`, enabling HTTP port access only from proxy.
+
+Example assuming proxy IP address is 192.168.1.1:
+
+```
+<Valve className="org.apache.catalina.valves.RemoteAddrValve"
+  addConnectorPort="true"
+  allow="(.*;8443|192.168.1.1;8080)$"
+/>
 ```
 
 Please note that when registering SMP with SML, the externally visible address and hostname has to be used, i.e., the
