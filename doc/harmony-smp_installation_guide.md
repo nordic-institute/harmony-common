@@ -269,5 +269,5 @@ Example assuming proxy IP address is 192.168.1.1:
 />
 ```
 
-Please note that when registering SMP with SML, the externally visible address and hostname has to be used, i.e., the
+Please note that when registering SMP with SML, the externally visible address and hostname have to be used, i.e., the
 address and hostname of reverse proxy, not address and hostname of SMP.
