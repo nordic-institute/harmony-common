@@ -250,13 +250,25 @@ location ~ [^\/]*\/services\/[^\/]*$
 ```
 
 When SMP is behind a reverse proxy SSL connections have to be terminated at proxy and SMP reconfigured to use plain
-HTTP connections. SSL can be disabled in `/etc/harmony-smp/tomcat-conf/server.xml`. Remove or comment out Connector xml
-element and replace with:
+HTTP connections. SSL can be disabled in `/etc/harmony-smp/tomcat-conf/server.xml`. Remove or comment out the default 
+`Connector` xml element: 
+
+```
+<Connector SSLEnabled="true"
+           protocol="org.apache.coyote.http11.Http11NioProtocol"
+           port="8443" maxThreads="200"
+           scheme="https" secure="true"
+           keystoreFile="/etc/harmony-smp/tls-keystore.jks"
+           keystorePass="{{tls_keystore_password}}"
+           clientAuth="false" sslProtocol="TLS" />
+```
+
+And replace it with:
 
 ```
 <Connector port="8080" protocol="org.apache.coyote.http11.Http11AprProtocol"
            maxThreads="150"/>
 ```
 
-Please note that when registering with SML externally visible address and hostname has to be used ie the
+Please note that when registering SMP with SML, the externally visible address and hostname has to be used, i.e., the
 address and hostname of reverse proxy, not address and hostname of SMP.
