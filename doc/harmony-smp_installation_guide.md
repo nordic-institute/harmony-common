@@ -225,14 +225,16 @@ During the installation process, multiple random passwords are generated.
 
 ### 2.11 Securing SMP user interface
 
-For security reasons it is highly recommended not to expose SMP user interface endpoints to public internet.
+For security reasons, it is highly recommended not to expose all SMP endpoints to public internet. Since all SMP endpoints
+use the port `8443`, an application level firewall or proxy is needed.
 
-To achieve this some reverse proxy should be deployed between SMP and internet. For dynamic discovery purposes only
-endpoint for reading service metadata must be publicly accessible. SMP publishes service metadata from request path
-`/{serviceGroupId}/services/{serviceMetadataId}`. Note that only GET requests should be publicly accessible, PUT and 
-DELETE request to these URLs should be protected.
+To better protect SMP, a reverse proxy can be deployed between SMP and internet. For dynamic discovery purposes only
+the endpoint for reading service metadata must be publicly accessible. SMP publishes service metadata from request path
+`/{serviceGroupId}/services/{serviceMetadataId}`. Note that only `GET` requests should be publicly accessible. Instead, 
+`PUT` and `DELETE` requests to the same path should be protected.
 
-Example configuration excerpt for NGINX HTTP server, assuming `192.168.0.1` is address of SMP server behind reverse proxy: 
+Here's an example configuration excerpt for NGINX HTTP server. The example assumes that `192.168.0.1` is address of SMP 
+server behind reverse proxy: 
 
 ```
 location ~ [^\/]*\/services\/[^\/]*$
