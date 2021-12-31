@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<db:configuration xmlns:db="http://domibus.eu/configuration" party="org1_gw">
+
+	<mpcs>
+		<mpc name="defaultMpc"
+			 qualifiedName="http://docs.oasis-open.org/ebxml-msg/ebms/v3.0/ns/core/200704/defaultMPC"
+			 enabled="true"
+			 default="true"
+			 retention_downloaded="0"
+			 retention_undownloaded="14400"/>
+	</mpcs>
+	<businessProcesses>
+		<roles>
+			<role name="defaultInitiatorRole"
+					value="http://docs.oasis-open.org/ebxml-msg/ebms/v3.0/ns/core/200704/initiator"/>
+			<role name="defaultResponderRole"
+					value="http://docs.oasis-open.org/ebxml-msg/ebms/v3.0/ns/core/200704/responder"/>
+		</roles>
+		<parties>
+			<partyIdTypes>
+				<partyIdType name="partyTypeUrn" value="urn:oasis:names:tc:ebcore:partyid-type:unregistered"/>
+			</partyIdTypes>
+			<party name="org2_gw"
+				    endpoint="https://AP2_IP_OR_HOST:8443/services/msh">
+				<identifier partyId="harmony-org2" partyIdType="partyTypeUrn"/>
+			</party>
+			<party name="org1_gw"
+					endpoint="https://AP1_IP_OR_HOST:8443/services/msh">
+				<identifier partyId="harmony-org1" partyIdType="partyTypeUrn"/>
+			</party>
+		</parties>
+		<meps>
+			<mep name="oneway" value="http://docs.oasis-open.org/ebxml-msg/ebms/v3.0/ns/core/200704/oneWay"/>
+			<mep name="twoway" value="http://docs.oasis-open.org/ebxml-msg/ebms/v3.0/ns/core/200704/twoWay"/>
+			<binding name="push" value="http://docs.oasis-open.org/ebxml-msg/ebms/v3.0/ns/core/200704/push"/>
+			<binding name="pushAndPush" value="http://docs.oasis-open.org/ebxml-msg/ebms/v3.0/ns/core/200704/push-and-push"/>
+		</meps>
+		<properties>
+			<property name="originalSenderProperty"
+					key="originalSender"
+					datatype="string"
+					required="true"/>
+			<property name="finalRecipientProperty"
+					key="finalRecipient"
+					datatype="string"
+					required="true"/>
+			<propertySet name="eDeliveryPropertySet">
+				<propertyRef property="finalRecipientProperty"/>
+				<propertyRef property="originalSenderProperty"/>
+			</propertySet>
+		</properties>
+		<payloadProfiles>
+			<payload name="businessContentPayload"
+					cid="cid:message"
+					required="true"
+					mimeType="text/xml"/>
+			<payload name="businessContentAttachment"
+					cid="cid:attachment"
+					required="false"
+					mimeType="application/octet-stream"/>
+			<payloadProfile name="MessageProfile" maxSize="40894464">
+				<attachment name="businessContentPayload"/>
+				<attachment name="businessContentAttachment"/>
+			</payloadProfile>
+		</payloadProfiles>
+		<securities>
+			<security name="eDeliveryAS4Policy"
+					policy="eDeliveryAS4Policy.xml"
+					signatureMethod="RSA_SHA256" />
+		</securities>
+		<errorHandlings>
+			<errorHandling name="errorHandling"
+					errorAsResponse="true"
+					businessErrorNotifyProducer="true"
+					businessErrorNotifyConsumer="true"
+					deliveryFailureNotifyProducer="true"/>
+		</errorHandlings>
+		<agreements>
+			<agreement name="agreement1" value="A1" type="T1"/>
+		</agreements>
+		<services>
+			<service name="testService" value="bdx:noprocess" type="tc1"/>
+		</services>
+		<actions>
+			<action name="tc1Action" value="TC1Leg1"/>
+		</actions>
+		<as4>
+			<receptionAwareness name="receptionAwareness" retry="12;4;CONSTANT" duplicateDetection="true"/>
+			<reliability name="AS4Reliability" nonRepudiation="true" replyPattern="response"/>
+		</as4>
+		<legConfigurations>
+			<legConfiguration name="testLeg1"
+					service="testService"
+					action="tc1Action"
+					defaultMpc="defaultMpc"
+					reliability="AS4Reliability"
+					security="eDeliveryAS4Policy"
+					receptionAwareness="receptionAwareness"
+					propertySet="eDeliveryPropertySet"
+					payloadProfile="MessageProfile"
+					errorHandling="errorHandling"
+					compressPayloads="true"/>
+		</legConfigurations>
+<process name="tc1Process"
+         mep="oneway"
+         binding="push"
+         initiatorRole="defaultInitiatorRole"
+         responderRole="defaultResponderRole">
+	<initiatorParties>
+		<initiatorParty name="org1_gw"/>
+		<initiatorParty name="org2_gw"/>
+	</initiatorParties>
+	<responderParties>
+		<responderParty name="org1_gw"/>
+		<responderParty name="org2_gw"/>
+	</responderParties>
+	<legs>
+		<leg name="testLeg1"/>
+	</legs>
+</process>
+	</businessProcesses>
+</db:configuration>
