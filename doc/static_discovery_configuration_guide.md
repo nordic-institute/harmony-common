@@ -23,7 +23,6 @@ To view a copy of this license, visit <https://creativecommons.org/licenses/by-s
   - [1.1 Target Audience](#11-target-audience)
   - [1.2 Terms and abbreviations](#12-terms-and-abbreviations)
   - [1.3 References](#13-references)
-  - [1.4 Prerequisites](#14-prerequisites)
 - [2. Configure Static Discovery](#2-configure-static-discovery)
   - [2.1 Prerequisites](#21-prerequisites)
   - [2.2 Change the Sign and TLS Key Alias](#22-change-the-sign-and-tls-key-alias)
@@ -488,8 +487,8 @@ Also, completing the configuration steps require command line access with root p
 
 The PMode configuration files for the Access Points can be downloaded here:
 
-- [org1_gw](configuration_examples/static_discovery/pmode_org1.xml);
-- [org2_gw](configuration_examples/static_discovery/pmode_org2.xml).
+- [Access Point 1 (org1_gw)](configuration_examples/static_discovery/pmode_org1.xml);
+- [Access Point 2 (org2_gw)](configuration_examples/static_discovery/pmode_org2.xml).
 
 Upload the PMode files to the Access Points using the admin UI. Then, replace `AP2_IP_OR_HOST` in row 24 and 
 `AP1_IP_OR_HOST` in row 28 with the correct host names or IP addresses of the Access Points:
@@ -718,7 +717,7 @@ sudo systemctl restart harmony-ap
 
 ### 3.9 Send Test Message
 
-Send a request to Access Point 1 using the curl command below. The request (`submitRequest.xml`) can be downloaded [here](configuration_examples/static_discovery/submitRequest.xml). The content inside the payload's `value` element must be base64 encoded.
+Send a request to Access Point 1 using the curl command below. The request (`submitRequest.xml`) can be downloaded [here](configuration_examples/static_discovery/submitRequest.xml). The content inside the payload's `value` element must be [base64 encoded](https://www.base64encode.org/).
 
 ```
 curl -u org1:<org1_plugin_user_password> --header "Content-Type: text/xml;charset=UTF-8" --data @submitRequest.xml https://<AP1_IP_OR_HOST>:8443/services/backend -v -k
@@ -813,7 +812,7 @@ A successful response looks like this:
 </soap:Envelope>
 ```
 
-The content inside the payload's `value` element is base64 encoded. After decoding, the value looks like this:
+The content inside the payload's `value` element is base64 encoded. After [decoding](https://www.base64decode.org/), the value looks like this:
 
 ```
 <?xml version="1.0" encoding="UTF-8"?>
