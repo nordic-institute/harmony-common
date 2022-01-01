@@ -420,7 +420,7 @@ See the WS Plugin documentation \[[WS_PLUGIN](#Ref_WS_PLUGIN)\] for more details
 
 This chapter includes a sample configuration that consists of two Harmony Access Points. After completing the configuration
 steps described in this chapter, you should have two working Access Points that are able to exchange messages with 
-each other.
+each other. This configuration example uses self-signed certificates and One-Way SSL configuration.
 
 ![static discovery example configuration](img/static_discovery_configuration_example.svg)
  
