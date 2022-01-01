@@ -21,11 +21,11 @@
 				<partyIdType name="partyTypeUrn" value="urn:oasis:names:tc:ebcore:partyid-type:unregistered"/>
 			</partyIdTypes>
 			<party name="org2_gw"
-				    endpoint="https://AP2_IP_OR_HOST:8443/services/msh">
+				    endpoint="https://AP2_IP_OR_FQDN:8443/services/msh">
 				<identifier partyId="harmony-org2" partyIdType="partyTypeUrn"/>
 			</party>
 			<party name="org1_gw"
-					endpoint="https://AP1_IP_OR_HOST:8443/services/msh">
+					endpoint="https://AP1_IP_OR_FQDN:8443/services/msh">
 				<identifier partyId="harmony-org1" partyIdType="partyTypeUrn"/>
 			</party>
 		</parties>

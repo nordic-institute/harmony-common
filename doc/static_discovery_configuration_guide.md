@@ -25,7 +25,7 @@ To view a copy of this license, visit <https://creativecommons.org/licenses/by-s
   - [1.3 References](#13-references)
 - [2. Configure Static Discovery](#2-configure-static-discovery)
   - [2.1 Prerequisites](#21-prerequisites)
-  - [2.2 Change the Sign and TLS Key Alias](#22-change-the-sign-and-tls-key-alias)
+  - [2.2 Change the Sign Key Alias](#22-change-the-sign-key-alias)
   - [2.3 Create TLS Truststore](#23-create-tls-truststore)
   - [2.4 TLS Configuration](#24-tls-configuration)
     - [2.4.1 One-Way SSL](#241-one-way-ssl)
@@ -43,7 +43,7 @@ To view a copy of this license, visit <https://creativecommons.org/licenses/by-s
   - [3.3 Create Plugin Users](#33-create-plugin-users)
     - [3.3.1 Access Point 1](#331-access-point-1)
     - [3.3.2 Access Point 2](#332-access-point-2)
-  - [3.4 Change the Sign and TLS Key Alias](#34-change-the-sign-and-tls-key-alias)
+  - [3.4 Change the Sign Key Alias](#34-change-the-sign-key-alias)
     - [3.4.1 Access Point 1](#341-access-point-1)
     - [3.4.2 Access Point 2](#342-access-point-2)
   - [3.5 Export Certificates](#35-export-certificates)
@@ -103,12 +103,12 @@ The table below gives an overview of different keystore and truststore files tha
 | `/etc/harmony-ap/tls-keystore.jks` | `/etc/harmony-ap/tomcat-conf/server.xml` | `keystorePass` | Keystore for TLS key and certificate. |
 | `/etc/harmony-ap/tls-truststore.jks` |  |  | Truststore for trusted public TLS certificates. **Note:** The truststore and its password are created during the configuration process. They don't exist by default. |
 
-### 2.2 Change the Sign and TLS Key Alias
+### 2.2 Change the Sign Key Alias
 
 Sign and TLS keys are automatically created during the Access Point installation process. By default, the 
-alias of both is `selfsigned`. However, their alias must be manually updated to match the party name of the sender. 
+alias of both is `selfsigned`. However, the sign key alias must be manually updated to match the party name of the key owner. 
 The party name is defined in the `PMode` configuration file. For example, this block from a `PMode` file is taken from
-an Access Point owned by a party whose party name is `org1_gw`. In this case, the alias of sign and TLS keys should be 
+an Access Point owned by a party whose party name is `org1_gw`. In this case, the alias of the sign key should be 
 changed from `selfsigned` to `org1_gw`.
 
 ```
@@ -136,13 +136,6 @@ The sign key is stored in `/etc/harmony-ap/ap-keystore.jks`. The password of the
 
 ```
 sudo keytool -changealias -alias "selfsigned" -destalias "<party_name>" -keypass <ap_keystore_password> -keystore /etc/harmony-ap/ap-keystore.jks -storepass <ap_keystore_password>
-```
-
-The TLS key is stored in `/etc/harmony-ap/tls-keystore.jks`. The password of the keystore can be found in the
-`/etc/harmony-ap/tomcat-conf/server.xml` file in the `keystorePass` property. 
-
-```
-sudo keytool -changealias -alias "selfsigned" -destalias "<party_name>" -keypass <tls_keystore_password> -keystore /etc/harmony-ap/tls-keystore.jks -storepass <tls_keystore_password>
 ```
 
 Also, the `domibus.security.key.private.alias` property in the `/etc/harmony-ap/domibus.properties` file must be updated
@@ -197,6 +190,12 @@ the server's certificate. In the examples the value is `true` which means that t
 certificates can be used. However, in production environment the value should be set to `false` which means that the
 check is enabled.
 
+Restart the `harmony-ap` service to apply the changes:
+
+```
+sudo systemctl restart harmony-ap
+```
+
 #### 2.4.1 One-Way SSL
 
 When One-Way SSL is used, the sender validates the signature of the receiver using the public certificate of the receiver.
@@ -212,12 +211,6 @@ The public certificate of the receiver is expected to be present in the `/etc/ha
                            file="/etc/harmony-ap/tls-truststore.jks"/>
     </security:trustManagers>
 </http-conf:tlsClientParameters>
-```
-
-Restart the `harmony-ap` service to apply the changes:
-
-```
-sudo systemctl restart harmony-ap
 ```
 
 #### 2.4.2 Two-Way SSL
@@ -266,20 +259,15 @@ backend interface. In practise, after the change Two-Way SSL is required for the
     />
 ```
 
-Restart the `harmony-ap` service to apply the changes:
-
-```
-sudo systemctl restart harmony-ap
-```
-
 ### 2.5 Import Trusted Certificates to Truststores
 
 Public certificates of trusted data exhange parties must be imported to sign and TLS truststores. The certificates 
 may be self-signed or issued by a trusted certification authority. Self-signed certificates must be
 imported to the truststore directly. Instead, certificates issued by a trusted certificate authority may be imported
-directly or alternatively, the root certificate of the certificate authority may be imported.
+directly or alternatively, the root certificate of the certificate authority may be imported. Please note that it's not
+recommended to use self-signed certificates in production environments.
 
-Depending on the trust model of the eDelivery policy domain where the Access Point is connected, certificate validation and
+Depending on the trust model of the eDelivery policy domain where the Access Point is registered, certificate validation and
 checks can be adjusted using the following properties in the `/etc/harmony-ap/domibus.properties` file:
 
 | **Property** | **Default value** | **Description** |
@@ -297,39 +285,17 @@ The channel where trusted sign certificates of data exchange parties are distrib
 different eDelivery policy domains. If you don't know where to get them, please contact the domain authority of 
 the policy domain where the Access Point is registered.
 
-The sign certificate truststore located in `/etc/harmony-ap/ap-truststore.jks` can be updated through the admin UI. If 
-you receive a JKS bundle containing all the trusted sign certificates, you can update the truststore using the admin UI. 
-Instead, if you receive separate certificate files, you have to import manually on the command line.
+Trusted sign certificates can be imported using the admin UI. The certificates can be imported as a JKS bundle containing 
+multiple certificates or separately for each party.
 
-If the certificate to be imported is a sign certificate of a data exchange party, the party name of the other party must
-be used as an alias for the certificate. Instead, if the certificate to be imported is a root certificate of a trusted 
-certificate authority, the certificate alias can be chosen freely.
+In the admin UI, a JSK bundle can be imported by selecting Truststore and then Upload. Instead, a single sign certificate 
+for a specific party can be imported following the steps below:
 
-The password of the sign certificate truststore can be found in the `/etc/harmony-ap/domibus.properties` file in the `domibus.security.truststore.password` property.
-
-The following command can be used to import a trusted sign certificate to the sign certificate truststore:
-
-```
-sudo keytool -import -alias <party_name> -file </path/to/sign_certificate.crt> -keystore /etc/harmony-ap/ap-truststore.jks -storepass <ap_truststore_password>
-```
-
-All the trusted sign certificates can be listed using the following command:
-
-```
-keytool -list -v /etc/harmony-ap/ap-truststore.jks -storepass <ap_truststore_password>
-```
-
-A trusted sign certificate can be deleted using the following command:
-
-```
-sudo keytool -delete -noprompt -alias <party_name> /etc/harmony-ap/ap-truststore.jks -storepass <ap_truststore_password>
-```
-
-Restart the `harmony-ap` service to apply the changes:
-
-```
-sudo systemctl restart harmony-ap
-```
+1. Click PMode and then Parties.
+2. Select the Party which sign certificate you want to import and click Edit.
+3. Click the Import button in the Certificate section.
+4. Select the certificate to be imported.
+5. Click OK and then click Save.
 
 ### 2.5.2 Import Trusted TLS Certificates
 
@@ -341,7 +307,7 @@ The TLS certificate truststore located in `/etc/harmony-ap/tls-truststore.jks` c
 
 If the certificate to be imported is a TLS certificate of a data exchange party, it's recommended to use the party name 
 of the other party as an alias for the certificate. Instead, if the certificate to be imported is a root certificate 
-of a trusted certificate authority, the certificate alias can be chosen freely.
+of a trusted certificate authority, then the name of the certificate authority is a good alternative to be used as an alias.
 
 The following command can be used to import a trusted TLS certificate to the TLS certificate truststore:
 
@@ -370,7 +336,7 @@ sudo systemctl restart harmony-ap
 ### 2.6 Export Certificates from Keystores
 
 The channel where sign and TLS certificates of data exchange parties are distributed or published varies between 
-different eDelivery policy domains. If you don't know where to publish them, please contact the domain authority of 
+different eDelivery policy domains. If you're not sure where to publish them, please contact the domain authority of 
 the policy domain where the Access Point is registered. Whatever the channel is, the first step is to export the certificates
 from sign and TLS keystores.
 
@@ -394,12 +360,6 @@ A sign key can be deleted using the following command:
 sudo keytool -delete -noprompt -alias <party_name> /etc/harmony-ap/ap-keystore.jks -storepass <ap_keystore_password>
 ```
 
-Restart the `harmony-ap` service to apply the changes:
-
-```
-sudo systemctl restart harmony-ap
-```
-
 ### 2.6.2 Export TLS Certificates
 
 A TLS certificate belonging to a specific party can be exported using the following command:
@@ -418,12 +378,6 @@ A TLS key can be deleted using the following command:
 
 ```
 sudo keytool -delete -noprompt -alias <party_name> /etc/harmony-ap/tls-keystore.jks -storepass <tls_keystore_password>
-```
-
-Restart the `harmony-ap` service to apply the changes:
-
-```
-sudo systemctl restart harmony-ap
 ```
 
 ### 2.7 Create Plugin Users
@@ -490,16 +444,16 @@ The PMode configuration files for the Access Points can be downloaded here:
 - [Access Point 1 (org1_gw)](configuration_examples/static_discovery/pmode_org1.xml);
 - [Access Point 2 (org2_gw)](configuration_examples/static_discovery/pmode_org2.xml).
 
-Upload the PMode files to the Access Points using the admin UI. Then, replace `AP2_IP_OR_HOST` in row 24 and 
-`AP1_IP_OR_HOST` in row 28 with the correct host names or IP addresses of the Access Points:
+Upload the PMode files to the Access Points using the admin UI. Then, replace `AP2_IP_OR_FQDN` in row 24 and 
+`AP1_IP_OR_FQDN` in row 28 with the correct host names or IP addresses of the Access Points:
 
 ```
 <party name="org2_gw"
-        endpoint="https://AP2_IP_OR_HOST:8443/services/msh">
+        endpoint="https://AP2_IP_OR_FQDN:8443/services/msh">
     <identifier partyId="harmony-org2" partyIdType="partyTypeUrn"/>
 </party>
 <party name="org1_gw"
-        endpoint="https://AP1_IP_OR_HOST:8443/services/msh">
+        endpoint="https://AP1_IP_OR_FQDN:8443/services/msh">
     <identifier partyId="harmony-org1" partyIdType="partyTypeUrn"/>
 </party>
 ```
@@ -532,23 +486,19 @@ On the Access Point (`org2_gw`) create a plugin user with the following informat
 
 Click OK and then Save.
 
-### 3.4 Change the Sign and TLS Key Alias
+### 3.4 Change the Sign Key Alias
 
 The sign key is stored in `/etc/harmony-ap/ap-keystore.jks`. The password of the keystore can be found in the
 `/etc/harmony-ap/domibus.properties` file in the `domibus.security.keystore.password` property. 
-
-The TLS key is stored in `/etc/harmony-ap/tls-keystore.jks`. The password of the keystore can be found in the
-`/etc/harmony-ap/tomcat-conf/server.xml` file in the `keystorePass` property. 
 
 This step requires shell access to the host.
 
 #### 3.4.1 Access Point 1
 
-On the Access Point `org1_gw` change the sign and TLS key alias: 
+On the Access Point 1 (`org1_gw`) change the sign key alias: 
 
 ```
 sudo keytool -changealias -alias "selfsigned" -destalias "org1_gw" -keypass <ap_keystore_password> -keystore /etc/harmony-ap/ap-keystore.jks -storepass <ap_keystore_password>
-sudo keytool -changealias -alias "selfsigned" -destalias "org1_gw" -keypass <tls_keystore_password> -keystore /etc/harmony-ap/tls-keystore.jks -storepass <tls_keystore_password>
 ```
 
 Also, the `domibus.security.key.private.alias` property in the `/etc/harmony-ap/domibus.properties` file must be updated
@@ -562,11 +512,10 @@ domibus.security.key.private.alias=org1_gw
 
 #### 3.4.2 Access Point 2
 
-On the Access Point `org2_gw` change the sign and TLS key alias: 
+On the Access Point 2 (`org2_gw`) change the sign key alias: 
 
 ```
 sudo keytool -changealias -alias "selfsigned" -destalias "org2_gw" -keypass <ap_keystore_password> -keystore /etc/harmony-ap/ap-keystore.jks -storepass <ap_keystore_password>
-sudo keytool -changealias -alias "selfsigned" -destalias "org2_gw" -keypass <tls_keystore_password> -keystore /etc/harmony-ap/tls-keystore.jks -storepass <tls_keystore_password>
 ```
 
 Also, the `domibus.security.key.private.alias` property in the `/etc/harmony-ap/domibus.properties` file must be updated
@@ -619,28 +568,30 @@ sudo keytool -export -keystore /etc/harmony-ap/tls-keystore.jks -alias org2_gw -
 ### 3.6 Import Certificates
 
 In order to establish a trusted relationship between the Access Points, they must import each others certificates. 
-Therefore, the certificates exported in section 3.6 must be copied from Access Point 1 to Access Point 2 and vice versa.
-
-The password of the sign certificate truststore can be found in the `/etc/harmony-ap/domibus.properties` file in the `domibus.security.truststore.password` property.
-
-This step requires shell access to the host.
+Therefore, the certificates exported in section 3.6 must be copied from Access Point 1 (`org1_gw`) to Access Point 2 
+(`org2_gw`) and vice versa.
 
 #### 3.6.1 Access Point 1
 
-Import the sign certificate of Access Point 2:
+The sign certificate of the Access Point 2 (`org2_gw`) is imported using the admin UI by following the steps below:
 
-```
-sudo keytool -import -alias org2_gw -file org2_sign_certificate.cer -keystore /etc/harmony-ap/ap-truststore.jks -storepass <ap_truststore_password>
-```
+1. Click PMode and then Parties.
+2. Select the party `org2_gw` and click Edit.
+3. Click the Import button in the Certificate section.
+4. Select the certificate to be imported.
+5. Click OK and then click Save.
 
-The TLS truststore doesn't exist yet and it will be created when the TLS certificate of the Access Point 2 is imported. 
-Therefore, generate a secure password for the TLS truststore (`tls_truststore_password`):
+The TLS certificate is imported on the command line. The TLS truststore doesn't exist yet and it will be created when 
+the TLS certificate of the Access Point 2 (`org2_gw`) is imported. Therefore, generate a secure password for the TLS 
+truststore (`tls_truststore_password`):
 
 ```
 openssl rand -base64 12
 ```
 
-Then, import the TLS certificate of Access Point 2:
+**Note:** Write down the password (`tls_truststore_password`). You will need it in step 3.7.
+
+Then, import the TLS certificate of Access Point 2 (`org2_gw`):
 
 ```
 sudo keytool -import -alias org2_gw -file org2_tls_certificate.cer -keystore /etc/harmony-ap/tls-truststore.jks -storepass <tls_truststore_password>
@@ -655,20 +606,25 @@ sudo chmod 751 /etc/harmony-ap/tls-truststore.jks
 
 #### 3.6.2 Access Point 2
 
-Import the sign certificate of Access Point 1:
+The sign certificate of the Access Point 1 (`org1_gw`) is imported using the admin UI by following the steps below:
 
-```
-sudo keytool -import -alias org1_gw -file org1_sign_certificate.cer -keystore /etc/harmony-ap/ap-truststore.jks -storepass <ap_truststore_password>
-```
+1. Click PMode and then Parties.
+2. Select the party `org1_gw` and click Edit.
+3. Click the Import button in the Certificate section.
+4. Select the certificate to be imported.
+5. Click OK and then click Save.
 
-The TLS truststore doesn't exist yet and it will be created when the TLS certificate of the Access Point 1 is imported. 
-Therefore, generate a secure password for the TLS truststore (`tls_truststore_password`):
+The TLS certificate is imported on the command line. The TLS truststore doesn't exist yet and it will be created when 
+the TLS certificate of the Access Point 1 (`org1_gw`) is imported. Therefore, generate a secure password for the TLS truststore 
+(`tls_truststore_password`):
 
 ```
 openssl rand -base64 12
 ```
 
-Then, import the TLS certificate of Access Point 1:
+**Note:** Write down the password (`tls_truststore_password`). You will need it in step 3.7.
+
+Then, import the TLS certificate of Access Point 1 (`org1_gw`):
 
 ```
 sudo keytool -import -alias org1_gw -file org1_tls_certificate.cer -keystore /etc/harmony-ap/tls-truststore.jks -storepass <tls_truststore_password>
@@ -685,7 +641,8 @@ sudo chmod 751 /etc/harmony-ap/tls-truststore.jks
 
 This step requires shell access to the host.
     
-On Access Points 1 and 2, create the `/etc/harmony-ap/clientauthentication.xml` file with the following content:
+On Access Points 1 (`org1_gw`) and Access Point 2 (`org2_gw`), create the `/etc/harmony-ap/clientauthentication.xml` 
+file with the following content:
 
 ```
 <http-conf:tlsClientParameters disableCNCheck="true" secureSocketProtocol="TLSv1.2"
@@ -698,6 +655,8 @@ On Access Points 1 and 2, create the `/etc/harmony-ap/clientauthentication.xml` 
 </http-conf:tlsClientParameters>
 ```
 
+**Note:** Use the password (`tls_truststore_password`) created in step 3.6.
+
 Set the file permissions of the new `/etc/harmony-ap/clientauthentication.xml` file:
 
 ```
@@ -709,7 +668,8 @@ sudo chmod 751 /etc/harmony-ap/clientauthentication.xml
 
 This step requires shell access to the host.
 
-On Access Points 1 and 2, restart the `harmony-ap` service to apply the configuration changes:
+On Access Points 1 (`org1_gw`) and Access Point 2 (`org2_gw`), restart the `harmony-ap` service to apply the 
+configuration changes:
 
 ```
 sudo systemctl restart harmony-ap
@@ -717,10 +677,10 @@ sudo systemctl restart harmony-ap
 
 ### 3.9 Send Test Message
 
-Send a request to Access Point 1 using the curl command below. The request (`submitRequest.xml`) can be downloaded [here](configuration_examples/static_discovery/submitRequest.xml). The content inside the payload's `value` element must be [base64 encoded](https://www.base64encode.org/).
+Send a request to Access Point 1 (`org1_gw`) using the curl command below. The request (`submitRequest.xml`) can be downloaded [here](configuration_examples/static_discovery/submitRequest.xml). The content inside the payload's `value` element must be [base64 encoded](https://www.base64encode.org/).
 
 ```
-curl -u org1:<org1_plugin_user_password> --header "Content-Type: text/xml;charset=UTF-8" --data @submitRequest.xml https://<AP1_IP_OR_HOST>:8443/services/backend -v -k
+curl -u org1:<org1_plugin_user_password> --header "Content-Type: text/xml;charset=UTF-8" --data @submitRequest.xml https://<AP1_IP_OR_FQDN>:8443/services/backend -v -k
 ```
 
 A successful response looks like this:
@@ -736,10 +696,10 @@ A successful response looks like this:
 </soap:Envelope>
 ```
 
-List received and pending messages on the Access Point 2. The request (`listPendingMessagesRequest.xml`) can be downloaded [here](configuration_examples/static_discovery/listPendingMessagesRequest.xml).
+List received and pending messages on the Access Point 2 (`org2_gw`). The request (`listPendingMessagesRequest.xml`) can be downloaded [here](configuration_examples/static_discovery/listPendingMessagesRequest.xml).
 
 ```
-curl -u org2:<org2_plugin_user_password> --header "Content-Type: text/xml;charset=UTF-8" --data @listPendingMessagesRequest.xml https://<AP2_IP_OR_HOST>:8443/services/backend -v -k
+curl -u org2:<org2_plugin_user_password> --header "Content-Type: text/xml;charset=UTF-8" --data @listPendingMessagesRequest.xml https://<AP2_IP_OR_FQDN>:8443/services/backend -v -k
 ```
 
 A successful response looks like this:
@@ -755,10 +715,10 @@ A successful response looks like this:
 </soap:Envelope>
 ```
 
-Retrieve the test message from Access Point 2. The request (`retrieveMessageRequest.xml`) can be downloaded [here](configuration_examples/static_discovery/retrieveMessageRequest.xml). Before sending the message, replace the `MESSAGE_ID` placeholder with the ID (`messageID`) of the test message.
+Retrieve the test message from Access Point 2 (`org2_gw`). The request (`retrieveMessageRequest.xml`) can be downloaded [here](configuration_examples/static_discovery/retrieveMessageRequest.xml). Before sending the message, replace the `MESSAGE_ID` placeholder with the ID (`messageID`) of the test message.
 
 ```
-curl -u org2:<org2_plugin_user_password> --header "Content-Type: text/xml;charset=UTF-8" --data @retrieveMessageRequest.xml https://<AP2_IP_OR_HOST>:8443/services/backend -v -k
+curl -u org2:<org2_plugin_user_password> --header "Content-Type: text/xml;charset=UTF-8" --data @retrieveMessageRequest.xml https://<AP2_IP_OR_FQDN>:8443/services/backend -v -k
 ```
 
 A successful response looks like this:
@@ -817,4 +777,32 @@ The content inside the payload's `value` element is base64 encoded. After [decod
 ```
 <?xml version="1.0" encoding="UTF-8"?>
 <hello>world</hello>
+```
+
+If you want to try sending the same message from Access Point 2 (`org2_gw`) to Access Point 1 (`org1_gw`), just switch
+the values of the `From` and `To`, and `originalSender` and `finalRecipient` properties:
+
+```
+<ns:PartyInfo>
+   <ns:From>
+      <ns:PartyId type="urn:oasis:names:tc:ebcore:partyid-type:unregistered">harmony-org2</ns:PartyId>
+      <ns:Role>http://docs.oasis-open.org/ebxml-msg/ebms/v3.0/ns/core/200704/initiator</ns:Role>
+   </ns:From>
+   <ns:To>
+      <ns:PartyId type="urn:oasis:names:tc:ebcore:partyid-type:unregistered">harmony-org1</ns:PartyId>
+      <ns:Role>http://docs.oasis-open.org/ebxml-msg/ebms/v3.0/ns/core/200704/responder</ns:Role>
+   </ns:To>
+</ns:PartyInfo>
+.
+.
+<ns:MessageProperties>
+   <ns:Property name="originalSender">urn:oasis:names:tc:ebcore:partyid-type:unregistered:C4</ns:Property>
+   <ns:Property name="finalRecipient">urn:oasis:names:tc:ebcore:partyid-type:unregistered:C1</ns:Property>
+</ns:MessageProperties>
+```
+
+Then, send the updated request to Access Point 2 (`org2_gw`) using the curl command below. The request (`submitRequestSwitched.xml`) can be downloaded [here](configuration_examples/static_discovery/submitRequestSwitched.xml).
+
+```
+curl -u org2:<org2_plugin_user_password> --header "Content-Type: text/xml;charset=UTF-8" --data @submitRequestSwitched.xml https://<AP2_IP_OR_FQDN>:8443/services/backend -v -k
 ```
