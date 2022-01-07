@@ -371,13 +371,11 @@ sudo keytool -delete -noprompt -alias <party_name> /etc/harmony-ap/ap-keystore.j
 
 ### 2.6.2 Export TLS Certificates
 
-A TLS certificate belonging to a specific party can be exported using the following command:
+The default TLS certificate that's created during the installation process can be exported using the following command:
 
 ```
-sudo keytool -export -keystore /etc/harmony-ap/tls-keystore.jks -alias <party_name> -file </path/to/exported_tls_certificate.cer> -storepass <tls_keystore_password>
+sudo keytool -export -keystore /etc/harmony-ap/tls-keystore.jks -alias selfsigned -file </path/to/exported_tls_certificate.cer> -storepass <tls_keystore_password>
 ```
-
-**Note:** The alias of the default TLS certificate that's created during the installation process is `selfsigned`.
 
 All the available TLS keys can be listed using the following command:
 
