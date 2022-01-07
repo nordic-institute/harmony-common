@@ -122,7 +122,7 @@ Requirements to software and settings:
 ### 2.4 Setup Package Repository
 
 Add the Harmony eDelivery Access repository’s signing key to the list of trusted keys:
-```
+```bash
 curl https://artifactory.niis.org/api/gpg/key/public | sudo apt-key add -
 ```
 
@@ -133,19 +133,19 @@ The repository key details:
 - 3rd party key server: [Ubuntu key server](https://keyserver.ubuntu.com/pks/lookup?search=0xfb0d532c10f6ec5b&fingerprint=on&op=index)
 
 Add Harmony eDelivery Access package repository:
-```
+```bash
 sudo apt-add-repository -y "deb https://artifactory.niis.org/harmony-release-deb $(lsb_release -sc)-current main"
 ```
 
 Update package repository metadata:
-```
+```bash
 sudo apt update
 ```
 
 ### 2.5 Access Point Installation
 
 Issue the following command to install the Harmony eDelivery Access Access Point:
-```
+```bash
 sudo apt install harmony-ap
 ```
 
@@ -166,19 +166,19 @@ See the Static Discovery Configuration Guide \[[UG-SDCG](static_discovery_config
 ### 2.6 Starting harmony-ap Service and Enabling Automatic Startup 
 
 To start `harmony-ap` service issue the following command:
-```
+```bash
 sudo systemctl start harmony-ap
 ```
 
 If you want `harmony-ap` service start at system startup issue the following command:
-```
+```bash
 sudo systemctl enable harmony-ap
 ```
 
 ### 2.7 Post-Installation Checks
 
 Ensure that the `harmony-ap` service is in the `running` state (example output follows):
-  ```
+  ```bash
   sudo systemctl list-units "harmony-ap*"
 
   UNIT                           LOAD   ACTIVE SUB     DESCRIPTION

@@ -114,7 +114,7 @@ The party name is defined in the `PMode` configuration file. See the Domibus Adm
 For example, this block from a `PMode` file is taken from an Access Point owned by a party whose party name is 
 `org1_gw`. In this case, the alias of the sign key should be changed from `selfsigned` to `org1_gw`.
 
-```
+```xml
 <?xml version="1.0" encoding="UTF-8"?>
 <db:configuration xmlns:db="http://domibus.eu/configuration" party="org1_gw">
 .
@@ -137,14 +137,14 @@ For example, this block from a `PMode` file is taken from an Access Point owned 
 The sign key is stored in `/etc/harmony-ap/ap-keystore.jks`. The password of the keystore can be found in the
 `/etc/harmony-ap/domibus.properties` file in the `domibus.security.keystore.password` property. 
 
-```
+```bash
 sudo keytool -changealias -alias "selfsigned" -destalias "<party_name>" -keypass <ap_keystore_password> -keystore /etc/harmony-ap/ap-keystore.jks -storepass <ap_keystore_password>
 ```
 
 Also, the `domibus.security.key.private.alias` property in the `/etc/harmony-ap/domibus.properties` file must be updated
 with the new alias. Open the file with a text editor and update the property value:
 
-```
+```properties
 #Private key
 #The alias from the keystore of the private key
 domibus.security.key.private.alias=selfsigned
@@ -152,7 +152,7 @@ domibus.security.key.private.alias=selfsigned
 
 Restart the `harmony-ap` service to apply the changes:
 
-```
+```bash
 sudo systemctl restart harmony-ap
 ```
 
@@ -161,20 +161,20 @@ sudo systemctl restart harmony-ap
 A truststore for sign certificates is created automatically during the installation process. Instead, a truststore for
 TLS certificates must be created manually. First, generate a secure password for the TLS truststore (`tls_truststore_password`):
 
-```
+```bash
 openssl rand -base64 12
 ```
 
 Then, generate the TLS truststore with a mock key pair and remove the mock key pair right after:
 
-```
+```bash
 sudo keytool -genkeypair -alias mock -keystore /etc/harmony-ap/tls-truststore.jks -storepass <tls_truststore_password> -keypass <tls_truststore_password> -dname "CN=mock"
 sudo keytool -delete -alias mock -keystore /etc/harmony-ap/tls-truststore.jks -storepass <tls_truststore_password>
 ```
 
 Set the file permissions of the new TLS truststore file:
 
-```
+```bash
 sudo chown harmony-ap:harmony-ap /etc/harmony-ap/tls-truststore.jks
 sudo chmod 751 /etc/harmony-ap/tls-truststore.jks
 ```
@@ -199,7 +199,7 @@ When One-Way SSL is used, the sender validates the signature of the receiver usi
 The public certificate of the receiver is expected to be present in the `/etc/harmony-ap/tls-truststore.jks` file. The 
 `/etc/harmony-ap/clientauthentication.xml` file should look like this:
 
-```
+```xml
 <http-conf:tlsClientParameters disableCNCheck="true" secureSocketProtocol="TLSv1.2"
                                xmlns:http-conf="http://cxf.apache.org/transports/http/configuration"
                                xmlns:security="http://cxf.apache.org/configuration/security">
@@ -212,7 +212,7 @@ The public certificate of the receiver is expected to be present in the `/etc/ha
 
 Restart the `harmony-ap` service to apply the changes:
 
-```
+```bash
 sudo systemctl restart harmony-ap
 ```
 
@@ -223,7 +223,7 @@ The public certificate of the receiver is expected to be present in the `/etc/ha
 the private key of the sender that's stored in the `/etc/harmony-ap/tls-keystore.jks` file is configured. The 
 `/etc/harmony-ap/clientauthentication.xml` file should look like this:
 
-```
+```xml
 <http-conf:tlsClientParameters disableCNCheck="true" secureSocketProtocol="TLSv1.2"
                                xmlns:http-conf="http://cxf.apache.org/transports/http/configuration"
                                xmlns:security="http://cxf.apache.org/configuration/security">
@@ -245,7 +245,7 @@ to `true`.
 **Note:** Setting `clientAuth` to `true` affects all the Access Point's HTTP interfaces - including the admin UI and 
 backend interface. In practise, after the change Two-Way SSL is required for the admin UI and backend interface too.
 
-```
+```xml
 <Connector
            SSLEnabled="true"
            protocol="org.apache.coyote.http11.Http11NioProtocol"
@@ -264,7 +264,7 @@ backend interface. In practise, after the change Two-Way SSL is required for the
 
 Restart the `harmony-ap` service to apply the changes:
 
-```
+```bash
 sudo systemctl restart harmony-ap
 ```
 
@@ -320,25 +320,25 @@ of a trusted certificate authority, then the name of the certificate authority i
 
 The following command can be used to import a trusted TLS certificate to the TLS certificate truststore:
 
-```
+```bash
 sudo keytool -import -alias <party_name> -file </path/to/tls_certificate.crt> -keystore /etc/harmony-ap/tls-truststore.jks -storepass <tls_truststore_password>
 ```
 
 All the trusted TLS certificates can be listed using the following command:
 
-```
+```bash
 keytool -list -v /etc/harmony-ap/tls-truststore.jks -storepass <tls_truststore_password>
 ```
 
 A trusted TLS certificate can be deleted using the following command:
 
-```
+```bash
 sudo keytool -delete -noprompt -alias <party_name> /etc/harmony-ap/tls-truststore.jks -storepass <tls_truststore_password>
 ```
 
 Restart the `harmony-ap` service to apply the changes:
 
-```
+```bash
 sudo systemctl restart harmony-ap
 ```
 
@@ -353,19 +353,19 @@ from sign and TLS keystores.
 
 A sign certificate belonging to a specific party can be exported using the following command:
 
-```
+```bash
 sudo keytool -export -keystore /etc/harmony-ap/ap-keystore.jks -alias <party_name> -file </path/to/exported_sign_certificate.cer> -storepass <ap_keystore_password>
 ```
 
 All the available sign keys can be listed using the following command:
 
-```
+```bash
 keytool -list -v /etc/harmony-ap/ap-keystore.jks -storepass <ap_keystore_password>
 ```
 
 A sign key can be deleted using the following command:
 
-```
+```bash
 sudo keytool -delete -noprompt -alias <party_name> /etc/harmony-ap/ap-keystore.jks -storepass <ap_keystore_password>
 ```
 
@@ -373,19 +373,19 @@ sudo keytool -delete -noprompt -alias <party_name> /etc/harmony-ap/ap-keystore.j
 
 The default TLS certificate that's created during the installation process can be exported using the following command:
 
-```
+```bash
 sudo keytool -export -keystore /etc/harmony-ap/tls-keystore.jks -alias selfsigned -file </path/to/exported_tls_certificate.cer> -storepass <tls_keystore_password>
 ```
 
 All the available TLS keys can be listed using the following command:
 
-```
+```bash
 keytool -list -v /etc/harmony-ap/tls-keystore.jks -storepass <tls_keystore_password>
 ```
 
 A TLS key can be deleted using the following command:
 
-```
+```bash
 sudo keytool -delete -noprompt -alias <party_name> /etc/harmony-ap/tls-keystore.jks -storepass <tls_keystore_password>
 ```
 
@@ -409,7 +409,7 @@ the receiver role, the value of the `finalRecipient` field must be used.
 For example, a backend system in the sender role would use `urn:oasis:names:tc:ebcore:partyid-type:unregistered:C1` in the
 `Original User` field while a backend system in the receiver role would use `urn:oasis:names:tc:ebcore:partyid-type:unregistered:C4`.
 
-```
+```xml
 .
 .
 <ns:MessageProperties>
@@ -456,7 +456,7 @@ The PMode configuration files for the Access Points can be downloaded here:
 Upload the PMode files to the Access Points using the admin UI. Then, replace `AP2_IP_OR_FQDN` in row 24 and 
 `AP1_IP_OR_FQDN` in row 28 with the correct host names or IP addresses of the Access Points:
 
-```
+```xml
 <party name="org2_gw"
         endpoint="https://AP2_IP_OR_FQDN:8443/services/msh">
     <identifier partyId="harmony-org2" partyIdType="partyTypeUrn"/>
@@ -506,14 +506,14 @@ This step requires shell access to the host.
 
 On the Access Point 1 (`org1_gw`) change the sign key alias: 
 
-```
+```bash
 sudo keytool -changealias -alias "selfsigned" -destalias "org1_gw" -keypass <ap_keystore_password> -keystore /etc/harmony-ap/ap-keystore.jks -storepass <ap_keystore_password>
 ```
 
 Also, the `domibus.security.key.private.alias` property in the `/etc/harmony-ap/domibus.properties` file must be updated
 with the new alias. Open the file with a text editor and update the property value:
 
-```
+```properties
 #Private key
 #The alias from the keystore of the private key
 domibus.security.key.private.alias=org1_gw
@@ -523,14 +523,14 @@ domibus.security.key.private.alias=org1_gw
 
 On the Access Point 2 (`org2_gw`) change the sign key alias: 
 
-```
+```bash
 sudo keytool -changealias -alias "selfsigned" -destalias "org2_gw" -keypass <ap_keystore_password> -keystore /etc/harmony-ap/ap-keystore.jks -storepass <ap_keystore_password>
 ```
 
 Also, the `domibus.security.key.private.alias` property in the `/etc/harmony-ap/domibus.properties` file must be updated
 with the new alias. Open the file with a text editor and update the property value:
 
-```
+```properties
 #Private key
 #The alias from the keystore of the private key
 domibus.security.key.private.alias=org2_gw
@@ -550,13 +550,13 @@ This step requires shell access to the host.
 
 Export the sign certificate using the following command:
 
-```
+```bash
 sudo keytool -export -keystore /etc/harmony-ap/ap-keystore.jks -alias org1_gw -file org1_sign_certificate.cer -storepass <ap_keystore_password>
 ```
 
 Export the TLS certificate using the following command:
 
-```
+```bash
 sudo keytool -export -keystore /etc/harmony-ap/tls-keystore.jks -alias selfsigned -file org1_tls_certificate.cer -storepass <tls_keystore_password>
 ```
 
@@ -564,13 +564,13 @@ sudo keytool -export -keystore /etc/harmony-ap/tls-keystore.jks -alias selfsigne
 
 Export the sign certificate using the following command:
 
-```
+```bash
 sudo keytool -export -keystore /etc/harmony-ap/ap-keystore.jks -alias org2_gw -file org2_sign_certificate.cer -storepass <ap_keystore_password>
 ```
 
 Export the TLS certificate using the following command:
 
-```
+```bash
 sudo keytool -export -keystore /etc/harmony-ap/tls-keystore.jks -alias selfsigned -file org2_tls_certificate.cer -storepass <tls_keystore_password>
 ```
 
@@ -594,7 +594,7 @@ The TLS certificate is imported on the command line. The TLS truststore doesn't 
 the TLS certificate of the Access Point 2 (`org2_gw`) is imported. Therefore, generate a secure password for the TLS 
 truststore (`tls_truststore_password`):
 
-```
+```bash
 openssl rand -base64 12
 ```
 
@@ -602,13 +602,13 @@ openssl rand -base64 12
 
 Then, import the TLS certificate of Access Point 2 (`org2_gw`). The command asks should the certificate be trusted and the answer is **yes**.
 
-```
+```bash
 sudo keytool -import -alias org2_gw -file org2_tls_certificate.cer -keystore /etc/harmony-ap/tls-truststore.jks -storepass <tls_truststore_password>
 ```
 
 Set the file permissions of the new TLS truststore file:
 
-```
+```bash
 sudo chown harmony-ap:harmony-ap /etc/harmony-ap/tls-truststore.jks
 sudo chmod 751 /etc/harmony-ap/tls-truststore.jks
 ```
@@ -627,7 +627,7 @@ The TLS certificate is imported on the command line. The TLS truststore doesn't 
 the TLS certificate of the Access Point 1 (`org1_gw`) is imported. Therefore, generate a secure password for the TLS truststore 
 (`tls_truststore_password`):
 
-```
+```bash
 openssl rand -base64 12
 ```
 
@@ -635,13 +635,13 @@ openssl rand -base64 12
 
 Then, import the TLS certificate of Access Point 1 (`org1_gw`). The command asks should the certificate be trusted and the answer is **yes**.
 
-```
+```bash
 sudo keytool -import -alias org1_gw -file org1_tls_certificate.cer -keystore /etc/harmony-ap/tls-truststore.jks -storepass <tls_truststore_password>
 ```
 
 Set the file permissions of the new TLS truststore file:
 
-```
+```bash
 sudo chown harmony-ap:harmony-ap /etc/harmony-ap/tls-truststore.jks
 sudo chmod 751 /etc/harmony-ap/tls-truststore.jks
 ```
@@ -653,7 +653,7 @@ This step requires shell access to the host.
 On Access Points 1 (`org1_gw`) and Access Point 2 (`org2_gw`), create the `/etc/harmony-ap/clientauthentication.xml` 
 file with the following content:
 
-```
+```xml
 <http-conf:tlsClientParameters disableCNCheck="true" secureSocketProtocol="TLSv1.2"
                                xmlns:http-conf="http://cxf.apache.org/transports/http/configuration"
                                xmlns:security="http://cxf.apache.org/configuration/security">
@@ -668,7 +668,7 @@ file with the following content:
 
 Set the file permissions of the new `/etc/harmony-ap/clientauthentication.xml` file:
 
-```
+```bash
 sudo chown harmony-ap:harmony-ap /etc/harmony-ap/clientauthentication.xml
 sudo chmod 751 /etc/harmony-ap/clientauthentication.xml
 ```
@@ -680,7 +680,7 @@ This step requires shell access to the host.
 On Access Points 1 (`org1_gw`) and Access Point 2 (`org2_gw`), restart the `harmony-ap` service to apply the 
 configuration changes:
 
-```
+```bash
 sudo systemctl restart harmony-ap
 ```
 
@@ -688,13 +688,13 @@ sudo systemctl restart harmony-ap
 
 Send a request to Access Point 1 (`org1_gw`) using the curl command below. The request (`submitRequest.xml`) can be downloaded [here](configuration_examples/static_discovery/submitRequest.xml?raw=1). The content inside the payload's `value` element must be [base64 encoded](https://www.base64encode.org/).
 
-```
+```bash
 curl -u org1:<org1_plugin_user_password> --header "Content-Type: text/xml;charset=UTF-8" --data @submitRequest.xml https://<AP1_IP_OR_FQDN>:8443/services/backend -v -k
 ```
 
 A successful response looks like this:
 
-```
+```xml
 <?xml version="1.0" encoding="UTF-8"?>
 <soap:Envelope xmlns:soap="http://www.w3.org/2003/05/soap-envelope">
    <soap:Body>
@@ -707,13 +707,13 @@ A successful response looks like this:
 
 List received and pending messages on the Access Point 2 (`org2_gw`). The request (`listPendingMessagesRequest.xml`) can be downloaded [here](configuration_examples/static_discovery/listPendingMessagesRequest.xml?raw=1).
 
-```
+```bash
 curl -u org2:<org2_plugin_user_password> --header "Content-Type: text/xml;charset=UTF-8" --data @listPendingMessagesRequest.xml https://<AP2_IP_OR_FQDN>:8443/services/backend -v -k
 ```
 
 A successful response looks like this:
 
-```
+```xml
 <?xml version="1.0" encoding="UTF-8"?>
 <soap:Envelope xmlns:soap="http://www.w3.org/2003/05/soap-envelope">
    <soap:Body>
@@ -726,13 +726,13 @@ A successful response looks like this:
 
 Retrieve the test message from Access Point 2 (`org2_gw`). The request (`retrieveMessageRequest.xml`) can be downloaded [here](configuration_examples/static_discovery/retrieveMessageRequest.xml?raw=1). Before sending the message, replace the `MESSAGE_ID` placeholder with the ID (`messageID`) of the test message.
 
-```
+```bash
 curl -u org2:<org2_plugin_user_password> --header "Content-Type: text/xml;charset=UTF-8" --data @retrieveMessageRequest.xml https://<AP2_IP_OR_FQDN>:8443/services/backend -v -k
 ```
 
 A successful response looks like this:
 
-```
+```xml
 <?xml version="1.0" encoding="UTF-8"?>
 <soap:Envelope xmlns:soap="http://www.w3.org/2003/05/soap-envelope">
    <soap:Header>
@@ -783,7 +783,7 @@ A successful response looks like this:
 
 The content inside the payload's `value` element is base64 encoded. After [decoding](https://www.base64decode.org/), the value looks like this:
 
-```
+```xml
 <?xml version="1.0" encoding="UTF-8"?>
 <hello>world</hello>
 ```
@@ -791,7 +791,7 @@ The content inside the payload's `value` element is base64 encoded. After [decod
 If you want to try sending the same message from Access Point 2 (`org2_gw`) to Access Point 1 (`org1_gw`), just switch
 the values of the `From` and `To`, and `originalSender` and `finalRecipient` properties:
 
-```
+```xml
 <ns:PartyInfo>
    <ns:From>
       <ns:PartyId type="urn:oasis:names:tc:ebcore:partyid-type:unregistered">harmony-org2</ns:PartyId>
@@ -812,6 +812,6 @@ the values of the `From` and `To`, and `originalSender` and `finalRecipient` pro
 
 Then, send the updated request to Access Point 2 (`org2_gw`) using the curl command below. The request (`submitRequestSwitched.xml`) can be downloaded [here](configuration_examples/static_discovery/submitRequestSwitched.xml?raw=1).
 
-```
+```bash
 curl -u org2:<org2_plugin_user_password> --header "Content-Type: text/xml;charset=UTF-8" --data @submitRequestSwitched.xml https://<AP2_IP_OR_FQDN>:8443/services/backend -v -k
 ```
