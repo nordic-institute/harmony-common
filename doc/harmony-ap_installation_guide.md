@@ -1,15 +1,16 @@
 # Harmony eDelivery Access - Access Point Installation Guide <!-- omit in toc -->
 
-Version: 1.0  
+Version: 1.1  
 Doc. ID: IG-AP
 
 ---
 
 ## Version history <!-- omit in toc -->
 
- Date       | Version | Description                                                     | Author
- ---------- | ------- | --------------------------------------------------------------- | --------------------
- 15.11.2021 | 1.0     | Initial version                                                 |
+ Date       | Version | Description                                                             | Author
+ ---------- | ------- | ------------------------------------------------------------------------| --------------------
+ 15.11.2021 | 1.0     | Initial version                                                         |
+ 07.01.2022 | 1.1     | Add reference to the Static Discovery Configuration Guide \[UG-SDCG\]   | Petteri Kivimäki
  
 ## License <!-- omit in toc -->
 
@@ -58,6 +59,7 @@ See eDelivery definitions documentation \[[TERMS](#Ref_TERMS)\].
 3. <a id="Ref_WS_PLUGIN" class="anchor"></a>\[WS_PLUGIN\] Access Point Interface Control Document - WS Plugin, <https://ec.europa.eu/cefdigital/wiki/download/attachments/447677321/%28eDelivery%29%28AP%29%28ICD%29%28WS%20plugin%29%281.7%29.pdf>
 4. <a id="Ref_PLUGIN_COOKBOOK" class="anchor"></a>\[PLUGIN_COOKBOOK\] Domibus Plugin Cookbook, <https://ec.europa.eu/cefdigital/wiki/download/attachments/447677321/%28eDelivery%29%28AP%29%28Plugin-CB%29%28Domibus.4.2.5%29%284.5%29.pdf>
 5. <a id="Ref_UG-DDCG" class="anchor"></a>\[UG-DDCG\] Harmony eDelivery Access - Dynamic Discovery Configuration Guide. Document ID: [UG-DDCG](dynamic_discovery_configuration_guide.md)
+6. <a id="Ref_UG-SDCG" class="anchor"></a>\[UG-SDCG\] Harmony eDelivery Access - Static Discovery Configuration Guide. Document ID: [UG-SDCG](static_discovery_configuration_guide.md)
 
 ## 2. Installation
 
@@ -120,7 +122,7 @@ Requirements to software and settings:
 ### 2.4 Setup Package Repository
 
 Add the Harmony eDelivery Access repository’s signing key to the list of trusted keys:
-```
+```bash
 curl https://artifactory.niis.org/api/gpg/key/public | sudo apt-key add -
 ```
 
@@ -131,19 +133,19 @@ The repository key details:
 - 3rd party key server: [Ubuntu key server](https://keyserver.ubuntu.com/pks/lookup?search=0xfb0d532c10f6ec5b&fingerprint=on&op=index)
 
 Add Harmony eDelivery Access package repository:
-```
+```bash
 sudo apt-add-repository -y "deb https://artifactory.niis.org/harmony-release-deb $(lsb_release -sc)-current main"
 ```
 
 Update package repository metadata:
-```
+```bash
 sudo apt update
 ```
 
 ### 2.5 Access Point Installation
 
 Issue the following command to install the Harmony eDelivery Access Access Point:
-```
+```bash
 sudo apt install harmony-ap
 ```
 
@@ -159,24 +161,24 @@ Upon the first installation of the Access Point, the system asks for the followi
   - For example: `CN=example.com, O=My Organisation, C=FI`;
   - *Note:* different eDelivery policy domains may have different requirements for the `Distinguished Name`. If you're not sure about the requirements, please contact the domain authority of the policy domain where the Access Point is registered.
 
-See the Dynamic Discovery Configuration Guide \[[UG-DDCG](dynamic_discovery_configuration_guide.md)\] for more information about how to configure dynamic discovery.
+See the Static Discovery Configuration Guide \[[UG-SDCG](static_discovery_configuration_guide.md)\] and the Dynamic Discovery Configuration Guide \[[UG-DDCG](dynamic_discovery_configuration_guide.md)\] for more information about how to configure different discovery options.
 
 ### 2.6 Starting harmony-ap Service and Enabling Automatic Startup 
 
 To start `harmony-ap` service issue the following command:
-```
+```bash
 sudo systemctl start harmony-ap
 ```
 
 If you want `harmony-ap` service start at system startup issue the following command:
-```
+```bash
 sudo systemctl enable harmony-ap
 ```
 
 ### 2.7 Post-Installation Checks
 
 Ensure that the `harmony-ap` service is in the `running` state (example output follows):
-  ```
+  ```bash
   sudo systemctl list-units "harmony-ap*"
 
   UNIT                           LOAD   ACTIVE SUB     DESCRIPTION
@@ -210,7 +212,7 @@ In addition to installing required dependencies, the installation process comple
 
 ### 2.10 Location of Configuration and Generated Passwords 
 
-All Access Point configuration files are located in the `/etc/harmony-ap` directory. See the Domibus Administration Guide \[[DOMIBUS_ADMIN_GUIDE](#Ref_DOMIBUS_ADMIN_GUIDE])\] for more details.
+All Access Point configuration files are located in the `/etc/harmony-ap` directory. See the Domibus Administration Guide \[[DOMIBUS_ADMIN_GUIDE](#Ref_DOMIBUS_ADMIN_GUIDE)\] for more details.
 
 During the installation process, multiple random passwords are generated.
 

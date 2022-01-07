@@ -41,7 +41,7 @@ To view a copy of this license, visit <https://creativecommons.org/licenses/by-s
 
 Harmony eDelivery Access supports static and dynamic discovery. This document describes configuration of participants and services for dynamic discovery. The configuration process differs between sending and receiving parties and therefore, this guide is divided in two different sections.
 
-![network diagram](img/four_corner_model.svg)
+![network diagram](img/four_corner_model_dynamic.svg)
 
 ### 1.1 Target Audience
 

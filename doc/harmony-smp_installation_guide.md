@@ -1,6 +1,6 @@
 # Harmony eDelivery Access - Service Metadata Publisher Installation Guide <!-- omit in toc -->
 
-Version: 1.2  
+Version: 1.3  
 Doc. ID: IG-SMP
 
 ---
@@ -12,6 +12,7 @@ Doc. ID: IG-SMP
  15.11.2021 | 1.0     | Initial version                                                 |
  20.12.2021 | 1.1     | Add section [2.4 Preparing OS](#24-preparing-os)                | Petteri Kivimäki
  21.12.2021 | 1.2     | Add section [2.11 Securing SMP user interface](#211-securing-smp-user-interface) | Andres Allkivi
+ 07.01.2021 | 1.3     | Add language types to code blocks                               | Petteri Kivimäki
  
 ## License <!-- omit in toc -->
 
@@ -121,21 +122,21 @@ Requirements to software and settings:
 Some virtual machines may not be able to supply enough entropy that's required in key generation. It's recommended to
 check the level of available entropy before the installation. It can be done by issuing the command below:
 
-```
+```bash
 cat /proc/sys/kernel/random/entropy_avail
 ```
 
 If the number returned by the command is less than 200, it indicates that there's not enough entropy available for 
 the key generation. In that case, it's strongly recommended to install the `rng-tools` package before installing SMP:
 
-```
+```bash
 sudo apt-get install rng-tools
 ```
 
 ### 2.5 Setup Package Repository
 
 Add the Harmony eDelivery Access repository’s signing key to the list of trusted keys:
-```
+```bash
 curl https://artifactory.niis.org/api/gpg/key/public | sudo apt-key add -
 ```
 
@@ -146,19 +147,19 @@ The repository key details:
 - 3rd party key server: [Ubuntu key server](https://keyserver.ubuntu.com/pks/lookup?search=0xfb0d532c10f6ec5b&fingerprint=on&op=index)
 
 Add Harmony eDelivery Access package repository:
-```
+```bash
 sudo apt-add-repository -y "deb https://artifactory.niis.org/harmony-release-deb $(lsb_release -sc)-current main"
 ```
 
 Update package repository metadata:
-```
+```bash
 sudo apt update
 ```
 
 ### 2.6 SMP Installation
 
 Issue the following command to install the Harmony eDelivery Access SMP:
-```
+```bash
 sudo apt install harmony-smp
 ```
 
@@ -180,19 +181,19 @@ See the Dynamic Discovery Configuration Guide \[[UG-DDCG](dynamic_discovery_conf
 ### 2.7 Starting harmony-smp Service and Enabling Automatic Startup 
 
 To start `harmony-smp` service issue the following command:
-```
+```bash
 sudo systemctl start harmony-smp
 ```
 
 If you want `harmony-smp` service start at system startup issue the following command:
-```
+```bash
 sudo systemctl enable harmony-smp
 ```
 
 ### 2.8 Post-Installation Checks
 
 Ensure that the `harmony-smp` service is in the `running` state (example output follows):
-  ```
+  ```bash
   sudo systemctl list-units "harmony-smp*"
 
   UNIT                           LOAD   ACTIVE SUB     DESCRIPTION
@@ -252,7 +253,7 @@ location ~ [^\/]*\/services\/[^\/]*$
 When SMP is behind a reverse proxy SSL connections have to be terminated at proxy and SMP reconfigured to accept plain
 HTTP connections. Edit `/etc/harmony-smp/tomcat-conf/server.xml` and add additional connector for plain http connections:
 
-```
+```xml
 <Connector port="8080" protocol="org.apache.coyote.http11.Http11AprProtocol"
            maxThreads="150"/>
 ```
@@ -260,9 +261,9 @@ HTTP connections. Edit `/etc/harmony-smp/tomcat-conf/server.xml` and add additio
 For security reasons unencrypted connections should be used only between reverse proxy and SMP. To enforce this add
 remote address valve to `Host` element in `server.xml`, enabling HTTP port access only from proxy.
 
-Example assuming proxy IP address is 192.168.1.1:
+Example assuming proxy IP address is `192.168.1.1`:
 
-```
+```xml
 <Valve className="org.apache.catalina.valves.RemoteAddrValve"
   addConnectorPort="true"
   allow="(.*;8443|192\.168\.1\.1;8080)$"
