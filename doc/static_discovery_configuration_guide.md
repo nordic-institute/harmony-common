@@ -91,6 +91,7 @@ See eDelivery definitions documentation \[[TERMS](#Ref_TERMS)\].
 Before starting the static discovery configuration process, please complete the Access Point installation according to the installation guide:
 
 - Harmony eDelivery Access - Access Point Installation Guide \[[IG-AS](harmony-ap_installation_guide.md)\].
+  - **Note:** During the installation, when the system asks do you want the Access Point installation to use dynamic discovery, please answer **No**.
 
 Also, completing the configuration steps require command line access with root permissions to the host server.
 
@@ -107,9 +108,11 @@ The table below gives an overview of different keystore and truststore files tha
 
 Sign and TLS keys are automatically created during the Access Point installation process. By default, the 
 alias of both is `selfsigned`. However, the sign key alias must be manually updated to match the party name of the key owner. 
-The party name is defined in the `PMode` configuration file. For example, this block from a `PMode` file is taken from
-an Access Point owned by a party whose party name is `org1_gw`. In this case, the alias of the sign key should be 
-changed from `selfsigned` to `org1_gw`.
+The party name is defined in the `PMode` configuration file. See the Domibus Administration Guide 
+\[[DOMIBUS_ADMIN_GUIDE](#Ref_DOMIBUS_ADMIN_GUIDE)\] for more details.
+
+For example, this block from a `PMode` file is taken from an Access Point owned by a party whose party name is 
+`org1_gw`. In this case, the alias of the sign key should be changed from `selfsigned` to `org1_gw`.
 
 ```
 <?xml version="1.0" encoding="UTF-8"?>
@@ -165,8 +168,8 @@ openssl rand -base64 12
 Then, generate the TLS truststore with a mock key pair and remove the mock key pair right after:
 
 ```
-sudo keytool -genkeypair -alias mock -keystore /etc/harmony-ap/ap-truststore.jks -storepass <tls_truststore_password> -keypass <tls_truststore_password> -dname "CN=mock"
-sudo keytool -delete -alias mock -keystore /etc/harmony-ap/ap-truststore.jks -storepass <tls_truststore_password>
+sudo keytool -genkeypair -alias mock -keystore /etc/harmony-ap/tls-truststore.jks -storepass <tls_truststore_password> -keypass <tls_truststore_password> -dname "CN=mock"
+sudo keytool -delete -alias mock -keystore /etc/harmony-ap/tls-truststore.jks -storepass <tls_truststore_password>
 ```
 
 Set the file permissions of the new TLS truststore file:
@@ -179,7 +182,7 @@ sudo chmod 751 /etc/harmony-ap/tls-truststore.jks
 ### 2.4 TLS Configuration
 
 Harmony Access Points supports two possible configurations, One-Way SSL and Two-Way SSL. See the Domibus Administration 
-Guide \[[DOMIBUS_ADMIN_GUIDE](#Ref_DOMIBUS_ADMIN_GUIDE])\] for more details.
+Guide \[[DOMIBUS_ADMIN_GUIDE](#Ref_DOMIBUS_ADMIN_GUIDE)\] for more details.
 
 The TLS configuration is read from the `/etc/harmony-ap/clientauthentication.xml` file. The content of the file depends
 on the configuration that's used.
@@ -189,12 +192,6 @@ whether it is checked if the host name specified in the URL matches the host nam
 the server's certificate. In the examples the value is `true` which means that the check is disabled and self-signed
 certificates can be used. However, in production environment the value should be set to `false` which means that the
 check is enabled.
-
-Restart the `harmony-ap` service to apply the changes:
-
-```
-sudo systemctl restart harmony-ap
-```
 
 #### 2.4.1 One-Way SSL
 
@@ -211,6 +208,12 @@ The public certificate of the receiver is expected to be present in the `/etc/ha
                            file="/etc/harmony-ap/tls-truststore.jks"/>
     </security:trustManagers>
 </http-conf:tlsClientParameters>
+```
+
+Restart the `harmony-ap` service to apply the changes:
+
+```
+sudo systemctl restart harmony-ap
 ```
 
 #### 2.4.2 Two-Way SSL
@@ -259,6 +262,12 @@ backend interface. In practise, after the change Two-Way SSL is required for the
     />
 ```
 
+Restart the `harmony-ap` service to apply the changes:
+
+```
+sudo systemctl restart harmony-ap
+```
+
 ### 2.5 Import Trusted Certificates to Truststores
 
 Public certificates of trusted data exhange parties must be imported to sign and TLS truststores. The certificates 
@@ -277,7 +286,7 @@ checks can be adjusted using the following properties in the `/etc/harmony-ap/do
 | `domibus.sender.certificate.subject.check` | `false` | When enabled, Domibus will verify before receiving a message, that the alias (party name) is present in the signing certificate subject. |
 | `domibus.sender.trust.validation.onreceiving` | `true` | If activated Domibus will verify before receiving a message, the validity and authorization on the sender's certificate. When disabled, none of the other checks are performed on the sender's certificate. |
 
-See the Domibus Administration Guide \[[DOMIBUS_ADMIN_GUIDE](#Ref_DOMIBUS_ADMIN_GUIDE])\] for more details regarding different configuration alternatives.
+See the Domibus Administration Guide \[[DOMIBUS_ADMIN_GUIDE](#Ref_DOMIBUS_ADMIN_GUIDE)\] for more details regarding different configuration alternatives.
 
 ### 2.5.1 Import Trusted Sign Certificates
 
@@ -548,7 +557,7 @@ sudo keytool -export -keystore /etc/harmony-ap/ap-keystore.jks -alias org1_gw -f
 Export the TLS certificate using the following command:
 
 ```
-sudo keytool -export -keystore /etc/harmony-ap/tls-keystore.jks -alias org1_gw -file org1_tls_certificate.cer -storepass <tls_keystore_password>
+sudo keytool -export -keystore /etc/harmony-ap/tls-keystore.jks -alias selfsigned -file org1_tls_certificate.cer -storepass <tls_keystore_password>
 ```
 
 #### 3.5.1 Access Point 2
@@ -562,7 +571,7 @@ sudo keytool -export -keystore /etc/harmony-ap/ap-keystore.jks -alias org2_gw -f
 Export the TLS certificate using the following command:
 
 ```
-sudo keytool -export -keystore /etc/harmony-ap/tls-keystore.jks -alias org2_gw -file org2_tls_certificate.cer -storepass <tls_keystore_password>
+sudo keytool -export -keystore /etc/harmony-ap/tls-keystore.jks -alias selfsigned -file org2_tls_certificate.cer -storepass <tls_keystore_password>
 ```
 
 ### 3.6 Import Certificates
@@ -591,7 +600,7 @@ openssl rand -base64 12
 
 **Note:** Write down the password (`tls_truststore_password`). You will need it in step 3.7.
 
-Then, import the TLS certificate of Access Point 2 (`org2_gw`):
+Then, import the TLS certificate of Access Point 2 (`org2_gw`). The command asks should the certificate be trusted and the answer is **yes**.
 
 ```
 sudo keytool -import -alias org2_gw -file org2_tls_certificate.cer -keystore /etc/harmony-ap/tls-truststore.jks -storepass <tls_truststore_password>
@@ -624,7 +633,7 @@ openssl rand -base64 12
 
 **Note:** Write down the password (`tls_truststore_password`). You will need it in step 3.7.
 
-Then, import the TLS certificate of Access Point 1 (`org1_gw`):
+Then, import the TLS certificate of Access Point 1 (`org1_gw`). The command asks should the certificate be trusted and the answer is **yes**.
 
 ```
 sudo keytool -import -alias org1_gw -file org1_tls_certificate.cer -keystore /etc/harmony-ap/tls-truststore.jks -storepass <tls_truststore_password>
@@ -677,7 +686,7 @@ sudo systemctl restart harmony-ap
 
 ### 3.9 Send Test Message
 
-Send a request to Access Point 1 (`org1_gw`) using the curl command below. The request (`submitRequest.xml`) can be downloaded [here](configuration_examples/static_discovery/submitRequest.xml). The content inside the payload's `value` element must be [base64 encoded](https://www.base64encode.org/).
+Send a request to Access Point 1 (`org1_gw`) using the curl command below. The request (`submitRequest.xml`) can be downloaded [here](configuration_examples/static_discovery/submitRequest.xml?raw=1). The content inside the payload's `value` element must be [base64 encoded](https://www.base64encode.org/).
 
 ```
 curl -u org1:<org1_plugin_user_password> --header "Content-Type: text/xml;charset=UTF-8" --data @submitRequest.xml https://<AP1_IP_OR_FQDN>:8443/services/backend -v -k
@@ -696,7 +705,7 @@ A successful response looks like this:
 </soap:Envelope>
 ```
 
-List received and pending messages on the Access Point 2 (`org2_gw`). The request (`listPendingMessagesRequest.xml`) can be downloaded [here](configuration_examples/static_discovery/listPendingMessagesRequest.xml).
+List received and pending messages on the Access Point 2 (`org2_gw`). The request (`listPendingMessagesRequest.xml`) can be downloaded [here](configuration_examples/static_discovery/listPendingMessagesRequest.xml?raw=1).
 
 ```
 curl -u org2:<org2_plugin_user_password> --header "Content-Type: text/xml;charset=UTF-8" --data @listPendingMessagesRequest.xml https://<AP2_IP_OR_FQDN>:8443/services/backend -v -k
@@ -715,7 +724,7 @@ A successful response looks like this:
 </soap:Envelope>
 ```
 
-Retrieve the test message from Access Point 2 (`org2_gw`). The request (`retrieveMessageRequest.xml`) can be downloaded [here](configuration_examples/static_discovery/retrieveMessageRequest.xml). Before sending the message, replace the `MESSAGE_ID` placeholder with the ID (`messageID`) of the test message.
+Retrieve the test message from Access Point 2 (`org2_gw`). The request (`retrieveMessageRequest.xml`) can be downloaded [here](configuration_examples/static_discovery/retrieveMessageRequest.xml?raw=1). Before sending the message, replace the `MESSAGE_ID` placeholder with the ID (`messageID`) of the test message.
 
 ```
 curl -u org2:<org2_plugin_user_password> --header "Content-Type: text/xml;charset=UTF-8" --data @retrieveMessageRequest.xml https://<AP2_IP_OR_FQDN>:8443/services/backend -v -k
@@ -801,7 +810,7 @@ the values of the `From` and `To`, and `originalSender` and `finalRecipient` pro
 </ns:MessageProperties>
 ```
 
-Then, send the updated request to Access Point 2 (`org2_gw`) using the curl command below. The request (`submitRequestSwitched.xml`) can be downloaded [here](configuration_examples/static_discovery/submitRequestSwitched.xml).
+Then, send the updated request to Access Point 2 (`org2_gw`) using the curl command below. The request (`submitRequestSwitched.xml`) can be downloaded [here](configuration_examples/static_discovery/submitRequestSwitched.xml?raw=1).
 
 ```
 curl -u org2:<org2_plugin_user_password> --header "Content-Type: text/xml;charset=UTF-8" --data @submitRequestSwitched.xml https://<AP2_IP_OR_FQDN>:8443/services/backend -v -k
