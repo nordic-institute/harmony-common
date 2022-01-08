@@ -288,7 +288,7 @@ checks can be adjusted using the following properties in the `/etc/harmony-ap/do
 
 See the Domibus Administration Guide \[[DOMIBUS_ADMIN_GUIDE](#Ref_DOMIBUS_ADMIN_GUIDE)\] for more details regarding different configuration alternatives.
 
-### 2.5.1 Import Trusted Sign Certificates
+#### 2.5.1 Import Trusted Sign Certificates
 
 The channel where trusted sign certificates of data exchange parties are distributed or published varies between 
 different eDelivery policy domains. If you don't know where to get them, please contact the domain authority of 
@@ -306,7 +306,7 @@ for a specific party can be imported following the steps below:
 4. Select the certificate to be imported.
 5. Click OK and then click Save.
 
-### 2.5.2 Import Trusted TLS Certificates
+#### 2.5.2 Import Trusted TLS Certificates
 
 The channel where trusted TLS certificates of data exchange parties are distributed or published varies between 
 different eDelivery policy domains. If you don't know where to get them, please contact the domain authority of 
@@ -327,13 +327,13 @@ sudo keytool -import -alias <party_name> -file </path/to/tls_certificate.crt> -k
 All the trusted TLS certificates can be listed using the following command:
 
 ```bash
-keytool -list -v /etc/harmony-ap/tls-truststore.jks -storepass <tls_truststore_password>
+keytool -list -v -keystore /etc/harmony-ap/tls-truststore.jks -storepass <tls_truststore_password>
 ```
 
 A trusted TLS certificate can be deleted using the following command:
 
 ```bash
-sudo keytool -delete -noprompt -alias <party_name> /etc/harmony-ap/tls-truststore.jks -storepass <tls_truststore_password>
+sudo keytool -delete -noprompt -alias <party_name> -keystore /etc/harmony-ap/tls-truststore.jks -storepass <tls_truststore_password>
 ```
 
 Restart the `harmony-ap` service to apply the changes:
@@ -349,7 +349,7 @@ different eDelivery policy domains. If you're not sure where to publish them, pl
 the policy domain where the Access Point is registered. Whatever the channel is, the first step is to export the certificates
 from sign and TLS keystores.
 
-### 2.6.1 Export Sign Certificates
+#### 2.6.1 Export Sign Certificates
 
 A sign certificate belonging to a specific party can be exported using the following command:
 
@@ -360,16 +360,16 @@ sudo keytool -export -keystore /etc/harmony-ap/ap-keystore.jks -alias <party_nam
 All the available sign keys can be listed using the following command:
 
 ```bash
-keytool -list -v /etc/harmony-ap/ap-keystore.jks -storepass <ap_keystore_password>
+keytool -list -v -keystore /etc/harmony-ap/ap-keystore.jks -storepass <ap_keystore_password>
 ```
 
 A sign key can be deleted using the following command:
 
 ```bash
-sudo keytool -delete -noprompt -alias <party_name> /etc/harmony-ap/ap-keystore.jks -storepass <ap_keystore_password>
+sudo keytool -delete -noprompt -alias <party_name> -keystore /etc/harmony-ap/ap-keystore.jks -storepass <ap_keystore_password>
 ```
 
-### 2.6.2 Export TLS Certificates
+#### 2.6.2 Export TLS Certificates
 
 The default TLS certificate that's created during the installation process can be exported using the following command:
 
@@ -380,13 +380,13 @@ sudo keytool -export -keystore /etc/harmony-ap/tls-keystore.jks -alias selfsigne
 All the available TLS keys can be listed using the following command:
 
 ```bash
-keytool -list -v /etc/harmony-ap/tls-keystore.jks -storepass <tls_keystore_password>
+keytool -list -v -keystore /etc/harmony-ap/tls-keystore.jks -storepass <tls_keystore_password>
 ```
 
 A TLS key can be deleted using the following command:
 
 ```bash
-sudo keytool -delete -noprompt -alias <party_name> /etc/harmony-ap/tls-keystore.jks -storepass <tls_keystore_password>
+sudo keytool -delete -noprompt -alias <party_name> -keystore /etc/harmony-ap/tls-keystore.jks -storepass <tls_keystore_password>
 ```
 
 ### 2.7 Create Plugin Users
