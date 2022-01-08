@@ -10,7 +10,7 @@ Doc. ID: UG-SDCG
  Date       | Version | Description                                                     | Author
  ---------- | ------- | --------------------------------------------------------------- | --------------------
  30.12.2021 | 1.0     | Initial version                                                 | Petteri Kivimäki
- 08.01.2022 | 1.1     | Remove sections about creating TLS truststore manually          | Petteri Kivimäki
+ 08.01.2022 | 1.1     | Remove sections about creating TLS truststore manually, update One-Way SSL configuration instructions | Petteri Kivimäki
  
 ## License <!-- omit in toc -->
 
@@ -158,8 +158,8 @@ sudo systemctl restart harmony-ap
 
 ### 2.3 TLS Configuration
 
-Harmony Access Points supports two possible configurations, One-Way SSL and Two-Way SSL. See the Domibus Administration 
-Guide \[[DOMIBUS_ADMIN_GUIDE](#Ref_DOMIBUS_ADMIN_GUIDE)\] for more details.
+Harmony Access Points supports two possible configurations, One-Way SSL (default) and Two-Way SSL. See the Domibus 
+Administration Guide \[[DOMIBUS_ADMIN_GUIDE](#Ref_DOMIBUS_ADMIN_GUIDE)\] for more details.
 
 The TLS configuration is read from the `/etc/harmony-ap/clientauthentication.xml` file. The content of the file depends
 on the configuration that's used.
@@ -168,13 +168,18 @@ on the configuration that's used.
 whether it is checked if the host name specified in the URL matches the host name specified in the Common Name (CN) of
 the server's certificate. In the examples the value is `true` which means that the check is disabled and self-signed
 certificates can be used. However, in production environment the value should be set to `false` which means that the
-check is enabled.
+check is enabled and self-signed certificates can not be used. Also, in the default configuration the value of the 
+`disableCNCheck` attribute  is `false`.
 
 #### 2.3.1 One-Way SSL
 
-When One-Way SSL is used, the sender validates the signature of the receiver using the public certificate of the receiver.
-The public certificate of the receiver is expected to be present in the `/etc/harmony-ap/tls-truststore.jks` file. The 
-`/etc/harmony-ap/clientauthentication.xml` file should look like this:
+When One-Way SSL is used (default), the sender validates the signature of the receiver using the public certificate of 
+the receiver. The public certificate of the receiver is expected to be present in the `/etc/harmony-ap/tls-truststore.jks` 
+file. 
+
+In the default configuration the value of the `disableCNCheck` attribute is `false` which means that self-signed certificates
+can not be used. However, if self-signed certificates are used, the value of the `disableCNCheck` attribute must be set to `true`.
+In that case, the `/etc/harmony-ap/clientauthentication.xml` file should look like this:
 
 ```xml
 <http-conf:tlsClientParameters disableCNCheck="true" secureSocketProtocol="TLSv1.2"
@@ -197,7 +202,8 @@ sudo systemctl restart harmony-ap
 
 In Two-Way SSL, both the sender and the receiver sign the request and validate the trust of the other party.
 The public certificate of the receiver is expected to be present in the `/etc/harmony-ap/tls-truststore.jks` file. Also,
-the private key of the sender that's stored in the `/etc/harmony-ap/tls-keystore.jks` file is configured. The 
+the private key of the sender that's stored in the `/etc/harmony-ap/tls-keystore.jks` file is configured. In the example
+below, the use of self-signed certificates is enabled (`disableCNCheck="true"`). The 
 `/etc/harmony-ap/clientauthentication.xml` file should look like this:
 
 ```xml
@@ -289,6 +295,9 @@ different eDelivery policy domains. If you don't know where to get them, please 
 the policy domain where the Access Point is registered.
 
 The TLS certificate truststore located in `/etc/harmony-ap/tls-truststore.jks` can not be updated through the admin UI.
+By default, the TLS truststore contains one trusted TLS certificate which is the Access Point's own public TLS certificate.
+The alias of the Access Point's own TLS certificate is `selfsigned`. If the same Access Point acts as a sender and 
+receiver, it must trust its own TLS certificate.
 
 If the certificate to be imported is a TLS certificate of a data exchange party, it's recommended to use the party name 
 of the other party as an alias for the certificate. Instead, if the certificate to be imported is a root certificate 
@@ -396,10 +405,8 @@ For example, a backend system in the sender role would use `urn:oasis:names:tc:e
 .
 ```
 
-The user name and password are used to authenticate requests to the plugin interface. With the default WS Plugin HTTP basic
-authentication is used.
-
-See the WS Plugin documentation \[[WS_PLUGIN](#Ref_WS_PLUGIN)\] for more details.
+The default WS Plugin supports basic authentication and TLS certificate based authentication. See the WS Plugin 
+documentation \[[WS_PLUGIN](#Ref_WS_PLUGIN)\] for more details.
 
 ## 3. Example Configuration
 
@@ -600,9 +607,10 @@ sudo keytool -import -alias org1_gw -file org1_tls_certificate.cer -keystore /et
 ### 3.7 Configure One-Way SSL
 
 This step requires shell access to the host.
-    
-On Access Points 1 (`org1_gw`) and Access Point 2 (`org2_gw`), create the `/etc/harmony-ap/clientauthentication.xml` 
-file with the following content:
+
+One-Way SSL is configured by default. However, the configuration has to be updated to allow the use of self-signed 
+certificates. On Access Points 1 (`org1_gw`) and Access Point 2 (`org2_gw`), set the value of the `disableCNCheck`
+ attribute to `true` in the `/etc/harmony-ap/clientauthentication.xml` configuration file:
 
 ```xml
 <http-conf:tlsClientParameters disableCNCheck="true" secureSocketProtocol="TLSv1.2"
@@ -613,15 +621,6 @@ file with the following content:
                            file="/etc/harmony-ap/tls-truststore.jks"/>
     </security:trustManagers>
 </http-conf:tlsClientParameters>
-```
-
-**Note:** Use the password (`tls_truststore_password`) created in step 3.6.
-
-Set the file permissions of the new `/etc/harmony-ap/clientauthentication.xml` file:
-
-```bash
-sudo chown harmony-ap:harmony-ap /etc/harmony-ap/clientauthentication.xml
-sudo chmod 751 /etc/harmony-ap/clientauthentication.xml
 ```
 
 ### 3.8 Apply Changes

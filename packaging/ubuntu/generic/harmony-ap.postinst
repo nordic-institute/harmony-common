@@ -103,6 +103,9 @@ case "$1" in
     sed -e "s/{{tls_keystore_password}}/$E_TLSKEYPASS/" -e "s/{{tls_truststore_password}}/$E_TLSTRUSTSTOREPASS/" \
         /opt/harmony-ap/setup/server.xml.template > /etc/harmony-ap/tomcat-conf/server.xml
 
+    sed -e "s/{{tls_truststore_password}}/$E_TLSTRUSTSTOREPASS/" \
+        /opt/harmony-ap/setup/clientauthentication.xml.template > /etc/harmony-ap/clientauthentication.xml
+
     sed -e "s/{{keystorepass}}/$E_KEYSTOREPASS/" -e "s/{{truststorepass}}/$E_TRUSTSTOREPASS/" \
       -e "s/{{dbuser}}/$E_DBUSER/" -e "s/{{dbpassword}}/$E_DBPASSWORD/" \
       -e "s/{{dynamicdiscovery}}/$USEDYNAMIC/" -e "s/{{smlzone}}/$E_SMLZONE/" \
