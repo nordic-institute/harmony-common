@@ -76,10 +76,10 @@ case "$1" in
     TLSKEYPASS=$(openssl rand -base64 12)
 
     keytool -genkeypair -keyalg RSA -alias selfsigned -keystore /etc/harmony-ap/ap-keystore.jks -storepass $KEYSTOREPASS \
-      -keypass $KEYSTOREPASS -validity 333 -keysize 3096 -dname "$SERVERDN" 2>/dev/null
+      -keypass $KEYSTOREPASS -validity 333 -keysize 3072 -dname "$SERVERDN" 2>/dev/null
 
     keytool -genkeypair -keyalg RSA -alias selfsigned -keystore /etc/harmony-ap/tls-keystore.jks -storepass $TLSKEYPASS \
-      -keypass $TLSKEYPASS -validity 333 -keysize 3096 -dname "$SERVERDN" 2>/dev/null
+      -keypass $TLSKEYPASS -validity 333 -keysize 3072 -dname "$SERVERDN" 2>/dev/null
 
     keytool -genkeypair -alias mock -keystore /etc/harmony-ap/ap-truststore.jks -storepass $TRUSTSTOREPASS \
       -keypass $TRUSTSTOREPASS -dname "CN=mock" 2>/dev/null
