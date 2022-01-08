@@ -14,7 +14,7 @@ cleanup() {
   if [ ! "$SUCCESS" = true ]; then
     rm -f /etc/harmony-ap/*.jks
     if [ "$DROPDBONERROR" = true ]; then
-      mysql -e "DROP SCHEMA harmony_ap; DROP USER harmony@localhost"
+      mysql -e "DROP SCHEMA harmony_ap; DROP USER harmony_ap@localhost"
     fi;
   fi
 }
@@ -74,6 +74,7 @@ case "$1" in
     KEYSTOREPASS=$(openssl rand -base64 12)
     TRUSTSTOREPASS=$(openssl rand -base64 12)
     TLSKEYPASS=$(openssl rand -base64 12)
+    TLSTRUSTSTOREPASS=$(openssl rand -base64 12)
 
     keytool -genkeypair -keyalg RSA -alias selfsigned -keystore /etc/harmony-ap/ap-keystore.jks -storepass $KEYSTOREPASS \
       -keypass $KEYSTOREPASS -validity 333 -keysize 3096 -dname "$SERVERDN" 2>/dev/null
@@ -85,15 +86,22 @@ case "$1" in
       -keypass $TRUSTSTOREPASS -dname "CN=mock" 2>/dev/null
     keytool -delete -alias mock -keystore /etc/harmony-ap/ap-truststore.jks -storepass $TRUSTSTOREPASS 2>/dev/null
 
+    keytool -export -alias selfsigned -file /etc/harmony-ap/selfsigned.cer \
+      -keystore /etc/harmony-ap/tls-keystore.jks -storepass $TLSKEYPASS 2>/dev/null
+    keytool -import -noprompt -alias selfsigned -file /etc/harmony-ap/selfsigned.cer \
+      -keystore /etc/harmony-ap/tls-truststore.jks -storepass $TLSTRUSTSTOREPASS 2>/dev/null
+    rm -f /etc/harmony-ap/selfsigned.cer
+
     E_KEYSTOREPASS=$(escape_for_sed "$KEYSTOREPASS")
     E_TRUSTSTOREPASS=$(escape_for_sed "$TRUSTSTOREPASS")
     E_DBUSER=$(escape_for_sed "$DBUSER")
     E_DBPASSWORD=$(escape_for_sed "$DBPASSWORD")
     E_TLSKEYPASS=$(escape_for_sed "$TLSKEYPASS")
+    E_TLSTRUSTSTOREPASS=$(escape_for_sed "$TLSTRUSTSTOREPASS")
     E_SMLZONE=$(escape_for_sed "$SMLZONE")
 
-
-    sed -e "s/{{tls_keystore_password}}/$E_TLSKEYPASS/" /opt/harmony-ap/setup/server.xml.template > /etc/harmony-ap/tomcat-conf/server.xml
+    sed -e "s/{{tls_keystore_password}}/$E_TLSKEYPASS/" -e "s/{{tls_truststore_password}}/$E_TLSTRUSTSTOREPASS/" \
+        /opt/harmony-ap/setup/server.xml.template > /etc/harmony-ap/tomcat-conf/server.xml
 
     sed -e "s/{{keystorepass}}/$E_KEYSTOREPASS/" -e "s/{{truststorepass}}/$E_TRUSTSTOREPASS/" \
       -e "s/{{dbuser}}/$E_DBUSER/" -e "s/{{dbpassword}}/$E_DBPASSWORD/" \
@@ -108,7 +116,7 @@ case "$1" in
       echo "The Harmony AP system user must not have uid 0 (root).Please fix this and reinstall this package." >&2
       exit 1
   fi
-  if [ "`id -g harmony`" -eq 0 ]; then
+  if [ "`id -g harmony-ap`" -eq 0 ]; then
       echo "The Harmony AP system user must not have root as primary group. Please fix this and reinstall this package." >&2
       exit 1
   fi
