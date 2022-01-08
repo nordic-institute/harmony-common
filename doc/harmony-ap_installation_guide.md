@@ -208,7 +208,7 @@ In addition to installing required dependencies, the installation process comple
 - creates MySQL database user `harmony_ap` and generates random password for it;
 - creates MySQL database schema `harmony_ap` and populates it with needed metadata;
 - loads initial configuration into database;
-- generates self-signed certificates for content encryption and for transport encryption;
+- generates self-signed certificates for content encryption and transport encryption;
 - configures One-Way SSL between two Access Points;
 - installs the `harmony-ap` systemd service but does not enable or start it.
 

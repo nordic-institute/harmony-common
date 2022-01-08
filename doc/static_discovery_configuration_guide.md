@@ -270,7 +270,7 @@ checks can be adjusted using the following properties in the `/etc/harmony-ap/do
 
 See the Domibus Administration Guide \[[DOMIBUS_ADMIN_GUIDE](#Ref_DOMIBUS_ADMIN_GUIDE)\] for more details regarding different configuration alternatives.
 
-### 2.4.1 Import Trusted Sign Certificates
+#### 2.4.1 Import Trusted Sign Certificates
 
 The channel where trusted sign certificates of data exchange parties are distributed or published varies between 
 different eDelivery policy domains. If you don't know where to get them, please contact the domain authority of 
@@ -288,7 +288,7 @@ for a specific party can be imported following the steps below:
 4. Select the certificate to be imported.
 5. Click OK and then click Save.
 
-### 2.4.2 Import Trusted TLS Certificates
+#### 2.4.2 Import Trusted TLS Certificates
 
 The channel where trusted TLS certificates of data exchange parties are distributed or published varies between 
 different eDelivery policy domains. If you don't know where to get them, please contact the domain authority of 
@@ -334,7 +334,7 @@ different eDelivery policy domains. If you're not sure where to publish them, pl
 the policy domain where the Access Point is registered. Whatever the channel is, the first step is to export the certificates
 from sign and TLS keystores.
 
-### 2.5.1 Export Sign Certificates
+#### 2.5.1 Export Sign Certificates
 
 A sign certificate belonging to a specific party can be exported using the following command:
 
@@ -354,7 +354,7 @@ A sign key can be deleted using the following command:
 sudo keytool -delete -noprompt -alias <party_name> -keystore /etc/harmony-ap/ap-keystore.jks -storepass <ap_keystore_password>
 ```
 
-### 2.5.2 Export TLS Certificates
+#### 2.5.2 Export TLS Certificates
 
 The default TLS certificate that's created during the installation process can be exported using the following command:
 
