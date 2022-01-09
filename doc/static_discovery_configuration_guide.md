@@ -301,8 +301,9 @@ the policy domain where the Access Point is registered.
 
 The TLS certificate truststore located in `/etc/harmony-ap/tls-truststore.jks` can not be updated through the admin UI.
 By default, the TLS truststore contains one trusted TLS certificate which is the Access Point's own public TLS certificate.
-The alias of the Access Point's own TLS certificate is `selfsigned`. If the same Access Point acts as a sender and 
-receiver, it must trust its own TLS certificate.
+The alias of the Access Point's own TLS certificate is the party name of the Access Point owner. If the party name of the 
+owner wasn't defined during the installation process, the default value is `selfsigned`. If the same Access Point acts 
+as a sender and receiver, it must trust its own TLS certificate.
 
 If the certificate to be imported is a TLS certificate of a data exchange party, it's recommended to use the party name 
 of the other party as an alias for the certificate. Instead, if the certificate to be imported is a root certificate 
