@@ -171,10 +171,9 @@ on the configuration that's used.
 
 **Note:** In the `/etc/harmony-ap/clientauthentication.xml` configuration examples, the `disableCNCheck` attribute specifies 
 whether it is checked if the host name specified in the URL matches the host name specified in the Common Name (CN) of
-the server's certificate. In the examples the value is `true` which means that the check is disabled and self-signed
-certificates can be used. However, in production environment the value should be set to `false` which means that the
-check is enabled and self-signed certificates can not be used. Also, in the default configuration the value of the 
-`disableCNCheck` attribute  is `false`.
+the server's certificate. In the examples the value is `true` which means that the check is disabled. However, in 
+production environment the value should be set to `false`. In the default configuration the value of the `disableCNCheck` 
+attribute is `false`.
 
 #### 2.3.1 One-Way SSL
 
@@ -182,9 +181,9 @@ When One-Way SSL is used (default), the sender validates the signature of the re
 the receiver. The public certificate of the receiver is expected to be present in the `/etc/harmony-ap/tls-truststore.jks` 
 file. 
 
-In the default configuration the value of the `disableCNCheck` attribute is `false` which means that self-signed certificates
-can not be used. However, if self-signed certificates are used, the value of the `disableCNCheck` attribute must be set to `true`.
-In that case, the `/etc/harmony-ap/clientauthentication.xml` file should look like this:
+In the default configuration the value of the `disableCNCheck` attribute is `false`. However, if self-signed certificates 
+are used, the value of the `disableCNCheck` attribute might need to be set to `true`. In that case, the 
+`/etc/harmony-ap/clientauthentication.xml` file should look like this:
 
 ```xml
 <http-conf:tlsClientParameters disableCNCheck="true" secureSocketProtocol="TLSv1.2"
