@@ -11,7 +11,7 @@ Doc. ID: IG-AP
  ---------- | ------- | ------------------------------------------------------------------------| --------------------
  15.11.2021 | 1.0     | Initial version                                                         |
  07.01.2022 | 1.1     | Add reference to the Static Discovery Configuration Guide \[UG-SDCG\]   | Petteri Kivimäki
- 08.01.2022 | 1.2     | Add TLS truststore to section [2.10](#210-location-of-configuration-and-generated-passwords) | Petteri Kivimäki
+ 08.01.2022 | 1.2     | Add party name to section [2.5](#25-access-point-installation) and TLS truststore to section [2.10](#210-location-of-configuration-and-generated-passwords) | Petteri Kivimäki
  
 ## License <!-- omit in toc -->
 
@@ -158,9 +158,11 @@ Upon the first installation of the Access Point, the system asks for the followi
   - the value can be edited later by changing the `domibus.smlzone` property in the `/etc/harmony-ap/domibus.properties` configuration file;
 - username of the administrative user - username to use to log in to administrative UI;
 - initial password for the administrative user;
+- party name of the Access Point owner organisation;
+  - if you don't know the party name of the owner, use the default value (`selfsigned`);
 - `Distinguished Name` for generated self-signed content encryption and TLS certificates;
-  - For example: `CN=example.com, O=My Organisation, C=FI`;
-  - *Note:* different eDelivery policy domains may have different requirements for the `Distinguished Name`. If you're not sure about the requirements, please contact the domain authority of the policy domain where the Access Point is registered.
+  - for example: `CN=example.com, O=My Organisation, C=FI`;
+  - *note:* different eDelivery policy domains may have different requirements for the `Distinguished Name`. If you're not sure about the requirements, please contact the domain authority of the policy domain where the Access Point is registered.
 
 See the Static Discovery Configuration Guide \[[UG-SDCG](static_discovery_configuration_guide.md)\] and the Dynamic Discovery Configuration Guide \[[UG-DDCG](dynamic_discovery_configuration_guide.md)\] for more information about how to configure different discovery options.
 

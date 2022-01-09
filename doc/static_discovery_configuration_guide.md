@@ -10,7 +10,7 @@ Doc. ID: UG-SDCG
  Date       | Version | Description                                                     | Author
  ---------- | ------- | --------------------------------------------------------------- | --------------------
  30.12.2021 | 1.0     | Initial version                                                 | Petteri Kivimäki
- 08.01.2022 | 1.1     | Remove sections about creating TLS truststore manually, update One-Way SSL configuration instructions | Petteri Kivimäki
+ 08.01.2022 | 1.1     | Remove sections about creating TLS truststore manually, update One-Way SSL configuration instructions, update example configuration | Petteri Kivimäki
  
 ## License <!-- omit in toc -->
 
@@ -43,18 +43,16 @@ To view a copy of this license, visit <https://creativecommons.org/licenses/by-s
   - [3.3 Create Plugin Users](#33-create-plugin-users)
     - [3.3.1 Access Point 1](#331-access-point-1)
     - [3.3.2 Access Point 2](#332-access-point-2)
-  - [3.4 Change the Sign Key Alias](#34-change-the-sign-key-alias)
+  - [3.4 Export Certificates](#34-export-certificates)
     - [3.4.1 Access Point 1](#341-access-point-1)
     - [3.4.2 Access Point 2](#342-access-point-2)
-  - [3.5 Export Certificates](#35-export-certificates)
+  - [3.5 Import Certificates](#35-import-certificates)
     - [3.5.1 Access Point 1](#351-access-point-1)
-    - [3.5.1 Access Point 2](#351-access-point-2)
-  - [3.6 Import Certificates](#36-import-certificates)
-    - [3.6.1 Access Point 1](#361-access-point-1)
-    - [3.6.2 Access Point 2](#362-access-point-2)
-  - [3.7 Configure One-Way SSL](#37-configure-one-way-ssl)
-  - [3.8 Apply Changes](#38-apply-changes)
-  - [3.9 Send Test Message](#39-send-test-message)
+    - [3.5.2 Access Point 2](#352-access-point-2)
+  - [3.6 Configure One-Way SSL](#36-configure-one-way-ssl)
+  - [3.7 Apply Changes](#37-apply-changes)
+  - [3.8 Send Test Message](#38-send-test-message)
+  
 ## 1 Introduction
 
 Harmony eDelivery Access supports static and dynamic discovery. This document describes configuration of participants and services for static discovery. This guide is divided in two different sections, a configuration guide and a practical configuration example.
@@ -91,7 +89,7 @@ See eDelivery definitions documentation \[[TERMS](#Ref_TERMS)\].
 Before starting the static discovery configuration process, please complete the Access Point installation according to the installation guide:
 
 - Harmony eDelivery Access - Access Point Installation Guide \[[IG-AS](harmony-ap_installation_guide.md)\].
-  - **Note:** During the installation, when the system asks do you want the Access Point installation to use dynamic discovery, please answer **No**.
+  - During the installation, when the system asks do you want the Access Point installation to use dynamic discovery, please answer **No**.
 
 Also, completing the configuration steps require command line access with root permissions to the host server.
 
@@ -106,13 +104,19 @@ The table below gives an overview of different keystore and truststore files tha
 
 ### 2.2 Change the Sign Key Alias
 
-Sign and TLS keys are automatically created during the Access Point installation process. By default, the 
-alias of both is `selfsigned`. However, the sign key alias must be manually updated to match the party name of the key owner. 
+Sign and TLS keys are automatically created during the Access Point installation process. The installation process 
+prompts for the Access Point owner Party Name that is used as an alias for the keys. Sometimes, the Party Name of the
+owner may not be known during the installation. In that case, `selfsigned` is used as the default value. In that case,
+the sign key alias must be manually updated later, because it must match the party name of the Access Point owner. Instead, if 
+the correct Party Name is set during the installation process, no manual configuration steps regarding the sign key alias
+are required later.
+
 The party name is defined in the `PMode` configuration file. See the Domibus Administration Guide 
 \[[DOMIBUS_ADMIN_GUIDE](#Ref_DOMIBUS_ADMIN_GUIDE)\] for more details.
 
 For example, this block from a `PMode` file is taken from an Access Point owned by a party whose party name is 
-`org1_gw`. In this case, the alias of the sign key should be changed from `selfsigned` to `org1_gw`.
+`org1_gw`. In this case, the alias of the sign key must be should `org1_gw`. If the Party Name wasn't set to `org1_gw`
+ during the installation process, it must manually changed from `selfsigned` to `org1_gw`.
 
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
@@ -135,7 +139,8 @@ For example, this block from a `PMode` file is taken from an Access Point owned 
 ```
 
 The sign key is stored in `/etc/harmony-ap/ap-keystore.jks`. The password of the keystore can be found in the
-`/etc/harmony-ap/domibus.properties` file in the `domibus.security.keystore.password` property. 
+`/etc/harmony-ap/domibus.properties` file in the `domibus.security.keystore.password` property. The alias is updated
+using the command below:
 
 ```bash
 sudo keytool -changealias -alias "selfsigned" -destalias "<party_name>" -keypass <ap_keystore_password> -keystore /etc/harmony-ap/ap-keystore.jks -storepass <ap_keystore_password>
@@ -336,7 +341,7 @@ from sign and TLS keystores.
 
 #### 2.5.1 Export Sign Certificates
 
-A sign certificate belonging to a specific party can be exported using the following command:
+A sign certificate belonging to a specific party can be exported using the following command (the default party name is `selfsigned`):
 
 ```bash
 sudo keytool -export -keystore /etc/harmony-ap/ap-keystore.jks -alias <party_name> -file </path/to/exported_sign_certificate.cer> -storepass <ap_keystore_password>
@@ -356,10 +361,10 @@ sudo keytool -delete -noprompt -alias <party_name> -keystore /etc/harmony-ap/ap-
 
 #### 2.5.2 Export TLS Certificates
 
-The default TLS certificate that's created during the installation process can be exported using the following command:
+The default TLS certificate that's created during the installation process can be exported using the following command (the default party name is `selfsigned`):
 
 ```bash
-sudo keytool -export -keystore /etc/harmony-ap/tls-keystore.jks -alias selfsigned -file </path/to/exported_tls_certificate.cer> -storepass <tls_keystore_password>
+sudo keytool -export -keystore /etc/harmony-ap/tls-keystore.jks -alias <party_name> -file </path/to/exported_tls_certificate.cer> -storepass <tls_keystore_password>
 ```
 
 All the available TLS keys can be listed using the following command:
@@ -426,7 +431,10 @@ a push message to Organisation 2.
 Before starting the static discovery configuration process, please complete the Access Point installation according to the installation guide:
 
 - Harmony eDelivery Access - Access Point Installation Guide \[[IG-AS](harmony-ap_installation_guide.md)\].
-  - **Note:** During the installation, when the system asks do you want the Access Point installation to use dynamic discovery, please answer **No**.
+  - During the installation, when the system asks do you want the Access Point installation to use dynamic discovery, please answer **No**.
+  - When Harmony Access Point owner Party Name is prompted during the installation process:
+    - For Access Point 1, use `org1_gw` as Party Name.
+    - For Access Point 2, use `org2_gw` as Party Name.
 
 Also, completing the configuration steps require command line access with root permissions to the host server.
 
@@ -434,8 +442,8 @@ Also, completing the configuration steps require command line access with root p
 
 The PMode configuration files for the Access Points can be downloaded here:
 
-- [Access Point 1 (org1_gw)](configuration_examples/static_discovery/pmode_org1.xml);
-- [Access Point 2 (org2_gw)](configuration_examples/static_discovery/pmode_org2.xml).
+- [Access Point 1 (org1_gw)](configuration_examples/static_discovery/pmode_org1.xml?raw=1);
+- [Access Point 2 (org2_gw)](configuration_examples/static_discovery/pmode_org2.xml?raw=1).
 
 Upload the PMode files to the Access Points using the admin UI. Then, replace `AP2_IP_OR_FQDN` in row 24 and 
 `AP1_IP_OR_FQDN` in row 28 with the correct host names or IP addresses of the Access Points:
@@ -479,48 +487,7 @@ On the Access Point (`org2_gw`) create a plugin user with the following informat
 
 Click OK and then Save.
 
-### 3.4 Change the Sign Key Alias
-
-The sign key is stored in `/etc/harmony-ap/ap-keystore.jks`. The password of the keystore can be found in the
-`/etc/harmony-ap/domibus.properties` file in the `domibus.security.keystore.password` property. 
-
-This step requires shell access to the host.
-
-#### 3.4.1 Access Point 1
-
-On the Access Point 1 (`org1_gw`) change the sign key alias: 
-
-```bash
-sudo keytool -changealias -alias "selfsigned" -destalias "org1_gw" -keypass <ap_keystore_password> -keystore /etc/harmony-ap/ap-keystore.jks -storepass <ap_keystore_password>
-```
-
-Also, the `domibus.security.key.private.alias` property in the `/etc/harmony-ap/domibus.properties` file must be updated
-with the new alias. Open the file with a text editor and update the property value:
-
-```properties
-#Private key
-#The alias from the keystore of the private key
-domibus.security.key.private.alias=org1_gw
-```
-
-#### 3.4.2 Access Point 2
-
-On the Access Point 2 (`org2_gw`) change the sign key alias: 
-
-```bash
-sudo keytool -changealias -alias "selfsigned" -destalias "org2_gw" -keypass <ap_keystore_password> -keystore /etc/harmony-ap/ap-keystore.jks -storepass <ap_keystore_password>
-```
-
-Also, the `domibus.security.key.private.alias` property in the `/etc/harmony-ap/domibus.properties` file must be updated
-with the new alias. Open the file with a text editor and update the property value:
-
-```properties
-#Private key
-#The alias from the keystore of the private key
-domibus.security.key.private.alias=org2_gw
-```
-
-### 3.5 Export Certificates
+### 3.4 Export Certificates
 
 The sign certificate is stored in `/etc/harmony-ap/ap-keystore.jks`. The password of the keystore can be found in the
 `/etc/harmony-ap/domibus.properties` file in the `domibus.security.keystore.password` property. 
@@ -530,7 +497,7 @@ The TLS certificate is stored in `/etc/harmony-ap/tls-keystore.jks`. The passwor
 
 This step requires shell access to the host.
 
-#### 3.5.1 Access Point 1
+#### 3.4.1 Access Point 1
 
 Export the sign certificate using the following command:
 
@@ -541,10 +508,10 @@ sudo keytool -export -keystore /etc/harmony-ap/ap-keystore.jks -alias org1_gw -f
 Export the TLS certificate using the following command:
 
 ```bash
-sudo keytool -export -keystore /etc/harmony-ap/tls-keystore.jks -alias selfsigned -file org1_tls_certificate.cer -storepass <tls_keystore_password>
+sudo keytool -export -keystore /etc/harmony-ap/tls-keystore.jks -alias org1_gw -file org1_tls_certificate.cer -storepass <tls_keystore_password>
 ```
 
-#### 3.5.1 Access Point 2
+#### 3.4.2 Access Point 2
 
 Export the sign certificate using the following command:
 
@@ -555,16 +522,16 @@ sudo keytool -export -keystore /etc/harmony-ap/ap-keystore.jks -alias org2_gw -f
 Export the TLS certificate using the following command:
 
 ```bash
-sudo keytool -export -keystore /etc/harmony-ap/tls-keystore.jks -alias selfsigned -file org2_tls_certificate.cer -storepass <tls_keystore_password>
+sudo keytool -export -keystore /etc/harmony-ap/tls-keystore.jks -alias org2_gw -file org2_tls_certificate.cer -storepass <tls_keystore_password>
 ```
 
-### 3.6 Import Certificates
+### 3.5 Import Certificates
 
 In order to establish a trusted relationship between the Access Points, they must import each others certificates. 
 Therefore, the certificates exported in section 3.6 must be copied from Access Point 1 (`org1_gw`) to Access Point 2 
 (`org2_gw`) and vice versa.
 
-#### 3.6.1 Access Point 1
+#### 3.5.1 Access Point 1
 
 The sign certificate of the Access Point 2 (`org2_gw`) is imported using the admin UI by following the steps below:
 
@@ -584,7 +551,7 @@ Import the TLS certificate of Access Point 2 (`org2_gw`). The command asks shoul
 sudo keytool -import -alias org2_gw -file org2_tls_certificate.cer -keystore /etc/harmony-ap/tls-truststore.jks -storepass <tls_truststore_password>
 ```
 
-#### 3.6.2 Access Point 2
+#### 3.5.2 Access Point 2
 
 The sign certificate of the Access Point 1 (`org1_gw`) is imported using the admin UI by following the steps below:
 
@@ -604,7 +571,7 @@ Import the TLS certificate of Access Point 1 (`org1_gw`). The command asks shoul
 sudo keytool -import -alias org1_gw -file org1_tls_certificate.cer -keystore /etc/harmony-ap/tls-truststore.jks -storepass <tls_truststore_password>
 ```
 
-### 3.7 Configure One-Way SSL
+### 3.6 Configure One-Way SSL
 
 This step requires shell access to the host.
 
@@ -623,7 +590,7 @@ certificates. On Access Points 1 (`org1_gw`) and Access Point 2 (`org2_gw`), set
 </http-conf:tlsClientParameters>
 ```
 
-### 3.8 Apply Changes
+### 3.7 Apply Changes
 
 This step requires shell access to the host.
 
@@ -634,7 +601,7 @@ configuration changes:
 sudo systemctl restart harmony-ap
 ```
 
-### 3.9 Send Test Message
+### 3.8 Send Test Message
 
 Send a request to Access Point 1 (`org1_gw`) using the curl command below. The request (`submitRequest.xml`) can be downloaded [here](configuration_examples/static_discovery/submitRequest.xml?raw=1). The content inside the payload's `value` element must be [base64 encoded](https://www.base64encode.org/).
 

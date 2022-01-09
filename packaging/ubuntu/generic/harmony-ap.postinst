@@ -35,6 +35,8 @@ case "$1" in
   AUSER="$RET"
   db_get harmony-ap/adminpassword
   APASSWORD="$RET"
+  db_get harmony-ap/partyname
+  PARTYNAME="$RET"
   db_get harmony-ap/serverdn
   SERVERDN="$RET"
   db_stop
@@ -76,19 +78,19 @@ case "$1" in
     TLSKEYPASS=$(openssl rand -base64 12)
     TLSTRUSTSTOREPASS=$(openssl rand -base64 12)
 
-    keytool -genkeypair -keyalg RSA -alias selfsigned -keystore /etc/harmony-ap/ap-keystore.jks -storepass $KEYSTOREPASS \
+    keytool -genkeypair -keyalg RSA -alias $PARTYNAME -keystore /etc/harmony-ap/ap-keystore.jks -storepass $KEYSTOREPASS \
       -keypass $KEYSTOREPASS -validity 333 -keysize 3096 -dname "$SERVERDN" 2>/dev/null
 
-    keytool -genkeypair -keyalg RSA -alias selfsigned -keystore /etc/harmony-ap/tls-keystore.jks -storepass $TLSKEYPASS \
+    keytool -genkeypair -keyalg RSA -alias $PARTYNAME -keystore /etc/harmony-ap/tls-keystore.jks -storepass $TLSKEYPASS \
       -keypass $TLSKEYPASS -validity 333 -keysize 3096 -dname "$SERVERDN" 2>/dev/null
 
     keytool -genkeypair -alias mock -keystore /etc/harmony-ap/ap-truststore.jks -storepass $TRUSTSTOREPASS \
       -keypass $TRUSTSTOREPASS -dname "CN=mock" 2>/dev/null
     keytool -delete -alias mock -keystore /etc/harmony-ap/ap-truststore.jks -storepass $TRUSTSTOREPASS 2>/dev/null
 
-    keytool -export -alias selfsigned -file /etc/harmony-ap/selfsigned.cer \
+    keytool -export -alias $PARTYNAME -file /etc/harmony-ap/selfsigned.cer \
       -keystore /etc/harmony-ap/tls-keystore.jks -storepass $TLSKEYPASS 2>/dev/null
-    keytool -import -noprompt -alias selfsigned -file /etc/harmony-ap/selfsigned.cer \
+    keytool -import -noprompt -alias $PARTYNAME -file /etc/harmony-ap/selfsigned.cer \
       -keystore /etc/harmony-ap/tls-truststore.jks -storepass $TLSTRUSTSTOREPASS 2>/dev/null
     rm -f /etc/harmony-ap/selfsigned.cer
 
@@ -99,6 +101,7 @@ case "$1" in
     E_TLSKEYPASS=$(escape_for_sed "$TLSKEYPASS")
     E_TLSTRUSTSTOREPASS=$(escape_for_sed "$TLSTRUSTSTOREPASS")
     E_SMLZONE=$(escape_for_sed "$SMLZONE")
+    E_PARTYNAME=$(escape_for_sed "$PARTYNAME")
 
     sed -e "s/{{tls_keystore_password}}/$E_TLSKEYPASS/" -e "s/{{tls_truststore_password}}/$E_TLSTRUSTSTOREPASS/" \
         /opt/harmony-ap/setup/server.xml.template > /etc/harmony-ap/tomcat-conf/server.xml
@@ -109,6 +112,7 @@ case "$1" in
     sed -e "s/{{keystorepass}}/$E_KEYSTOREPASS/" -e "s/{{truststorepass}}/$E_TRUSTSTOREPASS/" \
       -e "s/{{dbuser}}/$E_DBUSER/" -e "s/{{dbpassword}}/$E_DBPASSWORD/" \
       -e "s/{{dynamicdiscovery}}/$USEDYNAMIC/" -e "s/{{smlzone}}/$E_SMLZONE/" \
+      -e "s/{{partyname}}/$E_PARTYNAME/" \
         /opt/harmony-ap/setup/domibus.properties.template > /etc/harmony-ap/domibus.properties
   fi
 

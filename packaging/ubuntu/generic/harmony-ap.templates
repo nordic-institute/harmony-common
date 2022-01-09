@@ -10,12 +10,17 @@ Description: eDelivery SML zone
 Template: harmony-ap/adminuser
 Type: string
 Default: harmony
-Description: Harmony Accesspoint administator user name
+Description: Harmony Access Point administator username
 
 Template: harmony-ap/adminpassword
 Type: password
-Description: Harmony Accesspoint administator initial password
+Description: Harmony Access Point administator initial password
 
 Template: harmony-ap/serverdn
 Type: string
-Description: Distinguished name of generated selfsigned server certificate
+Description: Distinguished name of generated self-signed server certificate
+
+Template: harmony-ap/partyname
+Type: string
+Default: selfsigned
+Description: Harmony Access Point owner Party Name
