@@ -538,7 +538,7 @@ The sign certificate of the Access Point 2 (`org2_gw`) is imported using the adm
 1. Click PMode and then Parties.
 2. Select the party `org2_gw` and click Edit.
 3. Click the Import button in the Certificate section.
-4. Select the certificate to be imported.
+4. Select the certificate to be imported (`org2_sign_certificate.cer`).
 5. Click OK and then click Save.
 
 The TLS certificate is imported on the command line. The TLS truststore is located in `/etc/harmony-ap/tls-truststore.jks`. 
@@ -558,7 +558,7 @@ The sign certificate of the Access Point 1 (`org1_gw`) is imported using the adm
 1. Click PMode and then Parties.
 2. Select the party `org1_gw` and click Edit.
 3. Click the Import button in the Certificate section.
-4. Select the certificate to be imported.
+4. Select the certificate to be imported (`org1_sign_certificate.cer`).
 5. Click OK and then click Save.
 
 The TLS certificate is imported on the command line. The TLS truststore is located in `/etc/harmony-ap/tls-truststore.jks`. 
