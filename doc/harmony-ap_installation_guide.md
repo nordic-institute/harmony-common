@@ -1,6 +1,6 @@
 # Harmony eDelivery Access - Access Point Installation Guide <!-- omit in toc -->
 
-Version: 1.1  
+Version: 1.2  
 Doc. ID: IG-AP
 
 ---
@@ -11,6 +11,7 @@ Doc. ID: IG-AP
  ---------- | ------- | ------------------------------------------------------------------------| --------------------
  15.11.2021 | 1.0     | Initial version                                                         |
  07.01.2022 | 1.1     | Add reference to the Static Discovery Configuration Guide \[UG-SDCG\]   | Petteri Kivimäki
+ 08.01.2022 | 1.2     | Add party name to section [2.5](#25-access-point-installation) and TLS truststore to section [2.10](#210-location-of-configuration-and-generated-passwords) | Petteri Kivimäki
  
 ## License <!-- omit in toc -->
 
@@ -157,9 +158,11 @@ Upon the first installation of the Access Point, the system asks for the followi
   - the value can be edited later by changing the `domibus.smlzone` property in the `/etc/harmony-ap/domibus.properties` configuration file;
 - username of the administrative user - username to use to log in to administrative UI;
 - initial password for the administrative user;
-- `Distinguished Name` for generated self signed content and transport certificates;
-  - For example: `CN=example.com, O=My Organisation, C=FI`;
-  - *Note:* different eDelivery policy domains may have different requirements for the `Distinguished Name`. If you're not sure about the requirements, please contact the domain authority of the policy domain where the Access Point is registered.
+- party name of the Access Point owner organisation;
+  - if you don't know the party name of the owner, use the default value (`selfsigned`);
+- `Distinguished Name` for generated self-signed content encryption and TLS certificates;
+  - for example: `CN=example.com, O=My Organisation, C=FI`;
+  - *note:* different eDelivery policy domains may have different requirements for the `Distinguished Name`. If you're not sure about the requirements, please contact the domain authority of the policy domain where the Access Point is registered.
 
 See the Static Discovery Configuration Guide \[[UG-SDCG](static_discovery_configuration_guide.md)\] and the Dynamic Discovery Configuration Guide \[[UG-DDCG](dynamic_discovery_configuration_guide.md)\] for more information about how to configure different discovery options.
 
@@ -207,7 +210,9 @@ In addition to installing required dependencies, the installation process comple
 - creates MySQL database user `harmony_ap` and generates random password for it;
 - creates MySQL database schema `harmony_ap` and populates it with needed metadata;
 - loads initial configuration into database;
-- generates self-signed certificates for content encryption and for transport encryption;
+- generates self-signed certificates for content encryption and transport encryption;
+- creates initial configuration for One-Way SSL between two Access Points;
+  - sharing and importing certificates must be handled manually after the installation;
 - installs the `harmony-ap` systemd service but does not enable or start it.
 
 ### 2.10 Location of Configuration and Generated Passwords 
@@ -220,5 +225,6 @@ During the installation process, multiple random passwords are generated.
 |---|---|
 | Password for `harmony-ap` MySQL user | Configuration file: `/etc/harmony-ap/domibus.properties`<br /><br />Properties: `domibus.datasource.xa.property.password` and `domibus.datasource.password`. |
 | Content encryption keystore (`/etc/harmony-ap/ap-keystore.jks`) password | Configuration file: `/etc/harmony-ap/domibus.properties`<br /><br />Properties: `domibus.security.keystore.password` and `domibus.security.key.private.password`. Content of this keystore can be changed using the administrative UI. |
-| Content encryption truststore (`/etc/harmony-ap/ap-truststore.jks`) password | `Configuration file: /etc/harmony-ap/domibus.properties`<br /><br />Properties: `domibus.security.truststore.password`. Content of this keystore can be changed using UI. |
-| TLS keystore (`/etc/harmony-ap/tls-keystore.jks`) password | Configuration file: `/etc/harmony-ap/conf/server.xml` |
+| Content encryption truststore (`/etc/harmony-ap/ap-truststore.jks`) password | Configuration file: `/etc/harmony-ap/domibus.properties`<br /><br />Properties: `domibus.security.truststore.password`. Content of this keystore can be changed using the administrative UI. |
+| TLS keystore (`/etc/harmony-ap/tls-keystore.jks`) password | Configuration file: `/etc/harmony-ap/conf/server.xml`<br /><br />Property: `keystorePass` |
+| TLS truststore (`/etc/harmony-ap/tls-truststore.jks`) password | Configuration file: `/etc/harmony-ap/conf/server.xml`<br /><br />Property: `truststorePass` |

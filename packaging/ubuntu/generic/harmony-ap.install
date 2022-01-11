@@ -12,6 +12,7 @@
 ../../../../common/ap/harmony_ap_schema.ddl /opt/harmony-ap/setup/
 ../../../../common/ap/domibus.properties.template /opt/harmony-ap/setup/
 ../../../../common/ap/server.xml.template /opt/harmony-ap/setup/
+../../../../common/ap/clientauthentication.xml.template /opt/harmony-ap/setup/
 ../../../../common/ap/eDeliveryAS4Policy.xml /etc/harmony-ap/policies/
 ../../../../common/ap/eDeliveryAS4Policy_BST.xml /etc/harmony-ap/policies/
 ../../../../common/ap/eDeliveryAS4Policy_BST_PKIP.xml /etc/harmony-ap/policies/
