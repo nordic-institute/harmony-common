@@ -77,6 +77,7 @@ See eDelivery definitions documentation \[[TERMS](#Ref_TERMS)\].
 Before starting the dynamic discovery configuration process, please complete the Access Point installation according to the installation guide:
 
 - Harmony eDelivery Access - Access Point Installation Guide \[[IG-AS](harmony-ap_installation_guide.md)\].
+  - **Note:** During the installation, when the system asks do you want the Access Point installation to use dynamic discovery, please answer **Yes**.
 
 ### 2.2 Configuring Dynamic Discovery in Sender AP
 
@@ -84,7 +85,7 @@ Sending parties (corners `C1` and `C2`) do not have to be registered in SMP or S
 to enable dynamic discovery, sending parties must configure the values of the following properties in the 
 `/etc/harmony-ap/domibus.properties` configuration file:
 
-```
+```properties
 # Whether to use dynamic discovery or not
 domibus.dynamicdiscovery.useDynamicDiscovery=true
 
@@ -108,7 +109,7 @@ In addition, some changes are required in the sending party's PMode. Since the r
 the `PMode.Responder` parameter should not be set. In practice, the `process` element in PMode must not contain 
 `responderParties` element.
 
-```
+```xml
 ...
 <process name="tc1Process" initiatorRole="defaultInitiatorRole" responderRole="defaultResponderRole" mep="oneway" binding="push">
     <initiatorParties>
@@ -127,7 +128,7 @@ Similarly, in the AS4 message that's sent the `/UserMessage/PartyInfo/To` elemen
 recipient (`C4`) party is identified using a property named `finalRecipient`. The original sender (`C1`) party is identified 
 using a property named `originalSender`.
 
-```
+```xml
 <ns:UserMessage>
     <ns:PartyInfo>
         <ns:From>
@@ -165,7 +166,10 @@ See the Domibus Administration Guide \[[DOMIBUS_ADMIN_GUIDE](#Ref_DOMIBUS_ADMIN_
 Before starting the dynamic discovery configuration process, please complete the Access Point and SMP installation according to the corresponding installation guide:
 
 - Harmony eDelivery Access - Access Point Installation Guide \[[IG-AS](harmony-ap_installation_guide.md)\];
+  - **Note:** During the installation, when the system asks do you want the Access Point installation to use dynamic discovery, please answer **Yes**.
 - Harmony eDelivery Access - Service Metadata Publisher Installation Guide \[[IG-SMP](harmony-smp_installation_guide.md)\].
+  - **Note:** During the installation, when the system asks do you want the SMP installation to publish information to 
+  some Service Metadata Locator (SML), please answer **Yes**.
 
 ### 3.2 Registering SMP in SML
 
@@ -238,7 +242,7 @@ A final recipient (`C4`) party is registered in SML by completing the steps belo
 After saving, it's possible to review the new `ServiceGroup` record by clicking the "OASIS ServiceGroup URL" link. The
 record should look like this:
 
-```
+```xml
 <ServiceGroup>
     <ParticipantIdentifier scheme="urn:oasis:names:tc:ebcore:partyid-type:unregistered">c4</ParticipantIdentifier>
     <ServiceMetadataReferenceCollection/>
@@ -281,7 +285,7 @@ A service is registered in SMP by completing the steps below:
 After saving, it's possible to review the new `ServiceMetadata` record by clicking the "URL" link. The
 record should look like this:
 
-```
+```xml
 <SignedServiceMetadata>
    <ServiceMetadata>
       <ServiceInformation>
@@ -323,8 +327,6 @@ record should look like this:
       </KeyInfo>
    </Signature>
 </SignedServiceMetadata>
-
-
 ```
 
 See the SMP Administration Guide \[[SMP_ADMIN_GUIDE](#Ref_SMP_ADMIN_GUIDE])\] for more details.
@@ -335,7 +337,7 @@ To use dynamic discovery, some changes are required in the receiving party's (`C
 is not known beforehand, the `PMode.Initiator` parameter must not be set. In practice, the `process` element in PMode 
 must not contain `initiatorParties` element.
 
-```
+```xml
 ...
 <process name="tc1Process" initiatorRole="defaultInitiatorRole" responderRole="defaultResponderRole" mep="oneway" binding="push">
     <!-- no initiatorParties element -->
