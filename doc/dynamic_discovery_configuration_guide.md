@@ -1,6 +1,6 @@
 # Harmony eDelivery Access - Dynamic Discovery Configuration Guide <!-- omit in toc -->
 
-Version: 1.0  
+Version: 1.1  
 Doc. ID: UG-DDCG
 
 ---
@@ -10,7 +10,8 @@ Doc. ID: UG-DDCG
  Date       | Version | Description                                                     | Author
  ---------- | ------- | --------------------------------------------------------------- | --------------------
  03.12.2021 | 1.0     | Initial version                                                 |
- 
+ 22.01.2022 | 1.1     | Minor updates and new examples                                  | Petteri Kivimäki
+  
 ## License <!-- omit in toc -->
 
 This document is licensed under the Creative Commons Attribution-ShareAlike 4.0 International License.
@@ -122,7 +123,9 @@ the `PMode.Responder` parameter should not be set. In practice, the `process` el
 ...
 ``` 
 
-Similarly, in the AS4 message that's sent the `/UserMessage/PartyInfo/To` element must be empty.
+Similarly, in the AS4 message that's sent the `/UserMessage/PartyInfo/To` element must be empty. Instead, the final 
+recipient (`C4`) party is identified using a property named `finalRecipient`. The original sender (`C1`) party is identified 
+using a property named `originalSender`.
 
 ```
 <ns:UserMessage>
@@ -134,10 +137,25 @@ Similarly, in the AS4 message that's sent the `/UserMessage/PartyInfo/To` elemen
         <ns:To>
         </ns:To>
     </ns:PartyInfo>
+    <ns:MessageProperties>
+        <ns:Property name="originalSender" type="urn:oasis:names:tc:ebcore:partyid-type:unregistered">C1</ns:Property>
+        <ns:Property name="finalRecipient" type="urn:oasis:names:tc:ebcore:partyid-type:unregistered">C4</ns:Property>
+    </ns:MessageProperties>
 ...
 <ns:UserMessage>
 ```
 
+**Note:** Also, the following elements in the PMode and AS4 message must match with the values defined by the receiving
+party (`C3`):
+
+* document identifier scheme;
+* document identifier;
+* process scheme;
+* process identifier.
+
+See sections [3.5.2](#352-specifying-document-identifier-scheme-and-document-identifier-in-ap-pmode-and-as4-message)
+and [3.5.3](#353-specifying-process-scheme-and-process-identifier-in-ap-pmode-and-in-as4-message) for details.
+              
 See the Domibus Administration Guide \[[DOMIBUS_ADMIN_GUIDE](#Ref_DOMIBUS_ADMIN_GUIDE])\] for more details.
 
 ## 3. Dynamic Discovery for Receiving Parties
@@ -158,7 +176,11 @@ To register SMP to SML two certificates with private keys are needed and must be
 - Client certificate and private key for TLS connections to SML ("SML ClientCert" in the SMP UI)
 - Metadata signing certificate and private key for signing service metadata ("Response signature Certificate" in the SMP UI)
 
-Certificates used by SMP must be trusted by SML and Access Points using the SMP. More detailed certificate requirements depend on the eDelivery network. SMP keystore can be managed in the SMP admin UI by clicking the "Edit keystore" button under the "Domain" section.
+Certificates used by SMP must be trusted by SML and Access Points using the SMP. SMP keystore can be managed in the SMP 
+admin UI by clicking the "Edit keystore" button under the "Domain" section.
+
+The certificate requirements depend on the eDelivery policy domain. If you're not sure about the requirements, please 
+contact the domain authority of the policy domain where the SMP is registered.
 
 An SMP server is registered in SML by completing the steps below:
 
@@ -179,6 +201,7 @@ An SMP server is registered in SML by completing the steps below:
 - Click the "Save" button to save the changes.
   - **Note:** Changes are not saved if the "Save" button is not clicked.
 - Select the new domain and click the "Register" button to send a registration request to SML.
+  - If sending the registration request fails because of an authentication issue, please contact the SML admin for details.
 
 See the SMP Administration Guide \[[SMP_ADMIN_GUIDE](#Ref_SMP_ADMIN_GUIDE])\] for more details.
 
@@ -189,13 +212,13 @@ original sender (`C1`), initiator (`C2`) and responder (`C3`) - don't need to be
 `C2`, as well as `C3` and `C4` can be the same organisation.
 
 A final recipient is registered using its identifier. Allowed identifier types and values depend on the eDelivery 
-network. Identifiers consist of identifier type and identifier value. These values may be represented as two separate 
+policy domain. Identifiers consist of identifier type and identifier value. These values may be represented as two separate 
 fields or as a single field where type and value are concatenated.
 
-In the SMP UI and documentation a final recipient is represented by "ServiceGroup". The final recipient is identified by the fields
-"Participant identifier" and "Participant scheme".
+In the SMP UI and documentation a final recipient is represented by "ServiceGroup". The final recipient (`C4`) party is 
+identified by the fields "Participant identifier" and "Participant scheme".
 
-A final recipient is registered in SML by completing the steps below:
+A final recipient (`C4`) party is registered in SML by completing the steps below:
 
 - Log in to the SMP UI using a user with the `SMP_ADMIN` role.
   - Only a user with the `SMP_ADMIN` role can add, delete and modify final recipients.
@@ -203,13 +226,24 @@ A final recipient is registered in SML by completing the steps below:
 - Click the "New" button and the "New ServiceGroup" dialog appears.
 - Provide the following information:
   - Participant identifier
-  - Participant scheme
-    - Must start with `urn:oasis:names:tc:ebcore:partyid-type:(iso6523:|unregistered:)` OR must be up to 25 characters long with form `[domain]-[identifierArea]-[identifierType]` (e.g.: `busdox-actorid-upis`) and may only contain the following characters: [a-z0-9]. 
+  - Participant scheme. There are two supported alternatives a) and b):
+    1. Starts with `urn:oasis:names:tc:ebcore:partyid-type:(iso6523:|unregistered:)`.
+    2. Is up to 25 characters long with form `[domain]-[identifierArea]-[identifierType]` (e.g.: `busdox-actorid-upis`) and may only contain the following characters: `[a-z0-9]`. 
   - Owners
   - Domains
 - Click the "OK" button to close the "New ServiceGroup" dialog.
 - Click the "Save" button to save the changes.
   - **Note:** Changes are not saved if the "Save" button is not clicked.
+
+After saving, it's possible to review the new `ServiceGroup` record by clicking the "OASIS ServiceGroup URL" link. The
+record should look like this:
+
+```
+<ServiceGroup>
+    <ParticipantIdentifier scheme="urn:oasis:names:tc:ebcore:partyid-type:unregistered">c4</ParticipantIdentifier>
+    <ServiceMetadataReferenceCollection/>
+</ServiceGroup>
+```
 
 See the SMP Administration Guide \[[SMP_ADMIN_GUIDE](#Ref_SMP_ADMIN_GUIDE])\] for more details.
 
@@ -225,29 +259,80 @@ A service is registered in SMP by completing the steps below:
 - On the row of the participant who owns the service, click the "Add service metadata" icon in the "Actions" column and the "New ServiceMetada" dialog appears.
 - Click the "Metadata wizard" button and the "ServiceMetadaWizard" appears.
 - Provide the following information:
-  - Document identifier scheme
-  - Document identifier
-  - Process scheme
-  - Process identifier
-  - Transport profile
-    - The default is `bdxr-transport-ebms3-as4-v1p0`
-  - Endpoint URL
-    - The URL of the Access Point (`C3`) where SOAP requests are sent, e.g., `https://<HOST>:8443/services/msh`.
-  - Upload certificate
+  - Document identifier scheme (*optional*).
+  - Document identifier.
+- Click the "Generate XML" button and an XML template appears.
+- Update the following elements:
+  - Process scheme (`[enterProcessType]`).
+  - Process identifier (`[enterProcessName]`).
+  - Transport profile.
+    - The default is `bdxr-transport-ebms3-as4-v1p0`.
+  - Endpoint URL.
+    - The URL of the Access Point (`C3`) where the AS4 requests are sent, e.g., `https://<HOST>:8443/services/msh`.
+  - Upload certificate.
     - Certificate for encrypting messages. Note that this is the content encryption certificate of Access Point (`C3`), not the certificate of the final recipient.
-  - Service description
-  - Technical Contact URL
+  - Service description.
+  - Technical Contact URL.
 - Click the "OK" button to close the "ServiceMetadaWizard" dialog.
 - Click the "OK" button to close the "New ServiceMetada" dialog.
 - Click the "Save" button to save the changes.
   - **Note:** Changes are not saved if the "Save" button is not clicked.
 
+After saving, it's possible to review the new `ServiceMetadata` record by clicking the "URL" link. The
+record should look like this:
+
+```
+<SignedServiceMetadata>
+   <ServiceMetadata>
+      <ServiceInformation>
+         <ParticipantIdentifier scheme="urn:oasis:names:tc:ebcore:partyid-type:unregistered">c4</ParticipantIdentifier>
+         <DocumentIdentifier scheme="docidscheme">TC1Leg1</DocumentIdentifier>
+         <ProcessList>
+            <Process>
+               <ProcessIdentifier scheme="testscheme">bdx:noprocess</ProcessIdentifier>
+               <ServiceEndpointList>
+                  <Endpoint transportProfile="bdxr-transport-ebms3-as4-v1p0">
+                     <EndpointURI>https://<HOST>:8443/services/msh</EndpointURI>
+                     <Certificate>...</Certificate>
+                     <ServiceDescription />
+                     <TechnicalContactUrl />
+                  </Endpoint>
+               </ServiceEndpointList>
+            </Process>
+         </ProcessList>
+      </ServiceInformation>
+   </ServiceMetadata>
+   <Signature>
+      <SignedInfo>
+         <CanonicalizationMethod Algorithm="http://www.w3.org/TR/2001/REC-xml-c14n-20010315" />
+         <SignatureMethod Algorithm="http://www.w3.org/2001/04/xmldsig-more#rsa-sha256" />
+         <Reference URI="">
+            <Transforms>
+               <Transform Algorithm="http://www.w3.org/2000/09/xmldsig#enveloped-signature" />
+            </Transforms>
+            <DigestMethod Algorithm="http://www.w3.org/2001/04/xmlenc#sha256" />
+            <DigestValue>...</DigestValue>
+         </Reference>
+      </SignedInfo>
+      <SignatureValue>...</SignatureValue>
+      <KeyInfo>
+         <X509Data>
+            <X509SubjectName>...</X509SubjectName>
+            <X509Certificate>...</X509Certificate>
+         </X509Data>
+      </KeyInfo>
+   </Signature>
+</SignedServiceMetadata>
+
+
+```
+
 See the SMP Administration Guide \[[SMP_ADMIN_GUIDE](#Ref_SMP_ADMIN_GUIDE])\] for more details.
 
 ### 3.5 Configuring Dynamic Discovery in Receiving AP
 
-To use dynamic discovery, some changes are required in the receiving party's PMode. Since the sender of the message 
-isn't known beforehand, the `PMode.Initiator` parameter should not be set. In practice, the `process` element in PMode 
+To use dynamic discovery, some changes are required in the receiving party's (`C3`) PMode. Since the sender of the message 
+is not known beforehand, the `PMode.Initiator` parameter must not be set. In practice, the `process` element in PMode 
 must not contain `initiatorParties` element.
 
 ```
@@ -269,7 +354,7 @@ See the Domibus Administration Guide \[[DOMIBUS_ADMIN_GUIDE](#Ref_DOMIBUS_ADMIN_
 
 #### 3.5.1 Final Recipient in Plugin Configuration and AS4 Message
 
-In the Access Point (`C3`) configuration, the final recipient is represented as a plugin user. The recipient is 
+In the Access Point (`C3`) configuration, the final recipient (`C4`) is represented as a plugin user. The recipient is 
 identified by single field `Original user`. This field must contain identifier type concatenated with identifier 
 value, separated by `:`.
 
@@ -308,9 +393,11 @@ In AS4 message the same document type is referenced as:
 
         </CollaborationInfo>
 
+**Note:** The document scheme is not mandatory and can be omitted. In that case, also `::` can be omitted.
+
 #### 3.5.3 Specifying Process Scheme and Process Identifier in AP PMode and in AS4 Message
 
-In PMODE the following excerpt corresponds to process with scheme `servicetype` and identifier `bdx:noprocess`:
+In PMode the following excerpt corresponds to process with scheme `servicetype` and identifier `bdx:noprocess`:
 
         <services>
             <service name="someservicename" value="bdx:noprocess" type="servicetype"/>
