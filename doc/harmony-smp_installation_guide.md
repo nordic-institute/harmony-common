@@ -1,6 +1,6 @@
 # Harmony eDelivery Access - Service Metadata Publisher Installation Guide <!-- omit in toc -->
 
-Version: 1.3  
+Version: 1.4  
 Doc. ID: IG-SMP
 
 ---
@@ -13,6 +13,7 @@ Doc. ID: IG-SMP
  20.12.2021 | 1.1     | Add section [2.4 Preparing OS](#24-preparing-os)                | Petteri Kivimäki
  21.12.2021 | 1.2     | Add section [2.11 Securing SMP user interface](#211-securing-smp-user-interface) | Andres Allkivi
  07.01.2021 | 1.3     | Add language types to code blocks                               | Petteri Kivimäki
+ 22.01.2021 | 1.4     | Add more information about keystores and trustores. Add information about properties stored in database | Petteri Kivimäki
  
 ## License <!-- omit in toc -->
 
@@ -170,9 +171,9 @@ Upon the first installation of the SMP, the system asks for the following inform
   - *Note:* different eDelivery policy domains may have different requirements for the `Distinguished Name`. If you're not sure about the requirements, please contact the domain authority of the policy domain where the SMP is registered.
 - do you want the SMP installation to publish information to some Service Metadata Locator (SML);  
   - if yes then: 
-    - full URL of the SML server;
-    - full URL of this SMP server as seen from public Internet;
-    - public IP address of this SMP server (reachable from public Internet);
+    - full URL of the SML server, including protocol and port, e.g., `https://<HOST>:8443`;
+    - full URL of this SMP server as seen from public Internet, including protocol and port, e.g., `https://<HOST>:8443`;
+    - public IP address of this SMP server (reachable from public Internet), e.g., `172.2.3.14`;
 - username of the administrative user - username to use to log in to administrative UI;
 - initial password for the administrative user.
 
@@ -221,8 +222,27 @@ During the installation process, multiple random passwords are generated.
 | **Password purpose** | **Password location** |
 |---|---|
 | Password for `harmony-smp` MySQL user  | Configuration file: `/etc/harmony-smp/tomcat-conf/context.xml` |
-| Content encryption keystore password | MySQL database table `SMP_CONFIGURATION` with key `smp.keystore.password`. **Note:** when the service is started the password will be encrypted. Content of this keystore can be changed using UI.|
-| TLS keystore password | Configuration file: `/etc/harmony-smp/tomcat-conf/server.xml` |
+| Content encryption keystore (`/etc/harmony-smp/smp-keystore.jks`) password | MySQL database table `SMP_CONFIGURATION` with key `smp.keystore.password`. **Note:** when the service is started the password will be encrypted. Content of this keystore can be changed using UI.|
+| Content encryption truststore (`/etc/harmony-smp/smp-truststore.jks`) password | MySQL database table `SMP_CONFIGURATION` with key `smp.truststore.password.decrypted`. |
+| TLS keystore (`/etc/harmony-smp/tls-keystore.jks`) password | Configuration file: `/etc/harmony-smp/tomcat-conf/server.xml`<br /><br />Property: `keystorePass` |
+| TLS truststore (`/etc/harmony-smp/tls-truststore.jks`) password | Configuration file: `/etc/harmony-smp/tomcat-conf/server.xml`<br /><br />Property: `truststorePass` |
+
+Part of the SMP configuration is stored in MySQL database. The following properties are stored in the `SMP_CONFIGURATION` 
+table. The values are configured when the SMP is installed for the first time.
+
+| **Property** | **Default** | **Description** |
+|---|---|---|
+| `bdmsl.integration.enabled` | `false` | Does the SMP installation publish information to some Service Metadata Locator (SML). |
+| `bdmsl.integration.url` | ` ` | Full URL of the SML server, including protocol and port. |
+| `bdmsl.integration.logical.address` | ` ` | Full URL of this SMP server as seen from public Internet, including protocol and port. |
+| `bdmsl.integration.physical.address` | ` ` | Public IP address of this SMP server (reachable from public Internet). |
+
+The current values of the properties can be fetched using the following command:
+
+```bash
+sudo mysql -e "use harmony_smp; select * from SMP_CONFIGURATION where PROPERTY in('bdmsl.integration.enabled', 'bdmsl.integration.url', 'bdmsl.integration.logical.address', 'bdmsl.integration.physical.address');"
+```
+
 
 ### 2.11 Securing SMP user interface
 
