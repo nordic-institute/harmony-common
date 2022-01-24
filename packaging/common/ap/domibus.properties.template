@@ -41,7 +41,7 @@ domibus.security.keystore.password={{keystorepass}}
 
 #Private key
 #The alias from the keystore of the private key
-domibus.security.key.private.alias=selfsigned
+domibus.security.key.private.alias={{partyname}}
 
 #The private key password
 domibus.security.key.private.password={{keystorepass}}
