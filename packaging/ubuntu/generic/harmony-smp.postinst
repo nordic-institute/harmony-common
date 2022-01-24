@@ -114,8 +114,11 @@ case "$1" in
     -keypass $TLSKEYPASS -validity 333 -keysize 3072 -dname "$SERVERDN" 2>/dev/null
 
   TLSTRUSTSTOREPASS=$(openssl rand -base64 12)
-  keytool -genkeypair -alias mock -keystore /etc/harmony-smp/tls-truststore.jks -storepass $TLSTRUSTSTOREPASS \
-      -keypass $TLSTRUSTSTOREPASS -dname "CN=mock" 2>/dev/null
+  keytool -export -alias selfsigned -file /etc/harmony-smp/selfsigned.cer \
+      -keystore /etc/harmony-smp/tls-keystore.jks -storepass $TLSKEYPASS 2>/dev/null
+  keytool -import -noprompt -alias selfsigned -file /etc/harmony-smp/selfsigned.cer \
+      -keystore /etc/harmony-smp/tls-truststore.jks -storepass $TLSTRUSTSTOREPASS 2>/dev/null
+  rm -f /etc/harmony-smp/selfsigned.cer
 
   E_TLSKEYPASS=$(escape_for_sed "$TLSKEYPASS")
   E_TLSTRUSTSTOREPASS=$(escape_for_sed "$TLSTRUSTSTOREPASS")
