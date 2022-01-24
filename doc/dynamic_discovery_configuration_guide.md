@@ -10,7 +10,7 @@ Doc. ID: UG-DDCG
  Date       | Version | Description                                                     | Author
  ---------- | ------- | --------------------------------------------------------------- | --------------------
  03.12.2021 | 1.0     | Initial version                                                 |
- 22.01.2022 | 1.1     | Add sections [2.3](#23-tls-configuration-and-certificates), [3.3](#33-registering-smp-in-sml) and [3.6.1](#361-tls-configuration-and-certificates). Minor updates, add more examples. | Petteri Kivimäki
+ 22.01.2022 | 1.1     | Add information about keys and certficates. Add more configuration examples. | Petteri Kivimäki
   
 ## License <!-- omit in toc -->
 
@@ -159,10 +159,10 @@ using a property named `originalSender`.
 **Note:** Also, the following elements in the PMode and AS4 message must match with the values defined by the receiving
 party (`C3`):
 
-* document identifier scheme;
-* document identifier;
-* process scheme;
-* process identifier.
+- document identifier scheme;
+- document identifier;
+- process scheme;
+- process identifier.
 
 See sections [3.6.3](#363-specifying-document-identifier-scheme-and-document-identifier-in-ap-pmode-and-as4-message)
 and [3.6.4](#364-specifying-process-scheme-and-process-identifier-in-ap-pmode-and-in-as4-message) for details.

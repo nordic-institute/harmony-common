@@ -13,7 +13,7 @@ Doc. ID: IG-SMP
  20.12.2021 | 1.1     | Add section [2.4 Preparing OS](#24-preparing-os)                | Petteri Kivimäki
  21.12.2021 | 1.2     | Add section [2.11 Securing SMP user interface](#211-securing-smp-user-interface) | Andres Allkivi
  07.01.2021 | 1.3     | Add language types to code blocks                               | Petteri Kivimäki
- 22.01.2021 | 1.4     | Update section [2.10](#210-location-of-configuration-and-generated-passwords) and add information about properties stored in database | Petteri Kivimäki
+ 22.01.2021 | 1.4     | Add more information about keystores and trustores. Add information about properties stored in database | Petteri Kivimäki
  
 ## License <!-- omit in toc -->
 
