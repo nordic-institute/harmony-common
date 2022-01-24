@@ -84,7 +84,10 @@
                scheme="https" secure="true"
                keystoreFile="/etc/harmony-smp/tls-keystore.jks"
                keystorePass="{{tls_keystore_password}}"
-               clientAuth="false" sslProtocol="TLS" />
+               truststoreFile="/etc/harmony-smp/tls-truststore.jks"
+               truststorePass="{{tls_truststore_password}}"
+               clientAuth="false"
+               sslProtocol="TLS" />
     
     <!-- Define an SSL/TLS HTTP/1.1 Connector on port 8443 with HTTP/2
          This connector uses the APR/native implementation which always uses

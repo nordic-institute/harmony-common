@@ -6,7 +6,7 @@
 ../../../../commonbin/tomcat9/bin/*.jar /opt/harmony-smp/bin/
 ../../../../commonbin/tomcat9/lib/* /opt/harmony-smp/lib/
 ../../../../commonbin/tomcat9/conf/* /etc/harmony-smp/tomcat-conf/
-../../../../common/smp/setenv.sh /opt/harmony-smp/bin/
+../../../../common/smp/setenv.sh.template /opt/harmony-smp/setup/
 ../../../../common/smp/logging.properties /etc/harmony-smp/tomcat-conf/
 ../../../../common/smp/harmony_smp_schema.ddl /opt/harmony-smp/setup/
 ../../../../common/smp/server.xml.template /opt/harmony-smp/setup/

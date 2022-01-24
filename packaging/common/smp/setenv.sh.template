@@ -1,0 +1,6 @@
+#!/bin/sh
+
+export CLASSPATH=/etc/harmony-smp
+
+export JAVA_OPTS="$JAVA_OPTS -Djavax.net.ssl.trustStore=/etc/harmony-smp/tls-truststore.jks \
+   -Djavax.net.ssl.trustStorePassword={{tls_truststore_password}}"
