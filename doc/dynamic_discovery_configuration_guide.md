@@ -31,7 +31,7 @@ To view a copy of this license, visit <https://creativecommons.org/licenses/by-s
   - [2.3 TLS Configuration and Certificates](#23-tls-configuration-and-certificates)
 - [3. Dynamic Discovery for Receiving Parties](#3-dynamic-discovery-for-receiving-parties)
   - [3.1 Prerequisites](#31-prerequisites)
-  - [3.2 About Keys and Certificates](#32-about-keys-and-certificates)
+  - [3.2 Keys and Certificates](#32-keys-and-certificates)
   - [3.3 Registering SMP in SML](#33-registering-smp-in-sml)
   - [3.4 Registering Final Recipient in SML](#34-registering-final-recipient-in-sml)
   - [3.5 Registering Services in SMP](#35-registering-services-in-smp)
@@ -190,7 +190,7 @@ Before starting the dynamic discovery configuration process, please complete the
   - **Note:** During the installation, when the system asks do you want the SMP installation to publish information to 
   some Service Metadata Locator (SML), please answer **Yes**.
 
-### 3.2 About Keys and Certificates
+### 3.2 Keys and Certificates
 
 To register SMP to SML the following certificates with private keys are needed and must be present in the SMP sign keystore (`/etc/harmony-smp/smp-keystore.jks`):
 
@@ -202,8 +202,8 @@ a self-signed sign certificate with a private key that are automatically generat
 available in the SMP sign keystore. Also, a self-signed TLS certificate with a private key are automatically generated
 during the installation process. They're available in the TLS keystore (`/etc/harmony-smp/tls-keystore.jks`).
 
-Certificates used by the SMP must be trusted by the SML and Access Points using the SMP (=Access Points in a sending role). The 
-SMP sign keystore can be managed in the SMP admin UI by clicking the "Edit keystore" button under the "Domain" section. 
+Certificates used by the SMP must be trusted by the SML and Access Points using the SMP (=Access Points in a sending role). 
+The SMP sign keystore can be managed in the SMP admin UI by clicking the "Edit keystore" button under the "Domain" section. 
 In case the sign keystore and/or sign trustore need to be accessed on command line, their passwords can be queried from 
 the configuration database using the following command:
 
@@ -218,10 +218,9 @@ how to manage keystores and truststores on command line.
 Instead, the SMP TLS keystore can be managed on command line only. The password of the TLS keystore can be found in 
 the `/etc/harmony-smp/tomcat-conf/server.xml` file in the `keystorePass` property. 
 
-Also, the certificates used by the SML and Access Points in a sending role must be trusted by the SMP. It means that 
-their public TLS certificates must be imported to the SMP's TLS truststore (`/etc/harmony-smp/tls-truststore.jks`).
-The password of the TLS truststore can be found in the `/etc/harmony-smp/tomcat-conf/server.xml` file in the 
-`truststorePass` property.
+The TLS certificate used by the SML must be trusted by the SMP. It means that the SML's public TLS certificates 
+must be imported to the SMP's TLS truststore (`/etc/harmony-smp/tls-truststore.jks`). The password of the TLS truststore 
+can be found in the `/etc/harmony-smp/tomcat-conf/server.xml` file in the `truststorePass` property.
 
 **Note:** The certificate requirements depend on the eDelivery policy domain. If you're not sure about the requirements, please 
 contact the domain authority of the policy domain where the SMP is registered.
