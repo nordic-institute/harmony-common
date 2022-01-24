@@ -10,7 +10,7 @@ Doc. ID: UG-DDCG
  Date       | Version | Description                                                     | Author
  ---------- | ------- | --------------------------------------------------------------- | --------------------
  03.12.2021 | 1.0     | Initial version                                                 |
- 22.01.2022 | 1.1     | Minor updates and new examples                                  | Petteri Kivimäki
+ 22.01.2022 | 1.1     | Add sections [2.3](#23-tls-configuration-and-certificates), [3.3](#33-registering-smp-in-sml) and [3.6.1](#361-tls-configuration-and-certificates). Minor updates, add more examples. | Petteri Kivimäki
   
 ## License <!-- omit in toc -->
 
@@ -28,21 +28,30 @@ To view a copy of this license, visit <https://creativecommons.org/licenses/by-s
 - [2. Dynamic Discovery for Sending Parties](#2-dynamic-discovery-for-sending-parties)
   - [2.1 Prerequisites](#21-prerequisites)
   - [2.2 Configuring Dynamic Discovery in Sender AP](#22-configuring-dynamic-discovery-in-sender-ap)
+  - [2.3 TLS Configuration and Certificates](#23-tls-configuration-and-certificates)
 - [3. Dynamic Discovery for Receiving Parties](#3-dynamic-discovery-for-receiving-parties)
   - [3.1 Prerequisites](#31-prerequisites)
-  - [3.2 Registering SMP in SML](#32-registering-smp-in-sml)
-  - [3.3 Registering Final Recipient in SML](#33-registering-final-recipient-in-sml)
-  - [3.4 Registering Services in SMP](#34-registering-services-in-smp)
-  - [3.5 Configuring Dynamic Discovery in Receiving AP](#35-configuring-dynamic-discovery-in-receiving-ap)
-    - [3.5.1 Final Recipient in Plugin Configuration and AS4 Message](#351-final-recipient-in-plugin-configuration-and-as4-message)
-    - [3.5.2 Specifying Document Identifier Scheme and Document Identifier in AP PMode and AS4 Message](#352-specifying-document-identifier-scheme-and-document-identifier-in-ap-pmode-and-as4-message)
-    - [3.5.3 Specifying Process Scheme and Process Identifier in AP PMode and in AS4 Message](#353-specifying-process-scheme-and-process-identifier-in-ap-pmode-and-in-as4-message)
+  - [3.2 About Keys and Certificates](#32-about-keys-and-certificates)
+  - [3.3 Registering SMP in SML](#33-registering-smp-in-sml)
+  - [3.4 Registering Final Recipient in SML](#34-registering-final-recipient-in-sml)
+  - [3.5 Registering Services in SMP](#35-registering-services-in-smp)
+  - [3.6 Configuring Dynamic Discovery in Receiving AP](#36-configuring-dynamic-discovery-in-receiving-ap)
+    - [3.6.1 TLS Configuration and Certificates](#361-tls-configuration-and-certificates)
+    - [3.6.2 Final Recipient in Plugin Configuration and AS4 Message](#362-final-recipient-in-plugin-configuration-and-as4-message)
+    - [3.6.3 Specifying Document Identifier Scheme and Document Identifier in AP PMode and AS4 Message](#363-specifying-document-identifier-scheme-and-document-identifier-in-ap-pmode-and-as4-message)
+    - [3.6.4 Specifying Process Scheme and Process Identifier in AP PMode and in AS4 Message](#364-specifying-process-scheme-and-process-identifier-in-ap-pmode-and-in-as4-message)
  
 ## 1 Introduction
 
 Harmony eDelivery Access supports static and dynamic discovery. This document describes configuration of participants and services for dynamic discovery. The configuration process differs between sending and receiving parties and therefore, this guide is divided in two different sections.
 
 ![network diagram](img/four_corner_model_dynamic.svg)
+
+The Static Discovery Configuration Guide \[[UG-SDCG](static_discovery_configuration_guide.md)\] sections 2.2-2.6 explain
+how to configure TLS connection between Access Points, import/export certificates and configure plugin users. Those 
+sections apply to dynamic discovery too and completing the described configuration is a requirement for successful
+communication between different components. Please see the Static Discovery Configuration Guide 
+\[[UG-SDCG](static_discovery_configuration_guide.md)\] for details.
 
 ### 1.1 Target Audience
 
@@ -69,6 +78,7 @@ See eDelivery definitions documentation \[[TERMS](#Ref_TERMS)\].
 3. <a id="Ref_IG-SMP" class="anchor"></a>\[IG-SMP\] Harmony eDelivery Access - Service Metadata Publisher Installation Guide. Document ID: [IG-SMP](harmony-smp_installation_guide.md)
 4. <a id="Ref_DOMIBUS_ADMIN_GUIDE" class="anchor"></a>\[DOMIBUS_ADMIN_GUIDE\] Access Point Administration Guide - Domibus 4.2.5, <https://ec.europa.eu/cefdigital/wiki/download/attachments/447677321/%28eDelivery%29%28AP%29%28AG%29%284.2.5%29%288.9.6%29.pdf>
 5. <a id="Ref_SMP_ADMIN_GUIDE" class="anchor"></a>\[SMP_ADMIN_GUIDE\] SMP Administration Guide - SMP 4.X, <https://ec.europa.eu/cefdigital/wiki/download/attachments/82773286/%28eDelivery%29%28SMP%29%28AG%29%28CEF%20SMP%204.1.1%29%283.1%29.pdf>
+6. <a id="Ref_UG-SDCG" class="anchor"></a>\[UG-SDCG\] Harmony eDelivery Access - Static Discovery Configuration Guide. Document ID: [UG-SDCG](static_discovery_configuration_guide.md)
 
 ## 2. Dynamic Discovery for Sending Parties
 
@@ -154,10 +164,19 @@ party (`C3`):
 * process scheme;
 * process identifier.
 
-See sections [3.5.2](#352-specifying-document-identifier-scheme-and-document-identifier-in-ap-pmode-and-as4-message)
-and [3.5.3](#353-specifying-process-scheme-and-process-identifier-in-ap-pmode-and-in-as4-message) for details.
+See sections [3.6.3](#363-specifying-document-identifier-scheme-and-document-identifier-in-ap-pmode-and-as4-message)
+and [3.6.4](#364-specifying-process-scheme-and-process-identifier-in-ap-pmode-and-in-as4-message) for details.
               
 See the Domibus Administration Guide \[[DOMIBUS_ADMIN_GUIDE](#Ref_DOMIBUS_ADMIN_GUIDE])\] for more details.
+
+### 2.3 TLS Configuration and Certificates
+
+Public certificates of trusted data exchange parties must be imported to sign and TLS truststores. When dynamic discovery 
+is used, the public certificates of trusted data exchange parties include sign and TLS certificates of receiving party's 
+Access Point (`C3`) and SMP. See sections 2.2-2.6 of the Static Discovery Configuration Guide \[[UG-SDCG](static_discovery_configuration_guide.md)\] 
+for details on managing the configuration. Please note that SMP is not mentioned in the Static Discovery Configuration 
+Guide, because it's not used with static discovery. However, with dynamic discovery also the SMP sign and TLS certificates
+must be imported following the same principles.
 
 ## 3. Dynamic Discovery for Receiving Parties
 
@@ -171,20 +190,45 @@ Before starting the dynamic discovery configuration process, please complete the
   - **Note:** During the installation, when the system asks do you want the SMP installation to publish information to 
   some Service Metadata Locator (SML), please answer **Yes**.
 
-### 3.2 Registering SMP in SML
+### 3.2 About Keys and Certificates
+
+To register SMP to SML the following certificates with private keys are needed and must be present in the SMP sign keystore (`/etc/harmony-smp/smp-keystore.jks`):
+
+- Client certificate and private key for TLS connections to SML ("SML ClientCert" in the SMP UI).
+- Metadata signing certificate and private key for signing service metadata ("Response signature Certificate" in the SMP UI).
+
+Technically, it's possible to use the same key as an SML client certificate and a response signature certificate. By default, 
+a self-signed sign certificate with a private key that are automatically generated during the installation process are
+available in the SMP sign keystore. Also, a self-signed TLS certificate with a private key are automatically generated
+during the installation process. They're available in the TLS keystore (`/etc/harmony-smp/tls-keystore.jks`).
+
+Certificates used by the SMP must be trusted by the SML and Access Points using the SMP (=Access Points in a sending role). The 
+SMP sign keystore can be managed in the SMP admin UI by clicking the "Edit keystore" button under the "Domain" section. 
+In case the sign keystore and/or sign trustore need to be accessed on command line, their passwords can be queried from 
+the configuration database using the following command:
+
+```bash
+sudo mysql -e "use harmony_smp; select PROPERTY, VALUE from SMP_CONFIGURATION where PROPERTY in('smp.keystore.password', 'smp.truststore.password.decrypted');"
+```
+
+The value of the `smp.keystore.password ` property is `{DEC}{$PASSWORD}` where `$PASSWORD` is the sign keystore password.
+The Static Discovery Configuration Guide \[[UG-SDCG](static_discovery_configuration_guide.md)\] contains a lot of examples
+how to manage keystores and truststores on command line.
+
+Instead, the SMP TLS keystore can be managed on command line only. The password of the TLS keystore can be found in 
+the `/etc/harmony-smp/tomcat-conf/server.xml` file in the `keystorePass` property. 
+
+Also, the certificates used by the SML and Access Points in a sending role must be trusted by the SMP. It means that 
+their public TLS certificates must be imported to the SMP's TLS truststore (`/etc/harmony-smp/tls-truststore.jks`).
+The password of the TLS truststore can be found in the `/etc/harmony-smp/tomcat-conf/server.xml` file in the 
+`truststorePass` property.
+
+**Note:** The certificate requirements depend on the eDelivery policy domain. If you're not sure about the requirements, please 
+contact the domain authority of the policy domain where the SMP is registered.
+
+### 3.3 Registering SMP in SML
 
 First, the SMP server must be registered in SML. Please note that a single SMP instance can provide metadata for multiple SML domains. 
-
-To register SMP to SML two certificates with private keys are needed and must be present in the SMP keystore (`/etc/harmony-smp/smp-keystore.jks`):
-
-- Client certificate and private key for TLS connections to SML ("SML ClientCert" in the SMP UI)
-- Metadata signing certificate and private key for signing service metadata ("Response signature Certificate" in the SMP UI)
-
-Certificates used by SMP must be trusted by SML and Access Points using the SMP. SMP keystore can be managed in the SMP 
-admin UI by clicking the "Edit keystore" button under the "Domain" section.
-
-The certificate requirements depend on the eDelivery policy domain. If you're not sure about the requirements, please 
-contact the domain authority of the policy domain where the SMP is registered.
 
 An SMP server is registered in SML by completing the steps below:
 
@@ -209,7 +253,7 @@ An SMP server is registered in SML by completing the steps below:
 
 See the SMP Administration Guide \[[SMP_ADMIN_GUIDE](#Ref_SMP_ADMIN_GUIDE])\] for more details.
 
-### 3.3 Registering Final Recipient in SML
+### 3.4 Registering Final Recipient in SML
 
 Only the final recipient, corner `C4` in four corner topology, is registered in SML. In other words, the other parties - 
 original sender (`C1`), initiator (`C2`) and responder (`C3`) - don't need to be registered in SML. Note that `C1` and
@@ -251,7 +295,7 @@ record should look like this:
 
 See the SMP Administration Guide \[[SMP_ADMIN_GUIDE](#Ref_SMP_ADMIN_GUIDE])\] for more details.
 
-### 3.4 Registering Services in SMP
+### 3.5 Registering Services in SMP
 
 Services provided by the final recipient are registered in SMP where interested parties can retrieve metadata about them.
 
@@ -331,7 +375,7 @@ record should look like this:
 
 See the SMP Administration Guide \[[SMP_ADMIN_GUIDE](#Ref_SMP_ADMIN_GUIDE])\] for more details.
 
-### 3.5 Configuring Dynamic Discovery in Receiving AP
+### 3.6 Configuring Dynamic Discovery in Receiving AP
 
 To use dynamic discovery, some changes are required in the receiving party's (`C3`) PMode. Since the sender of the message 
 is not known beforehand, the `PMode.Initiator` parameter must not be set. In practice, the `process` element in PMode 
@@ -354,7 +398,14 @@ must not contain `initiatorParties` element.
 
 See the Domibus Administration Guide \[[DOMIBUS_ADMIN_GUIDE](#Ref_DOMIBUS_ADMIN_GUIDE])\] for more details.
 
-#### 3.5.1 Final Recipient in Plugin Configuration and AS4 Message
+#### 3.6.1 TLS Configuration and Certificates
+
+Public certificates of trusted data exchange parties must be imported to sign and TLS truststores. When dynamic discovery 
+is used, the public certificates of trusted data exchange parties include sign and TLS certificates of sending party's 
+Access Point (`C2`). See sections 2.2-2.6 of the Static Discovery Configuration Guide \[[UG-SDCG](static_discovery_configuration_guide.md)\] 
+for details on managing the configuration.
+
+#### 3.6.2 Final Recipient in Plugin Configuration and AS4 Message
 
 In the Access Point (`C3`) configuration, the final recipient (`C4`) is represented as a plugin user. The recipient is 
 identified by single field `Original user`. This field must contain identifier type concatenated with identifier 
@@ -375,7 +426,7 @@ As a single identifier value without type attribute:
 
     <Property name="finalRecipient">urn:oasis:names:tc:ebcore:partyid-type:iso6523:0088:8735822991022</Property>
 
-#### 3.5.2 Specifying Document Identifier Scheme and Document Identifier in AP PMode and AS4 Message
+#### 3.6.3 Specifying Document Identifier Scheme and Document Identifier in AP PMode and AS4 Message
 
 In PMode the following excerpt corresponds to document with scheme `docidscheme` and identifier `documentidvalue`:
 
@@ -397,7 +448,7 @@ In AS4 message the same document type is referenced as:
 
 **Note:** The document scheme is not mandatory and can be omitted. In that case, also `::` can be omitted.
 
-#### 3.5.3 Specifying Process Scheme and Process Identifier in AP PMode and in AS4 Message
+#### 3.6.4 Specifying Process Scheme and Process Identifier in AP PMode and in AS4 Message
 
 In PMode the following excerpt corresponds to process with scheme `servicetype` and identifier `bdx:noprocess`:
 
