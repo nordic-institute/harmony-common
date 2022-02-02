@@ -157,7 +157,7 @@ Upon the first installation of the Access Point, the system asks for the followi
   - the value can be edited later by changing the `domibus.smlzone` property in the `/etc/harmony-ap/domibus.properties` configuration file;
 - username of the administrative user - username to use to log in to administrative UI;
 - initial password for the administrative user;
-- `Distinguished Name` for generated self signed content and transport certificates;
+- `Distinguished Name` for generated self-signed content and transport certificates;
   - For example:
       ```bash
       CN=example.com, O=My Organisation, C=FI

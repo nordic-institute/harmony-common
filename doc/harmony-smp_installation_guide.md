@@ -166,7 +166,10 @@ sudo apt install harmony-smp
 Upon the first installation of the SMP, the system asks for the following information.
 
 - `Distinguished Name` for generated self-signed content and transport certificates;
-  - For example: `CN=example.com, O=My Organisation, C=FI`;
+  - For example:
+      ```bash
+      CN=example.com, O=My Organisation, C=FI
+      ```
   - *Note:* different eDelivery policy domains may have different requirements for the `Distinguished Name`. If you're not sure about the requirements, please contact the domain authority of the policy domain where the SMP is registered.
 - do you want the SMP installation to publish information to some Service Metadata Locator (SML);  
   - if yes then: 
