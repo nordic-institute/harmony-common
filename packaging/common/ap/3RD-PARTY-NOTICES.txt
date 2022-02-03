@@ -219,7 +219,6 @@ SUCH DAMAGE.
 (c) Copyright 2003 IBM Corp.
 (c) Copyright 2016-2021 European Commission Dynamic Discovery Client
 (c) Gerd Neugebauer
-(c) Override public Session
 (c) Robert Wenner
 (c) Steffen Klupsch
 (c) Torsten Neuer
@@ -241,14 +240,13 @@ Copyright (c) 2001-2004 by the MX4J contributors
 Copyright (c) 2001-2011 http://www.apache.org/' The Apache Software Foundation
 Copyright (c) 2002 $ copyright Pivotal, Inc.
 Copyright (c) 2002 Kevin Atkinson (kevina@gnu.org)
-Copyright (c) 2002 Landmark Graphics Corp
 Copyright (c) 2002, 2004-2006, 2008 Tatu Saloranta, tatu.saloranta@iki.fi
 Copyright (c) 2002-2021 Pivotal, Inc.
 Copyright (c) 2003 Eric Bie
 Copyright (c) 2004 Bill Burke
 Copyright (c) 2005-2019 The Guava Authors
-Copyright (c) 2005-2020 The Apache Software Foundation
 Copyright (c) 2006, 2008-2012, 2014-2017 Google Inc.
+Copyright (c) 2006-2020 The Apache Software Foundation
 Copyright (c) 2007-2010, 2019 The JASYPT team (http://www.jasypt.org)
 Copyright (c) 2008 Alexander Beider & Stephen P. Morse
 Copyright (c) 2008 http://www.w3.org/' title World Wide Web Consortium' W3C
@@ -280,10 +278,10 @@ Copyright 1999-2021 The Apache Software Foundation
 Copyright 2001 xa9 Institute
 Copyright 2001-2002 Juila Smith
 Copyright 2001-2002 me br
-Copyright 2001-2005 International Business Machines Corporation and Microsoft Corporation
 Copyright 2001-2008 Progress Software Corporation
 Copyright 2001-2015 Stephen Colebourne
 Copyright 2002 $ year the original author or authors
+Copyright 2002-2019 Red Hat Inc.
 Copyright 2002-2021 the original author or authors
 Copyright 2003 Wily Technology, Inc.
 Copyright 2004-2006, 2009 Acegi Technology Pty Limited
@@ -298,7 +296,6 @@ Copyright 2008 Google Inc. http://code.google.com/p/protobuf
 Copyright 2008, 2010-2011, 2013, 2015-2016 Red Hat, Inc., and individual contributors by the authors
 Copyright 2008-2012, 2015, 2017 Google Inc.
 Copyright 2008-2013 Red Hat Middleware LLC, and individual contributors by the authors
-Copyright 2008-2014, 2017, 2019 Red Hat, Inc.
 Copyright 2009 IIZUKA Software Technologies Ltd
 Copyright 2010-2011, 2013-2014 Red Hat, Inc., and individual contributors
 Copyright 2010-2012 Coda Hale and Yammer, Inc.
@@ -308,6 +305,8 @@ Copyright 2012 Twitter, Inc. http://www.apache.org/licenses/LICENSE-2.0.txt
 Copyright 2013 FasterXML.com
 Copyright 2013 Mark Rogers
 Copyright 2014 Attila Szegedi, Daniel Dekany, Jonathan Revusky
+Copyright 2014 The Netty Project
+Copyright 2014 Twitter
 Copyright 2014-2020 Rafael Winterhalter
 Copyright 2015 Scott Conway
 Copyright 2015 SmartBear Software
@@ -804,7 +803,6 @@ Copyright (c) 2005 University of Colorado at Boulder
 Copyright (c) 2006 Alastair Tse
 Copyright (c) 2006, 2010 Yahoo! Inc.
 Copyright (c) 2006-2021 XStream Committers
-Copyright (c) 2007 Eclipse Foundation, Inc.
 Copyright (c) 2007 Parakey Inc.
 Copyright (c) 2007 The OWASP Foundation
 Copyright (c) 2008 Ariel Flesler
@@ -2163,436 +2161,6 @@ Creative Commons Notice
 
 ----
 
-Attribution-ShareAlike 4.0 International
-
-=======================================================================
-
-Creative Commons Corporation ("Creative Commons") is not a law firm and
-does not provide legal services or legal advice. Distribution of
-Creative Commons public licenses does not create a lawyer-client or
-other relationship. Creative Commons makes its licenses and related
-information available on an "as-is" basis. Creative Commons gives no
-warranties regarding its licenses, any material licensed under their
-terms and conditions, or any related information. Creative Commons
-disclaims all liability for damages resulting from their use to the
-fullest extent possible.
-
-Using Creative Commons Public Licenses
-
-Creative Commons public licenses provide a standard set of terms and
-conditions that creators and other rights holders may use to share
-original works of authorship and other material subject to copyright
-and certain other rights specified in the public license below. The
-following considerations are for informational purposes only, are not
-exhaustive, and do not form part of our licenses.
-
-     Considerations for licensors: Our public licenses are
-     intended for use by those authorized to give the public
-     permission to use material in ways otherwise restricted by
-     copyright and certain other rights. Our licenses are
-     irrevocable. Licensors should read and understand the terms
-     and conditions of the license they choose before applying it.
-     Licensors should also secure all rights necessary before
-     applying our licenses so that the public can reuse the
-     material as expected. Licensors should clearly mark any
-     material not subject to the license. This includes other CC-
-     licensed material, or material used under an exception or
-     limitation to copyright. More considerations for licensors:
-	wiki.creativecommons.org/Considerations_for_licensors
-
-     Considerations for the public: By using one of our public
-     licenses, a licensor grants the public permission to use the
-     licensed material under specified terms and conditions. If
-     the licensor's permission is not necessary for any reason--for
-     example, because of any applicable exception or limitation to
-     copyright--then that use is not regulated by the license. Our
-     licenses grant only permissions under copyright and certain
-     other rights that a licensor has authority to grant. Use of
-     the licensed material may still be restricted for other
-     reasons, including because others have copyright or other
-     rights in the material. A licensor may make special requests,
-     such as asking that all changes be marked or described.
-     Although not required by our licenses, you are encouraged to
-     respect those requests where reasonable. More considerations
-     for the public:
-	wiki.creativecommons.org/Considerations_for_licensees
-
-=======================================================================
-
-Creative Commons Attribution-ShareAlike 4.0 International Public
-License
-
-By exercising the Licensed Rights (defined below), You accept and agree
-to be bound by the terms and conditions of this Creative Commons
-Attribution-ShareAlike 4.0 International Public License ("Public
-License"). To the extent this Public License may be interpreted as a
-contract, You are granted the Licensed Rights in consideration of Your
-acceptance of these terms and conditions, and the Licensor grants You
-such rights in consideration of benefits the Licensor receives from
-making the Licensed Material available under these terms and
-conditions.
-
-
-Section 1 -- Definitions.
-
-  a. Adapted Material means material subject to Copyright and Similar
-     Rights that is derived from or based upon the Licensed Material
-     and in which the Licensed Material is translated, altered,
-     arranged, transformed, or otherwise modified in a manner requiring
-     permission under the Copyright and Similar Rights held by the
-     Licensor. For purposes of this Public License, where the Licensed
-     Material is a musical work, performance, or sound recording,
-     Adapted Material is always produced where the Licensed Material is
-     synched in timed relation with a moving image.
-
-  b. Adapter's License means the license You apply to Your Copyright
-     and Similar Rights in Your contributions to Adapted Material in
-     accordance with the terms and conditions of this Public License.
-
-  c. BY-SA Compatible License means a license listed at
-     creativecommons.org/compatiblelicenses, approved by Creative
-     Commons as essentially the equivalent of this Public License.
-
-  d. Copyright and Similar Rights means copyright and/or similar rights
-     closely related to copyright including, without limitation,
-     performance, broadcast, sound recording, and Sui Generis Database
-     Rights, without regard to how the rights are labeled or
-     categorized. For purposes of this Public License, the rights
-     specified in Section 2(b)(1)-(2) are not Copyright and Similar
-     Rights.
-
-  e. Effective Technological Measures means those measures that, in the
-     absence of proper authority, may not be circumvented under laws
-     fulfilling obligations under Article 11 of the WIPO Copyright
-     Treaty adopted on December 20, 1996, and/or similar international
-     agreements.
-
-  f. Exceptions and Limitations means fair use, fair dealing, and/or
-     any other exception or limitation to Copyright and Similar Rights
-     that applies to Your use of the Licensed Material.
-
-  g. License Elements means the license attributes listed in the name
-     of a Creative Commons Public License. The License Elements of this
-     Public License are Attribution and ShareAlike.
-
-  h. Licensed Material means the artistic or literary work, database,
-     or other material to which the Licensor applied this Public
-     License.
-
-  i. Licensed Rights means the rights granted to You subject to the
-     terms and conditions of this Public License, which are limited to
-     all Copyright and Similar Rights that apply to Your use of the
-     Licensed Material and that the Licensor has authority to license.
-
-  j. Licensor means the individual(s) or entity(ies) granting rights
-     under this Public License.
-
-  k. Share means to provide material to the public by any means or
-     process that requires permission under the Licensed Rights, such
-     as reproduction, public display, public performance, distribution,
-     dissemination, communication, or importation, and to make material
-     available to the public including in ways that members of the
-     public may access the material from a place and at a time
-     individually chosen by them.
-
-  l. Sui Generis Database Rights means rights other than copyright
-     resulting from Directive 96/9/EC of the European Parliament and of
-     the Council of 11 March 1996 on the legal protection of databases,
-     as amended and/or succeeded, as well as other essentially
-     equivalent rights anywhere in the world.
-
-  m. You means the individual or entity exercising the Licensed Rights
-     under this Public License. Your has a corresponding meaning.
-
-
-Section 2 -- Scope.
-
-  a. License grant.
-
-       1. Subject to the terms and conditions of this Public License,
-          the Licensor hereby grants You a worldwide, royalty-free,
-          non-sublicensable, non-exclusive, irrevocable license to
-          exercise the Licensed Rights in the Licensed Material to:
-
-            a. reproduce and Share the Licensed Material, in whole or
-               in part; and
-
-            b. produce, reproduce, and Share Adapted Material.
-
-       2. Exceptions and Limitations. For the avoidance of doubt, where
-          Exceptions and Limitations apply to Your use, this Public
-          License does not apply, and You do not need to comply with
-          its terms and conditions.
-
-       3. Term. The term of this Public License is specified in Section
-          6(a).
-
-       4. Media and formats; technical modifications allowed. The
-          Licensor authorizes You to exercise the Licensed Rights in
-          all media and formats whether now known or hereafter created,
-          and to make technical modifications necessary to do so. The
-          Licensor waives and/or agrees not to assert any right or
-          authority to forbid You from making technical modifications
-          necessary to exercise the Licensed Rights, including
-          technical modifications necessary to circumvent Effective
-          Technological Measures. For purposes of this Public License,
-          simply making modifications authorized by this Section 2(a)
-          (4) never produces Adapted Material.
-
-       5. Downstream recipients.
-
-            a. Offer from the Licensor -- Licensed Material. Every
-               recipient of the Licensed Material automatically
-               receives an offer from the Licensor to exercise the
-               Licensed Rights under the terms and conditions of this
-               Public License.
-
-            b. Additional offer from the Licensor -- Adapted Material.
-               Every recipient of Adapted Material from You
-               automatically receives an offer from the Licensor to
-               exercise the Licensed Rights in the Adapted Material
-               under the conditions of the Adapter's License You apply.
-
-            c. No downstream restrictions. You may not offer or impose
-               any additional or different terms or conditions on, or
-               apply any Effective Technological Measures to, the
-               Licensed Material if doing so restricts exercise of the
-               Licensed Rights by any recipient of the Licensed
-               Material.
-
-       6. No endorsement. Nothing in this Public License constitutes or
-          may be construed as permission to assert or imply that You
-          are, or that Your use of the Licensed Material is, connected
-          with, or sponsored, endorsed, or granted official status by,
-          the Licensor or others designated to receive attribution as
-          provided in Section 3(a)(1)(A)(i).
-
-  b. Other rights.
-
-       1. Moral rights, such as the right of integrity, are not
-          licensed under this Public License, nor are publicity,
-          privacy, and/or other similar personality rights; however, to
-          the extent possible, the Licensor waives and/or agrees not to
-          assert any such rights held by the Licensor to the limited
-          extent necessary to allow You to exercise the Licensed
-          Rights, but not otherwise.
-
-       2. Patent and trademark rights are not licensed under this
-          Public License.
-
-       3. To the extent possible, the Licensor waives any right to
-          collect royalties from You for the exercise of the Licensed
-          Rights, whether directly or through a collecting society
-          under any voluntary or waivable statutory or compulsory
-          licensing scheme. In all other cases the Licensor expressly
-          reserves any right to collect such royalties.
-
-
-Section 3 -- License Conditions.
-
-Your exercise of the Licensed Rights is expressly made subject to the
-following conditions.
-
-  a. Attribution.
-
-       1. If You Share the Licensed Material (including in modified
-          form), You must:
-
-            a. retain the following if it is supplied by the Licensor
-               with the Licensed Material:
-
-                 i. identification of the creator(s) of the Licensed
-                    Material and any others designated to receive
-                    attribution, in any reasonable manner requested by
-                    the Licensor (including by pseudonym if
-                    designated);
-
-                ii. a copyright notice;
-
-               iii. a notice that refers to this Public License;
-
-                iv. a notice that refers to the disclaimer of
-                    warranties;
-
-                 v. a URI or hyperlink to the Licensed Material to the
-                    extent reasonably practicable;
-
-            b. indicate if You modified the Licensed Material and
-               retain an indication of any previous modifications; and
-
-            c. indicate the Licensed Material is licensed under this
-               Public License, and include the text of, or the URI or
-               hyperlink to, this Public License.
-
-       2. You may satisfy the conditions in Section 3(a)(1) in any
-          reasonable manner based on the medium, means, and context in
-          which You Share the Licensed Material. For example, it may be
-          reasonable to satisfy the conditions by providing a URI or
-          hyperlink to a resource that includes the required
-          information.
-
-       3. If requested by the Licensor, You must remove any of the
-          information required by Section 3(a)(1)(A) to the extent
-          reasonably practicable.
-
-  b. ShareAlike.
-
-     In addition to the conditions in Section 3(a), if You Share
-     Adapted Material You produce, the following conditions also apply.
-
-       1. The Adapter's License You apply must be a Creative Commons
-          license with the same License Elements, this version or
-          later, or a BY-SA Compatible License.
-
-       2. You must include the text of, or the URI or hyperlink to, the
-          Adapter's License You apply. You may satisfy this condition
-          in any reasonable manner based on the medium, means, and
-          context in which You Share Adapted Material.
-
-       3. You may not offer or impose any additional or different terms
-          or conditions on, or apply any Effective Technological
-          Measures to, Adapted Material that restrict exercise of the
-          rights granted under the Adapter's License You apply.
-
-
-Section 4 -- Sui Generis Database Rights.
-
-Where the Licensed Rights include Sui Generis Database Rights that
-apply to Your use of the Licensed Material:
-
-  a. for the avoidance of doubt, Section 2(a)(1) grants You the right
-     to extract, reuse, reproduce, and Share all or a substantial
-     portion of the contents of the database;
-
-  b. if You include all or a substantial portion of the database
-     contents in a database in which You have Sui Generis Database
-     Rights, then the database in which You have Sui Generis Database
-     Rights (but not its individual contents) is Adapted Material,
-
-     including for purposes of Section 3(b); and
-  c. You must comply with the conditions in Section 3(a) if You Share
-     all or a substantial portion of the contents of the database.
-
-For the avoidance of doubt, this Section 4 supplements and does not
-replace Your obligations under this Public License where the Licensed
-Rights include other Copyright and Similar Rights.
-
-
-Section 5 -- Disclaimer of Warranties and Limitation of Liability.
-
-  a. UNLESS OTHERWISE SEPARATELY UNDERTAKEN BY THE LICENSOR, TO THE
-     EXTENT POSSIBLE, THE LICENSOR OFFERS THE LICENSED MATERIAL AS-IS
-     AND AS-AVAILABLE, AND MAKES NO REPRESENTATIONS OR WARRANTIES OF
-     ANY KIND CONCERNING THE LICENSED MATERIAL, WHETHER EXPRESS,
-     IMPLIED, STATUTORY, OR OTHER. THIS INCLUDES, WITHOUT LIMITATION,
-     WARRANTIES OF TITLE, MERCHANTABILITY, FITNESS FOR A PARTICULAR
-     PURPOSE, NON-INFRINGEMENT, ABSENCE OF LATENT OR OTHER DEFECTS,
-     ACCURACY, OR THE PRESENCE OR ABSENCE OF ERRORS, WHETHER OR NOT
-     KNOWN OR DISCOVERABLE. WHERE DISCLAIMERS OF WARRANTIES ARE NOT
-     ALLOWED IN FULL OR IN PART, THIS DISCLAIMER MAY NOT APPLY TO YOU.
-
-  b. TO THE EXTENT POSSIBLE, IN NO EVENT WILL THE LICENSOR BE LIABLE
-     TO YOU ON ANY LEGAL THEORY (INCLUDING, WITHOUT LIMITATION,
-     NEGLIGENCE) OR OTHERWISE FOR ANY DIRECT, SPECIAL, INDIRECT,
-     INCIDENTAL, CONSEQUENTIAL, PUNITIVE, EXEMPLARY, OR OTHER LOSSES,
-     COSTS, EXPENSES, OR DAMAGES ARISING OUT OF THIS PUBLIC LICENSE OR
-     USE OF THE LICENSED MATERIAL, EVEN IF THE LICENSOR HAS BEEN
-     ADVISED OF THE POSSIBILITY OF SUCH LOSSES, COSTS, EXPENSES, OR
-     DAMAGES. WHERE A LIMITATION OF LIABILITY IS NOT ALLOWED IN FULL OR
-     IN PART, THIS LIMITATION MAY NOT APPLY TO YOU.
-
-  c. The disclaimer of warranties and limitation of liability provided
-     above shall be interpreted in a manner that, to the extent
-     possible, most closely approximates an absolute disclaimer and
-     waiver of all liability.
-
-
-Section 6 -- Term and Termination.
-
-  a. This Public License applies for the term of the Copyright and
-     Similar Rights licensed here. However, if You fail to comply with
-     this Public License, then Your rights under this Public License
-     terminate automatically.
-
-  b. Where Your right to use the Licensed Material has terminated under
-     Section 6(a), it reinstates:
-
-       1. automatically as of the date the violation is cured, provided
-          it is cured within 30 days of Your discovery of the
-          violation; or
-
-       2. upon express reinstatement by the Licensor.
-
-     For the avoidance of doubt, this Section 6(b) does not affect any
-     right the Licensor may have to seek remedies for Your violations
-     of this Public License.
-
-  c. For the avoidance of doubt, the Licensor may also offer the
-     Licensed Material under separate terms or conditions or stop
-     distributing the Licensed Material at any time; however, doing so
-     will not terminate this Public License.
-
-  d. Sections 1, 5, 6, 7, and 8 survive termination of this Public
-     License.
-
-
-Section 7 -- Other Terms and Conditions.
-
-  a. The Licensor shall not be bound by any additional or different
-     terms or conditions communicated by You unless expressly agreed.
-
-  b. Any arrangements, understandings, or agreements regarding the
-     Licensed Material not stated herein are separate from and
-     independent of the terms and conditions of this Public License.
-
-
-Section 8 -- Interpretation.
-
-  a. For the avoidance of doubt, this Public License does not, and
-     shall not be interpreted to, reduce, limit, restrict, or impose
-     conditions on any use of the Licensed Material that could lawfully
-     be made without permission under this Public License.
-
-  b. To the extent possible, if any provision of this Public License is
-     deemed unenforceable, it shall be automatically reformed to the
-     minimum extent necessary to make it enforceable. If the provision
-     cannot be reformed, it shall be severed from this Public License
-     without affecting the enforceability of the remaining terms and
-     conditions.
-
-  c. No term or condition of this Public License will be waived and no
-     failure to comply consented to unless expressly agreed to by the
-     Licensor.
-
-  d. Nothing in this Public License constitutes or may be interpreted
-     as a limitation upon, or waiver of, any privileges and immunities
-     that apply to the Licensor or You, including from the legal
-     processes of any jurisdiction or authority.
-
-
-=======================================================================
-
-Creative Commons is not a party to its public
-licenses. Notwithstanding, Creative Commons may elect to apply one of
-its public licenses to material it publishes and in those instances
-will be considered the “Licensor.” The text of the Creative Commons
-public licenses is dedicated to the public domain under the CC0 Public
-Domain Dedication. Except for the limited purpose of indicating that
-material is shared under a Creative Commons public license or as
-otherwise permitted by the Creative Commons policies published at
-creativecommons.org/policies, Creative Commons does not authorize the
-use of the trademark "Creative Commons" or any other trademark or logo
-of Creative Commons without its prior written consent including,
-without limitation, in connection with any unauthorized modifications
-to any of its public licenses or any other arrangements,
-understandings, or agreements concerning use of licensed material. For
-the avoidance of doubt, this paragraph does not form part of the
-public licenses.
-
-Creative Commons may be contacted at creativecommons.org.
-
-----
-
 Copyright (c) 1989, 1991 Free Software Foundation, Inc.
 Copyright (c) 2001-2004 by the MX4J contributors
 Copyright 1995-2006 Mort Bay Consulting Pty Ltd
@@ -3010,7 +2578,7 @@ This Agreement is governed by the laws of the State of New York and the intellec
 (c) 2013 Stephan Hennig
 (c) Andres Becerra Sandoval
 (c) Christoph Giess
-(c) Copyright 1996 IBM Corp.
+(c) Copyright 1993-1997 IBM Corp.
 (c) Copyright 1996 Taligent, Inc.
 (c) Gerd Neugebauer
 (c) Robert Wenner
@@ -3028,6 +2596,7 @@ Copyright (c) 2009-2017 Jason Mehrens
 Copyright (c) 2012-2016 University of Washington
 Copyright (c) YYYY Oracle and/or its affiliates
 Copyright 1994-2008 Sun Microsystems, Inc.
+Copyright 1998-1999 IBM Corp.
 Copyright 2003 Wily Technology, Inc.
 Copyright 2004 present by the Checker Framework
 Copyright 2004-2007 The Apache Software Foundation
@@ -3170,6 +2739,7 @@ This Agreement is governed by the laws of the State of New York and the intellec
 ----
 
 Copyright (c) 2008, 2020 Oracle and/or its affiliates
+Copyright 2015-2020 the original author or authors
 
 Eclipse Public License - v 2.0
 
@@ -3723,6 +3293,7 @@ registered office inside a European Union country.
 
 (c) 2007, 2016 the European Union
 Copyright (c) 1998 Hewlett-Packard Company
+Copyright (c) 2000-2015 www.hamcrest.org
 
 EUROPEAN UNION PUBLIC LICENCE v. 1.2
 EUPL © the European Union 2007, 2016
@@ -3898,12 +3469,11 @@ Without prejudice to specific agreement between parties,
 (c) Steffen Klupsch
 (c) Torsten Neuer
 Copyright (c) 1991, 1999 Free Software Foundation, Inc.
-Copyright (c) 2005 Emil A Eklund
 Copyright (c) 2009 by Oracle Corporation
 Copyright (c) 2009-2010 International Business Machines Corporation and others
 Copyright (c) 2012-2016 University of Washington
+Copyright (c) 2017, 2021 Oracle and/or its affiliates
 Copyright 2003 Wily Technology, Inc.
-Copyright 2010 The Dojo Foundation
 copyright 1996, 2004 Carsten Heinz
 copyright 1997-2004, 2006-2007, 2013 ///////// /
 copyright 2006-2007 Brooks Moses
@@ -4232,31 +3802,24 @@ That's all there is to it!
 (c) 2013 Stephan Hennig
 (c) Andres Becerra Sandoval
 (c) Christoph Giess
-(c) Copyright 1996 IBM Corp.
+(c) Copyright 1993-1997 IBM Corp.
 (c) Copyright 1996 Taligent, Inc.
 (c) Gerd Neugebauer
 (c) Robert Wenner
 (c) Steffen Klupsch
 (c) Torsten Neuer
 Copyright (c) 1989, 1991 Free Software Foundation, Inc.
-Copyright (c) 1994-2018 Oracle and/or its affiliates
-Copyright (c) 1996-2018 http://www.oracle.com' Oracle and/or its affiliates
+Copyright (c) 1994-2017, 2021 Oracle and/or its affiliates
+Copyright (c) 1996-2017 http://www.oracle.com' Oracle and/or its affiliates
 Copyright (c) 2004 World Wide Web Consortium
-Copyright (c) 2004-2017 Oracle
-Copyright (c) 2006 Google Inc.
 Copyright (c) 2008 John Resig (jquery.com)
 Copyright (c) 2009 by Oracle Corporation
 Copyright (c) 2009-2010 International Business Machines Corporation and others
-Copyright (c) 2009-2017 Jason Mehrens
 Copyright (c) 2012-2016 University of Washington
-Copyright (c) YYYY Oracle and/or its affiliates
 Copyright 1994-2008 Sun Microsystems, Inc.
+Copyright 1998-1999 IBM Corp.
 Copyright 2003 Wily Technology, Inc.
 Copyright 2004 present by the Checker Framework
-Copyright 2004-2007 The Apache Software Foundation
-Copyright 2009-2010 The Dojo Foundation
-Copyright 2010 John Resig
-Copyright 2011 Red Hat, Inc., and individual contributors by the authors
 Copyright The PEPPOL project (http://www.peppol.eu)
 copyright 1996, 2004 Carsten Heinz
 copyright 1997-2004, 2006-2007, 2013 ///////// /
@@ -7368,6 +6931,7 @@ Copyright (c) 2003-2007 University of Maryland and others
 Copyright (c) 2009 by Oracle Corporation
 Copyright (c) 2009-2010 International Business Machines Corporation and others
 Copyright (c) 2012-2016 University of Washington
+Copyright (c) 2017, 2021 Oracle and/or its affiliates
 Copyright 1999, 2006 Tim Vernum Jason Gilbert
 Copyright 2003 Wily Technology, Inc.
 Copyright 2003-2008 by the University of Maryland
@@ -8429,6 +7993,7 @@ Copyright (c) 2009 Tom u00e1s Pollak
 Copyright (c) 2009 Tomas Pollak
 Copyright (c) 2009 Toms Pollak
 Copyright (c) 2011 Andrey Loskutov
+Copyright (c) 2019 Machinery
 Copyright 2010 Red Hat, Inc., and individual contributors
 copyrighted by the Free Software Foundation
 
@@ -9593,97 +9158,7 @@ IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ----
 
-(c) 2005 Bob Ippolito
-(c) <jbonofre@apache.org>
-Copyright (c) 2010 Yahoo! Inc.
-Copyright 1999, 2006 Tim Vernum Jason Gilbert
-Copyright 2005 Sun Microsystems, Inc.
-Copyright 2005-2020 The Apache Software Foundation
-portions Copyright Apache Software Foundation
-
-Developing Nations 2.0
-
-CREATIVE COMMONS CORPORATION IS NOT A LAW FIRM AND DOES NOT PROVIDE LEGAL SERVICES. DISTRIBUTION OF THIS LICENSE DOES NOT CREATE AN ATTORNEY-CLIENT RELATIONSHIP. CREATIVE COMMONS PROVIDES THIS INFORMATION ON AN "AS-IS" BASIS. CREATIVE COMMONS MAKES NO WARRANTIES REGARDING THE INFORMATION PROVIDED, AND DISCLAIMS LIABILITY FOR DAMAGES RESULTING FROM ITS USE.
-License
-
-THE WORK (AS DEFINED BELOW) IS PROVIDED UNDER THE TERMS OF THIS CREATIVE COMMONS PUBLIC LICENSE ("CCPL" OR "LICENSE"). THE WORK IS PROTECTED BY COPYRIGHT AND/OR OTHER APPLICABLE LAW. ANY USE OF THE WORK OTHER THAN AS AUTHORIZED UNDER THIS LICENSE OR COPYRIGHT LAW IS PROHIBITED.
-
-BY EXERCISING ANY RIGHTS TO THE WORK PROVIDED HERE, YOU ACCEPT AND AGREE TO BE BOUND BY THE TERMS OF THIS LICENSE. THE LICENSOR GRANTS YOU THE RIGHTS CONTAINED HERE IN CONSIDERATION OF YOUR ACCEPTANCE OF SUCH TERMS AND CONDITIONS.
-
-1. Definitions
-
-"Collective Work" means a work, such as a periodical issue, anthology or encyclopedia, in which the Work in its entirety in unmodified form, along with a number of other contributions, constituting separate and independent works in themselves, are assembled into a collective whole. A work that constitutes a Collective Work will not be considered a Derivative Work (as defined below) for the purposes of this License.
-"Derivative Work" means a work based upon the Work or upon the Work and other pre-existing works, such as a translation, musical arrangement, dramatization, fictionalization, motion picture version, sound recording, art reproduction, abridgment, condensation, or any other form in which the Work may be recast, transformed, or adapted, except that a work that constitutes a Collective Work will not be considered a Derivative Work for the purpose of this License. For the avoidance of doubt, where the Work is a musical composition or sound recording, the synchronization of the Work in timed-relation with a moving image ("synching") will be considered a Derivative Work for the purpose of this License.
-"Developing Nation" means any nation that is not classified as a "high-income enconomy" by the World Bank.
-"Licensor" means the individual or entity that offers the Work under the terms of this License.
-"Original Author" means the individual or entity who created the Work.
-"Work" means the copyrightable work of authorship offered under the terms of this License.
-"You" means an individual or entity exercising rights under this License who has not previously violated the terms of this License with respect to the Work, or who has received express permission from the Licensor to exercise rights under this License despite a previous violation.
-2. Fair Use Rights. Nothing in this license is intended to reduce, limit, or restrict any rights arising from fair use, first sale or other limitations on the exclusive rights of the copyright owner under copyright law or other applicable laws.
-
-3. License Grant. Subject to the terms and conditions of this License, Licensor hereby grants You a worldwide, royalty-free, non-exclusive, perpetual (for the duration of the applicable copyright or subject to Section 7(a)) license to exercise the rights in the Work, in any Developing Nation, solely within the geographic territory of one or more Developing Nations, as stated below:
-
-to reproduce the Work, to incorporate the Work into one or more Collective Works, and to reproduce the Work as incorporated in the Collective Works;
-to create and reproduce Derivative Works;
-to distribute copies or phonorecords of, display publicly, perform publicly, and perform publicly by means of a digital audio transmission the Work including as incorporated in Collective Works;
-to distribute copies or phonorecords of, display publicly, perform publicly, and perform publicly by means of a digital audio transmission Derivative Works;
-For the avoidance of doubt, where the work is a musical composition:
-
-Performance Royalties Under Blanket Licenses. Licensor waives the exclusive right to collect, whether individually or via a performance rights society, royalties for the public performance or public digital performance (e.g. webcast) of the Work.
-Mechanical Rights and Statutory Royalties. Licensor waives the exclusive right to collect, whether individually or via a music rights agency or designated agent, royalties for any phonorecord You create from the Work ("cover version") and distribute, subject to any compulsory license that may apply.
-Webcasting Rights and Statutory Royalties. For the avoidance of doubt, where the Work is a sound recording, Licensor waives the exclusive right to collect, whether individually or via a performance-rights society, royalties for the public digital performance (e.g. webcast) of the Work, subject to any compulsory license that may apply.
-The above rights may be exercised in all media and formats whether now known or hereafter devised. The above rights include the right to make such modifications as are technically necessary to exercise the rights in other media and formats. All rights not expressly granted by Licensor are hereby reserved, including but not limited to the rights and restrictions described in Section 4.
-
-4. Restrictions. The license granted in Section 3 above is expressly made subject to and limited by the following restrictions:
-
-You may distribute, publicly display, publicly perform, or publicly digitally perform the Work only under the terms of this License, and You must include a copy of, or the Uniform Resource Identifier for, this License with every copy or phonorecord of the Work You distribute, publicly display, publicly perform, or publicly digitally perform. You may not offer or impose any terms on the Work that alter or restrict the terms of this License or the recipients' exercise of the rights granted hereunder. You may not sublicense the Work. You must keep intact all notices that refer to this License and to the disclaimer of warranties. You may not distribute, publicly display, publicly perform, or publicly digitally perform the Work with any technological measures that control access or use of the Work in a manner inconsistent with the terms of this License Agreement. The above applies to the Work as incorporated in a Collective Work, but this does not require the Collective Work apart from the Work itself to be made subject to the terms of this License. If You create a Collective Work, upon notice from any Licensor You must, to the extent practicable, remove from the Collective Work any reference to such Licensor or the Original Author, as requested. If You create a Derivative Work, upon notice from any Licensor You must, to the extent practicable, remove from the Derivative Work any reference to such Licensor or the Original Author, as requested.
-If you distribute, publicly display, publicly perform, or publicly digitally perform the Work or any Derivative Works or Collective Works, You must keep intact all copyright notices for the Work and give the Original Author credit reasonable to the medium or means You are utilizing by conveying the name (or pseudonym if applicable) of the Original Author if supplied; the title of the Work if supplied; to the extent reasonably practicable, the Uniform Resource Identifier, if any, that Licensor specifies to be associated with the Work, unless such URI does not refer to the copyright notice or licensing information for the Work; and, in the case of a Derivative Work, a credit identifying the use of the Work in the Derivative Work (e.g., "French translation of the Work by Original Author," or "Screenplay based on original Work by Original Author"). Such credit may be implemented in any reasonable manner; provided, however, that in the case of a Derivative Work or Collective Work, at a minimum such credit will appear where any other comparable authorship credit appears and in a manner at least as prominent as such other comparable authorship credit.
-The Work and any Derivative Works and Collective Works may only be exported to other Developing Nations, but may not be exported to countries classified as "high income" by the World Bank.
-This License does not authorize making the Work, any Derivative Works or any Collective Works publicly available on the Internet unless reasonable measures are undertaken to verify that the recipient is located in a Developing Nation, such as by requiring recipients to provide name and postal mailing address, or by limiting the distribution of the Work to Internet IP addresses within a Developing Nation.
-5. Representations, Warranties and Disclaimer
-
-UNLESS OTHERWISE MUTUALLY AGREED TO BY THE PARTIES IN WRITING, LICENSOR OFFERS THE WORK AS-IS AND MAKES NO REPRESENTATIONS OR WARRANTIES OF ANY KIND CONCERNING THE WORK, EXPRESS, IMPLIED, STATUTORY OR OTHERWISE, INCLUDING, WITHOUT LIMITATION, WARRANTIES OF TITLE, MERCHANTIBILITY, FITNESS FOR A PARTICULAR PURPOSE, NONINFRINGEMENT, OR THE ABSENCE OF LATENT OR OTHER DEFECTS, ACCURACY, OR THE PRESENCE OF ABSENCE OF ERRORS, WHETHER OR NOT DISCOVERABLE. SOME JURISDICTIONS DO NOT ALLOW THE EXCLUSION OF IMPLIED WARRANTIES, SO SUCH EXCLUSION MAY NOT APPLY TO YOU.
-
-6. Limitation on Liability. EXCEPT TO THE EXTENT REQUIRED BY APPLICABLE LAW, IN NO EVENT WILL LICENSOR BE LIABLE TO YOU ON ANY LEGAL THEORY FOR ANY SPECIAL, INCIDENTAL, CONSEQUENTIAL, PUNITIVE OR EXEMPLARY DAMAGES ARISING OUT OF THIS LICENSE OR THE USE OF THE WORK, EVEN IF LICENSOR HAS BEEN ADVISED OF THE POSSIBILITY OF SUCH DAMAGES.
-
-7. Termination
-
-This License and the rights granted hereunder will terminate automatically upon (i) any breach by You of the terms of this License or (ii) if any Developing Nation in which the Work is used, exported or distributed ceases at any time to qualify as a Developing Nation, in which case this License will automatically terminate with respect to such country five (5) years after the date of such re-classification; provided that You will not be liable for copyright infringement unless and until You continue to exercise such rights after You have actual knowledge of the termination of this License for such country. Individuals or entities who have received Derivative Works or Collective Works from You under this License, however, will not have their licenses terminated provided such individuals or entities remain in full compliance with those licenses. Sections 1, 2, 5, 6, 7, and 8 will survive any termination of this License.
-Subject to the above terms and conditions, the license granted here is perpetual (for the duration of the applicable copyright in the Work). Notwithstanding the above, Licensor reserves the right to release the Work under different license terms or to stop distributing the Work at any time; provided, however that any such election will not serve to withdraw this License (or any other license that has been, or is required to be, granted under the terms of this License), and this License will continue in full force and effect unless terminated as stated above.
-8. Miscellaneous
-
-Each time You distribute or publicly digitally perform the Work or a Collective Work, the Licensor offers to the recipient a license to the Work on the same terms and conditions as the license granted to You under this License.
-Each time You distribute or publicly digitally perform a Derivative Work, Licensor offers to the recipient a license to the original Work on the same terms and conditions as the license granted to You under this License.
-If any provision of this License is invalid or unenforceable under applicable law, it shall not affect the validity or enforceability of the remainder of the terms of this License, and without further action by the parties to this agreement, such provision shall be reformed to the minimum extent necessary to make such provision valid and enforceable.
-No term or provision of this License shall be deemed waived and no breach consented to unless such waiver or consent shall be in writing and signed by the party to be charged with such waiver or consent.
-This License constitutes the entire agreement between the parties with respect to the Work licensed here. There are no understandings, agreements or representations with respect to the Work not specified here. Licensor shall not be bound by any additional provisions that may appear in any communication from You. This License may not be modified without the mutual written agreement of the Licensor and You.
-
-----
-
-Copyright (c) 2009 OASIS(r)
-
-This document and possible translations of it may be copied and furnished to
-others, and derivative works that comment on or otherwise explain it or assist
-in its implementation may be prepared, copied, published, and distributed, in
-whole or in part, without restriction of any kind, provided that the above
-copyright notice and this section are included on all such copies and derivative
-works. However, this document itself may not be modified in any way, including
-by removing the copyright notice or references to Ecma International, except as
-needed for the purpose of developing any document or deliverable produced by
-Ecma International (in which case the rules applied to copyrights must be
-followed) or as required to translate it into languages other than English. The
-limited permissions granted above are perpetual and will not be revoked by Ecma
-International or its successors or assigns. This document and the information
-contained herein is provided on an "AS IS" basis and ECMA INTERNATIONAL
-DISCLAIMS ALL WARRANTIES, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO ANY
-WARRANTY THAT THE USE OF THE INFORMATION HEREIN WILL NOT INFRINGE ANY OWNERSHIP
-RIGHTS OR ANY IMPLIED WARRANTIES OF MERCHANTABILITY OR FITNESS FOR A PARTICULAR
-PURPOSE.
-
-----
-
 Copyright (c) 2001 The Internet Society ()
-Copyright (c) 2004 OASIS Open ()
 Copyright (c) 2006 UN/CEFACT ()
 
 This document and translations of it may be copied and furnished to
@@ -10057,6 +9532,41 @@ is actually used and/or redistributed.
 
 ----
 
+Copyright 2008 Google Inc.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are
+met:
+
+    * Redistributions of source code must retain the above copyright
+notice, this list of conditions and the following disclaimer.
+    * Redistributions in binary form must reproduce the above
+copyright notice, this list of conditions and the following disclaimer
+in the documentation and/or other materials provided with the
+distribution.
+    * Neither the name of Google Inc. nor the names of its
+contributors may be used to endorse or promote products derived from
+this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+Code generated by the Protocol Buffer compiler is owned by the owner
+of the input file used when generating it.  This code is not
+standalone and requires a support library to be linked with it.  This
+support library is itself covered by the above license.
+
+----
+
 Copyright 2001-2005 International Business Machines Corporation and Microsoft Corporation
 
 The Service Component Architecture JavaDoc, Interface Definition files,
@@ -10094,194 +9604,6 @@ Architecture Specification and the JavaDoc, Interface Definition Files
 and XSD Files will at all times remain with the Authors.
 
 No other rights are granted by implication, estoppel or otherwise.
-
-----
-
-Copyright (c) 2011-2013, 2016-2017 Oracle America, Inc.
-Copyright 2006 SUN MICROSYSTEMS, INC.
-Copyright 2006, 2013, 2017 Oracle America, Inc.
-Copyright 2006, 4150 SUN MICROSYSTEMS, INC. : Network Circle, Santa Clara, California 95054, U.S.A
-Copyright 2011-2013 Oracle America, Inc. ("Oracle") 500 Oracle Parkway, Redwood Shores, California 94065, U.S.A
-
-Copyright 2006 SUN MICROSYSTEMS, INC.
-4150 Network Circle, Santa Clara, California 95054, U.S.A
-All rights reserved.
-
-LIMITED LICENSE GRANTS
-
-1. License for Evaluation Purposes. Sun hereby grants you a fully-paid,
-non-exclusive, non-transferable, worldwide, limited license (without the
-right to sublicense), under Sun's applicable intellectual property
-rights to view, download, use and reproduce the Specification only for
-the purpose of internal evaluation. This includes (i) developing
-applications intended to run on an implementation of the Specification,
-provided that such applications do not themselves implement any
-portion(s) of the Specification, and (ii) discussing the Specification
-with any third party; and (iii) excerpting brief portions of the
-Specification in oral or written communications which discuss the
-Specification provided that such excerpts do not in the aggregate
-constitute a significant portion of the Specification.
-
-2. License for the Distribution of Compliant Implementations. Sun also
-grants you a perpetual, non-exclusive, non-transferable, worldwide,
-fully paid-up, royalty free, limited license (without the right to
-sublicense) under any applicable copyrights or, subject to the
-provisions of subsection 4 below, patent rights it may have covering the
-Specification to create and/or distribute an Independent Implementation
-of the Specification that: (a) fully implements the Specification
-including all its required interfaces and functionality; (b) does not
-modify, subset, superset or otherwise extend the Licensor Name Space, or
-include any public or protected packages, classes, Java interfaces,
-fields or methods within the Licensor Name Space other than those
-required/authorized by the Specification or Specifications being
-implemented; and (c) passes the Technology Compatibility Kit (including
-satisfying the requirements of the applicable TCK Users Guide) for such
-Specification ("Compliant Implementation"). In addition, the foregoing
-license is expressly conditioned on your not acting outside its scope.
-No license is granted hereunder for any other purpose (including, for
-example, modifying the Specification, other than to the extent of your
-fair use rights, or distributing the Specification to third parties).
-Also, no right, title, or interest in or to any trademarks, service
-marks, or trade names of Sun or Sun's licensors is granted hereunder.
-
-Java, and Java-related logos, marks and names are trademarks or
-registered trademarks of Sun Microsystems, Inc. in the U.S. and other
-countries.
-
-3. Pass-through Conditions. You need not include limitations (a)-(c)
-from the previous paragraph or any other particular "pass through"
-requirements in any license You grant concerning the use of your
-Independent Implementation or products derived from it. However, except
-with respect to Independent Implementations (and products derived from
-them) that satisfy limitations (a)-(c) from the previous paragraph, You
-may neither: (a) grant or otherwise pass through to your licensees any
-licenses under Sun's applicable intellectual property rights; nor (b)
-authorize your licensees to make any claims concerning their
-implementation's compliance with the Specification in question.
-
-4. Reciprocity Concerning Patent Licenses.
-
-a. With respect to any patent claims covered by the license granted
-under subparagraph 2 above that would be infringed by all technically
-feasible implementations of the Specification, such license is
-conditioned upon your offering on fair, reasonable and non-
-discriminatory terms, to any party seeking it from You, a perpetual,
-non-exclusive, non-transferable, worldwide license under Your patent
-rights which are or would be infringed by all technically feasible
-implementations of the Specification to develop, distribute and use a
-Compliant Implementation.
-
-b With respect to any patent claims owned by Sun and covered by the
-license granted under subparagraph 2, whether or not their infringement
-can be avoided in a technically feasible manner when implementing the
-Specification, such license shall terminate with respect to such claims
-if You initiate a claim against Sun that it has, in the course of
-performing its responsibilities as the Specification Lead, induced any
-other entity to infringe Your patent rights.
-
-c Also with respect to any patent claims owned by Sun and covered by the
-license granted under subparagraph 2 above, where the infringement of
-such claims can be avoided in a technically feasible manner when
-implementing the Specification such license, with respect to such
-claims, shall terminate if You initiate a claim against Sun that its
-making, having made, using, offering to sell, selling or importing a
-Compliant Implementation infringes Your patent rights.
-
-5. Definitions. For the purposes of this Agreement: "Independent
-Implementation" shall mean an implementation of the Specification that
-neither derives from any of Sun's source code or binary code materials
-nor, except with an appropriate and separate license from Sun, includes
-any of Sun's source code or binary code materials; "Licensor Name Space"
-shall mean the public class or interface declarations whose names begin
-with "java", "javax", "com.sun" or their equivalents in any subsequent
-naming convention adopted by Sun through the Java Community Process, or
-any recognized successors or replacements thereof; and
-"Technology Compatibility Kit" or "TCK" shall mean the test suite and
-accompanying TCK User's Guide provided by Sun which corresponds to the
-Specification and that was available either (i) from Sun 120 days before
-the first release of Your Independent Implementation that allows its use
-for commercial purposes, or (ii) more recently than 120 days from such
-release but against which You elect to test Your implementation of the
-Specification.
-
-This Agreement will terminate immediately without notice from Sun if you
-breach the Agreement or act outside the scope of the licenses granted
-above.
-
-DISCLAIMER OF WARRANTIES
-
-THE SPECIFICATION IS PROVIDED "AS IS". SUN MAKES NO REPRESENTATIONS OR
-WARRANTIES, EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO,
-WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, NON-
-INFRINGEMENT (INCLUDING AS A CONSEQUENCE OF ANY PRACTICE OR
-IMPLEMENTATION OF THE SPECIFICATION), OR THAT THE CONTENTS OF THE
-SPECIFICATION ARE SUITABLE FOR ANY PURPOSE. This document does not
-represent any commitment to release or implement any portion of the
-Specification in any product. In addition, the Specification could
-include technical inaccuracies or typographical errors.
-
-LIMITATION OF LIABILITY
-
-TO THE EXTENT NOT PROHIBITED BY LAW, IN NO EVENT WILL SUN OR ITS
-LICENSORS BE LIABLE FOR ANY DAMAGES, INCLUDING WITHOUT LIMITATION, LOST
-REVENUE, PROFITS OR DATA, OR FOR SPECIAL, INDIRECT, CONSEQUENTIAL,
-INCIDENTAL OR PUNITIVE DAMAGES, HOWEVER CAUSED AND REGARDLESS OF THE
-THEORY OF LIABILITY, ARISING OUT OF OR RELATED IN ANY WAY TO YOUR
-HAVING, IMPLEMENTING OR OTHERWISE USING THE SPECIFICATION, EVEN IF SUN
-AND/OR ITS LICENSORS HAVE BEEN ADVISED OF THE POSSIBILITY OF SUCH
-DAMAGES.
-
-You will indemnify, hold harmless, and defend Sun and its licensors from
-any claims arising or resulting from: (i) your use of the Specification;
-(ii) the use or distribution of your Java application, applet and/or
-implementation; and/or (iii) any claims that later versions or releases
-of any Specification furnished to you are incompatible with the
-Specification provided to you under this license.
-
-RESTRICTED RIGHTS LEGEND
-
-U.S. Government: If this Specification is being acquired by or on behalf
-of the U.S. Government or by a U.S. Government prime contractor or
-subcontractor (at any tier), then the Government's rights in the
-Software and accompanying documentation shall be only as set forth in
-this license; this is in accordance with 48 C.F.R. 227.7201 through
-227.7202-4 (for Department of Defense (DoD) acquisitions) and with 48
-C.F.R. 2.101 and 12.212 (for non-DoD acquisitions).
-
-REPORT
-
-If you provide Sun with any comments or suggestions concerning the
-Specification ("Feedback"), you hereby: (i) agree that such Feedback is
-provided on a non-proprietary and non-confidential basis, and (ii) grant
-Sun a perpetual, non-exclusive, worldwide, fully paid-up, irrevocable
-license, with the right to sublicense through multiple levels of
-sublicensees, to incorporate, disclose, and use without limitation the
-Feedback for any purpose.
-
-GENERAL TERMS
-
-Any action related to this Agreement will be governed by California law
-and controlling U.S. federal law. The U.N. Convention for the
-International Sale of Goods and the choice of law rules of any
-jurisdiction will not apply.
-
-The Specification is subject to U.S. export control laws and may be
-subject to export or import regulations in other countries. Licensee
-agrees to comply strictly with all such laws and regulations and
-acknowledges that it has the responsibility to obtain such licenses to
-export, re-export or import as may be required after delivery to
-Licensee.
-
-This Agreement is the parties' entire agreement relating to its subject
-matter. It supersedes all prior or contemporaneous oral or written
-communications, proposals, conditions, representations and warranties
-and prevails over any conflicting or additional terms of any quote,
-order, acknowledgment, or other communication between the parties
-relating to its subject matter during the term of this Agreement. No
-modification to this Agreement will be binding, unless in writing and
-signed by an authorized representative of each party.
-
-Rev. April, 2006 Sun/Final/Full
 
 ----
 
@@ -10353,16 +9675,66 @@ You may wish to report any ambiguities, inconsistencies or inaccuracies you may 
 
 ----
 
-(c) Copyright 1993-1997 IBM Corp.
+Copyright (c) 1991-2014 Unicode, Inc.
 
-The original version of this source code and documentation
-is copyrighted and owned by Taligent, Inc., a wholly-owned
-subsidiary of IBM. These materials are provided under terms
-of a License Agreement between Taligent and Sun. This technology
-is protected by multiple US and International patents.
+UNICODE, INC. LICENSE AGREEMENT - DATA FILES AND SOFTWARE
 
-This notice and attribution to Taligent may not be removed.
-Taligent is a registered trademark of Taligent, Inc.
+Unicode Data Files include all data files under the directories
+http://www.unicode.org/Public/, http://www.unicode.org/reports/, and
+http://www.unicode.org/cldr/data/ . Unicode Software includes any source
+code published in the Unicode Standard or under the directories
+http://www.unicode.org/Public/, http://www.unicode.org/reports/, and
+http://www.unicode.org/cldr/data/.
+
+NOTICE TO USER: Carefully read the following legal agreement. BY
+DOWNLOADING, INSTALLING, COPYING OR OTHERWISE USING UNICODE INC.'S DATA
+FILES ("DATA FILES"), AND/OR SOFTWARE ("SOFTWARE"), YOU UNEQUIVOCALLY
+ACCEPT, AND AGREE TO BE BOUND BY, ALL OF THE TERMS AND CONDITIONS OF THIS
+AGREEMENT. IF YOU DO NOT AGREE, DO NOT DOWNLOAD, INSTALL, COPY, DISTRIBUTE
+OR USE THE DATA FILES OR SOFTWARE.
+
+COPYRIGHT AND PERMISSION NOTICE
+
+Copyright ©  Unicode, Inc. All rights reserved. Distributed under
+the Terms of Use in http://www.unicode.org/copyright.html.
+
+Permission is hereby granted, free of charge, to any person obtaining a
+copy of the Unicode data files and any associated documentation (the
+"Data Files") or Unicode software and any associated documentation (the
+"Software") to deal in the Data Files or Software without restriction,
+including without limitation the rights to use, copy, modify, merge,
+publish, distribute, and/or sell copies of the Data Files or Software,
+and to permit persons to whom the Data Files or Software are furnished
+to do so, provided that
+
+(a) the above copyright notice(s) and this permission notice appear with
+all copies of the Data Files or Software,
+
+(b) both the above copyright notice(s) and this permission notice appear
+in associated documentation, and
+
+(c) there is clear notice in each modified Data File or in the Software
+as well as in the documentation associated with the Data File(s) or
+Software that the data or software has been modified.
+
+THE DATA FILES AND SOFTWARE ARE PROVIDED "AS IS", WITHOUT WARRANTY OF
+ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE
+WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+NONINFRINGEMENT OF THIRD PARTY RIGHTS. IN NO EVENT SHALL THE COPYRIGHT
+HOLDER OR HOLDERS INCLUDED IN THIS NOTICE BE LIABLE FOR ANY CLAIM, OR
+ANY SPECIAL INDIRECT OR CONSEQUENTIAL DAMAGES, OR ANY DAMAGES WHATSOEVER
+RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF
+CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
+CONNECTION WITH THE USE OR PERFORMANCE OF THE DATA FILES OR SOFTWARE.
+
+Except as contained in this notice, the name of a copyright holder shall
+not be used in advertising or otherwise to promote the sale, use or
+other dealings in these Data Files or Software without prior written
+authorization of the copyright holder.
+
+Unicode and the Unicode logo are trademarks of Unicode, Inc., and may be
+registered in some jurisdictions. All other trademarks and registered
+trademarks mentioned herein are the property of their respective owners.
 
 ----
 
@@ -10436,7 +9808,6 @@ No other rights are granted by implication, estoppel or otherwise.
 
 (c) 2001-2005 Actional Corporation, BEA Systems, Inc., Computer Associates International, Inc., International Business Machines Corporation, Layer
 (c) 2002-2005 BEA Systems, IBM, Microsoft Corporation, Inc, and TIBCO Software Inc
-(c) 2004-2006 BEA Systems Inc., Computer Associates International, Inc., International Business Machines Corporation, Microsoft Corporation, Inc., SAP AG, Sun Microsystems, and webMethods
 
 WS-Trust Specification
 
@@ -10557,11 +9928,10 @@ No other rights are granted by implication, estoppel or otherwise.
 Copyright (c) 1997-2013 Oracle and/or its affiliates
 Copyright (c) 2000-2019 The Legion Of The Bouncy Castle Inc. (http://www.bouncycastle.org)
 Copyright (c) 2001-2004 by the MX4J contributors
-Copyright (c) 2004-2017 QOS.ch
+Copyright (c) 2004-2011 QOS.ch
 Copyright (c) 2005 Bob Ippolito
 Copyright (c) 2005 Emil A Eklund
 Copyright (c) 2005 Thomas Fuchs (http://script.aculo.us, http://mir.aculo.us)
-Copyright (c) 2005-2006 David Heinemeier Hansson
 Copyright (c) 2006 Neil Crosby
 Copyright (c) 2008 John Resig (jquery.com)
 Copyright (c) 2008 Kohsuke Kawaguchi and codehaus.org
@@ -11479,6 +10849,60 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ----
 
+Copyright (c) 2017, 2021 Oracle and/or its affiliates
+
+The Universal FOSS Exception, Version 1.0
+
+In addition to the rights set forth in the other license(s) included in the
+distribution for this software, data, and/or documentation (collectively the
+"Software," and such licenses collectively with this additional permission the
+"Software License"), the copyright holders wish to facilitate interoperability
+with other software, data, and/or documentation distributed with complete
+corresponding source under a license that is OSI-approved and/or categorized by
+the FSF as free (collectively "Other FOSS"). We therefore hereby grant the
+following additional permission with respect to the use and distribution of the
+Software with Other FOSS, and the constants, function signatures, data
+structures and other invocation methods used to run or interact with each of
+them (as to each, such software's "Interfaces"):
+
+   (i) The Software's Interfaces may, to the extent permitted by the license of
+   the Other FOSS, be copied into, used and distributed in the Other FOSS in
+   order to enable interoperability, without requiring a change to the license
+   of the Other FOSS other than as to any Interfaces of the Software embedded
+   therein. The Software's Interfaces remain at all times under the Software
+   License, including without limitation as used in the Other FOSS (which upon
+   any such use also then contains a portion of the Software under the Software
+   License).
+
+   (ii) The Other FOSS's Interfaces may, to the extent permitted by the license
+   of the Other FOSS, be copied into, used and distributed in the Software in
+   order to enable interoperability, without requiring that such Interfaces be
+   licensed under the terms of the Software License or otherwise altering their
+   original terms, if this does not require any portion of the Software other
+   than such Interfaces to be licensed under the terms other than the Software
+   License.
+
+   (iii) If only Interfaces and no other code is copied between the Software and
+   the Other FOSS in either direction, the use and/or distribution of the
+   Software with the Other FOSS shall not be deemed to require that the Other
+   FOSS be licensed under the license of the Software, other than as to any
+   Interfaces of the Software copied into the Other FOSS. This includes, by way
+   of example and without limitation, statically or dynamically linking the
+   Software together with Other FOSS after enabling interoperability using the
+   Interfaces of one or both, and distributing the resulting combination under
+   different licenses for the respective portions thereof.
+
+For avoidance of doubt, a license which is OSI-approved or categorized by the
+FSF as free, includes, for the purpose of this permission, such licenses with
+additional permissions, and any license that has previously been so-approved or
+categorized as free, even if now deprecated or otherwise no longer recognized as
+approved or free. Nothing in this additional permission grants any right to
+distribute any portion of the Software on terms other than those of the Software
+License or grants any additional permission of any kind for use or distribution
+of the Software in conjunction with software other than Other FOSS.
+
+----
+
 Copyright (c) 1997-2017 Oracle and/or its affiliates
 Copyright (c) 2001-2004, 2011 World Wide Web Consortium (Massachusetts Institute of Technology, European Research Consortium for Informatics and Mathematics, Keio University)
 Copyright (c) 2004-2006 World Wide Web Consortium
@@ -11522,7 +10946,6 @@ times remain with copyright holders.
 ----
 
 (c) 2001 W3C (Massachusetts Institute of Technology, Institut National de Recherche en Informatique et en Automatique, Keio University)
-Copyright (c) 1994-2002 http://www.w3.org/' World Wide Web Consortium, http://www.lcs.mit.edu/' Massachusetts Institute
 Copyright (c) 1994-2005 World Wide Web Consortium, (Massachusetts Institute of Technology, Institut National de Recherche en Informatique et en Automatique, Keio University)
 Copyright (c) 2000 http://www.w3.org/' title World Wide Web
 Copyright (c) 2003 W3C(R) (MIT, ERCIM, Keio)

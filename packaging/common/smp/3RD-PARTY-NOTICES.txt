@@ -151,8 +151,7 @@ Copyright (c) 1997-2013 Oracle and/or its affiliates
 Copyright (c) 1999 Shigeru Chiba
 Copyright (c) 1999 http://www.w3.org
 Copyright (c) 1999-2009 OW2 Consortium <https://www.ow2.org/>
-Copyright (c) 2000-2002, 2005 The Apache Software Foundation
-Copyright (c) 2000-2004 Jason Hunter & Brett McLaughlin
+Copyright (c) 2000-2002 The Apache Software Foundation
 Copyright (c) 2001 The Internet Society ()
 Copyright (c) 2001-2005 freebxml.org
 Copyright (c) 2002 $ copyright Pivotal, Inc.
@@ -177,18 +176,17 @@ Copyright (c) 2015-2018 Google, Inc., Netflix, Inc., Microsoft Corp. and contrib
 Copyright (c) Microsoft Corporation
 Copyright 1996 Aki Yoshida
 Copyright 1997-2008 Sun Microsystems, Inc.
-Copyright 1999-2019 The Apache Software Foundation
+Copyright 1999-2021 The Apache Software Foundation
 Copyright 2000-2007 Apache Software
 Copyright 2001 xa9 Institute
-Copyright 2001-2005 International Business Machines Corporation and Microsoft Corporation
 Copyright 2001-2015 Stephen Colebourne
 Copyright 2002 $ year the original author or authors
+Copyright 2002-2018 Red Hat Inc.
 Copyright 2002-2019 the original author or authors
 Copyright 2003 Wily Technology, Inc.
 Copyright 2004-2006, 2009 Acegi Technology Pty Limited
 Copyright 2006 Thomas Hawtin
 Copyright 2006, 2012-2013 International Business Machines Corp.
-Copyright 2009-2013, 2017 Red Hat, Inc.
 Copyright 2010-2011 Red Hat, Inc., and individual contributors by the authors
 Copyright 2010-2011, 2013-2014 Red Hat, Inc., and individual contributors
 Copyright 2010-2012 Coda Hale and Yammer, Inc.
@@ -196,6 +194,8 @@ Copyright 2011-2017 Google Inc.
 Copyright 2012 Twitter, Inc
 Copyright 2012 Twitter, Inc. http://www.apache.org/licenses/LICENSE-2.0.txt
 Copyright 2013 FasterXML.com
+Copyright 2014 The Netty Project
+Copyright 2014 Twitter
 Copyright 2014-2019 Rafael Winterhalter
 Copyright 2016 Palantir Technologies, Inc.
 Copyright 2017 The Bazel Authors
@@ -2318,6 +2318,8 @@ This Agreement is governed by the laws of the State of New York and the intellec
 
 ----
 
+Copyright 2015-2020 the original author or authors
+
 Eclipse Public License - v 2.0
 
     THE ACCOMPANYING PROGRAM IS PROVIDED UNDER THE TERMS OF THIS ECLIPSE
@@ -2865,6 +2867,7 @@ registered office inside a European Union country.
 
 (c) 2007, 2016 the European Union
 (c) Copyright 2018-2019 European Commission CEF
+Copyright (c) 2000-2015 www.hamcrest.org
 Copyright (c) 2016 OASIS Open
 
 EUROPEAN UNION PUBLIC LICENCE v. 1.2
@@ -2983,6 +2986,7 @@ Without prejudice to specific agreement between parties,
 ----
 
 (c) 2000 Achim D. Brucker
+Copyright (c) 2017, 2021 Oracle and/or its affiliates
 
 This program is free software; you can redistribute it and/or modify it under
 the terms of the GNU General Public License as published by the Free Software
@@ -3313,17 +3317,13 @@ That's all there is to it!
 (c) Steffen Klupsch
 (c) Torsten Neuer
 Copyright (c) 1989, 1991 Free Software Foundation, Inc.
-Copyright (c) 1994-2018 Oracle and/or its affiliates
-Copyright (c) 1996-2017 http://www.oracle.com' Oracle and/or its affiliates
+Copyright (c) 1994-2018, 2021 Oracle and/or its affiliates
 Copyright (c) 2004 World Wide Web Consortium
-Copyright (c) 2006 Google Inc.
 Copyright (c) 2009 by Oracle Corporation
 Copyright (c) 2009-2013 Jason Mehrens
 Copyright (c) 2012-2016 University of Washington
 Copyright 1994-2008 Sun Microsystems, Inc.
 Copyright 2003 Wily Technology, Inc.
-Copyright 2004-2007 The Apache Software Foundation
-Copyright 2011 Red Hat, Inc., and individual contributors by the authors
 Copyright Checker Framework Development Team
 copyright 1996, 2004 Carsten Heinz
 copyright 1997-2004, 2006-2007, 2013 ///////// /
@@ -5875,6 +5875,8 @@ THIS SOFTWARE.
 
 ----
 
+Copyright (c) 2017, 2021 Oracle and/or its affiliates
+
 This library is free software; you can redistribute it and/or modify it under
 the terms of the GNU Library General Public License as published by the Free
 Software Foundation; either version 2 of the License, or (at your option) any
@@ -6894,6 +6896,7 @@ That's all there is to it!
 Copyright (c) 1999 Shigeru Chiba
 Copyright (c) 2004 Bill Burke
 Copyright (c) 2008 Red Hat Middleware LLC
+Copyright (c) 2019 Machinery
 
 This library is free software; you can redistribute it and/or modify it under
 the terms of the GNU Lesser General Public License as published by the Free
@@ -8269,30 +8272,7 @@ program.
 
 ----
 
-Copyright (c) 2009 OASIS(r)
-
-This document and possible translations of it may be copied and furnished to
-others, and derivative works that comment on or otherwise explain it or assist
-in its implementation may be prepared, copied, published, and distributed, in
-whole or in part, without restriction of any kind, provided that the above
-copyright notice and this section are included on all such copies and derivative
-works. However, this document itself may not be modified in any way, including
-by removing the copyright notice or references to Ecma International, except as
-needed for the purpose of developing any document or deliverable produced by
-Ecma International (in which case the rules applied to copyrights must be
-followed) or as required to translate it into languages other than English. The
-limited permissions granted above are perpetual and will not be revoked by Ecma
-International or its successors or assigns. This document and the information
-contained herein is provided on an "AS IS" basis and ECMA INTERNATIONAL
-DISCLAIMS ALL WARRANTIES, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO ANY
-WARRANTY THAT THE USE OF THE INFORMATION HEREIN WILL NOT INFRINGE ANY OWNERSHIP
-RIGHTS OR ANY IMPLIED WARRANTIES OF MERCHANTABILITY OR FITNESS FOR A PARTICULAR
-PURPOSE.
-
-----
-
 Copyright (c) 2001 The Internet Society ()
-Copyright (c) 2004 OASIS Open ()
 
 This document and translations of it may be copied and furnished to
 others, and derivative works that comment on or otherwise explain it
@@ -8328,58 +8308,7 @@ ISO 8879, provided this notice is included in all copies.
 
 ----
 
-Copyright (c) 2000-2004 Jason Hunter & Brett McLaughlin
-
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions
-are met:
-
-1. Redistributions of source code must retain the above copyright
-   notice, this list of conditions, and the following disclaimer.
-
-2. Redistributions in binary form must reproduce the above copyright
-   notice, this list of conditions, and the disclaimer that follows
-   these conditions in the documentation and/or other materials
-   provided with the distribution.
-
-3. The name "JDOM" must not be used to endorse or promote products
-   derived from this software without prior written permission.  For
-   written permission, please contact <request_AT_jdom_DOT_org>.
-
-4. Products derived from this software may not be called "JDOM", nor
-   may "JDOM" appear in their name, without prior written permission
-   from the JDOM Project Management <request_AT_jdom_DOT_org>.
-
-In addition, we request (but do not require) that you include in the
-end-user documentation provided with the redistribution and/or in the
-software itself an acknowledgement equivalent to the following:
-    "This product includes software developed by the
-     JDOM Project (http://www.jdom.org/)."
-Alternatively, the acknowledgment may be graphical using the logos
-available at http://www.jdom.org/images/logos.
-
-THIS SOFTWARE IS PROVIDED ``AS IS'' AND ANY EXPRESSED OR IMPLIED
-WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
-OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-DISCLAIMED.  IN NO EVENT SHALL THE JDOM AUTHORS OR THE PROJECT
-CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF
-USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
-ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
-OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT
-OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
-SUCH DAMAGE.
-
-This software consists of voluntary contributions made by many
-individuals on behalf of the JDOM Project and was originally
-created by Jason Hunter <jhunter_AT_jdom_DOT_org> and
-Brett McLaughlin <brett_AT_jdom_DOT_org>.  For more information
-on the JDOM Project, please see <http://www.jdom.org/>.
-
-----
-
-Copyright (c) 2002-2008 OASIS Open ()
+Copyright (c) 2002-2008 OASIS Open
 
 Oasis WS Security Specification License
 
@@ -8493,6 +8422,41 @@ is actually used and/or redistributed.
 
 ----
 
+Copyright 2008 Google Inc.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are
+met:
+
+    * Redistributions of source code must retain the above copyright
+notice, this list of conditions and the following disclaimer.
+    * Redistributions in binary form must reproduce the above
+copyright notice, this list of conditions and the following disclaimer
+in the documentation and/or other materials provided with the
+distribution.
+    * Neither the name of Google Inc. nor the names of its
+contributors may be used to endorse or promote products derived from
+this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+Code generated by the Protocol Buffer compiler is owned by the owner
+of the input file used when generating it.  This code is not
+standalone and requires a support library to be linked with it.  This
+support library is itself covered by the above license.
+
+----
+
 Copyright 2001-2005 International Business Machines Corporation and Microsoft Corporation
 
 The Service Component Architecture JavaDoc, Interface Definition files,
@@ -8533,213 +8497,66 @@ No other rights are granted by implication, estoppel or otherwise.
 
 ----
 
-Copyright (c) 2011-2013, 2016-2017 Oracle America, Inc.
-Copyright 2006 SUN MICROSYSTEMS, INC.
-Copyright 2006, 2013, 2017 Oracle America, Inc.
-Copyright 2006, 4150 SUN MICROSYSTEMS, INC. : Network Circle, Santa Clara, California 95054, U.S.A
-Copyright 2011-2013 Oracle America, Inc. ("Oracle") 500 Oracle Parkway, Redwood Shores, California 94065, U.S.A
+Copyright (c) 1991-2014 Unicode, Inc.
 
-Copyright 2006 SUN MICROSYSTEMS, INC.
-4150 Network Circle, Santa Clara, California 95054, U.S.A
-All rights reserved.
+UNICODE, INC. LICENSE AGREEMENT - DATA FILES AND SOFTWARE
 
-LIMITED LICENSE GRANTS
+Unicode Data Files include all data files under the directories
+http://www.unicode.org/Public/, http://www.unicode.org/reports/, and
+http://www.unicode.org/cldr/data/ . Unicode Software includes any source
+code published in the Unicode Standard or under the directories
+http://www.unicode.org/Public/, http://www.unicode.org/reports/, and
+http://www.unicode.org/cldr/data/.
 
-1. License for Evaluation Purposes. Sun hereby grants you a fully-paid,
-non-exclusive, non-transferable, worldwide, limited license (without the
-right to sublicense), under Sun's applicable intellectual property
-rights to view, download, use and reproduce the Specification only for
-the purpose of internal evaluation. This includes (i) developing
-applications intended to run on an implementation of the Specification,
-provided that such applications do not themselves implement any
-portion(s) of the Specification, and (ii) discussing the Specification
-with any third party; and (iii) excerpting brief portions of the
-Specification in oral or written communications which discuss the
-Specification provided that such excerpts do not in the aggregate
-constitute a significant portion of the Specification.
+NOTICE TO USER: Carefully read the following legal agreement. BY
+DOWNLOADING, INSTALLING, COPYING OR OTHERWISE USING UNICODE INC.'S DATA
+FILES ("DATA FILES"), AND/OR SOFTWARE ("SOFTWARE"), YOU UNEQUIVOCALLY
+ACCEPT, AND AGREE TO BE BOUND BY, ALL OF THE TERMS AND CONDITIONS OF THIS
+AGREEMENT. IF YOU DO NOT AGREE, DO NOT DOWNLOAD, INSTALL, COPY, DISTRIBUTE
+OR USE THE DATA FILES OR SOFTWARE.
 
-2. License for the Distribution of Compliant Implementations. Sun also
-grants you a perpetual, non-exclusive, non-transferable, worldwide,
-fully paid-up, royalty free, limited license (without the right to
-sublicense) under any applicable copyrights or, subject to the
-provisions of subsection 4 below, patent rights it may have covering the
-Specification to create and/or distribute an Independent Implementation
-of the Specification that: (a) fully implements the Specification
-including all its required interfaces and functionality; (b) does not
-modify, subset, superset or otherwise extend the Licensor Name Space, or
-include any public or protected packages, classes, Java interfaces,
-fields or methods within the Licensor Name Space other than those
-required/authorized by the Specification or Specifications being
-implemented; and (c) passes the Technology Compatibility Kit (including
-satisfying the requirements of the applicable TCK Users Guide) for such
-Specification ("Compliant Implementation"). In addition, the foregoing
-license is expressly conditioned on your not acting outside its scope.
-No license is granted hereunder for any other purpose (including, for
-example, modifying the Specification, other than to the extent of your
-fair use rights, or distributing the Specification to third parties).
-Also, no right, title, or interest in or to any trademarks, service
-marks, or trade names of Sun or Sun's licensors is granted hereunder.
+COPYRIGHT AND PERMISSION NOTICE
 
-Java, and Java-related logos, marks and names are trademarks or
-registered trademarks of Sun Microsystems, Inc. in the U.S. and other
-countries.
+Copyright ©  Unicode, Inc. All rights reserved. Distributed under
+the Terms of Use in http://www.unicode.org/copyright.html.
 
-3. Pass-through Conditions. You need not include limitations (a)-(c)
-from the previous paragraph or any other particular "pass through"
-requirements in any license You grant concerning the use of your
-Independent Implementation or products derived from it. However, except
-with respect to Independent Implementations (and products derived from
-them) that satisfy limitations (a)-(c) from the previous paragraph, You
-may neither: (a) grant or otherwise pass through to your licensees any
-licenses under Sun's applicable intellectual property rights; nor (b)
-authorize your licensees to make any claims concerning their
-implementation's compliance with the Specification in question.
+Permission is hereby granted, free of charge, to any person obtaining a
+copy of the Unicode data files and any associated documentation (the
+"Data Files") or Unicode software and any associated documentation (the
+"Software") to deal in the Data Files or Software without restriction,
+including without limitation the rights to use, copy, modify, merge,
+publish, distribute, and/or sell copies of the Data Files or Software,
+and to permit persons to whom the Data Files or Software are furnished
+to do so, provided that
 
-4. Reciprocity Concerning Patent Licenses.
+(a) the above copyright notice(s) and this permission notice appear with
+all copies of the Data Files or Software,
 
-a. With respect to any patent claims covered by the license granted
-under subparagraph 2 above that would be infringed by all technically
-feasible implementations of the Specification, such license is
-conditioned upon your offering on fair, reasonable and non-
-discriminatory terms, to any party seeking it from You, a perpetual,
-non-exclusive, non-transferable, worldwide license under Your patent
-rights which are or would be infringed by all technically feasible
-implementations of the Specification to develop, distribute and use a
-Compliant Implementation.
+(b) both the above copyright notice(s) and this permission notice appear
+in associated documentation, and
 
-b With respect to any patent claims owned by Sun and covered by the
-license granted under subparagraph 2, whether or not their infringement
-can be avoided in a technically feasible manner when implementing the
-Specification, such license shall terminate with respect to such claims
-if You initiate a claim against Sun that it has, in the course of
-performing its responsibilities as the Specification Lead, induced any
-other entity to infringe Your patent rights.
+(c) there is clear notice in each modified Data File or in the Software
+as well as in the documentation associated with the Data File(s) or
+Software that the data or software has been modified.
 
-c Also with respect to any patent claims owned by Sun and covered by the
-license granted under subparagraph 2 above, where the infringement of
-such claims can be avoided in a technically feasible manner when
-implementing the Specification such license, with respect to such
-claims, shall terminate if You initiate a claim against Sun that its
-making, having made, using, offering to sell, selling or importing a
-Compliant Implementation infringes Your patent rights.
+THE DATA FILES AND SOFTWARE ARE PROVIDED "AS IS", WITHOUT WARRANTY OF
+ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE
+WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+NONINFRINGEMENT OF THIRD PARTY RIGHTS. IN NO EVENT SHALL THE COPYRIGHT
+HOLDER OR HOLDERS INCLUDED IN THIS NOTICE BE LIABLE FOR ANY CLAIM, OR
+ANY SPECIAL INDIRECT OR CONSEQUENTIAL DAMAGES, OR ANY DAMAGES WHATSOEVER
+RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN ACTION OF
+CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF OR IN
+CONNECTION WITH THE USE OR PERFORMANCE OF THE DATA FILES OR SOFTWARE.
 
-5. Definitions. For the purposes of this Agreement: "Independent
-Implementation" shall mean an implementation of the Specification that
-neither derives from any of Sun's source code or binary code materials
-nor, except with an appropriate and separate license from Sun, includes
-any of Sun's source code or binary code materials; "Licensor Name Space"
-shall mean the public class or interface declarations whose names begin
-with "java", "javax", "com.sun" or their equivalents in any subsequent
-naming convention adopted by Sun through the Java Community Process, or
-any recognized successors or replacements thereof; and
-"Technology Compatibility Kit" or "TCK" shall mean the test suite and
-accompanying TCK User's Guide provided by Sun which corresponds to the
-Specification and that was available either (i) from Sun 120 days before
-the first release of Your Independent Implementation that allows its use
-for commercial purposes, or (ii) more recently than 120 days from such
-release but against which You elect to test Your implementation of the
-Specification.
+Except as contained in this notice, the name of a copyright holder shall
+not be used in advertising or otherwise to promote the sale, use or
+other dealings in these Data Files or Software without prior written
+authorization of the copyright holder.
 
-This Agreement will terminate immediately without notice from Sun if you
-breach the Agreement or act outside the scope of the licenses granted
-above.
-
-DISCLAIMER OF WARRANTIES
-
-THE SPECIFICATION IS PROVIDED "AS IS". SUN MAKES NO REPRESENTATIONS OR
-WARRANTIES, EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO,
-WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, NON-
-INFRINGEMENT (INCLUDING AS A CONSEQUENCE OF ANY PRACTICE OR
-IMPLEMENTATION OF THE SPECIFICATION), OR THAT THE CONTENTS OF THE
-SPECIFICATION ARE SUITABLE FOR ANY PURPOSE. This document does not
-represent any commitment to release or implement any portion of the
-Specification in any product. In addition, the Specification could
-include technical inaccuracies or typographical errors.
-
-LIMITATION OF LIABILITY
-
-TO THE EXTENT NOT PROHIBITED BY LAW, IN NO EVENT WILL SUN OR ITS
-LICENSORS BE LIABLE FOR ANY DAMAGES, INCLUDING WITHOUT LIMITATION, LOST
-REVENUE, PROFITS OR DATA, OR FOR SPECIAL, INDIRECT, CONSEQUENTIAL,
-INCIDENTAL OR PUNITIVE DAMAGES, HOWEVER CAUSED AND REGARDLESS OF THE
-THEORY OF LIABILITY, ARISING OUT OF OR RELATED IN ANY WAY TO YOUR
-HAVING, IMPLEMENTING OR OTHERWISE USING THE SPECIFICATION, EVEN IF SUN
-AND/OR ITS LICENSORS HAVE BEEN ADVISED OF THE POSSIBILITY OF SUCH
-DAMAGES.
-
-You will indemnify, hold harmless, and defend Sun and its licensors from
-any claims arising or resulting from: (i) your use of the Specification;
-(ii) the use or distribution of your Java application, applet and/or
-implementation; and/or (iii) any claims that later versions or releases
-of any Specification furnished to you are incompatible with the
-Specification provided to you under this license.
-
-RESTRICTED RIGHTS LEGEND
-
-U.S. Government: If this Specification is being acquired by or on behalf
-of the U.S. Government or by a U.S. Government prime contractor or
-subcontractor (at any tier), then the Government's rights in the
-Software and accompanying documentation shall be only as set forth in
-this license; this is in accordance with 48 C.F.R. 227.7201 through
-227.7202-4 (for Department of Defense (DoD) acquisitions) and with 48
-C.F.R. 2.101 and 12.212 (for non-DoD acquisitions).
-
-REPORT
-
-If you provide Sun with any comments or suggestions concerning the
-Specification ("Feedback"), you hereby: (i) agree that such Feedback is
-provided on a non-proprietary and non-confidential basis, and (ii) grant
-Sun a perpetual, non-exclusive, worldwide, fully paid-up, irrevocable
-license, with the right to sublicense through multiple levels of
-sublicensees, to incorporate, disclose, and use without limitation the
-Feedback for any purpose.
-
-GENERAL TERMS
-
-Any action related to this Agreement will be governed by California law
-and controlling U.S. federal law. The U.N. Convention for the
-International Sale of Goods and the choice of law rules of any
-jurisdiction will not apply.
-
-The Specification is subject to U.S. export control laws and may be
-subject to export or import regulations in other countries. Licensee
-agrees to comply strictly with all such laws and regulations and
-acknowledges that it has the responsibility to obtain such licenses to
-export, re-export or import as may be required after delivery to
-Licensee.
-
-This Agreement is the parties' entire agreement relating to its subject
-matter. It supersedes all prior or contemporaneous oral or written
-communications, proposals, conditions, representations and warranties
-and prevails over any conflicting or additional terms of any quote,
-order, acknowledgment, or other communication between the parties
-relating to its subject matter during the term of this Agreement. No
-modification to this Agreement will be binding, unless in writing and
-signed by an authorized representative of each party.
-
-Rev. April, 2006 Sun/Final/Full
-
-----
-
-Copyright 1993-2002 Sun Microsystems, Inc. 901 San Antonio Road, Palo Alto, California, 94303, U.S.A.
-
-Permission to use, copy, modify, and distribute this software
-and its documentation for NON-COMMERCIAL purposes and without
-fee is hereby granted provided that this copyright notice
-appears in all copies.
-
-The Java source code is the confidential and proprietary information
-of Sun Microsystems, Inc. ("Confidential Information").  You shall
-not disclose such Confidential Information and shall use it only in
-accordance with the terms of the license agreement you entered into
-with Sun.
-
-SUN MAKES NO REPRESENTATIONS OR WARRANTIES ABOUT THE SUITABILITY OF
-THE SOFTWARE, EITHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED
-TO THE IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR A
-PARTICULAR PURPOSE, OR NON-INFRINGEMENT. SUN SHALL NOT BE LIABLE FOR
-ANY DAMAGES SUFFERED BY LICENSEE AS A RESULT OF USING, MODIFYING OR
-DISTRIBUTING THIS SOFTWARE OR ITS DERIVATIVES.
+Unicode and the Unicode logo are trademarks of Unicode, Inc., and may be
+registered in some jurisdictions. All other trademarks and registered
+trademarks mentioned herein are the property of their respective owners.
 
 ----
 
@@ -8813,7 +8630,6 @@ No other rights are granted by implication, estoppel or otherwise.
 
 (c) 2001-2005 Actional Corporation, BEA Systems, Inc., Computer Associates International, Inc., International Business Machines Corporation, Layer
 (c) 2002-2005 BEA Systems, IBM, Microsoft Corporation, Inc, and TIBCO Software Inc
-(c) 2004-2006 BEA Systems Inc., Computer Associates International, Inc., International Business Machines Corporation, Microsoft Corporation, Inc., SAP AG, Sun Microsystems, and webMethods
 
 WS-Trust Specification
 
@@ -8894,7 +8710,7 @@ No other rights are granted by implication, estoppel or otherwise.
 (c) 2004 William Thimbleby
 (c) 2004, 2006 Brooks Moses
 (c) 2005 Christophe Jorssen
-(c) 2005, 2012, 2014 jQuery Foundation, Inc.
+(c) 2005, 2014 jQuery Foundation, Inc.
 (c) 2006 Christoph Kiefer
 (c) 2006 Herbert Voss
 (c) 2006 Michael Franke
@@ -8922,8 +8738,7 @@ No other rights are granted by implication, estoppel or otherwise.
 (c) Zeno Rocha
 Copyright (c) 1997-2013 Oracle and/or its affiliates
 Copyright (c) 2000-2021 The Legion Of The Bouncy Castle Inc. (https://www.bouncycastle.org)
-Copyright (c) 2004-2017 QOS.ch
-Copyright (c) 2005-2006 David Heinemeier Hansson
+Copyright (c) 2004-2011 QOS.ch
 Copyright (c) 2008 Kohsuke Kawaguchi and codehaus.org
 Copyright (c) 2008-2009 Bjoern Hoehrmann <bjoern@hoehrmann.de>
 Copyright (c) 2009 by Oracle Corporation
@@ -9537,29 +9352,6 @@ purpose. It is provided "as is" without express or implied warranty.
 
 ----
 
-Noweb is protected by copyright.  It is not public-domain
-software or shareware, and it is not protected by a ``copyleft''
-agreement like the one used by the Free Software Foundation.
-
-Noweb is available free for any use in any field of endeavor.  You may
-redistribute noweb in whole or in part provided you acknowledge its
-source and include this COPYRIGHT file.  You may modify noweb and
-create derived works, provided you retain this copyright notice, but
-the result may not be called noweb without my written consent.
-
-You may sell noweb if you wish.  For example, you may sell a CD-ROM
-including noweb.
-
-You may sell a derived work, provided that all source code for your
-derived work is available, at no additional charge, to anyone who buys
-your derived work in any form.  You must give permisson for said
-source code to be used and modified under the terms of this license.
-You must state clearly that your work uses or is based on noweb and
-that noweb is available free of change.  You must also request that
-bug reports on your work be reported to you.
-
-----
-
 LICENSE ISSUES
   ==============
 
@@ -9721,6 +9513,60 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ----
 
+Copyright (c) 2017, 2021 Oracle and/or its affiliates
+
+The Universal FOSS Exception, Version 1.0
+
+In addition to the rights set forth in the other license(s) included in the
+distribution for this software, data, and/or documentation (collectively the
+"Software," and such licenses collectively with this additional permission the
+"Software License"), the copyright holders wish to facilitate interoperability
+with other software, data, and/or documentation distributed with complete
+corresponding source under a license that is OSI-approved and/or categorized by
+the FSF as free (collectively "Other FOSS"). We therefore hereby grant the
+following additional permission with respect to the use and distribution of the
+Software with Other FOSS, and the constants, function signatures, data
+structures and other invocation methods used to run or interact with each of
+them (as to each, such software's "Interfaces"):
+
+   (i) The Software's Interfaces may, to the extent permitted by the license of
+   the Other FOSS, be copied into, used and distributed in the Other FOSS in
+   order to enable interoperability, without requiring a change to the license
+   of the Other FOSS other than as to any Interfaces of the Software embedded
+   therein. The Software's Interfaces remain at all times under the Software
+   License, including without limitation as used in the Other FOSS (which upon
+   any such use also then contains a portion of the Software under the Software
+   License).
+
+   (ii) The Other FOSS's Interfaces may, to the extent permitted by the license
+   of the Other FOSS, be copied into, used and distributed in the Software in
+   order to enable interoperability, without requiring that such Interfaces be
+   licensed under the terms of the Software License or otherwise altering their
+   original terms, if this does not require any portion of the Software other
+   than such Interfaces to be licensed under the terms other than the Software
+   License.
+
+   (iii) If only Interfaces and no other code is copied between the Software and
+   the Other FOSS in either direction, the use and/or distribution of the
+   Software with the Other FOSS shall not be deemed to require that the Other
+   FOSS be licensed under the license of the Software, other than as to any
+   Interfaces of the Software copied into the Other FOSS. This includes, by way
+   of example and without limitation, statically or dynamically linking the
+   Software together with Other FOSS after enabling interoperability using the
+   Interfaces of one or both, and distributing the resulting combination under
+   different licenses for the respective portions thereof.
+
+For avoidance of doubt, a license which is OSI-approved or categorized by the
+FSF as free, includes, for the purpose of this permission, such licenses with
+additional permissions, and any license that has previously been so-approved or
+categorized as free, even if now deprecated or otherwise no longer recognized as
+approved or free. Nothing in this additional permission grants any right to
+distribute any portion of the Software on terms other than those of the Software
+License or grants any additional permission of any kind for use or distribution
+of the Software in conjunction with software other than Other FOSS.
+
+----
+
 Copyright (c) 1997-2013 Oracle and/or its affiliates
 Copyright (c) 2004-2006 World Wide Web Consortium
 Copyright (c) 2011 World Wide Web Consortium (Massachusetts Institute of Technology, European Research Consortium for Informatics and Mathematics, Keio University)
@@ -9764,7 +9610,6 @@ times remain with copyright holders.
 ----
 
 (c) 2001 W3C (Massachusetts Institute of Technology, Institut National de Recherche en Informatique et en Automatique, Keio University)
-Copyright (c) 1994-2002 http://www.w3.org/' World Wide Web Consortium, http://www.lcs.mit.edu/' Massachusetts Institute
 Copyright (c) 2000 http://www.w3.org/' title World Wide Web
 Copyright (c) 2001 World Wide Web Consortium, (Massachusetts Institute of Technology, Institut National de Recherche en Informatique et en Automatique, Keio University)
 Copyright (c) 2003 W3C(R) (MIT, ERCIM, Keio)
