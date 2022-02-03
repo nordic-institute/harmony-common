@@ -1,3 +1,9 @@
+harmony-edelivery-access (1.1.0-0) stable; urgency=low
+
+  * Minor release
+
+ -- Nordic Institute for Interoperability Solutions (NIIS) <edelivery@niis.org>  Thu, 03 Feb 2022 08:01:00 +0200
+
 harmony-edelivery-access (1.0.0-0) stable; urgency=low
 
   * Initial release
