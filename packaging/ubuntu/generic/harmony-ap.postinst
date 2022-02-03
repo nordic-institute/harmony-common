@@ -64,11 +64,9 @@ case "$1" in
         INSERT INTO harmony_ap.TB_USER_ROLES (USER_ID, ROLE_ID) VALUES ('1', '1');"
   else
     echo "Schema harmony_ap already exists. Skipping schema creation" >&2
-    DBPASSWORD=$(openssl rand -base64 12)
-    mysql -e \
-      "ALTER USER $DBUSER@localhost IDENTIFIED BY '$DBPASSWORD'; \
-       FLUSH PRIVILEGES;"
   fi
+
+  mkdir -p /etc/harmony-ap/bin
 
   if [ ! -f /etc/harmony-ap/domibus.properties ]; then
     rm -f /etc/harmony-ap/*.jks
@@ -116,7 +114,16 @@ case "$1" in
         /opt/harmony-ap/setup/domibus.properties.template > /etc/harmony-ap/domibus.properties
 
     sed -e "s/{{tls_truststore_password}}/$E_TLSTRUSTSTOREPASS/" \
-        /opt/harmony-ap/setup/setenv.sh.template > /opt/harmony-ap/bin/setenv.sh
+        /opt/harmony-ap/setup/setenv.sh.template > /etc/harmony-ap/bin/setenv.sh
+  fi
+
+  # Required to support upgrade from 1.0.0 to 1.1.0
+  if [ ! -f /etc/harmony-ap/bin/setenv.sh ]; then
+    cp /opt/harmony-ap/setup/setenv.sh /etc/harmony-ap/bin/setenv.sh
+  fi
+
+  if [ ! -f /opt/harmony-ap/bin/setenv.sh ]; then
+    ln -s /etc/harmony-ap/bin/setenv.sh /opt/harmony-ap/bin/setenv.sh
   fi
 
   adduser --system --quiet --no-create-home --shell /usr/sbin/nologin --group --gecos "Harmony user" harmony-ap
