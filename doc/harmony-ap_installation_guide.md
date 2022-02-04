@@ -1,6 +1,6 @@
 # Harmony eDelivery Access - Access Point Installation Guide <!-- omit in toc -->
 
-Version: 1.2  
+Version: 1.3  
 Doc. ID: IG-AP
 
 ---
@@ -12,6 +12,7 @@ Doc. ID: IG-AP
  15.11.2021 | 1.0     | Initial version                                                         |
  07.01.2022 | 1.1     | Add reference to the Static Discovery Configuration Guide \[UG-SDCG\]   | Petteri Kivimäki
  08.01.2022 | 1.2     | Add party name to section [2.5](#25-access-point-installation) and TLS truststore to section [2.10](#210-location-of-configuration-and-generated-passwords) | Petteri Kivimäki
+ 04.02.2022 | 1.3     | Add upgrade instructions                                                | Petteri Kivimäki
  
 ## License <!-- omit in toc -->
 
@@ -36,6 +37,7 @@ To view a copy of this license, visit <https://creativecommons.org/licenses/by-s
   - [2.8 Installing Custom Plugins](#28-installing-custom-plugins)
   - [2.9 Changes made to system during installation](#29-changes-made-to-system-during-installation)
   - [2.10 Location of configuration and generated passwords](#210-location-of-configuration-and-generated-passwords)
+- [3 Version Upgrade](#3-version-upgrade)
  
 ## 1 Introduction
 
@@ -62,7 +64,7 @@ See eDelivery definitions documentation \[[TERMS](#Ref_TERMS)\].
 5. <a id="Ref_UG-DDCG" class="anchor"></a>\[UG-DDCG\] Harmony eDelivery Access - Dynamic Discovery Configuration Guide. Document ID: [UG-DDCG](dynamic_discovery_configuration_guide.md)
 6. <a id="Ref_UG-SDCG" class="anchor"></a>\[UG-SDCG\] Harmony eDelivery Access - Static Discovery Configuration Guide. Document ID: [UG-SDCG](static_discovery_configuration_guide.md)
 
-## 2. Installation
+## 2 Installation
 
 ### 2.1 Prerequisites to Installation
 
@@ -228,3 +230,30 @@ During the installation process, multiple random passwords are generated.
 | Content encryption truststore (`/etc/harmony-ap/ap-truststore.jks`) password | Configuration file: `/etc/harmony-ap/domibus.properties`<br /><br />Properties: `domibus.security.truststore.password`. Content of this keystore can be changed using the administrative UI. |
 | TLS keystore (`/etc/harmony-ap/tls-keystore.jks`) password | Configuration file: `/etc/harmony-ap/conf/server.xml`<br /><br />Property: `keystorePass` |
 | TLS truststore (`/etc/harmony-ap/tls-truststore.jks`) password | Configuration file: `/etc/harmony-ap/conf/server.xml`<br /><br />Property: `truststorePass` |
+
+## 3 Version Upgrade
+
+Before upgrading the Access Point, stop the `harmony-ap` service:
+```bash
+sudo systemctl stop harmony-ap
+```
+
+Update package repository metadata:
+```bash
+sudo apt update
+```
+
+Issue the following command to run the upgrade:
+```bash
+sudo apt upgrade
+```
+
+Once the upgrade has been completed, reload the `harmony-ap` service configuration files:
+```bash
+sudo systemctl daemon-reload
+```
+
+Start the `harmony-ap` service:
+```bash
+sudo systemctl stop harmony-ap
+```
