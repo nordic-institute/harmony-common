@@ -14,7 +14,7 @@ Doc. ID: IG-SMP
  21.12.2021 | 1.2     | Add section [2.11 Securing SMP user interface](#211-securing-smp-user-interface) | Andres Allkivi
  07.01.2021 | 1.3     | Add language types to code blocks                               | Petteri Kivimäki
  22.01.2021 | 1.4     | Add more information about keystores and trustores. Add information about properties stored in database | Petteri Kivimäki
- 06.02.2021 | 1.5     | Add upgrade instructions. Add section about log files.          | Petteri Kivimäki
+ 06.02.2021 | 1.5     | Add upgrade instructions. Add section about log files           | Petteri Kivimäki
  
 ## License <!-- omit in toc -->
 
@@ -296,7 +296,7 @@ Example assuming proxy IP address is `192.168.1.1`:
 Please note that when registering SMP with SML, the externally visible address and hostname have to be used, i.e., the
 address and hostname of reverse proxy, not address and hostname of SMP.
 
-### 2.12 Log files
+### 2.12 Log Files
 
 The SMP application log files are located in the `/var/log/harmony-smp/` directory.
 
