@@ -12,7 +12,7 @@ Doc. ID: IG-AP
  15.11.2021 | 1.0     | Initial version                                                         |
  07.01.2022 | 1.1     | Add reference to the Static Discovery Configuration Guide \[UG-SDCG\]   | Petteri Kivimäki
  08.01.2022 | 1.2     | Add party name to section [2.5](#25-access-point-installation) and TLS truststore to section [2.10](#210-location-of-configuration-and-generated-passwords) | Petteri Kivimäki
- 04.02.2022 | 1.3     | Add upgrade instructions                                                | Petteri Kivimäki
+ 04.02.2022 | 1.3     | Add upgrade instructions. Add section about log files                   | Petteri Kivimäki
  
 ## License <!-- omit in toc -->
 
@@ -37,6 +37,7 @@ To view a copy of this license, visit <https://creativecommons.org/licenses/by-s
   - [2.8 Installing Custom Plugins](#28-installing-custom-plugins)
   - [2.9 Changes made to system during installation](#29-changes-made-to-system-during-installation)
   - [2.10 Location of configuration and generated passwords](#210-location-of-configuration-and-generated-passwords)
+  - [2.11 Log Files](#211-log-files)
 - [3 Version Upgrade](#3-version-upgrade)
  
 ## 1 Introduction
@@ -230,6 +231,10 @@ During the installation process, multiple random passwords are generated.
 | Content encryption truststore (`/etc/harmony-ap/ap-truststore.jks`) password | Configuration file: `/etc/harmony-ap/domibus.properties`<br /><br />Properties: `domibus.security.truststore.password`. Content of this keystore can be changed using the administrative UI. |
 | TLS keystore (`/etc/harmony-ap/tls-keystore.jks`) password | Configuration file: `/etc/harmony-ap/conf/server.xml`<br /><br />Property: `keystorePass` |
 | TLS truststore (`/etc/harmony-ap/tls-truststore.jks`) password | Configuration file: `/etc/harmony-ap/conf/server.xml`<br /><br />Property: `truststorePass` |
+
+### 2.11 Log Files
+
+The Access Point application log files are located in the `/var/log/harmony-ap/` directory.
 
 ## 3 Version Upgrade
 
