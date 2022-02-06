@@ -91,6 +91,8 @@ case "$1" in
        INSERT INTO SMP_CONFIGURATION (PROPERTY, VALUE, CREATED_ON, LAST_UPDATED_ON)
          VALUES ('smp.keystore.filename', 'smp-keystore.jks', NOW(), NOW());
        INSERT INTO SMP_CONFIGURATION (PROPERTY, VALUE, CREATED_ON, LAST_UPDATED_ON)
+         VALUES ('smp.truststore.filename', 'smp-truststore.jks', NOW(), NOW());
+       INSERT INTO SMP_CONFIGURATION (PROPERTY, VALUE, CREATED_ON, LAST_UPDATED_ON)
          VALUES ('authentication.blueCoat.enabled', 'false', NOW(), NOW());
        INSERT INTO SMP_CONFIGURATION (PROPERTY, VALUE, CREATED_ON, LAST_UPDATED_ON)
          VALUES ('configuration.dir', '/etc/harmony-smp/', NOW(), NOW());"
@@ -108,6 +110,15 @@ case "$1" in
     mysql harmony_smp -e  "INSERT INTO SMP_CONFIGURATION (PROPERTY, VALUE, CREATED_ON, LAST_UPDATED_ON)
          VALUES ('smp.keystore.password', '{DEC}{$KEYSTOREPASS}', NOW(), NOW())
          ON DUPLICATE KEY UPDATE VALUE='{DEC}{$KEYSTOREPASS}', LAST_UPDATED_ON=NOW();"
+
+    TRUSTSTOREPASS=$(openssl rand -base64 12)
+    keytool -genkeypair -alias mock -keystore /etc/harmony-smp/smp-truststore.jks -storepass $TRUSTSTOREPASS \
+      -keypass $TRUSTSTOREPASS -dname "CN=mock" 2>/dev/null
+    keytool -delete -alias mock -keystore /etc/harmony-smp/smp-truststore.jks -storepass $TRUSTSTOREPASS 2>/dev/null
+
+    mysql harmony_smp -e  "INSERT INTO SMP_CONFIGURATION (PROPERTY, VALUE, CREATED_ON, LAST_UPDATED_ON)
+         VALUES ('smp.truststore.password', '{DEC}{$TRUSTSTOREPASS}', NOW(), NOW())
+         ON DUPLICATE KEY UPDATE VALUE='{DEC}{$TRUSTSTOREPASS}', LAST_UPDATED_ON=NOW();"
 
     TLSKEYPASS=$(openssl rand -base64 12)
     keytool -genkeypair -keyalg RSA -alias selfsigned -keystore /etc/harmony-smp/tls-keystore.jks -storepass $TLSKEYPASS \
