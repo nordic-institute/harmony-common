@@ -225,10 +225,10 @@ During the installation process, multiple random passwords are generated.
 | **Password purpose** | **Password location** |
 |---|---|
 | Password for `harmony-smp` MySQL user  | Configuration file: `/etc/harmony-smp/tomcat-conf/context.xml` |
-| Content encryption keystore (`/etc/harmony-smp/smp-keystore.jks`) password | MySQL database table `SMP_CONFIGURATION` with key `smp.keystore.password`. The format is `{DEC}{[password}}`. Content of this keystore can be changed using UI.|
-| Content encryption truststore (`/etc/harmony-smp/smp-truststore.jks`) password | MySQL database table `SMP_CONFIGURATION` with key `smp.truststore.password`. The format is `{DEC}{[password}}`. |
+| Content encryption keystore (`/etc/harmony-smp/smp-keystore.jks`) password | MySQL database table `SMP_CONFIGURATION` with key `smp.keystore.password`. The format is `{DEC}{password}`. Content of this keystore can be changed using UI.|
+| Content encryption truststore (`/etc/harmony-smp/smp-truststore.jks`) password | MySQL database table `SMP_CONFIGURATION` with key `smp.truststore.password`. The format is `{DEC}{password}`. |
 | TLS keystore (`/etc/harmony-smp/tls-keystore.jks`) password | Configuration file: `/etc/harmony-smp/tomcat-conf/server.xml`<br /><br />Property: `keystorePass` |
-| TLS truststore (`/etc/harmony-smp/tls-truststore.jks`) password | Configuration file: `/etc/harmony-smp/tomcat-conf/server.xml`<br /><br />Property: `truststorePass` |
+| TLS truststore (`/etc/harmony-smp/tls-truststore.jks`) password | Configuration file: `/etc/harmony-smp/tomcat-conf/server.xml`<br /><br />Property: `truststorePass`<br /><br />Also, the password is stored in: `/opt/harmony-smp/bin/setenv.sh` |
 
 Part of the SMP configuration is stored in MySQL database. The following properties are stored in the `SMP_CONFIGURATION` 
 table. The values are configured when the SMP is installed for the first time.
