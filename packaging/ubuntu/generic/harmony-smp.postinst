@@ -96,54 +96,64 @@ case "$1" in
          VALUES ('configuration.dir', '/etc/harmony-smp/', NOW(), NOW());"
   else
     echo "Schema harmony_smp already exists. Skipping schema creation" >&2
-    mysql -e \
-      "ALTER USER $DBUSER@localhost IDENTIFIED BY '$DBPASSWORD'; \
-       FLUSH PRIVILEGES;"
   fi
 
-  KEYSTOREPASS=$(openssl rand -base64 12)
-  keytool -genkeypair -keyalg RSA -alias selfsigned -keystore /etc/harmony-smp/smp-keystore.jks -storepass $KEYSTOREPASS \
-    -keypass $KEYSTOREPASS -validity 333 -keysize 3072 -dname "$SERVERDN" 2>/dev/null
+  if [ ! -f /etc/harmony-smp/tomcat-conf/server.xml ]; then
+    rm -f /etc/harmony-smp/*.jks
 
-  mysql harmony_smp -e  "INSERT INTO SMP_CONFIGURATION (PROPERTY, VALUE, CREATED_ON, LAST_UPDATED_ON)
+    KEYSTOREPASS=$(openssl rand -base64 12)
+    keytool -genkeypair -keyalg RSA -alias selfsigned -keystore /etc/harmony-smp/smp-keystore.jks -storepass $KEYSTOREPASS \
+        -keypass $KEYSTOREPASS -validity 333 -keysize 3072 -dname "$SERVERDN" 2>/dev/null
+
+    mysql harmony_smp -e  "INSERT INTO SMP_CONFIGURATION (PROPERTY, VALUE, CREATED_ON, LAST_UPDATED_ON)
          VALUES ('smp.keystore.password', '{DEC}{$KEYSTOREPASS}', NOW(), NOW())
          ON DUPLICATE KEY UPDATE VALUE='{DEC}{$KEYSTOREPASS}', LAST_UPDATED_ON=NOW();"
 
-  TLSKEYPASS=$(openssl rand -base64 12)
-  keytool -genkeypair -keyalg RSA -alias selfsigned -keystore /etc/harmony-smp/tls-keystore.jks -storepass $TLSKEYPASS \
-    -keypass $TLSKEYPASS -validity 333 -keysize 3072 -dname "$SERVERDN" 2>/dev/null
+    TLSKEYPASS=$(openssl rand -base64 12)
+    keytool -genkeypair -keyalg RSA -alias selfsigned -keystore /etc/harmony-smp/tls-keystore.jks -storepass $TLSKEYPASS \
+        -keypass $TLSKEYPASS -validity 333 -keysize 3072 -dname "$SERVERDN" 2>/dev/null
 
-  TLSTRUSTSTOREPASS=$(openssl rand -base64 12)
-  keytool -export -alias selfsigned -file /etc/harmony-smp/selfsigned.cer \
-      -keystore /etc/harmony-smp/tls-keystore.jks -storepass $TLSKEYPASS 2>/dev/null
-  keytool -import -noprompt -alias selfsigned -file /etc/harmony-smp/selfsigned.cer \
-      -keystore /etc/harmony-smp/tls-truststore.jks -storepass $TLSTRUSTSTOREPASS 2>/dev/null
-  rm -f /etc/harmony-smp/selfsigned.cer
+    TLSTRUSTSTOREPASS=$(openssl rand -base64 12)
+    keytool -export -alias selfsigned -file /etc/harmony-smp/selfsigned.cer \
+        -keystore /etc/harmony-smp/tls-keystore.jks -storepass $TLSKEYPASS 2>/dev/null
+    keytool -import -noprompt -alias selfsigned -file /etc/harmony-smp/selfsigned.cer \
+        -keystore /etc/harmony-smp/tls-truststore.jks -storepass $TLSTRUSTSTOREPASS 2>/dev/null
+    rm -f /etc/harmony-smp/selfsigned.cer
 
-  E_TLSKEYPASS=$(escape_for_sed "$TLSKEYPASS")
-  E_TLSTRUSTSTOREPASS=$(escape_for_sed "$TLSTRUSTSTOREPASS")
-  sed -e "s/{{tls_keystore_password}}/$E_TLSKEYPASS/" -e "s/{{tls_truststore_password}}/$E_TLSTRUSTSTOREPASS/" \
-      /opt/harmony-smp/setup/server.xml.template > /etc/harmony-smp/tomcat-conf/server.xml
+    E_TLSKEYPASS=$(escape_for_sed "$TLSKEYPASS")
+    E_TLSTRUSTSTOREPASS=$(escape_for_sed "$TLSTRUSTSTOREPASS")
+    sed -e "s/{{tls_keystore_password}}/$E_TLSKEYPASS/" -e "s/{{tls_truststore_password}}/$E_TLSTRUSTSTOREPASS/" \
+        /opt/harmony-smp/setup/server.xml.template > /etc/harmony-smp/tomcat-conf/server.xml
 
-  sed -e "s/{{tls_truststore_password}}/$E_TLSTRUSTSTOREPASS/" \
-      /opt/harmony-smp/setup/setenv.sh.template > /opt/harmony-smp/bin/setenv.sh
+    sed -e "s/{{tls_truststore_password}}/$E_TLSTRUSTSTOREPASS/" \
+        /opt/harmony-smp/setup/setenv.sh.template > /opt/harmony-smp/bin/setenv.sh
 
-  E_DBUSER=$(escape_for_sed "$DBUSER")
-  E_DBPASSWORD=$(escape_for_sed "$DBPASSWORD")
-  sed -e "s/{{dbuser}}/$E_DBUSER/" \
-      -e "s/{{dbpassword}}/$E_DBPASSWORD/" \
-    /opt/harmony-smp/setup/context.xml.template > /etc/harmony-smp/tomcat-conf/context.xml
+    E_DBUSER=$(escape_for_sed "$DBUSER")
+    E_DBPASSWORD=$(escape_for_sed "$DBPASSWORD")
+    sed -e "s/{{dbuser}}/$E_DBUSER/" \
+        -e "s/{{dbpassword}}/$E_DBPASSWORD/" \
+        /opt/harmony-smp/setup/context.xml.template > /etc/harmony-smp/tomcat-conf/context.xml
+  fi
 
-  adduser --system --quiet --no-create-home --shell /usr/sbin/nologin --group --gecos "Harmony user" harmony-smp
+  # Required to support upgrade from 1.0.0 to 1.1.0
+  if [ ! -f /opt/harmony-smp/bin/setenv.sh ]; then
+    echo "Create /opt/harmony-smp/bin/setenv.sh file" >&2
+    cp /opt/harmony-smp/setup/setenv.sh /opt/harmony-smp/bin/setenv.sh
+  fi
+
+  # Make sure the administrative user exists
+  if ! getent passwd harmony-smp > /dev/null; then
+    adduser --system --quiet --no-create-home --shell /usr/sbin/nologin --group --gecos "Harmony user" harmony-smp
+  fi
 
   # check validity of user and group
   if [ "`id -u harmony-smp`" -eq 0 ]; then
-      echo "The Harmony SMP system user 'harmony-smp' must not have uid 0 (root).Please fix this and reinstall this package." >&2
-      exit 1
+    echo "The Harmony SMP system user 'harmony-smp' must not have uid 0 (root).Please fix this and reinstall this package." >&2
+    exit 1
   fi
   if [ "`id -g harmony-smp`" -eq 0 ]; then
-      echo "The Harmony SMP system user 'harmony-smp' must not have root as primary group. Please fix this and reinstall this package." >&2
-      exit 1
+    echo "The Harmony SMP system user 'harmony-smp' must not have root as primary group. Please fix this and reinstall this package." >&2
+    exit 1
   fi
 
   mkdir -p /opt/harmony-smp/temp
