@@ -260,5 +260,5 @@ sudo systemctl daemon-reload
 
 Start the `harmony-ap` service:
 ```bash
-sudo systemctl stop harmony-ap
+sudo systemctl start harmony-ap
 ```
