@@ -152,7 +152,7 @@ case "$1" in
 
   if [ "$(systemctl is-enabled harmony-ap)" = "enabled" ]; then
     systemctl daemon-reload
-    systemctl start harmony-ap >/dev/null || true
+    systemctl start harmony-ap 2>/dev/null || true
   fi
 
   SUCCESS=true
