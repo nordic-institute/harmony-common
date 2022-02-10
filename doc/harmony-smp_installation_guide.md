@@ -302,10 +302,8 @@ The SMP application log files are located in the `/var/log/harmony-smp/` directo
 
 ## 3 Version Upgrade
 
-Before upgrading the SMP, stop the `harmony-smp` service:
-```bash
-sudo systemctl stop harmony-smp
-```
+The the `harmony-smp` service is automatically stopped for the upgrade and automatically restarted after the upgrade if
+starting the service at system startup has been enabled.
 
 Update package repository metadata:
 ```bash
@@ -317,12 +315,8 @@ Issue the following command to run the upgrade:
 sudo apt upgrade
 ```
 
-Once the upgrade has been completed, reload the `harmony-smp` service configuration files:
+If starting the service at system startup hasn't been enabled, the `harmony-smp` service must be started manually after
+the upgrade:
 ```bash
-sudo systemctl daemon-reload
-```
-
-Start the `harmony-smp` service:
-```bash
-sudo systemctl stop harmony-smp
+sudo systemctl start harmony-smp
 ```

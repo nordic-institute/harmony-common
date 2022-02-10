@@ -181,6 +181,11 @@ case "$1" in
   chown -R harmony-smp:harmony-smp /etc/harmony-smp
   chmod -R 0751 /etc/harmony-smp
 
+  if [ "$(systemctl is-enabled harmony-smp)" = "enabled" ]; then
+    systemctl daemon-reload
+    systemctl start harmony-smp >/dev/null || true
+  fi
+
   SUCCESS=true
  ;;
 
