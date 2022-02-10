@@ -21,3 +21,4 @@
 ../../../../common/ap/doNothingPolicy.xml /etc/harmony-ap/policies/
 ../../../../common/ap/LICENSE.txt /usr/share/doc/harmony-ap/
 ../../../../common/ap/3RD-PARTY-NOTICES.txt /usr/share/doc/harmony-ap/
+../../../../../CHANGELOG.md /usr/share/doc/harmony-ap/
