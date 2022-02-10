@@ -239,8 +239,7 @@ The Access Point application log files are located in the `/var/log/harmony-ap/`
 ## 3 Version Upgrade
 
 The the `harmony-ap` service is automatically stopped for the upgrade and automatically restarted after the upgrade if
-starting the service at system startup has been enabled.
-
+the service has been enabled. Otherwise, the service must be manually restarted after the upgrade.
 
 Update package repository metadata:
 ```bash
