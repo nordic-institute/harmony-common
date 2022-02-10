@@ -1,5 +1,5 @@
 FROM ubuntu:20.04
-LABEL maintainer="Nordic Institute for Interoperability Solutions <info@niis.org>"
+LABEL maintainer="Nordic Institute for Interoperability Solutions <edelivery@niis.org>"
 
 ENV DEBIAN_FRONTEND=noninteractive
 

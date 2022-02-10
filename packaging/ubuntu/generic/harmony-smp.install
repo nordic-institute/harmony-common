@@ -13,3 +13,4 @@
 ../../../../common/smp/context.xml.template /opt/harmony-smp/setup/
 ../../../../common/smp/LICENSE.txt /usr/share/doc/harmony-smp/
 ../../../../common/smp/3RD-PARTY-NOTICES.txt /usr/share/doc/harmony-smp/
+../../../../../CHANGELOG.md /usr/share/doc/harmony-smp/

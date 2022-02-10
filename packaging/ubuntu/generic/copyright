@@ -1,6 +1,6 @@
 Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
 Upstream-Name: Harmony eDelivery Access
-Upstream-Contact: Nordic Institute for Interoperability Solutions (NIIS) <info@niis.org>
+Upstream-Contact: Nordic Institute for Interoperability Solutions (NIIS) <edelivery@niis.org>
 Source: https://github.com/nordic-institute/
 
 Files: *
