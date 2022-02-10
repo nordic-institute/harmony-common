@@ -303,7 +303,7 @@ The SMP application log files are located in the `/var/log/harmony-smp/` directo
 ## 3 Version Upgrade
 
 The the `harmony-smp` service is automatically stopped for the upgrade and automatically restarted after the upgrade if
-starting the service at system startup has been enabled.
+the service has been enabled. Otherwise, the service must be manually restarted after the upgrade.
 
 Update package repository metadata:
 ```bash
