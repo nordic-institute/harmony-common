@@ -183,7 +183,7 @@ case "$1" in
 
   if [ "$(systemctl is-enabled harmony-smp)" = "enabled" ]; then
     systemctl daemon-reload
-    systemctl start harmony-smp >/dev/null || true
+    systemctl start harmony-smp 2>/dev/null || true
   fi
 
   SUCCESS=true
