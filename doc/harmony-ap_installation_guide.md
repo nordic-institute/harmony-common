@@ -238,10 +238,9 @@ The Access Point application log files are located in the `/var/log/harmony-ap/`
 
 ## 3 Version Upgrade
 
-Before upgrading the Access Point, stop the `harmony-ap` service:
-```bash
-sudo systemctl stop harmony-ap
-```
+The the `harmony-ap` service is automatically stopped for the upgrade and automatically restarted after the upgrade if
+starting the service at system startup has been enabled.
+
 
 Update package repository metadata:
 ```bash
@@ -253,12 +252,8 @@ Issue the following command to run the upgrade:
 sudo apt upgrade
 ```
 
-Once the upgrade has been completed, reload the `harmony-ap` service configuration files:
-```bash
-sudo systemctl daemon-reload
-```
-
-Start the `harmony-ap` service:
+If starting the service at system startup hasn't been enabled, the `harmony-ap` service must be started manually after
+the upgrade:
 ```bash
 sudo systemctl start harmony-ap
 ```

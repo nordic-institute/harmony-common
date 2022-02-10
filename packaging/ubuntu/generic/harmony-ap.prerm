@@ -1,4 +1,0 @@
-#!/bin/bash
-set -e
-
-systemctl stop harmony-ap >/dev/null || true
