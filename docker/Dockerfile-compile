@@ -1,5 +1,5 @@
 FROM maven:3.6-jdk-8
-LABEL maintainer="Nordic Institute for Interoperability Solutions <info@niis.org>"
+LABEL maintainer="Nordic Institute for Interoperability Solutions <edelivery@niis.org>"
 
 ENV DEBIAN_FRONTEND=noninteractive
 

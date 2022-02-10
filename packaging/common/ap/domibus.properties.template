@@ -17,7 +17,7 @@
 #domibus.ui.support.team.name=Nordic Institute for Interoperability Solutions (NIIS)
 
 #support team email
-#domibus.ui.support.team.email=info@niis.org
+#domibus.ui.support.team.email=edelivery@niis.org
 
 #Max rows for CSV export
 #domibus.ui.csv.rows.max=10000
