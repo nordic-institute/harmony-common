@@ -1,6 +1,6 @@
 # Harmony eDelivery Access - Dynamic Discovery Configuration Guide <!-- omit in toc -->
 
-Version: 1.1  
+Version: 1.2  
 Doc. ID: UG-DDCG
 
 ---
@@ -10,7 +10,8 @@ Doc. ID: UG-DDCG
  Date       | Version | Description                                                     | Author
  ---------- | ------- | --------------------------------------------------------------- | --------------------
  03.12.2021 | 1.0     | Initial version                                                 |
- 22.01.2022 | 1.1     | Add information about keys and certficates. Add more configuration examples. | Petteri Kivimäki
+ 22.01.2022 | 1.1     | Add information about keys and certficates. Add more configuration examples | Petteri Kivimäki
+ 06.01.2022 | 1.2     | Minor updates                                                   | Petteri Kivimäki
   
 ## License <!-- omit in toc -->
 
@@ -208,10 +209,10 @@ In case the sign keystore and/or sign trustore need to be accessed on command li
 the configuration database using the following command:
 
 ```bash
-sudo mysql -e "use harmony_smp; select PROPERTY, VALUE from SMP_CONFIGURATION where PROPERTY in('smp.keystore.password', 'smp.truststore.password.decrypted');"
+sudo mysql -e "use harmony_smp; select PROPERTY, VALUE from SMP_CONFIGURATION where PROPERTY in('smp.keystore.password', 'smp.truststore.password');"
 ```
 
-The value of the `smp.keystore.password ` property is `{DEC}{$PASSWORD}` where `$PASSWORD` is the sign keystore password.
+The value of the properties is in format `{DEC}{$PASSWORD}` where `$PASSWORD` is the sign keystore/truststore password.
 The Static Discovery Configuration Guide \[[UG-SDCG](static_discovery_configuration_guide.md)\] contains a lot of examples
 how to manage keystores and truststores on command line.
 
