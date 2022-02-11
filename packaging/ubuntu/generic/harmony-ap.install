@@ -6,6 +6,7 @@
 ../../../../commonbin/tomcat9/lib/* /opt/harmony-ap/lib/
 ../../../../commonbin/tomcat9/conf/* /etc/harmony-ap/tomcat-conf/
 ../../../../common/ap/logging.properties /etc/harmony-ap/tomcat-conf/
+../../../../common/ap/setenv.sh /opt/harmony-ap/setup/
 ../../../../common/ap/setenv.sh.template /opt/harmony-ap/setup/
 ../../../../common/ap/activemq.xml /etc/harmony-ap/internal/
 ../../../../common/ap/logback.xml /etc/harmony-ap/

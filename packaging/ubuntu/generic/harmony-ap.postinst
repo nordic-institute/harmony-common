@@ -64,10 +64,6 @@ case "$1" in
         INSERT INTO harmony_ap.TB_USER_ROLES (USER_ID, ROLE_ID) VALUES ('1', '1');"
   else
     echo "Schema harmony_ap already exists. Skipping schema creation" >&2
-    DBPASSWORD=$(openssl rand -base64 12)
-    mysql -e \
-      "ALTER USER $DBUSER@localhost IDENTIFIED BY '$DBPASSWORD'; \
-       FLUSH PRIVILEGES;"
   fi
 
   if [ ! -f /etc/harmony-ap/domibus.properties ]; then
@@ -119,7 +115,16 @@ case "$1" in
         /opt/harmony-ap/setup/setenv.sh.template > /opt/harmony-ap/bin/setenv.sh
   fi
 
-  adduser --system --quiet --no-create-home --shell /usr/sbin/nologin --group --gecos "Harmony user" harmony-ap
+  # Required to support upgrade from 1.0.0 to 1.1.0
+  if [ ! -f /opt/harmony-ap/bin/setenv.sh ]; then
+    echo "Create /opt/harmony-ap/bin/setenv.sh file" >&2
+    cp /opt/harmony-ap/setup/setenv.sh /opt/harmony-ap/bin/setenv.sh
+  fi
+
+  # Make sure the administrative user exists
+  if ! getent passwd harmony-ap > /dev/null; then
+    adduser --system --quiet --no-create-home --shell /usr/sbin/nologin --group --gecos "Harmony user" harmony-ap
+  fi
 
   # check validity of user and group
   if [ "`id -u harmony-ap`" -eq 0 ]; then
@@ -144,6 +149,11 @@ case "$1" in
   # config folder permissions
   chown -R harmony-ap:harmony-ap /etc/harmony-ap
   chmod -R 0751 /etc/harmony-ap
+
+  if [ "$(systemctl is-enabled harmony-ap)" = "enabled" ]; then
+    systemctl daemon-reload
+    systemctl start harmony-ap 2>/dev/null || true
+  fi
 
   SUCCESS=true
  ;;
