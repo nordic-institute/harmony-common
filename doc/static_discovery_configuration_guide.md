@@ -1,6 +1,6 @@
 # Harmony eDelivery Access - Static Discovery Configuration Guide <!-- omit in toc -->
 
-Version: 1.1  
+Version: 1.2  
 Doc. ID: UG-SDCG
 
 ---
@@ -11,6 +11,7 @@ Doc. ID: UG-SDCG
  ---------- | ------- | --------------------------------------------------------------- | --------------------
  30.12.2021 | 1.0     | Initial version                                                 | Petteri Kivimäki
  08.01.2022 | 1.1     | Remove sections about creating TLS truststore manually, update One-Way SSL configuration instructions, update example configuration | Petteri Kivimäki
+ 16.02.2022 | 1.2     | Minor updates on SSL configuration details                      | Petteri Kivimäki
  
 ## License <!-- omit in toc -->
 
@@ -171,7 +172,7 @@ on the configuration that's used.
 
 **Note:** In the `/etc/harmony-ap/clientauthentication.xml` configuration examples, the `disableCNCheck` attribute specifies 
 whether it is checked if the host name specified in the URL matches the host name specified in the Common Name (CN) of
-the server's certificate. In the examples the value is `true` which means that the check is disabled. However, in 
+the server's TLS certificate. In the examples the value is `true` which means that the check is disabled. However, in 
 production environment the value should be set to `false`. In the default configuration the value of the `disableCNCheck` 
 attribute is `false`.
 
@@ -575,8 +576,8 @@ sudo keytool -import -alias org1_gw -file org1_tls_certificate.cer -keystore /et
 
 This step requires shell access to the host.
 
-One-Way SSL is configured by default. However, the configuration has to be updated to allow the use of self-signed 
-certificates. On Access Points 1 (`org1_gw`) and Access Point 2 (`org2_gw`), set the value of the `disableCNCheck`
+One-Way SSL is configured by default. However, the configuration should be updated to disable the host name verification
+of the TLS certificate. On Access Points 1 (`org1_gw`) and Access Point 2 (`org2_gw`), set the value of the `disableCNCheck`
  attribute to `true` in the `/etc/harmony-ap/clientauthentication.xml` configuration file:
 
 ```xml
