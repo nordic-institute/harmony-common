@@ -1,6 +1,6 @@
 # Harmony eDelivery Access - Dynamic Discovery Configuration Guide <!-- omit in toc -->
 
-Version: 1.2  
+Version: 1.3  
 Doc. ID: UG-DDCG
 
 ---
@@ -12,6 +12,7 @@ Doc. ID: UG-DDCG
  03.12.2021 | 1.0     | Initial version                                                 |
  22.01.2022 | 1.1     | Add information about keys and certficates. Add more configuration examples | Petteri Kivimäki
  06.01.2022 | 1.2     | Minor updates                                                   | Petteri Kivimäki
+ 16.02.2022 | 1.3     | Minor updates                                                   | Petteri Kivimäki
   
 ## License <!-- omit in toc -->
 
@@ -94,7 +95,8 @@ Before starting the dynamic discovery configuration process, please complete the
 
 Sending parties (corners `C1` and `C2`) do not have to be registered in SMP or SML, only receiving parties do. Instead, 
 to enable dynamic discovery, sending parties must configure the values of the following properties in the 
-`/etc/harmony-ap/domibus.properties` configuration file:
+`/etc/harmony-ap/domibus.properties` configuration file. The values are configured automatically during the Access Point
+installation process, but they can be changed manually afterwards.
 
 ```properties
 # Whether to use dynamic discovery or not
@@ -186,7 +188,9 @@ must be imported following the same principles.
 Before starting the dynamic discovery configuration process, please complete the Access Point and SMP installation according to the corresponding installation guide:
 
 - Harmony eDelivery Access - Access Point Installation Guide \[[IG-AS](harmony-ap_installation_guide.md)\];
-  - **Note:** During the installation, when the system asks do you want the Access Point installation to use dynamic discovery, please answer **Yes**.
+  - **Note:** During the installation, when the system asks do you want the Access Point installation to use dynamic discovery, 
+  please answer **No** if the Access Point is going to be used for receiving messages only. If the Access Point is going to 
+  be used for sending messages too, then please answer **Yes**.
 - Harmony eDelivery Access - Service Metadata Publisher Installation Guide \[[IG-SMP](harmony-smp_installation_guide.md)\].
   - **Note:** During the installation, when the system asks do you want the SMP installation to publish information to 
   some Service Metadata Locator (SML), please answer **Yes**.
@@ -219,7 +223,7 @@ how to manage keystores and truststores on command line.
 Instead, the SMP TLS keystore can be managed on command line only. The password of the TLS keystore can be found in 
 the `/etc/harmony-smp/tomcat-conf/server.xml` file in the `keystorePass` property. 
 
-The TLS certificate used by the SML must be trusted by the SMP. It means that the SML's public TLS certificates 
+The TLS certificate used by the SML must be trusted by the SMP. It means that the SML's public TLS certificate 
 must be imported to the SMP's TLS truststore (`/etc/harmony-smp/tls-truststore.jks`). The password of the TLS truststore 
 can be found in the `/etc/harmony-smp/tomcat-conf/server.xml` file in the `truststorePass` property.
 
