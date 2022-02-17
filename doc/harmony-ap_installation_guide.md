@@ -163,9 +163,12 @@ Upon the first installation of the Access Point, the system asks for the followi
 - initial password for the administrative user;
 - party name of the Access Point owner organisation;
   - if you don't know the party name of the owner, use the default value (`selfsigned`);
-- `Distinguished Name` for generated self-signed content encryption and TLS certificates;
-  - for example: `CN=example.com, O=My Organisation, C=FI`;
-  - *note:* different eDelivery policy domains may have different requirements for the `Distinguished Name`. If you're not sure about the requirements, please contact the domain authority of the policy domain where the Access Point is registered.
+- `Distinguished Name` for generated self-signed content and transport certificates;
+  - For example:
+      ```bash
+      CN=example.com, O=My Organisation, C=FI
+      ```
+  - *Note:* different eDelivery policy domains may have different requirements for the `Distinguished Name`. If you're not sure about the requirements, please contact the domain authority of the policy domain where the Access Point is registered.
 
 See the Static Discovery Configuration Guide \[[UG-SDCG](static_discovery_configuration_guide.md)\] and the Dynamic Discovery Configuration Guide \[[UG-DDCG](dynamic_discovery_configuration_guide.md)\] for more information about how to configure different discovery options.
 
