@@ -1,7 +1,7 @@
 Source: harmony-edelivery-access
 Section: web
 Priority: optional
-Maintainer: Nordic Institute for Interoperability Solutions (NIIS) <info@niis.org>
+Maintainer: Nordic Institute for Interoperability Solutions (NIIS) <edelivery@niis.org>
 Build-Depends: debhelper (>= 12)
 Standards-Version: 3.8.3
 

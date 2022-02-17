@@ -1,0 +1,5 @@
+#!/bin/bash
+
+if [ "$1" = "upgrade" ]; then
+  systemctl stop harmony-smp 2>/dev/null || true
+fi

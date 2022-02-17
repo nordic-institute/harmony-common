@@ -14,7 +14,7 @@ cleanup() {
   if [ ! "$SUCCESS" = true ]; then
     rm -f /etc/harmony-ap/*.jks
     if [ "$DROPDBONERROR" = true ]; then
-      mysql -e "DROP SCHEMA harmony_ap; DROP USER harmony@localhost"
+      mysql -e "DROP SCHEMA harmony_ap; DROP USER harmony_ap@localhost"
     fi;
   fi
 }
@@ -35,6 +35,8 @@ case "$1" in
   AUSER="$RET"
   db_get harmony-ap/adminpassword
   APASSWORD="$RET"
+  db_get harmony-ap/partyname
+  PARTYNAME="$RET"
   db_get harmony-ap/serverdn
   SERVERDN="$RET"
   db_stop
@@ -62,10 +64,6 @@ case "$1" in
         INSERT INTO harmony_ap.TB_USER_ROLES (USER_ID, ROLE_ID) VALUES ('1', '1');"
   else
     echo "Schema harmony_ap already exists. Skipping schema creation" >&2
-    DBPASSWORD=$(openssl rand -base64 12)
-    mysql -e \
-      "ALTER USER $DBUSER@localhost IDENTIFIED BY '$DBPASSWORD'; \
-       FLUSH PRIVILEGES;"
   fi
 
   if [ ! -f /etc/harmony-ap/domibus.properties ]; then
@@ -74,41 +72,66 @@ case "$1" in
     KEYSTOREPASS=$(openssl rand -base64 12)
     TRUSTSTOREPASS=$(openssl rand -base64 12)
     TLSKEYPASS=$(openssl rand -base64 12)
+    TLSTRUSTSTOREPASS=$(openssl rand -base64 12)
 
-    keytool -genkeypair -keyalg RSA -alias selfsigned -keystore /etc/harmony-ap/ap-keystore.jks -storepass $KEYSTOREPASS \
-      -keypass $KEYSTOREPASS -validity 333 -keysize 3096 -dname "$SERVERDN" 2>/dev/null
+    keytool -genkeypair -keyalg RSA -alias $PARTYNAME -keystore /etc/harmony-ap/ap-keystore.jks -storepass $KEYSTOREPASS \
+      -keypass $KEYSTOREPASS -validity 333 -keysize 3072 -dname "$SERVERDN" 2>/dev/null
 
-    keytool -genkeypair -keyalg RSA -alias selfsigned -keystore /etc/harmony-ap/tls-keystore.jks -storepass $TLSKEYPASS \
-      -keypass $TLSKEYPASS -validity 333 -keysize 3096 -dname "$SERVERDN" 2>/dev/null
+    keytool -genkeypair -keyalg RSA -alias $PARTYNAME -keystore /etc/harmony-ap/tls-keystore.jks -storepass $TLSKEYPASS \
+      -keypass $TLSKEYPASS -validity 333 -keysize 3072 -dname "$SERVERDN" 2>/dev/null
 
     keytool -genkeypair -alias mock -keystore /etc/harmony-ap/ap-truststore.jks -storepass $TRUSTSTOREPASS \
       -keypass $TRUSTSTOREPASS -dname "CN=mock" 2>/dev/null
     keytool -delete -alias mock -keystore /etc/harmony-ap/ap-truststore.jks -storepass $TRUSTSTOREPASS 2>/dev/null
+
+    keytool -export -alias $PARTYNAME -file /etc/harmony-ap/selfsigned.cer \
+      -keystore /etc/harmony-ap/tls-keystore.jks -storepass $TLSKEYPASS 2>/dev/null
+    keytool -import -noprompt -alias $PARTYNAME -file /etc/harmony-ap/selfsigned.cer \
+      -keystore /etc/harmony-ap/tls-truststore.jks -storepass $TLSTRUSTSTOREPASS 2>/dev/null
+    rm -f /etc/harmony-ap/selfsigned.cer
 
     E_KEYSTOREPASS=$(escape_for_sed "$KEYSTOREPASS")
     E_TRUSTSTOREPASS=$(escape_for_sed "$TRUSTSTOREPASS")
     E_DBUSER=$(escape_for_sed "$DBUSER")
     E_DBPASSWORD=$(escape_for_sed "$DBPASSWORD")
     E_TLSKEYPASS=$(escape_for_sed "$TLSKEYPASS")
+    E_TLSTRUSTSTOREPASS=$(escape_for_sed "$TLSTRUSTSTOREPASS")
     E_SMLZONE=$(escape_for_sed "$SMLZONE")
+    E_PARTYNAME=$(escape_for_sed "$PARTYNAME")
 
+    sed -e "s/{{tls_keystore_password}}/$E_TLSKEYPASS/" -e "s/{{tls_truststore_password}}/$E_TLSTRUSTSTOREPASS/" \
+        /opt/harmony-ap/setup/server.xml.template > /etc/harmony-ap/tomcat-conf/server.xml
 
-    sed -e "s/{{tls_keystore_password}}/$E_TLSKEYPASS/" /opt/harmony-ap/setup/server.xml.template > /etc/harmony-ap/tomcat-conf/server.xml
+    sed -e "s/{{tls_truststore_password}}/$E_TLSTRUSTSTOREPASS/" \
+        /opt/harmony-ap/setup/clientauthentication.xml.template > /etc/harmony-ap/clientauthentication.xml
 
     sed -e "s/{{keystorepass}}/$E_KEYSTOREPASS/" -e "s/{{truststorepass}}/$E_TRUSTSTOREPASS/" \
       -e "s/{{dbuser}}/$E_DBUSER/" -e "s/{{dbpassword}}/$E_DBPASSWORD/" \
       -e "s/{{dynamicdiscovery}}/$USEDYNAMIC/" -e "s/{{smlzone}}/$E_SMLZONE/" \
+      -e "s/{{partyname}}/$E_PARTYNAME/" \
         /opt/harmony-ap/setup/domibus.properties.template > /etc/harmony-ap/domibus.properties
+
+    sed -e "s/{{tls_truststore_password}}/$E_TLSTRUSTSTOREPASS/" \
+        /opt/harmony-ap/setup/setenv.sh.template > /opt/harmony-ap/bin/setenv.sh
   fi
 
-  adduser --system --quiet --no-create-home --shell /usr/sbin/nologin --group --gecos "Harmony user" harmony-ap
+  # Required to support upgrade from 1.0.0 to 1.1.0
+  if [ ! -f /opt/harmony-ap/bin/setenv.sh ]; then
+    echo "Create /opt/harmony-ap/bin/setenv.sh file" >&2
+    cp /opt/harmony-ap/setup/setenv.sh /opt/harmony-ap/bin/setenv.sh
+  fi
+
+  # Make sure the administrative user exists
+  if ! getent passwd harmony-ap > /dev/null; then
+    adduser --system --quiet --no-create-home --shell /usr/sbin/nologin --group --gecos "Harmony user" harmony-ap
+  fi
 
   # check validity of user and group
   if [ "`id -u harmony-ap`" -eq 0 ]; then
       echo "The Harmony AP system user must not have uid 0 (root).Please fix this and reinstall this package." >&2
       exit 1
   fi
-  if [ "`id -g harmony`" -eq 0 ]; then
+  if [ "`id -g harmony-ap`" -eq 0 ]; then
       echo "The Harmony AP system user must not have root as primary group. Please fix this and reinstall this package." >&2
       exit 1
   fi
@@ -126,6 +149,11 @@ case "$1" in
   # config folder permissions
   chown -R harmony-ap:harmony-ap /etc/harmony-ap
   chmod -R 0751 /etc/harmony-ap
+
+  if [ "$(systemctl is-enabled harmony-ap)" = "enabled" ]; then
+    systemctl daemon-reload
+    systemctl start harmony-ap 2>/dev/null || true
+  fi
 
   SUCCESS=true
  ;;
