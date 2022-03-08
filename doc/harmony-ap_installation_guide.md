@@ -189,7 +189,8 @@ sudo systemctl enable harmony-ap
 Ensure that the `harmony-ap` service is in the `running` state (example output follows):
   ```bash
   sudo systemctl list-units "harmony-ap*"
-
+  ```
+  ```bash
   UNIT                           LOAD   ACTIVE SUB     DESCRIPTION
   harmony-ap.service             loaded active running Harmony eDelivery Access - Access Point
   ```
