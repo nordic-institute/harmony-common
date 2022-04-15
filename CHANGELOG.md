@@ -1,5 +1,7 @@
 # Changelog
 
+## 1.2.0 - 202x-xx-xx
+
 ## 1.1.0 - 2022-02-17
 
 - NEDS-24: Add support for upgrading Access Point using package manager.
