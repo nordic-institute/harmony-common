@@ -15,7 +15,7 @@ Doc. ID: IG-SMP
  07.01.2021 | 1.3     | Add language types to code blocks                               | Petteri Kivimäki
  22.01.2021 | 1.4     | Add more information about keystores and trustores. Add information about properties stored in database | Petteri Kivimäki
  06.02.2021 | 1.5     | Add upgrade instructions. Add section about log files           | Petteri Kivimäki
- 23.04.2022 | 1.6     | Add port number to the SMP Installation section                 | Petteri Kivimäki
+ 23.04.2022 | 1.6     | Add port number to the SMP Installation section. Update package repository URL | Petteri Kivimäki
  
 ## License <!-- omit in toc -->
 
@@ -155,7 +155,7 @@ The repository key details:
 
 Add Harmony eDelivery Access package repository:
 ```bash
-sudo apt-add-repository -y "deb https://artifactory.niis.org/harmony-release-deb $(lsb_release -sc)-current main"
+sudo apt-add-repository -y "deb https://artifactory.niis.org/artifactory/harmony-release-deb $(lsb_release -sc)-current main"
 ```
 
 Update package repository metadata:

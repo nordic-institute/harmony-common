@@ -13,7 +13,7 @@ Doc. ID: IG-AP
  07.01.2022 | 1.1     | Add reference to the Static Discovery Configuration Guide \[UG-SDCG\]   | Petteri Kivimäki
  08.01.2022 | 1.2     | Add party name to section [2.5](#25-access-point-installation) and TLS truststore to section [2.10](#210-location-of-configuration-and-generated-passwords) | Petteri Kivimäki
  04.02.2022 | 1.3     | Add upgrade instructions. Add section about log files                   | Petteri Kivimäki
- 23.04.2022 | 1.4     | Add port number to the Access Point Installation section. Update package repository URL. | Petteri Kivimäki
+ 23.04.2022 | 1.4     | Add port number to the Access Point Installation section. Update package repository URL | Petteri Kivimäki
 
 ## License <!-- omit in toc -->
 
