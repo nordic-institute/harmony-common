@@ -1,6 +1,6 @@
 # Harmony eDelivery Access - Service Metadata Publisher Installation Guide <!-- omit in toc -->
 
-Version: 1.5  
+Version: 1.6
 Doc. ID: IG-SMP
 
 ---
@@ -15,6 +15,7 @@ Doc. ID: IG-SMP
  07.01.2021 | 1.3     | Add language types to code blocks                               | Petteri Kivimäki
  22.01.2021 | 1.4     | Add more information about keystores and trustores. Add information about properties stored in database | Petteri Kivimäki
  06.02.2021 | 1.5     | Add upgrade instructions. Add section about log files           | Petteri Kivimäki
+ 23.04.2022 | 1.6     | Add port number to the SMP Installation section                 | Petteri Kivimäki
  
 ## License <!-- omit in toc -->
 
@@ -91,12 +92,14 @@ The table below lists the required connections between different components.
 **Connection Type** | **Source** | **Target** | **Target Ports** | **Protocol** | **Note** |
 -----------|------------|-----------|-----------|-----------|-----------|
 Out | SMP | SML | 443, 8443, other | tcp | |
-In  | Data Exchange Partner Access Point | SMP | 8443 | tcp | URL paths: `/{participantIdentifier}` and `/{participantIdentifier}/services/{documentIdentifier}` |
-In | Admin | SMP | 8443 | tcp | Source in the internal network<br /><br />URL paths: `/` and `/ui` |
+In  | Data Exchange Partner Access Point | SMP | 8443* | tcp | URL paths: `/{participantIdentifier}` and `/{participantIdentifier}/services/{documentIdentifier}` |
+In | Admin | SMP | 8443* | tcp | Source in the internal network<br /><br />URL paths: `/` and `/ui` |
+
+\* The port number for inbound connections is configurable and the value can be set during the SMP installation process. Port `8443` is used by default.
 
 It is strongly recommended to protect the SMP from unwanted access using a firewall (hardware or software based). The firewall can be applied to both incoming and outgoing connections depending on the security requirements of the environment where the SMP is deployed. It is recommended to allow incoming traffic to specific ports only from explicitly defined sources using IP filtering. **Special attention should be paid with the firewall configuration since incorrect configuration may leave the SMP vulnerable to exploits and attacks.**
 
-In addition, it's strongly recommended to use URL path filtering for the SMP since the admin UI and metadata query interface run on port `8443`.
+In addition, it's strongly recommended to use URL path filtering for the SMP since the admin UI and metadata query interface run on the same port. By default, the port number is `8443`, but it is configurable.
 
 **Port** | **URL Path** | **Description** |
 ---------|----------|-----------------|
@@ -170,11 +173,13 @@ sudo apt install harmony-smp
 Upon the first installation of the SMP, the system asks for the following information.
 
 - `Distinguished Name` for generated self-signed content and transport certificates;
-  - For example:
+  - for example:
       ```bash
       CN=example.com, O=My Organisation, C=FI
       ```
-  - *Note:* different eDelivery policy domains may have different requirements for the `Distinguished Name`. If you're not sure about the requirements, please contact the domain authority of the policy domain where the SMP is registered.
+  - *note:* different eDelivery policy domains may have different requirements for the `Distinguished Name`. If you're not sure about the requirements, please contact the domain authority of the policy domain where the SMP is registered.
+- port number that the SMP listens to. The default is `8443`;
+  - the SMP admin UI and metadata query interface run on the defined port;
 - do you want the SMP installation to publish information to some Service Metadata Locator (SML);  
   - if yes then: 
     - full URL of the SML server, including protocol and port, e.g., `https://<HOST>:8443`;
