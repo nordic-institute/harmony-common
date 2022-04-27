@@ -81,7 +81,7 @@
     <Connector
                SSLEnabled="true"
                protocol="org.apache.coyote.http11.Http11NioProtocol"
-               port="8443"
+               port="{{tomcat_port}}"
                maxThreads="200"
                scheme="https"
                secure="true"

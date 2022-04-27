@@ -24,3 +24,8 @@ Template: harmony-ap/partyname
 Type: string
 Default: selfsigned
 Description: Harmony Access Point owner Party Name
+
+Template: harmony-ap/tomcatport
+Type: string
+Default: 8443
+Description: Harmony Access Point port number

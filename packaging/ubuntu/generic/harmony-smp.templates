@@ -18,12 +18,17 @@ Description: IP address of this SMP server
 Template: harmony-smp/adminuser
 Type: string
 Default: harmony
-Description: Harmony Accesspoint administator user name
+Description: Administator username of this SMP server
 
 Template: harmony-smp/adminpassword
 Type: password
-Description: Harmony Accesspoint administator initial password
+Description: Initial administator password of this SMP server
 
 Template: harmony-smp/serverdn
 Type: string
-Description: Distinguished name of generated selfsigned server certificate
+Description: Distinguished name of generated self-signed server certificate
+
+Template: harmony-smp/tomcatport
+Type: string
+Default: 8443
+Description: Port number of this SMP server
