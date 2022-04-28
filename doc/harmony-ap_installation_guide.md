@@ -1,6 +1,6 @@
 # Harmony eDelivery Access - Access Point Installation Guide <!-- omit in toc -->
 
-Version: 1.3  
+Version: 1.4  
 Doc. ID: IG-AP
 
 ---
@@ -13,7 +13,8 @@ Doc. ID: IG-AP
  07.01.2022 | 1.1     | Add reference to the Static Discovery Configuration Guide \[UG-SDCG\]   | Petteri Kivimäki
  08.01.2022 | 1.2     | Add party name to section [2.5](#25-access-point-installation) and TLS truststore to section [2.10](#210-location-of-configuration-and-generated-passwords) | Petteri Kivimäki
  04.02.2022 | 1.3     | Add upgrade instructions. Add section about log files                   | Petteri Kivimäki
- 
+ 23.04.2022 | 1.4     | Add port number to the Access Point Installation section. Update package repository URL | Petteri Kivimäki
+
 ## License <!-- omit in toc -->
 
 This document is licensed under the Creative Commons Attribution-ShareAlike 4.0 International License.
@@ -93,13 +94,15 @@ The table below lists the required connections between different components.
 Out | Access Point | Data Exchange Partner Access Point | 443, 8443, other | tcp | |
 Out | Access Point | SMP | 443, 8443, other | tcp | |
 Out | Access Point | Backend (push) | 80, 443, other | tcp | Target in the internal network |
-In  | Data Exchange Partner Access Point | Access Point | 8443 | tcp | URL path: `/services/msh` |
-In | Backend (submit, pull) | Access Point | 8443 | tcp | Source in the internal network<br /><br />URL path: `/services/backend` |
-In | Admin | Access Point | 8443 | tcp | Source in the internal network<br /><br />URL path: `/` |
+In  | Data Exchange Partner Access Point | Access Point | 8443* | tcp | URL path: `/services/msh` |
+In | Backend (submit, pull) | Access Point | 8443* | tcp | Source in the internal network<br /><br />URL path: `/services/backend` |
+In | Admin | Access Point | 8443* | tcp | Source in the internal network<br /><br />URL path: `/` |
+
+\* The port number for inbound connections is configurable and the value can be set during the Access Point installation process. Port `8443` is used by default.
 
 It is strongly recommended to protect the Access Point from unwanted access using a firewall (hardware or software based). The firewall can be applied to both incoming and outgoing connections depending on the security requirements of the environment where the Access Point is deployed. It is recommended to allow incoming traffic to specific ports only from explicitly defined sources using IP filtering. **Special attention should be paid with the firewall configuration since incorrect configuration may leave the Access Point vulnerable to exploits and attacks.**
 
-In addition, it's strongly recommended to use URL path filtering for the Access Point since the admin UI, backend interface and AS4 interface all run on port `8443`.
+In addition, it's strongly recommended to use URL path filtering for the Access Point since the admin UI, backend interface and AS4 interface all run on the same port. By default, the port number is `8443`, but it is configurable.
 
 **Port** | **URL Path** | **Description** |
 ---------|----------|-----------------|
@@ -138,7 +141,7 @@ The repository key details:
 
 Add Harmony eDelivery Access package repository:
 ```bash
-sudo apt-add-repository -y "deb https://artifactory.niis.org/harmony-release-deb $(lsb_release -sc)-current main"
+sudo apt-add-repository -y "deb https://artifactory.niis.org/artifactory/harmony-release-deb $(lsb_release -sc)-current main"
 ```
 
 Update package repository metadata:
@@ -164,11 +167,13 @@ Upon the first installation of the Access Point, the system asks for the followi
 - party name of the Access Point owner organisation;
   - if you don't know the party name of the owner, use the default value (`selfsigned`);
 - `Distinguished Name` for generated self-signed content and transport certificates;
-  - For example:
+  - for example:
       ```bash
       CN=example.com, O=My Organisation, C=FI
       ```
-  - *Note:* different eDelivery policy domains may have different requirements for the `Distinguished Name`. If you're not sure about the requirements, please contact the domain authority of the policy domain where the Access Point is registered.
+  - *note:* different eDelivery policy domains may have different requirements for the `Distinguished Name`. If you're not sure about the requirements, please contact the domain authority of the policy domain where the Access Point is registered;
+- port number that the Access Point listens to. The default is `8443`;
+  - the Access Point admin UI, backend interface and AS4 interface all run on the defined port.
 
 See the Static Discovery Configuration Guide \[[UG-SDCG](static_discovery_configuration_guide.md)\] and the Dynamic Discovery Configuration Guide \[[UG-DDCG](dynamic_discovery_configuration_guide.md)\] for more information about how to configure different discovery options.
 
