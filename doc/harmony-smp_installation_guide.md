@@ -1,8 +1,7 @@
 # Harmony eDelivery Access - Service Metadata Publisher Installation Guide <!-- omit in toc -->
 
-Version: 1.6
+Version: 1.7  
 Doc. ID: IG-SMP
-
 ---
 
 ## Version history <!-- omit in toc -->
@@ -16,6 +15,7 @@ Doc. ID: IG-SMP
  22.01.2021 | 1.4     | Add more information about keystores and trustores. Add information about properties stored in database | Petteri Kivimäki
  06.02.2021 | 1.5     | Add upgrade instructions. Add section about log files           | Petteri Kivimäki
  23.04.2022 | 1.6     | Add port number to the SMP Installation section. Update package repository URL | Petteri Kivimäki
+ 28.04.2022 | 1.7     | Minor changes                                                   | Petteri Kivimäki
  
 ## License <!-- omit in toc -->
 
@@ -207,7 +207,8 @@ sudo systemctl enable harmony-smp
 Ensure that the `harmony-smp` service is in the `running` state (example output follows):
   ```bash
   sudo systemctl list-units "harmony-smp*"
-
+  ```
+  ```bash
   UNIT                           LOAD   ACTIVE SUB     DESCRIPTION
   harmony-smp.service             loaded active running Harmony eDelivery Access - SMP
   ```

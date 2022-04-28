@@ -1,6 +1,6 @@
 # Harmony eDelivery Access - Access Point Installation Guide <!-- omit in toc -->
 
-Version: 1.4  
+Version: 1.5  
 Doc. ID: IG-AP
 
 ---
@@ -14,6 +14,7 @@ Doc. ID: IG-AP
  08.01.2022 | 1.2     | Add party name to section [2.5](#25-access-point-installation) and TLS truststore to section [2.10](#210-location-of-configuration-and-generated-passwords) | Petteri Kivimäki
  04.02.2022 | 1.3     | Add upgrade instructions. Add section about log files                   | Petteri Kivimäki
  23.04.2022 | 1.4     | Add port number to the Access Point Installation section. Update package repository URL | Petteri Kivimäki
+ 28.04.2022 | 1.5     | Minor changes                                                           | Petteri Kivimäki
 
 ## License <!-- omit in toc -->
 
@@ -194,7 +195,8 @@ sudo systemctl enable harmony-ap
 Ensure that the `harmony-ap` service is in the `running` state (example output follows):
   ```bash
   sudo systemctl list-units "harmony-ap*"
-
+  ```
+  ```bash
   UNIT                           LOAD   ACTIVE SUB     DESCRIPTION
   harmony-ap.service             loaded active running Harmony eDelivery Access - Access Point
   ```
