@@ -1,6 +1,6 @@
 # Changelog
 
-## 1.2.0 - 2022-05-08
+## 1.2.0 - 2022-05-10
 
 - NEDS-62: Enable the use of Peppol IDs in the Harmony Access Point Plugin User configuration.
 - NEDS-86: Make the Harmony Access Point HTTPS port configurable during the installation process.
