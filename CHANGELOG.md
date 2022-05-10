@@ -6,8 +6,8 @@
 - NEDS-86: Make the Harmony Access Point HTTPS port configurable during the installation process.
 - NEDS-87: Make the Harmony SMP HTTPS port configurable during the installation process.
 - NEDS-90: Improve the Harmony Access Point's Peppol AS4 specification.
-- NEDS-91: Update the Harmony Access Point 3d party dependencies.
-- NEDS-93: Update the Harmony SMP 3d party dependencies.
+- NEDS-91: Update the Harmony Access Point 3rd party dependencies.
+- NEDS-93: Update the Harmony SMP 3rd party dependencies.
 
 ## 1.1.0 - 2022-02-17
 
