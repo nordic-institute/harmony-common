@@ -96,16 +96,13 @@ parrt@antlr.org
 
 ----
 
-Copyright (c) 1999-2004, 2016-2017 The Apache Software Foundation
+Copyright (c) 1999-2002, 2016-2017 The Apache Software Foundation
 Copyright (c) 2001-2004 The OpenSymphony Group
 Copyright (c) 2001-2004 by the MX4J contributors
-Copyright (c) 2004, 2018 Oracle and/or its affiliates
 Copyright 1995-2006 Mort Bay Consulting Pty Ltd
-Copyright 1996 Aki Yoshida
 Copyright 1999-2021 The Apache Software Foundation
 Copyright 2005 Sun Microsystems, Inc.
 Copyright 2005-2019 Apache Software Foundation
-copyright (c) 1999 International Business Machines, Inc., http://www.apache.org
 copyright (c) 2001 Institute
 portions Copyright Apache Software Foundation
 
@@ -219,12 +216,13 @@ SUCH DAMAGE.
 (c) Copyright 2003 IBM Corp.
 (c) Copyright 2016-2021 European Commission Dynamic Discovery Client
 (c) Gerd Neugebauer
+(c) Override public Session
 (c) Robert Wenner
 (c) Steffen Klupsch
 (c) Torsten Neuer
 (c) this.destination.error
 (c) this.destination.next
-Copyright (c) 1995-2018 Mort Bay Consulting Pty. Ltd.
+Copyright (c) 1993-2008 OASIS(R)
 Copyright (c) 1997-2018, 2020 Oracle and/or its affiliates
 Copyright (c) 1999 Shigeru Chiba
 Copyright (c) 1999 http://www.w3.org
@@ -236,17 +234,19 @@ Copyright (c) 1999-2009 OW2 Consortium <https://www.ow2.org/>
 Copyright (c) 2000 a http://www.acmee.com Acmee Inc /a , br
 Copyright (c) 2000-2004 Jason Hunter & Brett McLaughlin
 Copyright (c) 2001 The Internet Society ()
+Copyright (c) 2001, 2004 World Wide Web Consortium, (Massachusetts Institute of Technology, European Research Consortium for Informatics and Mathematics, Keio University)
 Copyright (c) 2001-2004 by the MX4J contributors
 Copyright (c) 2001-2011 http://www.apache.org/' The Apache Software Foundation
 Copyright (c) 2002 $ copyright Pivotal, Inc.
 Copyright (c) 2002 Kevin Atkinson (kevina@gnu.org)
+Copyright (c) 2002 Landmark Graphics Corp
 Copyright (c) 2002, 2004-2006, 2008 Tatu Saloranta, tatu.saloranta@iki.fi
-Copyright (c) 2002-2021 Pivotal, Inc.
+Copyright (c) 2002-2022 Pivotal, Inc.
 Copyright (c) 2003 Eric Bie
 Copyright (c) 2004 Bill Burke
 Copyright (c) 2005-2019 The Guava Authors
+Copyright (c) 2005-2020 The Apache Software Foundation
 Copyright (c) 2006, 2008-2012, 2014-2017 Google Inc.
-Copyright (c) 2006-2020 The Apache Software Foundation
 Copyright (c) 2007-2010, 2019 The JASYPT team (http://www.jasypt.org)
 Copyright (c) 2008 Alexander Beider & Stephen P. Morse
 Copyright (c) 2008 http://www.w3.org/' title World Wide Web Consortium' W3C
@@ -267,47 +267,55 @@ Copyright (c) 2012-2016 University of Washington
 Copyright (c) 2013-2015 Brett Wooldridge
 Copyright (c) 2014 Trymph Inc.
 Copyright (c) 2015-2018 Google, Inc., Netflix, Inc., Microsoft Corp. and contributors
+Copyright (c) 2015-2021 the original authors
 Copyright (c) 2016-2018 Gson
 Copyright (c) 2016-2018 The Gson authors
+Copyright (c) 2019 Eclipse Foundation
+Copyright (c) Kartik Visweswaran
 Copyright (c) Microsoft Corporation
 Copyright 1995-2006 Mort Bay Consulting Pty Ltd
-Copyright 1996 Aki Yoshida
 Copyright 1997-2008 Sun Microsystems, Inc.
 Copyright 1999, 2006 Tim Vernum Jason Gilbert
 Copyright 1999-2021 The Apache Software Foundation
 Copyright 2001 xa9 Institute
 Copyright 2001-2002 Juila Smith
 Copyright 2001-2002 me br
+Copyright 2001-2006 International Business Machines Corporation and Microsoft Corporation
 Copyright 2001-2008 Progress Software Corporation
-Copyright 2001-2015 Stephen Colebourne
+Copyright 2001-2017 Stephen Colebourne
 Copyright 2002 $ year the original author or authors
 Copyright 2002-2019 Red Hat Inc.
-Copyright 2002-2021 the original author or authors
+Copyright 2002-2022 the original author or authors
 Copyright 2003 Wily Technology, Inc.
+Copyright 2003-2004 BEA Systems Inc. and IBM Corporation and Microsoft Corporation
 Copyright 2004-2006, 2009 Acegi Technology Pty Limited
 Copyright 2005, 2015, 2018 Bytecode Pty Ltd.
 Copyright 2005-2012 (c) the a http://www.apache.org/ Apache Software Foundation
 Copyright 2005-2019 Apache Software Foundation
-Copyright 2006 Thomas Hawtin
 Copyright 2006, 2012-2013 International Business Machines Corp.
 Copyright 2006-2019 Joe Walnes, Henri Tremblay, Leonardo Mesquita
 Copyright 2007, 2010 Kyle Miller
 Copyright 2008 Google Inc. http://code.google.com/p/protobuf
 Copyright 2008, 2010-2011, 2013, 2015-2016 Red Hat, Inc., and individual contributors by the authors
 Copyright 2008-2012, 2015, 2017 Google Inc.
-Copyright 2008-2013 Red Hat Middleware LLC, and individual contributors by the authors
 Copyright 2009 IIZUKA Software Technologies Ltd
 Copyright 2010-2011, 2013-2014 Red Hat, Inc., and individual contributors
 Copyright 2010-2012 Coda Hale and Yammer, Inc.
+Copyright 2011-2013 Oracle America, Inc. ("Oracle") 500 Oracle Parkway, Redwood Shores, California 94065, U.S.A
+Copyright 2011-2016 Oracle America Incorporated
+Copyright 2011-2016 Terracotta, Inc.
 Copyright 2011-2018 The Error Prone
 Copyright 2012 Twitter, Inc
 Copyright 2012 Twitter, Inc. http://www.apache.org/licenses/LICENSE-2.0.txt
+Copyright 2012-2017 Connect2id Ltd.
 Copyright 2013 FasterXML.com
 Copyright 2013 Mark Rogers
+Copyright 2013 Oracle America, Inc.
 Copyright 2014 Attila Szegedi, Daniel Dekany, Jonathan Revusky
 Copyright 2014 The Netty Project
 Copyright 2014 Twitter
 Copyright 2014-2020 Rafael Winterhalter
+Copyright 2015 Dave Gandy
 Copyright 2015 Scott Conway
 Copyright 2015 SmartBear Software
 Copyright 2016-2018 Andrew Rucker Jones
@@ -315,7 +323,6 @@ Copyright 2017 Andrew Rucket Jones
 Copyright 2017 Lovell Fuller
 Copyright 2018 Andre Levandovski Rosot
 Copyright MapStruct Authors
-Copyright Terracotta, Inc.
 Copyright today.year The Error Prone
 Portions copyright 2005 Sun Microsystems, Inc.
 copyright (c) 2001 Institute
@@ -786,7 +793,7 @@ either expressed or implied, of the FreeBSD Project.
 (c) Steffen Klupsch
 (c) Torsten Neuer
 Copyright (c) 1996 O'Reilly & Associates
-Copyright (c) 1996-2020 Oracle and/or its affiliates
+Copyright (c) 1996-2021 Oracle and/or its affiliates
 Copyright (c) 1999-2002 Paul Johnston . Other contributors Greg Holt, Andrew Kepert, Ydnar, Lostinet
 Copyright (c) 1999-2009 OW2 Consortium <https://www.ow2.org/>
 Copyright (c) 2000-2011 INRIA, France Telecom
@@ -803,6 +810,7 @@ Copyright (c) 2005 University of Colorado at Boulder
 Copyright (c) 2006 Alastair Tse
 Copyright (c) 2006, 2010 Yahoo! Inc.
 Copyright (c) 2006-2021 XStream Committers
+Copyright (c) 2007 Eclipse Foundation, Inc.
 Copyright (c) 2007 Parakey Inc.
 Copyright (c) 2007 The OWASP Foundation
 Copyright (c) 2008 Ariel Flesler
@@ -817,10 +825,10 @@ Copyright (c) 2011 org.xbill.DNS
 Copyright (c) 2012-2013 Maximilian Antoni
 Copyright (c) 2012-2016 University of Washington
 Copyright (c) 2013 IBM Corp.
+Copyright (c) 2019-2020 Eclipse Foundation
 Copyright (c) Mapbox
 Copyright (c) YYYY Oracle and/or its affiliates
 Copyright (c) inceptionYear currentYear Oracle and/or its affiliates
-Copyright (c) inceptionYear currentYear vendor.name
 Copyright 1995-2006 Mort Bay Consulting Pty Ltd
 Copyright 1999, 2006 Tim Vernum Jason Gilbert
 Copyright 2000-2002 Paul Johnston . Other contributors Greg Holt, Andrew Kepert, Ydnar, Lostinet
@@ -2578,14 +2586,14 @@ This Agreement is governed by the laws of the State of New York and the intellec
 (c) 2013 Stephan Hennig
 (c) Andres Becerra Sandoval
 (c) Christoph Giess
-(c) Copyright 1993-1997 IBM Corp.
+(c) Copyright 1996 IBM Corp.
 (c) Copyright 1996 Taligent, Inc.
 (c) Gerd Neugebauer
 (c) Robert Wenner
 (c) Steffen Klupsch
 (c) Torsten Neuer
 Copyright (c) 1989, 1991 Free Software Foundation, Inc.
-Copyright (c) 1994-2018 Oracle and/or its affiliates
+Copyright (c) 1994-2019 Oracle and/or its affiliates
 Copyright (c) 1996-2018 http://www.oracle.com' Oracle and/or its affiliates
 Copyright (c) 2004 World Wide Web Consortium
 Copyright (c) 2004-2017 Oracle
@@ -2594,9 +2602,9 @@ Copyright (c) 2009 by Oracle Corporation
 Copyright (c) 2009-2010 International Business Machines Corporation and others
 Copyright (c) 2009-2017 Jason Mehrens
 Copyright (c) 2012-2016 University of Washington
+Copyright (c) 2019 Eclipse Foundation
 Copyright (c) YYYY Oracle and/or its affiliates
 Copyright 1994-2008 Sun Microsystems, Inc.
-Copyright 1998-1999 IBM Corp.
 Copyright 2003 Wily Technology, Inc.
 Copyright 2004 present by the Checker Framework
 Copyright 2004-2007 The Apache Software Foundation
@@ -2623,11 +2631,11 @@ from your version.
 
 ----
 
-Copyright (c) 1995-2018 Mort Bay Consulting Pty. Ltd.
+Copyright (c) 1998-2002 W3C (MIT, INRIA, Keio)
 Copyright (c) 1998-2002 Xerox Corporation, Palo Alto Research Center, Incorporated (PARC)
 Copyright (c) 1999-2002 Xerox Corporation, Palo Alto Research Center, Incorporated
-Copyright (c) 1999-2016 QOS.ch
 Copyright (c) 1999-2018 Xerox Corporation, Palo Alto Research Center, Incorporated (PARC), Contributors
+Copyright (c) 1999-2021 QOS.ch
 Copyright (c) 2000, 2003-2004, 2006-2007 IBM Corporation and others
 Copyright (c) 2002 Palo Alto Research Center, Incorporated
 Copyright (c) 2002, 2004 Palo Alto Research Center, Incorporated (PARC). IBM Corporation
@@ -2646,7 +2654,6 @@ Copyright (c) 2012 VMware, Inc.
 Copyright (c) 2013 IBM Corp.
 Copyright (c) 2013 VMware
 Copyright (c) 2017 Oracle and/or its affiliates
-Copyright 1996 Aki Yoshida
 copyright Sun Microsystems, Inc and Apache Software Foundation
 
 Eclipse Public License - v 1.0
@@ -2738,7 +2745,8 @@ This Agreement is governed by the laws of the State of New York and the intellec
 
 ----
 
-Copyright (c) 2008, 2020 Oracle and/or its affiliates
+Copyright (c) 2005, 2008-2009, 2012, 2017-2020 Oracle and/or its affiliates
+Copyright (c) 2019 Eclipse Foundation
 Copyright 2015-2020 the original author or authors
 
 Eclipse Public License - v 2.0
@@ -3802,22 +3810,21 @@ That's all there is to it!
 (c) 2013 Stephan Hennig
 (c) Andres Becerra Sandoval
 (c) Christoph Giess
-(c) Copyright 1993-1997 IBM Corp.
+(c) Copyright 1996 IBM Corp.
 (c) Copyright 1996 Taligent, Inc.
 (c) Gerd Neugebauer
 (c) Robert Wenner
 (c) Steffen Klupsch
 (c) Torsten Neuer
 Copyright (c) 1989, 1991 Free Software Foundation, Inc.
-Copyright (c) 1994-2017, 2021 Oracle and/or its affiliates
-Copyright (c) 1996-2017 http://www.oracle.com' Oracle and/or its affiliates
+Copyright (c) 1994-2015, 2017-2019, 2021 Oracle and/or its affiliates
 Copyright (c) 2004 World Wide Web Consortium
 Copyright (c) 2008 John Resig (jquery.com)
 Copyright (c) 2009 by Oracle Corporation
 Copyright (c) 2009-2010 International Business Machines Corporation and others
 Copyright (c) 2012-2016 University of Washington
+Copyright (c) 2019 Eclipse Foundation
 Copyright 1994-2008 Sun Microsystems, Inc.
-Copyright 1998-1999 IBM Corp.
 Copyright 2003 Wily Technology, Inc.
 Copyright 2004 present by the Checker Framework
 Copyright The PEPPOL project (http://www.peppol.eu)
@@ -6926,7 +6933,6 @@ That's all there is to it!
 (c) Robert Wenner
 (c) Steffen Klupsch
 (c) Torsten Neuer
-Copyright (c) 1997-2012 Gerald Brose / The JacORB Team
 Copyright (c) 2003-2007 University of Maryland and others
 Copyright (c) 2009 by Oracle Corporation
 Copyright (c) 2009-2010 International Business Machines Corporation and others
@@ -7441,7 +7447,9 @@ That's all there is to it!
 (c) 2008 Adam Warski, JBoss Inc.
 (c) Copyright 2016-2021 European Commission Dynamic Discovery Client
 Copyright (c) 1991, 1999 Free Software Foundation, Inc.
-Copyright (c) 1999-2016 QOS.ch
+Copyright (c) 1998-2002 W3C (MIT, INRIA, Keio)
+Copyright (c) 1999-2005 QOS.ch, LOGBack.com
+Copyright (c) 1999-2021 QOS.ch
 Copyright (c) 2003-2008 University of Maryland and others
 Copyright (c) 2015, 2018 Machinery
 Copyright 2016-2021 European Commission Dynamic Discovery Client
@@ -7994,7 +8002,6 @@ Copyright (c) 2009 Tomas Pollak
 Copyright (c) 2009 Toms Pollak
 Copyright (c) 2011 Andrey Loskutov
 Copyright (c) 2019 Machinery
-Copyright 2010 Red Hat, Inc., and individual contributors
 copyrighted by the Free Software Foundation
 
 This library is free software; you can redistribute it and/or modify it under
@@ -9159,6 +9166,7 @@ IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ----
 
 Copyright (c) 2001 The Internet Society ()
+Copyright (c) 2004 OASIS Open ()
 Copyright (c) 2006 UN/CEFACT ()
 
 This document and translations of it may be copied and furnished to
@@ -9346,6 +9354,7 @@ MX4J, please see
 ----
 
 Copyright (c) 2002-2008, 2013 OASIS Open
+Copyright (c) 2009 OASIS(r)
 
 Oasis WS Security Specification License
 
@@ -9808,6 +9817,7 @@ No other rights are granted by implication, estoppel or otherwise.
 
 (c) 2001-2005 Actional Corporation, BEA Systems, Inc., Computer Associates International, Inc., International Business Machines Corporation, Layer
 (c) 2002-2005 BEA Systems, IBM, Microsoft Corporation, Inc, and TIBCO Software Inc
+(c) 2004-2006 BEA Systems Inc., Computer Associates International, Inc., International Business Machines Corporation, Microsoft Corporation, Inc., SAP AG, Sun Microsystems, and webMethods
 
 WS-Trust Specification
 
@@ -9887,6 +9897,7 @@ No other rights are granted by implication, estoppel or otherwise.
 (c) 2004 Martine Gautier
 (c) 2004 William Thimbleby
 (c) 2004, 2006 Brooks Moses
+(c) 2004-2010 year().format 'YYYY-MM-DD , -04
 (c) 2005 Bob Ippolito
 (c) 2005 Christophe Jorssen
 (c) 2005, 2014 jQuery Foundation, Inc.
@@ -9907,6 +9918,7 @@ No other rights are granted by implication, estoppel or otherwise.
 (c) 2013 Jobst Hoffmann
 (c) 2013 Stefan Pinnow
 (c) 2013 Stephan Hennig
+(c) 2017 year().format 'YYYY-MM-DD , -10-04
 (c) 2019 Denis Pushkarev
 (c) <jbonofre@apache.org>
 (c) Andres Becerra Sandoval
@@ -9926,16 +9938,16 @@ No other rights are granted by implication, estoppel or otherwise.
 (c) Torsten Neuer
 (c) Zeno Rocha
 Copyright (c) 1997-2013 Oracle and/or its affiliates
-Copyright (c) 2000-2019 The Legion Of The Bouncy Castle Inc. (http://www.bouncycastle.org)
+Copyright (c) 2000-2021 The Legion Of The Bouncy Castle Inc. (https://www.bouncycastle.org)
 Copyright (c) 2001-2004 by the MX4J contributors
-Copyright (c) 2004-2011 QOS.ch
+Copyright (c) 2004-2017 QOS.ch
 Copyright (c) 2005 Bob Ippolito
 Copyright (c) 2005 Emil A Eklund
 Copyright (c) 2005 Thomas Fuchs (http://script.aculo.us, http://mir.aculo.us)
+Copyright (c) 2005-2006 David Heinemeier Hansson
 Copyright (c) 2006 Neil Crosby
 Copyright (c) 2008 John Resig (jquery.com)
 Copyright (c) 2008 Kohsuke Kawaguchi and codehaus.org
-Copyright (c) 2008-2009 Bjoern Hoehrmann <bjoern@hoehrmann.de>
 Copyright (c) 2009 by Oracle Corporation
 Copyright (c) 2009, 2012 codehaus.org
 Copyright (c) 2009-2010 International Business Machines Corporation and others
@@ -9946,7 +9958,6 @@ Copyright (c) 2010-2011 Marcus Westin
 Copyright (c) 2010-2016 Jeremy Ashkenas, DocumentCloud
 Copyright (c) 2011 Alexander Shtuchkin
 Copyright (c) 2011 Dominic Tarr
-Copyright (c) 2011 Tim Buktu (tbuktu@hotmail.com)
 Copyright (c) 2011-2012 Ariya Hidayat <ariya.hidayat@gmail.com>
 Copyright (c) 2011-2012 Christopher Jeffrey
 Copyright (c) 2011-2014 by Jorik Tangelder
@@ -10008,7 +10019,6 @@ copyright 1997-2004, 2006-2007, 2013 ///////// /
 copyright 2006-2007 Brooks Moses
 copyright Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors <http://underscorejs.org/>
 portions Copyright Apache Software Foundation
-IntegerPolynomial (c) IntegerPolynomial
 
 Permission is hereby granted, free of charge, to any person obtaining
 a copy of this software and associated documentation files (the
@@ -10946,8 +10956,9 @@ times remain with copyright holders.
 ----
 
 (c) 2001 W3C (Massachusetts Institute of Technology, Institut National de Recherche en Informatique et en Automatique, Keio University)
-Copyright (c) 1994-2005 World Wide Web Consortium, (Massachusetts Institute of Technology, Institut National de Recherche en Informatique et en Automatique, Keio University)
+Copyright (c) 1994-2002 http://www.w3.org/' World Wide Web Consortium, http://www.lcs.mit.edu/' Massachusetts Institute
 Copyright (c) 2000 http://www.w3.org/' title World Wide Web
+Copyright (c) 2001-2005 World Wide Web Consortium, (Massachusetts Institute of Technology, Institut National de Recherche en Informatique et en Automatique, Keio University)
 Copyright (c) 2003 W3C(R) (MIT, ERCIM, Keio)
 Copyright 2001 Martin Gudgin, Developmentor
 Copyright 2001 Martin Gudgin, Developmentor. http://www.develop.co.uk

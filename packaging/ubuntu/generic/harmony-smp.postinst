@@ -37,6 +37,8 @@ case "$1" in
   SMPURL="$RET"
   db_get harmony-smp/smpip
   SMPIP="$RET"
+  db_get harmony-smp/tomcatport
+  TOMCATPORT="$RET"
 
   DBUSER=harmony_smp
   DBPASSWORD=$(openssl rand -base64 12)
@@ -133,7 +135,9 @@ case "$1" in
 
     E_TLSKEYPASS=$(escape_for_sed "$TLSKEYPASS")
     E_TLSTRUSTSTOREPASS=$(escape_for_sed "$TLSTRUSTSTOREPASS")
+    E_TOMCATPORT=$(escape_for_sed "$TOMCATPORT")
     sed -e "s/{{tls_keystore_password}}/$E_TLSKEYPASS/" -e "s/{{tls_truststore_password}}/$E_TLSTRUSTSTOREPASS/" \
+        -e "s/{{tomcat_port}}/$E_TOMCATPORT/" \
         /opt/harmony-smp/setup/server.xml.template > /etc/harmony-smp/tomcat-conf/server.xml
 
     sed -e "s/{{tls_truststore_password}}/$E_TLSTRUSTSTOREPASS/" \
@@ -144,6 +148,13 @@ case "$1" in
     sed -e "s/{{dbuser}}/$E_DBUSER/" \
         -e "s/{{dbpassword}}/$E_DBPASSWORD/" \
         /opt/harmony-smp/setup/context.xml.template > /etc/harmony-smp/tomcat-conf/context.xml
+
+    # Check if Tomcat runs on a privileged port - port number below 1024
+    PORT_NUMBER_REGEX='^((6553[0-5])|(655[0-2][0-9])|(65[0-4][0-9]{2})|(6[0-4][0-9]{3})|([1-5][0-9]{4})|([0-5]{0,5})|([0-9]{1,4}))$'
+    if [[ $E_TOMCATPORT =~ $PORT_NUMBER_REGEX && $E_TOMCATPORT -lt 1024 ]]; then
+        echo "Tomcat will run on a privileged port" >&2
+        setcap cap_net_bind_service+ep /usr/lib/jvm/java-8-openjdk-amd64/jre/bin/java
+    fi
   fi
 
   # Required to support upgrade from 1.0.0 to 1.1.0
