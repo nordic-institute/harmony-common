@@ -29,7 +29,7 @@ Harmony eDelivery Access is based on upon the [Domibus](https://ec.europa.eu/cef
  
 Please visit the Harmony eDelivery Access [website](https://edelivery.digital) for more information.
 
-Harmony eDelivery Access release notes and additional support material are available in the [Harmony Knowledge Base](https://confluence.niis.org/display/HEAKB/).
+Harmony eDelivery Access release notes and additional support material are available in the [Harmony Knowledge Base](https://edelivery.digital/kb).
 
 ## Installation
 
@@ -45,7 +45,6 @@ Alternatively, it's possible to build the packages locally. The instructions for
 ## How to Contribute?
 
 Submit a pull request to [Access Point](https://github.com/nordic-institute/harmony-access-point) or [SMP](https://github.com/nordic-institute/harmony-smp)
-source code repository, or an enhancement request to the [Harmony Service Desk](https://jira.niis.org/servicedesk/customer/portal/3).
-[Sign up](https://jira.niis.org/secure/Signup!default.jspa) for an account and
-get access to the [Harmony Service Desk](https://jira.niis.org/servicedesk/customer/portal/3) and
-[Harmony Backlog](https://jira.niis.org/projects/NEDS/).
+source code repository, or an enhancement request to the [Harmony Service Desk](https://edelivery.digital/sd).
+[Sign up](https://id.atlassian.com/signup) for an account and
+request access to the [Harmony Service Desk](https://edelivery.digital/sd) and the [Harmony Backlog](https://nordic-institute.atlassian.net/browse/NEDS).
