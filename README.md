@@ -45,6 +45,12 @@ Alternatively, it's possible to build the packages locally. The instructions for
 ## How to Contribute?
 
 Submit a pull request to [Access Point](https://github.com/nordic-institute/harmony-access-point) or [SMP](https://github.com/nordic-institute/harmony-smp)
-source code repository, or an enhancement request to the [Harmony Service Desk](https://edelivery.digital/sd).
-[Sign up](https://id.atlassian.com/signup) for an account and
-request access to the [Harmony Service Desk](https://edelivery.digital/sd) and the [Harmony Backlog](https://nordic-institute.atlassian.net/browse/NEDS).
+source code repository, or an enhancement request to the [Harmony Service Desk](https://edelivery.digital/sd). A list 
+of existing backlog items is publicly available in the [Harmony JIRA](https://nordic-institute.atlassian.net/browse/NEDS). 
+
+In order to access the Harmony Service Desk, [sign up](https://id.atlassian.com/signup) for an account and
+request access to the [Harmony Backlog](https://nordic-institute.atlassian.net/jira/software/c/projects/NEDS/boards/3/backlog). 
+Alternatively, you can use your existing account, sign in and request for access. Once your request has been approved, you're able 
+to access the [Harmony Service Desk](https://edelivery.digital/sd) and the 
+[Harmony Backlog](https://nordic-institute.atlassian.net/jira/software/c/projects/NEDS/boards/3/backlog). Approving the 
+request typically requires 1-2 business days.
