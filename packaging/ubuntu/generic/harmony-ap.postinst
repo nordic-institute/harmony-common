@@ -137,7 +137,7 @@ case "$1" in
     adduser --system --quiet --no-create-home --shell /usr/sbin/nologin --group --gecos "Harmony user" harmony-ap
   fi
 
-  # check validity of user and group
+  # Check validity of user and group
   if [ "`id -u harmony-ap`" -eq 0 ]; then
       echo "The Harmony AP system user must not have uid 0 (root).Please fix this and reinstall this package." >&2
       exit 1
@@ -145,6 +145,18 @@ case "$1" in
   if [ "`id -g harmony-ap`" -eq 0 ]; then
       echo "The Harmony AP system user must not have root as primary group. Please fix this and reinstall this package." >&2
       exit 1
+  fi
+
+  # Check if the Tomcat startup.sh script loads the setjavahome.sh script and update the
+  # startup.sh script if needed
+  if [ -f /opt/harmony-ap/bin/setjavahome.sh ] && ! grep -Fxq "source /opt/harmony-ap/bin/setjavahome.sh" /opt/harmony-ap/bin/startup.sh; then
+    REPLACEMENT="source \/opt\/harmony-ap\/bin\/setjavahome.sh"
+    # Get the line number of the second last line of the script header
+    START_LINE_NUMBER=$(grep -n '# Start Script' /opt/harmony-ap/bin/startup.sh | cut -d ":" -f 1)
+    # Line number of the first empty line in the script
+    LINE_NUMBER=$(($START_LINE_NUMBER+2))
+    # Replace the first empty line
+    sed -i "${LINE_NUMBER}s/^$/$REPLACEMENT/" /opt/harmony-ap/bin/startup.sh
   fi
 
   mkdir -p /opt/harmony-ap/temp
