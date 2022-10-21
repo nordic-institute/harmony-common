@@ -177,8 +177,10 @@ case "$1" in
   chown -R harmony-ap:harmony-ap /etc/harmony-ap
   chmod -R 0751 /etc/harmony-ap
 
+  # reload service configuration
+  systemctl daemon-reload
+
   if [ "$(systemctl is-enabled harmony-ap)" = "enabled" ]; then
-    systemctl daemon-reload
     systemctl start harmony-ap 2>/dev/null || true
   fi
 
