@@ -76,19 +76,19 @@ case "$1" in
     TLSKEYPASS=$(openssl rand -base64 12)
     TLSTRUSTSTOREPASS=$(openssl rand -base64 12)
 
-    keytool -genkeypair -keyalg RSA -alias $PARTYNAME -keystore /etc/harmony-ap/ap-keystore.jks -storepass $KEYSTOREPASS \
+    keytool -J-Dkeystore.pkcs12.legacy -genkeypair -keyalg RSA -alias $PARTYNAME -keystore /etc/harmony-ap/ap-keystore.jks -storepass $KEYSTOREPASS \
       -keypass $KEYSTOREPASS -validity 333 -keysize 3072 -dname "$SERVERDN" 2>/dev/null
 
-    keytool -genkeypair -keyalg RSA -alias $PARTYNAME -keystore /etc/harmony-ap/tls-keystore.jks -storepass $TLSKEYPASS \
+    keytool -J-Dkeystore.pkcs12.legacy -genkeypair -keyalg RSA -alias $PARTYNAME -keystore /etc/harmony-ap/tls-keystore.jks -storepass $TLSKEYPASS \
       -keypass $TLSKEYPASS -validity 333 -keysize 3072 -dname "$SERVERDN" 2>/dev/null
 
-    keytool -genkeypair -alias mock -keystore /etc/harmony-ap/ap-truststore.jks -storepass $TRUSTSTOREPASS \
+    keytool -J-Dkeystore.pkcs12.legacy -genkeypair -alias mock -keystore /etc/harmony-ap/ap-truststore.jks -storepass $TRUSTSTOREPASS \
       -keypass $TRUSTSTOREPASS -dname "CN=mock" 2>/dev/null
     keytool -delete -alias mock -keystore /etc/harmony-ap/ap-truststore.jks -storepass $TRUSTSTOREPASS 2>/dev/null
 
     keytool -export -alias $PARTYNAME -file /etc/harmony-ap/selfsigned.cer \
       -keystore /etc/harmony-ap/tls-keystore.jks -storepass $TLSKEYPASS 2>/dev/null
-    keytool -import -noprompt -alias $PARTYNAME -file /etc/harmony-ap/selfsigned.cer \
+    keytool -J-Dkeystore.pkcs12.legacy -import -noprompt -alias $PARTYNAME -file /etc/harmony-ap/selfsigned.cer \
       -keystore /etc/harmony-ap/tls-truststore.jks -storepass $TLSTRUSTSTOREPASS 2>/dev/null
     rm -f /etc/harmony-ap/selfsigned.cer
 
@@ -122,7 +122,11 @@ case "$1" in
     PORT_NUMBER_REGEX='^((6553[0-5])|(655[0-2][0-9])|(65[0-4][0-9]{2})|(6[0-4][0-9]{3})|([1-5][0-9]{4})|([0-5]{0,5})|([0-9]{1,4}))$'
     if [[ $E_TOMCATPORT =~ $PORT_NUMBER_REGEX && $E_TOMCATPORT -lt 1024 ]]; then
         echo "Tomcat will run on a privileged port" >&2
-        setcap cap_net_bind_service+ep /usr/lib/jvm/java-8-openjdk-amd64/jre/bin/java
+        if [ -d /usr/lib/jvm/java-11-openjdk-amd64 ]; then
+          setcap cap_net_bind_service+ep /usr/lib/jvm/java-11-openjdk-amd64/bin/java
+        else
+          setcap cap_net_bind_service+ep /usr/lib/jvm/java-8-openjdk-amd64/jre/bin/java
+        fi
     fi
   fi
 
@@ -137,7 +141,7 @@ case "$1" in
     adduser --system --quiet --no-create-home --shell /usr/sbin/nologin --group --gecos "Harmony user" harmony-ap
   fi
 
-  # check validity of user and group
+  # Check validity of user and group
   if [ "`id -u harmony-ap`" -eq 0 ]; then
       echo "The Harmony AP system user must not have uid 0 (root).Please fix this and reinstall this package." >&2
       exit 1
@@ -145,6 +149,18 @@ case "$1" in
   if [ "`id -g harmony-ap`" -eq 0 ]; then
       echo "The Harmony AP system user must not have root as primary group. Please fix this and reinstall this package." >&2
       exit 1
+  fi
+
+  # Check if the Tomcat startup.sh script loads the setjavahome.sh script and update the
+  # startup.sh script if needed
+  if [ -f /opt/harmony-ap/bin/setjavahome.sh ] && ! grep -Fxq "source /opt/harmony-ap/bin/setjavahome.sh" /opt/harmony-ap/bin/startup.sh; then
+    REPLACEMENT="source \/opt\/harmony-ap\/bin\/setjavahome.sh"
+    # Get the line number of the second last line of the script header
+    START_LINE_NUMBER=$(grep -n '# Start Script' /opt/harmony-ap/bin/startup.sh | cut -d ":" -f 1)
+    # Line number of the first empty line in the script
+    LINE_NUMBER=$(($START_LINE_NUMBER+2))
+    # Replace the first empty line
+    sed -i "${LINE_NUMBER}s/^$/$REPLACEMENT/" /opt/harmony-ap/bin/startup.sh
   fi
 
   mkdir -p /opt/harmony-ap/temp
@@ -161,8 +177,10 @@ case "$1" in
   chown -R harmony-ap:harmony-ap /etc/harmony-ap
   chmod -R 0751 /etc/harmony-ap
 
+  # reload service configuration
+  systemctl daemon-reload
+
   if [ "$(systemctl is-enabled harmony-ap)" = "enabled" ]; then
-    systemctl daemon-reload
     systemctl start harmony-ap 2>/dev/null || true
   fi
 

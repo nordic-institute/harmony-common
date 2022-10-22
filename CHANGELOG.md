@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.3.0 - 2022-10-22
+
+- NEDS-96: Add support for OpenJDK 11 for the Harmony Access Point.
+- NEDS-97: Update the Harmony Access Point 3rd party dependencies. 
+
 ## 1.2.0 - 2022-05-10
 
 - NEDS-62: Enable the use of Peppol IDs in the Harmony Access Point Plugin User configuration.
