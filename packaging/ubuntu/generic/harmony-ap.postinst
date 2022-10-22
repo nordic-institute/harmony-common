@@ -88,7 +88,7 @@ case "$1" in
 
     keytool -export -alias $PARTYNAME -file /etc/harmony-ap/selfsigned.cer \
       -keystore /etc/harmony-ap/tls-keystore.jks -storepass $TLSKEYPASS 2>/dev/null
-    keytool -import -noprompt -alias $PARTYNAME -file /etc/harmony-ap/selfsigned.cer \
+    keytool -J-Dkeystore.pkcs12.legacy -import -noprompt -alias $PARTYNAME -file /etc/harmony-ap/selfsigned.cer \
       -keystore /etc/harmony-ap/tls-truststore.jks -storepass $TLSTRUSTSTOREPASS 2>/dev/null
     rm -f /etc/harmony-ap/selfsigned.cer
 
@@ -177,8 +177,10 @@ case "$1" in
   chown -R harmony-ap:harmony-ap /etc/harmony-ap
   chmod -R 0751 /etc/harmony-ap
 
+  # reload service configuration
+  systemctl daemon-reload
+
   if [ "$(systemctl is-enabled harmony-ap)" = "enabled" ]; then
-    systemctl daemon-reload
     systemctl start harmony-ap 2>/dev/null || true
   fi
 
