@@ -88,7 +88,7 @@ case "$1" in
 
     keytool -export -alias $PARTYNAME -file /etc/harmony-ap/selfsigned.cer \
       -keystore /etc/harmony-ap/tls-keystore.jks -storepass $TLSKEYPASS 2>/dev/null
-    keytool -import -noprompt -alias $PARTYNAME -file /etc/harmony-ap/selfsigned.cer \
+    keytool -J-Dkeystore.pkcs12.legacy -import -noprompt -alias $PARTYNAME -file /etc/harmony-ap/selfsigned.cer \
       -keystore /etc/harmony-ap/tls-truststore.jks -storepass $TLSTRUSTSTOREPASS 2>/dev/null
     rm -f /etc/harmony-ap/selfsigned.cer
 
