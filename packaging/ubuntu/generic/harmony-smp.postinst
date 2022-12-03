@@ -43,6 +43,9 @@ case "$1" in
   DBUSER=harmony_smp
   DBPASSWORD=$(openssl rand -base64 12)
 
+  export LIQUIBASE_HOME=/opt/liquibase
+  export URL=jdbc:mysql://localhost:3306/harmony_smp
+
   SCHEMA_EXISTS=$(mysql -s -N -e "SELECT SCHEMA_NAME FROM INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME='harmony_smp'");
   if [ -z "$SCHEMA_EXISTS" ]; then
 
@@ -60,13 +63,21 @@ case "$1" in
 
     mysql -e \
       "create schema harmony_smp; \
-      alter database harmony_smp charset=utf8mb4 collate=utf8mb4_bin; \
+      alter database harmony_smp charset=latin1; \
       create user $DBUSER@localhost identified by '$DBPASSWORD'; \
       grant all on harmony_smp.* to $DBUSER@localhost;"
     DROPDBONERROR=true
 
+    echo "Apply liquibase migrations"  >&2
 
-    mysql harmony_smp < /opt/harmony-smp/setup/harmony_smp_schema.ddl
+    $LIQUIBASE_HOME/liquibase \
+      --classpath=/opt/harmony-smp/setup/mysql-connector-java-8.0.30.jar \
+    	--driver=com.mysql.cj.jdbc.Driver \
+    	--url=$URL \
+    	--username=$DBUSER \
+      --password=$DBPASSWORD \
+    	--changeLogFile=/root/changelog.mysql.sql \
+      update
 
     HASHEDPASSWORD=$(java -cp "/opt/harmony-smp/webapps/ROOT/WEB-INF/lib/*" \
       eu.europa.ec.edelivery.smp.utils.BCryptPasswordHash "$APASSWORD")
@@ -74,7 +85,6 @@ case "$1" in
     mysql harmony_smp -e \
       "INSERT INTO SMP_USER (ID, USERNAME, PASSWORD, ROLE, ACTIVE, CREATED_ON, LAST_UPDATED_ON, PASSWORD_CHANGED)
          VALUES(1, '$AUSER', '$HASHEDPASSWORD', 'SYSTEM_ADMIN', 1, NOW(), NOW(), NOW());
-       UPDATE SMP_USER_SEQ set next_val=2 WHERE next_val < 2;
 
        INSERT INTO SMP_CONFIGURATION (PROPERTY, VALUE, CREATED_ON, LAST_UPDATED_ON)
          VALUES ('contextPath.output', 'true', NOW(), NOW());
@@ -99,7 +109,37 @@ case "$1" in
        INSERT INTO SMP_CONFIGURATION (PROPERTY, VALUE, CREATED_ON, LAST_UPDATED_ON)
          VALUES ('configuration.dir', '/etc/harmony-smp/', NOW(), NOW());"
   else
-    echo "Schema harmony_smp already exists. Skipping schema creation" >&2
+    echo "Schema harmony_smp already exists. Sync liquibase" >&2
+
+
+    mysql -e \
+      "alter user '$DBUSER'@'localhost' identified by '$DBPASSWORD'; \
+      grant all PRIVILEGES  on *.* to '$DBUSER'@'localhost';"
+
+    echo "Sync change log" >&2
+
+    $LIQUIBASE_HOME/liquibase \
+      --classpath=/opt/harmony-smp/setup/mysql-connector-java-8.0.30.jar \
+    	--driver=com.mysql.cj.jdbc.Driver \
+    	--url=$URL \
+    	--username=$DBUSER \
+      --password=$DBPASSWORD \
+    	--changeLogFile=/root/changelog.mysql.sql \
+      --contexts=legacy \
+      changelog-sync
+
+    echo "Update database" >&2
+
+    $LIQUIBASE_HOME/liquibase \
+      --classpath=/opt/harmony-smp/setup/mysql-connector-java-8.0.30.jar \
+    	--driver=com.mysql.cj.jdbc.Driver \
+    	--url=$URL \
+    	--username=$DBUSER \
+      --password=$DBPASSWORD \
+    	--changeLogFile=/root/changelog.mysql.sql \
+      --contexts=2_version \
+      update
+
   fi
 
   if [ ! -f /etc/harmony-smp/tomcat-conf/server.xml ]; then
