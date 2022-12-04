@@ -114,7 +114,8 @@ case "$1" in
 
     mysql -e \
       "alter user '$DBUSER'@'localhost' identified by '$DBPASSWORD'; \
-      grant all PRIVILEGES  on *.* to '$DBUSER'@'localhost';"
+      alter database harmony_smp charset=latin1; \
+      grant all on harmony_smp.* to '$DBUSER'@'localhost';"
 
     echo "Sync change log" >&2
 
