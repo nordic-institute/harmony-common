@@ -1,4 +1,4 @@
-Source: harmony-edelivery-access
+Source: harmony-ap
 Section: web
 Priority: optional
 Maintainer: Nordic Institute for Interoperability Solutions (NIIS) <edelivery@niis.org>
@@ -9,10 +9,3 @@ Package: harmony-ap
 Architecture: all
 Depends: openjdk-11-jre-headless | java8-runtime-headless | java8-runtime, mysql-server, mysql-client
 Description: Harmony eDelivery Access - Access Point
-
-Package: harmony-smp
-Architecture: all
-Depends: openjdk-8-jre-headless | java8-runtime-headless | java8-runtime, mysql-server, mysql-client
-Description: Harmony eDelivery Access - Service Metadata Publisher
-
-

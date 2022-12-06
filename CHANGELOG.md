@@ -4,7 +4,6 @@
 
 - NEDS-Update_4_2 Update to eDelivery 4.2 version
 
-
 ## 1.3.1 - 2022-11-15
 
 - NEDS-98: Update the `commons-text` dependency.

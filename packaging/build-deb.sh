@@ -3,7 +3,7 @@ set -e
 
 # CHANGE VERSION NUMBERS BELOW AS NEEDED
 # Version of Harmony Access Point
-APVERSION=1.2.0
+APVERSION=1.3.1
 
 # Version of Harmony SMP
 SMPVERSION=2.0.0
@@ -53,7 +53,8 @@ cd "$DIR"
 rm -rf build/*
 
 mkdir -p build/harmony
-cp -a ubuntu build/harmony
+cp -r ap build/harmony
+cp -r smp build/harmony
 
 cd commonbin
 if [ ! -f apache-tomcat-9.0.52.tar.gz ]; then
@@ -92,4 +93,5 @@ mkdir -p commonbin/harmony-smp
 unzip "$HARMONY_SMP_REPO_PATH/smp-webapp/target/harmonysmp-$SMPVERSION.war" -d commonbin/harmony-smp
 
 prepare ubuntu20.04
-builddeb build/harmony/ubuntu focal ubuntu20.04
+builddeb build/harmony/ap/ubuntu focal ubuntu20.04
+builddeb build/harmony/smp/ubuntu focal ubuntu20.04
