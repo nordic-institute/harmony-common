@@ -40,6 +40,8 @@ case "$1" in
   db_get harmony-smp/tomcatport
   TOMCATPORT="$RET"
 
+  systemctl stop harmony-smp 2>/dev/null || true
+
   DBUSER=harmony_smp
   DBPASSWORD=$(openssl rand -base64 12)
 
@@ -116,6 +118,12 @@ case "$1" in
       "alter user '$DBUSER'@'localhost' identified by '$DBPASSWORD'; \
       alter database harmony_smp charset=latin1; \
       grant all on harmony_smp.* to '$DBUSER'@'localhost';"
+
+    E_DBUSER=$(escape_for_sed "$DBUSER")
+    E_DBPASSWORD=$(escape_for_sed "$DBPASSWORD")
+    sed -e "s/{{dbuser}}/$E_DBUSER/" \
+        -e "s/{{dbpassword}}/$E_DBPASSWORD/" \
+        /opt/harmony-smp/setup/context.xml.template > /etc/harmony-smp/tomcat-conf/context.xml
 
     echo "Sync change log" >&2
 
