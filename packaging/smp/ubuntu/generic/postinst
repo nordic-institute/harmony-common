@@ -40,9 +40,6 @@ case "$1" in
   db_get harmony-smp/tomcatport
   TOMCATPORT="$RET"
 
-  DBUSER=harmony_smp
-  DBPASSWORD=$(openssl rand -base64 12)
-
   export LIQUIBASE_HOME=/opt/liquibase
   export URL=jdbc:mysql://localhost:3306/harmony_smp
 
@@ -60,6 +57,9 @@ case "$1" in
     db_reset harmony-smp/adminpassword
 
     echo "Creating database schema harmony_smp" >&2
+
+    DBUSER=harmony_smp
+    DBPASSWORD=$(openssl rand -base64 12)
 
     mysql -e \
       "create schema harmony_smp; \
@@ -111,16 +111,13 @@ case "$1" in
   else
     echo "Schema harmony_smp already exists. Sync liquibase" >&2
 
+    DBUSER=$(xmlstarlet sel -t -v "/Context/Resource/@username" /etc/harmony-smp/tomcat-conf/context.xml)
+    DBPASSWORD=$(xmlstarlet sel -t -v "/Context/Resource/@password" /etc/harmony-smp/tomcat-conf/context.xml)
 
-    mysql -e \
-      "alter user '$DBUSER'@'localhost' identified by '$DBPASSWORD'; \
-      grant all on harmony_smp.* to '$DBUSER'@'localhost';"
-
-    E_DBUSER=$(escape_for_sed "$DBUSER")
-    E_DBPASSWORD=$(escape_for_sed "$DBPASSWORD")
-    sed -e "s/{{dbuser}}/$E_DBUSER/" \
-        -e "s/{{dbpassword}}/$E_DBPASSWORD/" \
-        /opt/harmony-smp/setup/context.xml.template > /etc/harmony-smp/tomcat-conf/context.xml
+    if [[ -z $DBUSER || -z $DBPASSWORD ]]; then
+      echo 'Existing database credentials not found'
+      exit 1
+    fi
 
     echo "Sync change log" >&2
 
