@@ -40,8 +40,6 @@ case "$1" in
   db_get harmony-smp/tomcatport
   TOMCATPORT="$RET"
 
-  systemctl stop harmony-smp 2>/dev/null || true
-
   DBUSER=harmony_smp
   DBPASSWORD=$(openssl rand -base64 12)
 
