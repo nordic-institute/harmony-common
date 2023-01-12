@@ -65,7 +65,7 @@ case "$1" in
 
     mysql -e \
       "create schema harmony_smp; \
-      alter database harmony_smp charset=latin1; \
+      alter database harmony_smp charset=utf8mb4 collate=utf8mb4_bin; \
       create user $DBUSER@localhost identified by '$DBPASSWORD'; \
       grant all on harmony_smp.* to $DBUSER@localhost;"
     DROPDBONERROR=true
@@ -116,7 +116,6 @@ case "$1" in
 
     mysql -e \
       "alter user '$DBUSER'@'localhost' identified by '$DBPASSWORD'; \
-      alter database harmony_smp charset=latin1; \
       grant all on harmony_smp.* to '$DBUSER'@'localhost';"
 
     E_DBUSER=$(escape_for_sed "$DBUSER")
