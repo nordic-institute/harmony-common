@@ -76,7 +76,7 @@ case "$1" in
     	--url=$URL \
     	--username=$DBUSER \
       --password=$DBPASSWORD \
-    	--changeLogFile=/root/changelog.mysql.sql \
+    	--changeLogFile=/root/db.changelog.yaml \
       update
 
     HASHEDPASSWORD=$(java -cp "/opt/harmony-smp/webapps/ROOT/WEB-INF/lib/*" \
@@ -127,7 +127,7 @@ case "$1" in
     	--url=$URL \
     	--username=$DBUSER \
       --password=$DBPASSWORD \
-    	--changeLogFile=/root/changelog.mysql.sql \
+    	--changeLogFile=/root/db.changelog.yaml \
       --contexts=legacy \
       changelog-sync
 
@@ -139,8 +139,7 @@ case "$1" in
     	--url=$URL \
     	--username=$DBUSER \
       --password=$DBPASSWORD \
-    	--changeLogFile=/root/changelog.mysql.sql \
-      --contexts=2_version \
+    	--changeLogFile=/root/db.changelog.yaml \
       update
 
   fi
