@@ -14,6 +14,5 @@
 ../../../smp/config/LICENSE.txt /usr/share/doc/harmony-smp/
 ../../../smp/config/3RD-PARTY-NOTICES.txt /usr/share/doc/harmony-smp/
 ../../../smp/config/liquibase/* /opt/liquibase
-../../../smp/config/mysql-connector-java-8.0.30.jar /opt/harmony-smp/setup/
 ../../../smp/config/db/* /root/
 ../../../../../../CHANGELOG.md /usr/share/doc/harmony-smp/
