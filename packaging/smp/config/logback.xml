@@ -4,7 +4,7 @@
     <property name="encoderPattern" value="%d{ISO8601} [%X{smp_user}] [%X{smp_session_id}] [%X{smp_request_id}] [%thread] %5p %c{1}:%L - %m%n" scope="global"/>
     <property name="consolePattern" value="%d{ISO8601} [%X{smp_user}] [%X{smp_session_id}] [%X{smp_request_id}] [%thread] %5p %c{1}:%L - %m%n" scope="global"/>
      <appender name="file" class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>${log.folder:-logs}/harmony-smp.log</file>
+        <file>/var/log/harmony-smp/harmony-smp.log</file>
         <filter class="ch.qos.logback.core.filter.EvaluatorFilter">
             <evaluator class="ch.qos.logback.classic.boolex.OnMarkerEvaluator">
                 <marker>SECURITY</marker>
@@ -15,7 +15,7 @@
         </filter>
         <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
             <!-- rollover daily -->
-            <fileNamePattern>${log.folder:-logs}/harmony-smp-%d{yyyy-MM-dd}.%i.log</fileNamePattern>
+            <fileNamePattern>/var/log/harmony-smp/harmony-smp-%d{yyyy-MM-dd}.%i.log</fileNamePattern>
             <!-- each file should be at most 30MB, keep 60 days worth of history, but at most 20GB -->
             <maxFileSize>30MB</maxFileSize>
             <maxHistory>60</maxHistory>
