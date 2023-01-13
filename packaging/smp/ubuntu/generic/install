@@ -5,8 +5,7 @@
 ../../../../../commonbin/tomcat9/lib/* /opt/harmony-smp/lib/
 ../../../../../commonbin/tomcat9/conf/* /etc/harmony-smp/tomcat-conf/
 ../../../smp/config/smp.config.properties /etc/harmony-smp/
-../../../smp/config/smp-log4j.properties /etc/harmony-smp/
-../../../smp/config/log4j.properties /opt/harmony-smp/webapps/ROOT/WEB-INF/classes/
+../../../smp/config/smp-logback.xml /opt/harmony-smp/webapps/ROOT/WEB-INF/classes/
 ../../../smp/config/setenv.sh /opt/harmony-smp/setup/
 ../../../smp/config/setenv.sh.template /opt/harmony-smp/setup/
 ../../../smp/config/logging.properties /etc/harmony-smp/tomcat-conf/
