@@ -53,6 +53,7 @@ buildInDocker() {
     # Compile SMP
     docker run -it --rm \
        -u builder \
+       -v /etc/timezone:/etc/timezone:ro \
        -v "$(pwd)/../harmony-smp/":/mnt \
        harmony-compile \
        mvn clean -f harmony-pom.xml install "${SMP_ARGUMENTS[@]}"
