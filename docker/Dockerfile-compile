@@ -4,7 +4,12 @@ LABEL maintainer="Nordic Institute for Interoperability Solutions <edelivery@nii
 ENV DEBIAN_FRONTEND=noninteractive
 
 RUN apt-get -qq update \
-  && apt-get -qq upgrade
+  && apt-get -qq upgrade \
+  && apt-get -qq install tzdata \
+  && apt-get -qq autoremove \
+  && apt-get -qq clean \
+  && ln -fs /usr/share/zoneinfo/CET /etc/localtime \
+  && dpkg-reconfigure -f noninteractive tzdata
 
 ARG uid
 ARG gid
