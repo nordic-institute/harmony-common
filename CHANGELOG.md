@@ -2,7 +2,10 @@
 
 ## 2.0.0 - 2022-12-02
 
-- NEDS-Update_4_2 Update to eDelivery 4.2 version
+- NEDS-Update_4_2: Divide AP and SMP deb build jobs
+- NEDS-Update_4_2: Implement Liquibase
+- NEDS-Update_4_2: Add migrations to eDelivery 4.2 version
+- NEDS-Update_4_2: Replace Log4j with Logback
 
 ## 1.3.1 - 2022-11-15
 
