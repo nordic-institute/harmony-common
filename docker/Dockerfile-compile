@@ -8,7 +8,7 @@ RUN apt-get -qq update \
   && apt-get -qq install tzdata \
   && apt-get -qq autoremove \
   && apt-get -qq clean \
-  && ln -fs /usr/share/zoneinfo/EET /etc/localtime \
+  && ln -fs /usr/share/zoneinfo/CET /etc/localtime \
   && dpkg-reconfigure -f noninteractive tzdata
 
 ARG uid
