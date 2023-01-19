@@ -13,6 +13,6 @@
 ../../../smp/config/context.xml.template /opt/harmony-smp/setup/
 ../../../smp/config/LICENSE.txt /usr/share/doc/harmony-smp/
 ../../../smp/config/3RD-PARTY-NOTICES.txt /usr/share/doc/harmony-smp/
-../../../smp/config/liquibase/* /opt/liquibase
-../../../smp/config/db/* /root/
+../../../smp/config/liquibase/* /opt/harmony-smp/liquibase
+../../../smp/config/db/* /opt/harmony-smp/db
 ../../../../../../CHANGELOG.md /usr/share/doc/harmony-smp/

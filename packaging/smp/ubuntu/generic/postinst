@@ -40,7 +40,7 @@ case "$1" in
   db_get harmony-smp/tomcatport
   TOMCATPORT="$RET"
 
-  export LIQUIBASE_HOME=/opt/liquibase
+  export LIQUIBASE_HOME=/opt/harmony-smp/liquibase
   export URL=jdbc:mysql://localhost:3306/harmony_smp
 
   SCHEMA_EXISTS=$(mysql -s -N -e "SELECT SCHEMA_NAME FROM INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME='harmony_smp'");
@@ -76,7 +76,7 @@ case "$1" in
       --url=$URL \
       --username=$DBUSER \
       --password=$DBPASSWORD \
-      --changeLogFile=/root/db.changelog.yaml \
+      --changeLogFile=/opt/harmony-smp/db/db.changelog.yaml \
       update
 
     HASHEDPASSWORD=$(java -cp "/opt/harmony-smp/webapps/ROOT/WEB-INF/lib/*" \
@@ -127,7 +127,7 @@ case "$1" in
       --url=$URL \
       --username=$DBUSER \
       --password=$DBPASSWORD \
-      --changeLogFile=/root/db.changelog.yaml \
+      --changeLogFile=/opt/harmony-smp/db/db.changelog.yaml \
       --contexts=legacy \
       changelog-sync
 
@@ -139,7 +139,7 @@ case "$1" in
       --url=$URL \
       --username=$DBUSER \
       --password=$DBPASSWORD \
-      --changeLogFile=/root/db.changelog.yaml \
+      --changeLogFile=/opt/harmony-smp/db/db.changelog.yaml \
       update
 
   fi
