@@ -28,7 +28,7 @@ esac
 done
 
 AP_ARGUMENTS=(-Ptomcat -Pdefault-plugins -Pdatabase -PUI)
-SMP_ARGUMENTS=()
+SMP_ARGUMENTS=(-Duser.timezone=CET)
 
 if [[ -n "$SKIP_TESTS" ]]; then
     echo "Skipping tests"...
