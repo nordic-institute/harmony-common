@@ -68,7 +68,7 @@ case "$1" in
       grant all on harmony_smp.* to $DBUSER@localhost;"
     DROPDBONERROR=true
 
-    echo "Apply liquibase migrations"  >&2
+    echo "Apply Liquibase migrations"  >&2
 
     $LIQUIBASE_HOME/liquibase.sh \
       --classpath=/opt/harmony-smp/lib/mysql-connector-java-8.0.26.jar \
@@ -109,7 +109,7 @@ case "$1" in
        INSERT INTO SMP_CONFIGURATION (PROPERTY, VALUE, CREATED_ON, LAST_UPDATED_ON)
          VALUES ('configuration.dir', '/etc/harmony-smp/', NOW(), NOW());"
   else
-    echo "Schema harmony_smp already exists. Sync liquibase" >&2
+    echo "Schema harmony_smp already exists. Update database" >&2
 
     DBUSER=$(xmlstarlet sel -t -v "/Context/Resource/@username" /etc/harmony-smp/tomcat-conf/context.xml)
     DBPASSWORD=$(xmlstarlet sel -t -v "/Context/Resource/@password" /etc/harmony-smp/tomcat-conf/context.xml)
@@ -119,17 +119,22 @@ case "$1" in
       exit 1
     fi
 
-    echo "Sync change log" >&2
+    # If current Harmony SMP version (<= 1.3.1) doesn't use Liquibase, change log must be synced before
+    # applying migrations. Liquibase is not used if DATABASECHANGELOG table does not exist.
+    CHANGELOG_EXISTS=$(mysql -e "show tables in harmony_smp like 'DATABASECHANGELOG';")
+    if [ -z "$CHANGELOG_EXISTS" ]; then
+      echo "No Liquibase detected. Sync change log" >&2
 
-    $LIQUIBASE_HOME/liquibase.sh \
-      --classpath=/opt/harmony-smp/lib/mysql-connector-java-8.0.26.jar \
-      --driver=com.mysql.cj.jdbc.Driver \
-      --url=$URL \
-      --username=$DBUSER \
-      --password=$DBPASSWORD \
-      --changeLogFile=/opt/harmony-smp/db/db.changelog.yaml \
-      --contexts=legacy \
-      changelog-sync
+      $LIQUIBASE_HOME/liquibase.sh \
+        --classpath=/opt/harmony-smp/lib/mysql-connector-java-8.0.26.jar \
+        --driver=com.mysql.cj.jdbc.Driver \
+        --url=$URL \
+        --username=$DBUSER \
+        --password=$DBPASSWORD \
+        --changeLogFile=/opt/harmony-smp/db/db.changelog.yaml \
+        --contexts=legacy \
+        changelog-sync
+    fi
 
     echo "Update database" >&2
 
