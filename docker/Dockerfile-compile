@@ -4,10 +4,7 @@ LABEL maintainer="Nordic Institute for Interoperability Solutions <edelivery@nii
 ENV DEBIAN_FRONTEND=noninteractive
 
 RUN apt-get -qq update \
-  && apt-get -qq upgrade \
-  && apt-get -qq install rng-tools \
-  && apt-get -qq autoremove \
-  && apt-get -qq clean
+  && apt-get -qq upgrade
 
 ARG uid
 ARG gid
