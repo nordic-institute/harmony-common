@@ -1,6 +1,6 @@
 # Changelog
 
-## x.x.x - 2023-01-23
+## SMP - 1.4.0 - 2023-01-23
 
 - NEDS-101: Merge changes from SMP 4.2 into Harmony SMP. [More information](https://ec.europa.eu/digital-building-blocks/wikis/display/DIGITAL/SMP+-+v4.2).
 - NEDS-101: Update Harmony SMP properties. [More information](https://ec.europa.eu/digital-building-blocks/code/projects/EDELIVERY/repos/smp/browse/changelog.txt?at=refs%2Ftags%2F4.2).
@@ -9,16 +9,16 @@
 - NEDS-101: Replace Log4j with Logback.
 - NEDS-101: Update the Harmony SMP 3rd party dependencies.
 
-## 1.3.1 - 2022-11-15
+## Access Point and SMP - 1.3.1 - 2022-11-15
 
 - NEDS-98: Update the `commons-text` dependency.
 
-## 1.3.0 - 2022-10-22
+## Access Point and SMP - 1.3.0 - 2022-10-22
 
 - NEDS-96: Add support for OpenJDK 11 for the Harmony Access Point.
 - NEDS-97: Update the Harmony Access Point 3rd party dependencies.
 
-## 1.2.0 - 2022-05-10
+## Access Point and SMP - 1.2.0 - 2022-05-10
 
 - NEDS-62: Enable the use of Peppol IDs in the Harmony Access Point Plugin User configuration.
 - NEDS-86: Make the Harmony Access Point HTTPS port configurable during the installation process.
@@ -27,7 +27,7 @@
 - NEDS-91: Update the Harmony Access Point 3rd party dependencies.
 - NEDS-93: Update the Harmony SMP 3rd party dependencies.
 
-## 1.1.0 - 2022-02-17
+## Access Point and SMP - 1.1.0 - 2022-02-17
 
 - NEDS-24: Add support for upgrading Access Point using package manager.
 - NEDS-25: Add support for upgrading SMP using package manager.
@@ -44,7 +44,7 @@
 - NEDS-82: Create and configure TLS truststore "/etc/harmony-smp/tls-trustore.jks" during fresh SMP installation.
 - NEDS-85: Create a changelog document.
 
-## 1.0.0 - 2021-12-17
+## Access Point and SMP - 1.0.0 - 2021-12-17
 
 - NEDS-20: Implement Debian packaging for the Harmony Access Point component.
 - NEDS-21: Implement Debian packaging for the Harmony SMP component.
