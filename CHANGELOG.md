@@ -1,11 +1,13 @@
 # Changelog
 
-## 2.0.0 - 2022-12-02
+## x.x.x - 2023-01-23
 
-- NEDS-Update_4_2: Divide AP and SMP deb build jobs
-- NEDS-Update_4_2: Implement Liquibase
-- NEDS-Update_4_2: Add migrations to eDelivery 4.2 version
-- NEDS-Update_4_2: Replace Log4j with Logback
+- NEDS-101: Merge changes from SMP 4.2 into Harmony SMP. [More information](https://ec.europa.eu/digital-building-blocks/wikis/display/DIGITAL/SMP+-+v4.2).
+- NEDS-101: Update Harmony SMP properties. [More information](https://ec.europa.eu/digital-building-blocks/code/projects/EDELIVERY/repos/smp/browse/changelog.txt?at=refs%2Ftags%2F4.2).
+- NEDS-101: Divide Access Point and SMP debian build jobs.
+- NEDS-101: Implement database migrations using Liquibase for Harmony SMP.
+- NEDS-101: Replace Log4j with Logback.
+- NEDS-101: Update the Harmony SMP 3rd party dependencies.
 
 ## 1.3.1 - 2022-11-15
 
