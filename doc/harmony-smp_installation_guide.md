@@ -1,21 +1,22 @@
 # Harmony eDelivery Access - Service Metadata Publisher Installation Guide <!-- omit in toc -->
 
-Version: 1.7  
+Version: 1.8  
 Doc. ID: IG-SMP
 ---
 
 ## Version history <!-- omit in toc -->
 
- Date       | Version | Description                                                     | Author
- ---------- | ------- | --------------------------------------------------------------- | --------------------
- 15.11.2021 | 1.0     | Initial version                                                 |
- 20.12.2021 | 1.1     | Add section [2.4 Preparing OS](#24-preparing-os)                | Petteri Kivimäki
- 21.12.2021 | 1.2     | Add section [2.11 Securing SMP user interface](#211-securing-smp-user-interface) | Andres Allkivi
- 07.01.2021 | 1.3     | Add language types to code blocks                               | Petteri Kivimäki
+ Date       | Version | Description                                                                                             | Author
+ ---------- |---------|---------------------------------------------------------------------------------------------------------| --------------------
+ 15.11.2021 | 1.0     | Initial version                                                                                         |
+ 20.12.2021 | 1.1     | Add section [2.4 Preparing OS](#24-preparing-os)                                                        | Petteri Kivimäki
+ 21.12.2021 | 1.2     | Add section [2.11 Securing SMP user interface](#211-securing-smp-user-interface)                        | Andres Allkivi
+ 07.01.2021 | 1.3     | Add language types to code blocks                                                                       | Petteri Kivimäki
  22.01.2021 | 1.4     | Add more information about keystores and trustores. Add information about properties stored in database | Petteri Kivimäki
- 06.02.2021 | 1.5     | Add upgrade instructions. Add section about log files           | Petteri Kivimäki
- 23.04.2022 | 1.6     | Add port number to the SMP Installation section. Update package repository URL | Petteri Kivimäki
- 28.04.2022 | 1.7     | Minor changes                                                   | Petteri Kivimäki
+ 06.02.2021 | 1.5     | Add upgrade instructions. Add section about log files                                                   | Petteri Kivimäki
+ 23.04.2022 | 1.6     | Add port number to the SMP Installation section. Update package repository URL                          | Petteri Kivimäki
+ 28.04.2022 | 1.7     | Minor changes                                                                                           | Petteri Kivimäki
+ 22.01.2023 | 1.8     | Update SMP Admin Guide link                                                                             | Petteri Kivimäki
  
 ## License <!-- omit in toc -->
 
@@ -63,7 +64,7 @@ See eDelivery definitions documentation \[[TERMS](#Ref_TERMS)\].
 ### 1.3 References
 
 1. <a id="Ref_TERMS" class="anchor"></a>\[TERMS\] CEF Definitions - eDelivery Definitions, <https://ec.europa.eu/cefdigital/wiki/display/CEFDIGITAL/CEF+Definitions#CEFDefinitions-eDeliveryDefinitions>
-2. <a id="Ref_SMP_ADMIN_GUIDE" class="anchor"></a>\[SMP_ADMIN_GUIDE\] SMP Administration Guide - SMP 4.X, <https://ec.europa.eu/cefdigital/wiki/download/attachments/82773286/%28eDelivery%29%28SMP%29%28AG%29%28CEF%20SMP%204.1.1%29%283.1%29.pdf>
+2. <a id="Ref_SMP_ADMIN_GUIDE" class="anchor"></a>\[SMP_ADMIN_GUIDE\] SMP Administration Guide - SMP 4.2, <https://ec.europa.eu/digital-building-blocks/wikis/download/attachments/551518321/%28eDelivery%29%28SMP%29%28AG%29%28SMP%204.2-FR%29%283.5%29.pdf>
 3. <a id="Ref_UG-DDCG" class="anchor"></a>\[UG-DDCG\] Harmony eDelivery Access - Dynamic Discovery Configuration Guide. Document ID: [UG-DDCG](dynamic_discovery_configuration_guide.md)
 
 ## 2. Installation

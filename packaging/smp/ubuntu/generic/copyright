@@ -1,0 +1,12 @@
+Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+Upstream-Name: Harmony eDelivery Access
+Upstream-Contact: Nordic Institute for Interoperability Solutions (NIIS) <edelivery@niis.org>
+Source: https://github.com/nordic-institute/
+
+Files: *
+Copyright: European Commission | CEF eDelivery
+License: EUPL-1.2
+
+Files: debian/*
+Copyright: 2021 Nordic Institute for Interoperability Solutions (NIIS)
+License: EUPL-1.2
