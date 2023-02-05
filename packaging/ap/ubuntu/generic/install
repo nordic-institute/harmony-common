@@ -10,7 +10,6 @@
 ../../../ap/config/setenv.sh.template /opt/harmony-ap/setup/
 ../../../ap/config/activemq.xml /etc/harmony-ap/internal/
 ../../../ap/config/logback.xml /etc/harmony-ap/
-../../../ap/config/harmony_ap_schema.ddl /opt/harmony-ap/setup/
 ../../../ap/config/domibus.properties.template /opt/harmony-ap/setup/
 ../../../ap/config/server.xml.template /opt/harmony-ap/setup/
 ../../../ap/config/clientauthentication.xml.template /opt/harmony-ap/setup/
@@ -23,4 +22,6 @@
 ../../../ap/config/LICENSE.txt /usr/share/doc/harmony-ap/
 ../../../ap/config/3RD-PARTY-NOTICES.txt /usr/share/doc/harmony-ap/
 ../../../ap/config/setjavahome.sh /opt/harmony-ap/bin/
+../../../ap/config/liquibase/* /opt/harmony-ap/liquibase
+../../../ap/config/db/* /opt/harmony-ap/db
 ../../../../../../CHANGELOG.md /usr/share/doc/harmony-ap/
