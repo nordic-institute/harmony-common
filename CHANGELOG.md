@@ -1,8 +1,9 @@
 # Changelog
 
-## Access Point - 1.4.0 - 2023-xx-xx
+## Access Point - 1.4.0 - 2023-02-08
 
 - NEDS-104: Implement database migrations using Liquibase for Harmony Access Point.
+- NEDS-105: Update the Harmony Access Point 3rd party dependencies.
 
 ## SMP - 1.4.0 - 2023-01-23
 
