@@ -43,12 +43,17 @@ case "$1" in
   TOMCATPORT="$RET"
   db_stop
 
-  DBUSER=harmony_ap
+  export LIQUIBASE_HOME=/opt/harmony-ap/liquibase
+  export URL=jdbc:mysql://localhost:3306/harmony_ap
+
   SCHEMA_EXISTS=$(mysql -s -N -e "SELECT SCHEMA_NAME FROM INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME='harmony_ap'");
   if [ -z "$SCHEMA_EXISTS" ]; then
     DROPDBONERROR=true
     echo "Creating database schema harmony_ap" >&2
+
+    DBUSER=harmony_ap
     DBPASSWORD=$(openssl rand -base64 12)
+
     mysql -e \
       "create schema harmony_ap; \
       alter database harmony_ap charset=utf8mb4 collate=utf8mb4_bin; \
@@ -56,7 +61,16 @@ case "$1" in
       grant all on harmony_ap.* to $DBUSER@localhost; \
       grant xa_recover_admin on *.* to $DBUSER@localhost;"
 
-    mysql harmony_ap < /opt/harmony-ap/setup/harmony_ap_schema.ddl
+    echo "Apply Liquibase migrations"  >&2
+
+    $LIQUIBASE_HOME/liquibase.sh \
+      --classpath=/opt/harmony-ap/lib/mysql-connector-java-8.0.26.jar \
+      --driver=com.mysql.cj.jdbc.Driver \
+      --url=$URL \
+      --username=$DBUSER \
+      --password=$DBPASSWORD \
+      --changeLogFile=/opt/harmony-ap/db/db.changelog.xml \
+      update
 
     HASHEDPASSWORD=$(java -cp "/opt/harmony-ap/webapps/ROOT/WEB-INF/lib/*" \
       eu.domibus.api.util.BCryptPasswordHash "$APASSWORD")
@@ -65,7 +79,43 @@ case "$1" in
        VALUES ('1', '$AUSER', '$HASHEDPASSWORD', 1, 0, 0);
         INSERT INTO harmony_ap.TB_USER_ROLES (USER_ID, ROLE_ID) VALUES ('1', '1');"
   else
-    echo "Schema harmony_ap already exists. Skipping schema creation" >&2
+    echo "Schema harmony_ap already exists. Update database" >&2
+
+    DBUSER=$(grep "domibus.datasource.user" /etc/harmony-ap/domibus.properties | cut -d'=' -f2 | head -n 1)
+    DBPASSWORD=$(grep "domibus.datasource.password" /etc/harmony-ap/domibus.properties | cut -d'=' -f2 | head -n 1)
+
+    if [[ -z $DBUSER || -z $DBPASSWORD ]]; then
+      echo 'Existing database credentials not found'
+      exit 1
+    fi
+
+    # If current Harmony AP version (<= 1.3.1) doesn't use Liquibase, change log must be synced before
+    # applying migrations. Liquibase is not used if DATABASECHANGELOG table does not exist.
+    CHANGELOG_EXISTS=$(mysql -e "show tables in harmony_ap like 'DATABASECHANGELOG';")
+    if [ -z "$CHANGELOG_EXISTS" ]; then
+      echo "No Liquibase detected. Sync change log" >&2
+
+      $LIQUIBASE_HOME/liquibase.sh \
+        --classpath=/opt/harmony-ap/lib/mysql-connector-java-8.0.26.jar \
+        --driver=com.mysql.cj.jdbc.Driver \
+        --url=$URL \
+        --username=$DBUSER \
+        --password=$DBPASSWORD \
+        --changeLogFile=/opt/harmony-ap/db/db.changelog.xml \
+        --contexts=legacy \
+        changelog-sync
+    fi
+
+    echo "Update database" >&2
+
+    $LIQUIBASE_HOME/liquibase.sh \
+      --classpath=/opt/harmony-ap/lib/mysql-connector-java-8.0.26.jar \
+      --driver=com.mysql.cj.jdbc.Driver \
+      --url=$URL \
+      --username=$DBUSER \
+      --password=$DBPASSWORD \
+      --changeLogFile=/opt/harmony-ap/db/db.changelog.xml \
+      update
   fi
 
   if [ ! -f /etc/harmony-ap/domibus.properties ]; then
