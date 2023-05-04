@@ -1,9 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <configuration>
+    <conversionRule conversionWord="domibusLine" converterClass="eu.domibus.logging.DomibusLineOfCallerConverter" />
     <!-- pattern definition -->
-    <property name="encoderPattern" value="%d{ISO8601} [%X{d_user}] [%X{d_domain}] [%X{d_messageId}] [%thread] %5p %c{1}:%L - %m%n" scope="global"/>
-    <property name="statisticsPattern" value="%d{ISO8601} %5p %c{1}:%L - %m%n" scope="global"/>
+    <property name="encoderPattern" value="%d{ISO8601} [%X{d_user}] [%X{d_domain}] [%X{d_messageId}] [%thread] %5p %c{1}:%domibusLine - %m%n" scope="global"/>
+    <property name="statisticsPattern" value="%d{ISO8601} %5p %c{1}:%domibusLine - %m%n" scope="global"/>
 
     <!-- multitenancy: start include domains config files here -->
     <!--<include optional="true" file="${catalina.home}/conf/domibus/domain_name-logback.xml"/>-->
@@ -20,7 +21,7 @@
             <totalSizeCap>20GB</totalSizeCap>
         </rollingPolicy>
         <encoder>
-            <pattern>%d{ISO8601} [%X{d_user}] [%X{d_messageId}] %5p %c{1}:%L - %m%n</pattern>
+            <pattern>%d{ISO8601} [%X{d_user}] [%X{d_messageId}] %5p %c{1}:%domibusLine - %m%n</pattern>
         </encoder>
     </appender>
     <appender name="file" class="ch.qos.logback.core.rolling.RollingFileAppender">
@@ -42,6 +43,23 @@
         <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
             <!-- rollover daily -->
             <fileNamePattern>/var/log/harmony-ap/domibus-%d{yyyy-MM-dd}.%i.log</fileNamePattern>
+            <!-- each file should be at most 30MB, keep 60 days worth of history, but at most 20GB -->
+            <maxFileSize>30MB</maxFileSize>
+            <maxHistory>60</maxHistory>
+            <totalSizeCap>20GB</totalSizeCap>
+        </rollingPolicy>
+        <encoder>
+            <pattern>${encoderPattern}</pattern>
+        </encoder>
+    </appender>
+    <appender name="error_file" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${catalina.home}/logs/domibus-error.log</file>
+        <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+            <level>WARN</level>
+        </filter>
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <!-- rollover daily -->
+            <fileNamePattern>/var/log/harmony-ap/domibus-error-%d{yyyy-MM-dd}.%i.log</fileNamePattern>
             <!-- each file should be at most 30MB, keep 60 days worth of history, but at most 20GB -->
             <maxFileSize>30MB</maxFileSize>
             <maxHistory>60</maxHistory>
@@ -161,5 +179,6 @@
     <root level="WARN">
         <appender-ref ref="file"/>
         <appender-ref ref="stdout"/>
+        <appender-ref ref="error_file"/>
     </root>
 </configuration>
