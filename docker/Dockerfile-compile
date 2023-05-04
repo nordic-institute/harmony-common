@@ -11,7 +11,7 @@ ARG gid
 
 RUN groupadd -g $gid builder && useradd -m -u $uid -g $gid builder
 RUN mkdir -p /root && chown -R builder:builder /root
-RUN mkdir -p /.m2 && chown -R builder:builder /.m2
+RUN mkdir -p /home/builder/.m2 && chown -R builder:builder /home/builder/.m2
 
 USER builder
 
