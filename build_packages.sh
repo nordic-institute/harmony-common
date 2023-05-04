@@ -48,7 +48,7 @@ buildInDocker() {
        --user builder \
        -v "$(pwd)/../harmony-access-point/":/mnt \
        harmony-compile \
-       mvn clean -f harmony-pom.xml install "${AP_ARGUMENTS[@]}"
+       mvn clean -f pom.xml install "${AP_ARGUMENTS[@]}"
 
     # Compile SMP
     docker run -it --rm \
@@ -72,7 +72,7 @@ buildLocally() {
     echo "Building locally..."
     # Compile code
     cd ../harmony-access-point/
-    mvn clean -f harmony-pom.xml install "${AP_ARGUMENTS[@]}"
+    mvn clean -f pom.xml install "${AP_ARGUMENTS[@]}"
     cd ../harmony-smp/
     mvn clean -f harmony-pom.xml install "${SMP_ARGUMENTS[@]}"
 

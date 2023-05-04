@@ -3,7 +3,7 @@ set -e
 
 # CHANGE VERSION NUMBERS BELOW AS NEEDED
 # Version of Harmony Access Point
-APVERSION=1.4.0
+APVERSION="2.0.0-SNAPSHOT"
 
 # Version of Harmony SMP
 SMPVERSION=1.4.0
@@ -79,10 +79,10 @@ rm -rf commonbin/harmony-ap
 
 mkdir -p commonbin/harmony-ap
 
-unzip "$HARMONY_AP_REPO_PATH/Domibus-MSH-tomcat/target/harmony-MSH-tomcat-$APVERSION.war" -d commonbin/harmony-ap
+unzip "$HARMONY_AP_REPO_PATH/Tomcat/Domibus-MSH-tomcat-distribution/target/harmony-MSH-tomcat-distribution-$APVERSION.war" -d commonbin/harmony-ap
 
 # copy ws plugin jar
-cp "$HARMONY_AP_REPO_PATH/Domibus-default-ws-plugin/target/harmony-default-ws-plugin-$APVERSION.jar" commonbin/ws-plugin.jar
+cp "$HARMONY_AP_REPO_PATH/Plugin-WS/Domibus-default-ws-plugin/target/harmony-default-ws-plugin-$APVERSION.jar" commonbin/ws-plugin.jar
 
 # cleanup
 rm -rf commonbin/harmony-smp
