@@ -6,5 +6,29 @@
                       http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.18.xsd">
 
     <include file="/opt/harmony-ap/db/migrations/0001-init.sql"/>
+    <include file="/opt/harmony-ap/db/migrations/mysql-2.0.0-SNAPSHOT.sql"/>
+    <include file="/opt/harmony-ap/db/migrations/mysql-2.0.0-SNAPSHOT-data.sql"/>  
+    <include file="/opt/harmony-ap/db/migrations/mysql-2.0.0-SNAPSHOT-multi-tenancy.sql"/> 
+    <include file="/opt/harmony-ap/db/migrations/mysql-2.0.0-SNAPSHOT-multi-tenancy-data.sql"/>           
+    <include file="/opt/harmony-ap/db/migrations/mysql-4.2-to-4.2.1-migration.sql"/>
+    <include file="/opt/harmony-ap/db/migrations/mysql-4.2.1-to-4.2.2-migration.sql"/> 
+    <include file="/opt/harmony-ap/db/migrations/mysql-4.2.2-to-4.2.3-migration.sql"/> 
+    <include file="/opt/harmony-ap/db/migrations/mysql-4.2.9-to-5.0-migration.sql"/>
+    <include file="/opt/harmony-ap/db/migrations/mysql-4.2.9-to-5.0-data-migration-step1.sql"/>                          
+    <include file="/opt/harmony-ap/db/migrations/mysql-4.2.9-to-5.0-data-migration-step2.sql"/> 
+    <include file="/opt/harmony-ap/db/migrations/mysql-4.2.9-to-5.0-data-migration-step3.sql"/>
+    <include file="/opt/harmony-ap/db/migrations/mysql-4.2.9-to-5.0-data-migration-step4.sql"/>
+    <include file="/opt/harmony-ap/db/migrations/mysql-4.2.9-to-5.0-multi-tenancy-migration.sql"/>
+    <include file="/opt/harmony-ap/db/migrations/mysql-4.2.9-to-5.0-data-migration-multi-tenancy-step1.sql"/> 
+    <include file="/opt/harmony-ap/db/migrations/mysql-4.2.9-to-5.0-data-migration-multi-tenancy-step2.sql"/>  
+    <include file="/opt/harmony-ap/db/migrations/mysql-4.2.9-to-5.0-data-migration-multi-tenancy-step3.sql"/>  
+    <include file="/opt/harmony-ap/db/migrations/mysql-4.2.9-to-5.0-data-migration-multi-tenancy-step4.sql"/> 
+    <include file="/opt/harmony-ap/db/migrations/mysql-5.0-to-5.0.1-migration.sql"/>
+    <include file="/opt/harmony-ap/db/migrations/mysql-5.0.1-to-5.0.2-migration.sql"/>
+    <include file="/opt/harmony-ap/db/migrations/mysql-5.0-to-5.1-migration.sql"/>
+    <include file="/opt/harmony-ap/db/migrations/mysql-5.0-to-5.1-multi-tenancy-migration.sql"/>
+    <include file="/opt/harmony-ap/db/migrations/mysql-5.1-data-migration.sql"/>
+
+
 
 </databaseChangeLog>
