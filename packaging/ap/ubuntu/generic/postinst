@@ -77,7 +77,7 @@ case "$1" in
 
     mysql -e "INSERT INTO harmony_ap.TB_USER (ID_PK, USER_NAME, USER_PASSWORD, USER_ENABLED, USER_DELETED, DEFAULT_PASSWORD) \
        VALUES ('1', '$AUSER', '$HASHEDPASSWORD', 1, 0, 0);
-        INSERT INTO harmony_ap.TB_USER_ROLES (USER_ID, ROLE_ID) VALUES ('1', '1');"
+       INSERT INTO harmony_ap.TB_USER_ROLES (USER_ID, ROLE_ID) VALUES ('1', '197001010000000001');"
   else
     echo "Schema harmony_ap already exists. Update database" >&2
 
