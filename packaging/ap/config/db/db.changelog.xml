@@ -1,11 +1,34 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <databaseChangeLog
-        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
-        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
-                      http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.18.xsd">
+  xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog  http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.18.xsd">
 
-    <include file="/opt/harmony-ap/db/migrations/mysql-2.0.0-SNAPSHOT.sql"/>
-    <include file="/opt/harmony-ap/db/migrations/mysql-2.0.0-SNAPSHOT-data.sql"/>
+  <changeSet author="harmony" id="2.0.0-migration">
+    <preConditions onFail="CONTINUE" onError="HALT">
+      <changeSetExecuted id="0001:001" author="root" changeLogFile="/opt/harmony-ap/db/migrations/0001-init.sql"/>
+    </preConditions>
+    <sqlFile dbms="mysql" relativeToChangelogFile="true" path="migrations/mysql-4.2.5-to-4.2.6-migration.ddl" />
+    <sqlFile dbms="mysql" relativeToChangelogFile="true" path="migrations/mysql-4.2.9-to-5.0-migration.ddl" />
+    <sqlFile dbms="mysql" relativeToChangelogFile="true" endDelimiter="//" path="migrations/mysql-4.2.9-to-5.0-data-migration-step1.ddl" />
+    <sqlFile dbms="mysql" relativeToChangelogFile="true" endDelimiter="//" path="migrations/mysql-4.2.9-to-5.0-data-migration-step2.ddl" />
+    <sqlFile dbms="mysql" relativeToChangelogFile="true" path="migrations/mysql-4.2.9-to-5.0-data-migration-step3.ddl" />
+    <sqlFile dbms="mysql" relativeToChangelogFile="true" endDelimiter="//" path="migrations/mysql-4.2.9-to-5.0-data-migration-step4.ddl" />
+    <sqlFile dbms="mysql" relativeToChangelogFile="true" path="migrations/mysql-5.0-to-5.0.1-migration.ddl" />
+    <sqlFile dbms="mysql" relativeToChangelogFile="true" path="migrations/mysql-5.0.1-to-5.0.2-migration.ddl" />
+    <sqlFile dbms="mysql" relativeToChangelogFile="true" path="migrations/mysql-5.0-to-5.1-migration.ddl" />
+    <sqlFile dbms="mysql" relativeToChangelogFile="true" path="migrations/mysql-5.1-data-migration.ddl" />
+  </changeSet>
+
+  <changeSet author="harmony" id="2.0.0-init">
+    <preConditions onFail="MARK_RAN" onError="HALT">
+      <not>
+        <changeSetExecuted id="0001:001" author="root" changeLogFile="/opt/harmony-ap/db/migrations/0001-init.sql"/>
+      </not>
+    </preConditions>
+
+    <sqlFile dbms="mysql" relativeToChangelogFile="true" path="migrations/mysql-5.1.0.ddl"/>
+    <sqlFile dbms="mysql" relativeToChangelogFile="true" path="migrations/mysql-5.1.0-data.ddl"/>
+  </changeSet>
 
 </databaseChangeLog>
