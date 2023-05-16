@@ -2,7 +2,7 @@
 --  Update Database Script
 --  *********************************************************************
 --  Change Log: src/main/resources/db/archive/5.0/changelog-5.0-delta.xml
---  Ran at: 5/15/23 12:13 PM
+--  Ran at: 5/16/23 4:04 PM
 --  Against: null@offline:mysql?changeLogFile=/home/hyoty/projects/niis/harmony-access-point/Core/Domibus-MSH-db/target/liquibase/changelog-5.0-delta.mysql
 --  Liquibase version: 4.17.0
 --  *********************************************************************
@@ -38,16 +38,15 @@ ALTER TABLE TB_COMMAND_PROPERTY RENAME INDEX UNI_COMMAND_PROP_NAME TO UK_COMMAND
 
 ALTER TABLE TB_USER RENAME INDEX USER_NAME TO UK_USER_NAME;
 
-ALTER TABLE TB_USER_ROLE RENAME INDEX ROLE_NAME TO UK_ROLE_NAME;
+ALTER TABLE TB_USER_ROLE RENAME INDEX UQ_ROLE_NAME TO UK_ROLE_NAME;
 
 --  Changeset src/main/resources/db/archive/5.0/migration/common/changelog-5.0-alter-delta.xml::EDELIVERY-8384-primary-key-index-names-common::Sebastian-Ion TINCU
 --  Changeset src/main/resources/db/archive/5.0/migration/single-tenancy/changelog-5.0-alter-delta.xml::EDELIVERY-7840-Rename-unique-key-constraints-single-tenancy::Soumya
 ALTER TABLE TB_CERTIFICATE RENAME INDEX CERTIFICATE_ALIAS TO UK_CERTIFICATE_ALIAS;
 
-ALTER TABLE TB_ENCRYPTION_KEY RENAME INDEX KEY_USAGE TO UK_KEY_USAGE;
+ALTER TABLE TB_ENCRYPTION_KEY RENAME INDEX UQ_KEY_USAGE TO UK_KEY_USAGE;
 
--- TODO: DOES NOT EXIST?
--- ALTER TABLE TB_PM_LEG_MPC RENAME INDEX UK_7H5NW411791GF4LG1YH6SI1WD TO UK_LEG_MPC_PARTYMPCMAP_ID;
+ALTER TABLE TB_PM_LEG_MPC RENAME INDEX UK_7H5NW411791GF4LG1YH6SI1WD TO UK_LEG_MPC_PARTYMPCMAP_ID;
 
 --  Changeset src/main/resources/db/archive/5.0/migration/single-tenancy/changelog-5.0-alter-delta.xml::EDELIVERY-7840-Rename-foreign-key-constraints-single-tenancy::Soumya
 ALTER TABLE TB_REV_CHANGES

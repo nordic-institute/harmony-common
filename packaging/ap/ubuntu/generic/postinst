@@ -54,21 +54,25 @@ case "$1" in
     DBUSER=harmony_ap
     DBPASSWORD=$(openssl rand -base64 12)
 
+    # Update time zone information
+    mysql_tzinfo_to_sql /usr/share/zoneinfo/posix | mysql -u root mysql
+
     mysql -e \
       "create schema harmony_ap; \
       alter database harmony_ap charset=utf8mb4 collate=utf8mb4_bin; \
-      create user $DBUSER@localhost identified by '$DBPASSWORD'; \
-      grant all on harmony_ap.* to $DBUSER@localhost; \
-      grant xa_recover_admin on *.* to $DBUSER@localhost;"
+      create user if not exists '$DBUSER'@localhost; \
+      alter user '$DBUSER'@localhost identified by '$DBPASSWORD'; \
+      grant all on harmony_ap.* to '$DBUSER'@localhost; \
+      grant xa_recover_admin on *.* to '$DBUSER'@localhost;"
 
     echo "Apply Liquibase migrations"  >&2
 
     $LIQUIBASE_HOME/liquibase.sh \
       --classpath=/opt/harmony-ap/lib/mysql-connector-java-8.0.26.jar \
       --driver=com.mysql.cj.jdbc.Driver \
-      --url=$URL \
-      --username=$DBUSER \
-      --password=$DBPASSWORD \
+      --url="$URL" \
+      --username="$DBUSER" \
+      --password="$DBPASSWORD" \
       --changeLogFile=/opt/harmony-ap/db/db.changelog.xml \
       update
 
@@ -89,33 +93,27 @@ case "$1" in
       exit 1
     fi
 
-    # If current Harmony AP version (<= 1.3.1) doesn't use Liquibase, change log must be synced before
-    # applying migrations. Liquibase is not used if DATABASECHANGELOG table does not exist.
-    CHANGELOG_EXISTS=$(mysql -e "show tables in harmony_ap like 'DATABASECHANGELOG';")
-    if [ -z "$CHANGELOG_EXISTS" ]; then
-      echo "No Liquibase detected. Sync change log" >&2
+    # Update time zone information 
+    mysql_tzinfo_to_sql /usr/share/zoneinfo/posix | mysql -u root mysql
+    systemctl restart mysql
+    mysqladmin -w -s -u root ping
 
-      $LIQUIBASE_HOME/liquibase.sh \
-        --classpath=/opt/harmony-ap/lib/mysql-connector-java-8.0.26.jar \
-        --driver=com.mysql.cj.jdbc.Driver \
-        --url=$URL \
-        --username=$DBUSER \
-        --password=$DBPASSWORD \
-        --changeLogFile=/opt/harmony-ap/db/db.changelog.xml \
-        --contexts=legacy \
-        changelog-sync
-    fi
+    mysql -e \
+      "GRANT SYSTEM_VARIABLES_ADMIN ON *.* TO '$DBUSER'@'localhost';"
 
     echo "Update database" >&2
 
     $LIQUIBASE_HOME/liquibase.sh \
       --classpath=/opt/harmony-ap/lib/mysql-connector-java-8.0.26.jar \
       --driver=com.mysql.cj.jdbc.Driver \
-      --url=$URL \
-      --username=$DBUSER \
-      --password=$DBPASSWORD \
+      --url="$URL" \
+      --username="$DBUSER" \
+      --password="$DBPASSWORD" \
       --changeLogFile=/opt/harmony-ap/db/db.changelog.xml \
       update
+
+    mysql -e \
+      "REVOKE SYSTEM_VARIABLES_ADMIN ON *.* FROM '$DBUSER'@'localhost';"
   fi
 
   if [ ! -f /etc/harmony-ap/domibus.properties ]; then
@@ -126,20 +124,20 @@ case "$1" in
     TLSKEYPASS=$(openssl rand -base64 12)
     TLSTRUSTSTOREPASS=$(openssl rand -base64 12)
 
-    keytool -J-Dkeystore.pkcs12.legacy -genkeypair -keyalg RSA -alias $PARTYNAME -keystore /etc/harmony-ap/ap-keystore.jks -storepass $KEYSTOREPASS \
-      -keypass $KEYSTOREPASS -validity 333 -keysize 3072 -dname "$SERVERDN" 2>/dev/null
+    keytool -J-Dkeystore.pkcs12.legacy -genkeypair -keyalg RSA -alias "$PARTYNAME" -keystore /etc/harmony-ap/ap-keystore.jks -storepass "$KEYSTOREPASS" \
+      -keypass "$KEYSTOREPASS" -validity 333 -keysize 3072 -dname "$SERVERDN" 2>/dev/null
 
-    keytool -J-Dkeystore.pkcs12.legacy -genkeypair -keyalg RSA -alias $PARTYNAME -keystore /etc/harmony-ap/tls-keystore.jks -storepass $TLSKEYPASS \
-      -keypass $TLSKEYPASS -validity 333 -keysize 3072 -dname "$SERVERDN" 2>/dev/null
+    keytool -J-Dkeystore.pkcs12.legacy -genkeypair -keyalg RSA -alias "$PARTYNAME" -keystore /etc/harmony-ap/tls-keystore.jks -storepass "$TLSKEYPASS" \
+      -keypass "$TLSKEYPASS" -validity 333 -keysize 3072 -dname "$SERVERDN" 2>/dev/null
 
-    keytool -J-Dkeystore.pkcs12.legacy -genkeypair -alias mock -keystore /etc/harmony-ap/ap-truststore.jks -storepass $TRUSTSTOREPASS \
-      -keypass $TRUSTSTOREPASS -dname "CN=mock" 2>/dev/null
-    keytool -delete -alias mock -keystore /etc/harmony-ap/ap-truststore.jks -storepass $TRUSTSTOREPASS 2>/dev/null
+    keytool -J-Dkeystore.pkcs12.legacy -genkeypair -alias mock -keystore /etc/harmony-ap/ap-truststore.jks -storepass "$TRUSTSTOREPASS" \
+      -keypass "$TRUSTSTOREPASS" -dname "CN=mock" 2>/dev/null
+    keytool -delete -alias mock -keystore /etc/harmony-ap/ap-truststore.jks -storepass "$TRUSTSTOREPASS" 2>/dev/null
 
-    keytool -export -alias $PARTYNAME -file /etc/harmony-ap/selfsigned.cer \
-      -keystore /etc/harmony-ap/tls-keystore.jks -storepass $TLSKEYPASS 2>/dev/null
-    keytool -J-Dkeystore.pkcs12.legacy -import -noprompt -alias $PARTYNAME -file /etc/harmony-ap/selfsigned.cer \
-      -keystore /etc/harmony-ap/tls-truststore.jks -storepass $TLSTRUSTSTOREPASS 2>/dev/null
+    keytool -export -alias "$PARTYNAME" -file /etc/harmony-ap/selfsigned.cer \
+      -keystore /etc/harmony-ap/tls-keystore.jks -storepass "$TLSKEYPASS" 2>/dev/null
+    keytool -J-Dkeystore.pkcs12.legacy -import -noprompt -alias "$PARTYNAME" -file /etc/harmony-ap/selfsigned.cer \
+      -keystore /etc/harmony-ap/tls-truststore.jks -storepass "$TLSTRUSTSTOREPASS" 2>/dev/null
     rm -f /etc/harmony-ap/selfsigned.cer
 
     E_KEYSTOREPASS=$(escape_for_sed "$KEYSTOREPASS")
@@ -192,11 +190,11 @@ case "$1" in
   fi
 
   # Check validity of user and group
-  if [ "`id -u harmony-ap`" -eq 0 ]; then
+  if [ "$(id -u harmony-ap)" -eq 0 ]; then
       echo "The Harmony AP system user must not have uid 0 (root).Please fix this and reinstall this package." >&2
       exit 1
   fi
-  if [ "`id -g harmony-ap`" -eq 0 ]; then
+  if [ "$(id -g harmony-ap)" -eq 0 ]; then
       echo "The Harmony AP system user must not have root as primary group. Please fix this and reinstall this package." >&2
       exit 1
   fi
@@ -208,7 +206,7 @@ case "$1" in
     # Get the line number of the second last line of the script header
     START_LINE_NUMBER=$(grep -n '# Start Script' /opt/harmony-ap/bin/startup.sh | cut -d ":" -f 1)
     # Line number of the first empty line in the script
-    LINE_NUMBER=$(($START_LINE_NUMBER+2))
+    LINE_NUMBER=$((START_LINE_NUMBER+2))
     # Replace the first empty line
     sed -i "${LINE_NUMBER}s/^$/$REPLACEMENT/" /opt/harmony-ap/bin/startup.sh
   fi
