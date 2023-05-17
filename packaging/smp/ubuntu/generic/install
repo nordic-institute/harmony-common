@@ -1,4 +1,4 @@
-../../../../../commonbin/mysql-connector-java-8.0.26.jar /opt/harmony-smp/lib/
+../../../../../commonbin/mysql-connector-j-8.0.33.jar /opt/harmony-smp/lib/
 ../../../../../commonbin/harmony-smp/* /opt/harmony-smp/webapps/ROOT/
 ../../../../../commonbin/tomcat9/bin/*.sh /opt/harmony-smp/bin/
 ../../../../../commonbin/tomcat9/bin/*.jar /opt/harmony-smp/bin/

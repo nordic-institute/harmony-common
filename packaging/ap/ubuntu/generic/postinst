@@ -19,6 +19,17 @@ cleanup() {
   fi
 }
 
+update_prop() {
+  local prop="$(escape_for_sed "$1")";
+  local value="$(escape_for_sed "$2")";
+  sed --in-place --regexp-extended "s/^${prop}\s*=.*$/${prop}=${value}/" /etc/harmony-ap/domibus.properties
+}
+
+delete_prop() {
+  local prop="$1";
+  sed --in-place --regexp-extended "/^${prop}\s*=.*/d" /etc/harmony-ap/domibus.properties
+}
+
 case "$1" in
  configure)
 
@@ -45,6 +56,7 @@ case "$1" in
 
   export LIQUIBASE_HOME=/opt/harmony-ap/liquibase
   export URL=jdbc:mysql://localhost:3306/harmony_ap
+  export LIQUIBASE_SHOW_BANNER=false
 
   SCHEMA_EXISTS=$(mysql -s -N -e "SELECT SCHEMA_NAME FROM INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME='harmony_ap'");
   if [ -z "$SCHEMA_EXISTS" ]; then
@@ -68,7 +80,7 @@ case "$1" in
     echo "Apply Liquibase migrations"  >&2
 
     $LIQUIBASE_HOME/liquibase.sh \
-      --classpath=/opt/harmony-ap/lib/mysql-connector-java-8.0.26.jar \
+      --classpath=/opt/harmony-ap/lib/mysql-connector-j-8.0.33.jar \
       --driver=com.mysql.cj.jdbc.Driver \
       --url="$URL" \
       --username="$DBUSER" \
@@ -104,7 +116,7 @@ case "$1" in
     echo "Update database" >&2
 
     $LIQUIBASE_HOME/liquibase.sh \
-      --classpath=/opt/harmony-ap/lib/mysql-connector-java-8.0.26.jar \
+      --classpath=/opt/harmony-ap/lib/mysql-connector-j-8.0.33.jar \
       --driver=com.mysql.cj.jdbc.Driver \
       --url="$URL" \
       --username="$DBUSER" \
@@ -176,6 +188,22 @@ case "$1" in
           setcap cap_net_bind_service+ep /usr/lib/jvm/java-8-openjdk-amd64/jre/bin/java
         fi
     fi
+  fi
+
+  if [[ -n $2 ]] && dpkg --compare-versions "$2" lt "2.0.0"; then
+    # Migrate properties on upgrade
+    update_prop 'domibus.entityManagerFactory.jpaProperty.hibernate.dialect' 'org.hibernate.dialect.MySQL8Dialect'
+    update_prop 'domibus.datasource.url' 'jdbc:mysql://${domibus.database.serverName}:${domibus.database.port}/${domibus.database.schema}?useSSL=false&useLegacyDatetimeCode=false&serverTimezone=UTC'
+    update_prop 'domibus.entityManagerFactory.jpaProperty.hibernate.connection.driver_class' 'com.mysql.cj.jdbc.Driver'
+
+    delete_prop 'domibus\.datasource\.xa.*'
+    delete_prop 'domibus\.jms\.queue\.ui\.replication'
+    delete_prop 'domibus\.ui\.replication.\enabled.*'
+    delete_prop 'domibus\.entityManagerFactory\.jpaProperty\.hibernate\.transaction\.factory_class'
+    delete_prop 'domibus\.entityManagerFactory\.jpaProperty\.hibernate\.transaction\.jta\.platform'
+    delete_prop 'com\.atomikos\..*'
+
+    #TODO: rename dynamic discovery properties
   fi
 
   # Required to support upgrade from 1.0.0 to 1.1.0
