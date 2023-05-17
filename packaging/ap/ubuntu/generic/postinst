@@ -9,10 +9,14 @@ escape_for_sed() {
 
 SUCCESS=false
 DROPDBONERROR=false
+DROPCONFIGONERROR=false
 
 cleanup() {
   if [ ! "$SUCCESS" = true ]; then
-    rm -f /etc/harmony-ap/*.jks
+    if [ "$DROPCONFIGONERROR" = true ]; then
+      rm -f /etc/harmony-ap/*.jks
+      rm -f /etc/harmony-ap/domibus.properties
+    fi
     if [ "$DROPDBONERROR" = true ]; then
       mysql -e "DROP SCHEMA harmony_ap; DROP USER harmony_ap@localhost"
     fi;
@@ -20,7 +24,7 @@ cleanup() {
 }
 
 update_prop() {
-  local prop="$(escape_for_sed "$1")";
+  local prop="$1"
   local value="$(escape_for_sed "$2")";
   sed --in-place --regexp-extended "s/^${prop}\s*=.*$/${prop}=${value}/" /etc/harmony-ap/domibus.properties
 }
@@ -28,6 +32,17 @@ update_prop() {
 delete_prop() {
   local prop="$1";
   sed --in-place --regexp-extended "/^${prop}\s*=.*/d" /etc/harmony-ap/domibus.properties
+}
+
+get_prop() {
+  local prop="$1";
+  grep -m1 -Po "^${prop}\s*=\s*\K.*$" /etc/harmony-ap/domibus.properties 2>/dev/null
+}
+
+rename_prop() {
+  local old="$1";
+  local new="$(escape_for_sed "$2")";
+  sed --in-place --regexp-extended "s/^${old}\s*=\s*(.*)$/${new}=\1/" /etc/harmony-ap/domibus.properties
 }
 
 case "$1" in
@@ -58,20 +73,23 @@ case "$1" in
   export URL=jdbc:mysql://localhost:3306/harmony_ap
   export LIQUIBASE_SHOW_BANNER=false
 
-  SCHEMA_EXISTS=$(mysql -s -N -e "SELECT SCHEMA_NAME FROM INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME='harmony_ap'");
+  SCHEMA_EXISTS=$(mysql -w -s -N -e "SELECT SCHEMA_NAME FROM INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME='harmony_ap'");
   if [ -z "$SCHEMA_EXISTS" ]; then
     DROPDBONERROR=true
     echo "Creating database schema harmony_ap" >&2
 
-    DBUSER=harmony_ap
-    DBPASSWORD=$(openssl rand -base64 12)
+    DBUSER=$(get_prop "domibus.datasource.user")
+    DBUSER=${DBUSER:-harmony_ap}
+
+    DBPASSWORD=$(get_prop "domibus.datasource.password")
+    DBPASSWORD=${DBPASSWORD:-$(openssl rand -base64 12)}
 
     # Update time zone information
     mysql_tzinfo_to_sql /usr/share/zoneinfo/posix | mysql -u root mysql
 
     mysql -e \
       "create schema harmony_ap; \
-      alter database harmony_ap charset=utf8mb4 collate=utf8mb4_bin; \
+      alter schema harmony_ap charset=utf8mb4 collate=utf8mb4_bin; \
       create user if not exists '$DBUSER'@localhost; \
       alter user '$DBUSER'@localhost identified by '$DBPASSWORD'; \
       grant all on harmony_ap.* to '$DBUSER'@localhost; \
@@ -97,18 +115,18 @@ case "$1" in
   else
     echo "Schema harmony_ap already exists. Update database" >&2
 
-    DBUSER=$(grep "domibus.datasource.user" /etc/harmony-ap/domibus.properties | cut -d'=' -f2 | head -n 1)
-    DBPASSWORD=$(grep "domibus.datasource.password" /etc/harmony-ap/domibus.properties | cut -d'=' -f2 | head -n 1)
+    DBUSER=$(get_prop "domibus.datasource.user")
+    DBPASSWORD=$(get_prop "domibus.datasource.password")
 
     if [[ -z $DBUSER || -z $DBPASSWORD ]]; then
       echo 'Existing database credentials not found'
       exit 1
     fi
 
-    # Update time zone information 
+    # Update mysql time zone information
     mysql_tzinfo_to_sql /usr/share/zoneinfo/posix | mysql -u root mysql
     systemctl restart mysql
-    mysqladmin -w -s -u root ping
+    mysqladmin -w -s -u root ping &>/dev/null
 
     mysql -e \
       "GRANT SYSTEM_VARIABLES_ADMIN ON *.* TO '$DBUSER'@'localhost';"
@@ -129,6 +147,7 @@ case "$1" in
   fi
 
   if [ ! -f /etc/harmony-ap/domibus.properties ]; then
+    DROPCONFIGONERROR=true
     rm -f /etc/harmony-ap/*.jks
 
     KEYSTOREPASS=$(openssl rand -base64 12)
@@ -192,9 +211,9 @@ case "$1" in
 
   if [[ -n $2 ]] && dpkg --compare-versions "$2" lt "2.0.0"; then
     # Migrate properties on upgrade
-    update_prop 'domibus.entityManagerFactory.jpaProperty.hibernate.dialect' 'org.hibernate.dialect.MySQL8Dialect'
-    update_prop 'domibus.datasource.url' 'jdbc:mysql://${domibus.database.serverName}:${domibus.database.port}/${domibus.database.schema}?useSSL=false&useLegacyDatetimeCode=false&serverTimezone=UTC'
-    update_prop 'domibus.entityManagerFactory.jpaProperty.hibernate.connection.driver_class' 'com.mysql.cj.jdbc.Driver'
+    update_prop 'domibus\.entityManagerFactory\.jpaProperty\.hibernate\.dialect' 'org.hibernate.dialect.MySQL8Dialect'
+    update_prop 'domibus\.datasource\.url' 'jdbc:mysql://${domibus.database.serverName}:${domibus.database.port}/${domibus.database.schema}?useSSL=false&useLegacyDatetimeCode=false&serverTimezone=UTC'
+    update_prop 'domibus\.entityManagerFactory\.jpaProperty\.hibernate\.connection\.driver_class' 'com.mysql.cj.jdbc.Driver'
 
     delete_prop 'domibus\.datasource\.xa.*'
     delete_prop 'domibus\.jms\.queue\.ui\.replication'
@@ -203,7 +222,13 @@ case "$1" in
     delete_prop 'domibus\.entityManagerFactory\.jpaProperty\.hibernate\.transaction\.jta\.platform'
     delete_prop 'com\.atomikos\..*'
 
-    #TODO: rename dynamic discovery properties
+    if [[ "$(get_prop 'domibus.dynamicdiscovery.client.specification')" == "PEPPOL" ]]; then
+      rename_prop 'domibus\.dynamicdiscovery\.partyid\.type' 'domibus.dynamicdiscovery.peppolclient.partyid.type'
+      rename_prop 'domibus\.dynamicdiscovery\.partyid\.responder\.role' 'domibus.dynamicdiscovery.peppolclient.partyid.responder.role'
+    else
+      rename_prop 'domibus\.dynamicdiscovery\.partyid\.type' 'domibus.dynamicdiscovery.oasisclient.partyid.responder.role'
+      rename_prop 'domibus\.dynamicdiscovery\.partyid\.responder\.role' 'domibus.dynamicdiscovery.oasisclient.partyid.responder.role'
+    fi
   fi
 
   # Required to support upgrade from 1.0.0 to 1.1.0
