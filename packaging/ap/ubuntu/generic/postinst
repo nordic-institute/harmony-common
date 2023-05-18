@@ -36,7 +36,7 @@ delete_prop() {
 
 get_prop() {
   local prop="$1";
-  grep -m1 -Po "^${prop}\s*=\s*\K.*$" /etc/harmony-ap/domibus.properties 2>/dev/null
+  grep -m1 -Po "^${prop}\s*=\s*\K.*$" /etc/harmony-ap/domibus.properties 2>/dev/null || echo ""
 }
 
 rename_prop() {
