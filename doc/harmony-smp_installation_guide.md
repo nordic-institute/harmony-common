@@ -59,11 +59,11 @@ The document is intended for readers with a moderate knowledge of Linux server m
 
 ### 1.2 Terms and abbreviations
 
-See eDelivery definitions documentation \[[TERMS](#Ref_TERMS)\].
+See eDelivery documentation \[[TERMS](#Ref_TERMS)\].
 
 ### 1.3 References
 
-1. <a id="Ref_TERMS" class="anchor"></a>\[TERMS\] CEF Definitions - eDelivery Definitions, <https://ec.europa.eu/cefdigital/wiki/display/CEFDIGITAL/CEF+Definitions#CEFDefinitions-eDeliveryDefinitions>
+1. <a id="Ref_TERMS" class="anchor"></a>\[TERMS\] eDelivery Documentation, <https://ec.europa.eu/digital-building-blocks/wikis/display/DIGITAL/eDelivery>
 2. <a id="Ref_SMP_ADMIN_GUIDE" class="anchor"></a>\[SMP_ADMIN_GUIDE\] SMP Administration Guide - SMP 4.2, <https://ec.europa.eu/digital-building-blocks/wikis/download/attachments/551518321/%28eDelivery%29%28SMP%29%28AG%29%28SMP%204.2-FR%29%283.5%29.pdf>
 3. <a id="Ref_UG-DDCG" class="anchor"></a>\[UG-DDCG\] Harmony eDelivery Access - Dynamic Discovery Configuration Guide. Document ID: [UG-DDCG](dynamic_discovery_configuration_guide.md)
 

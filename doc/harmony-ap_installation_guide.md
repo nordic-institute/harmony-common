@@ -1,20 +1,21 @@
 # Harmony eDelivery Access - Access Point Installation Guide <!-- omit in toc -->
 
-Version: 1.5  
+Version: 1.6  
 Doc. ID: IG-AP
 
 ---
 
 ## Version history <!-- omit in toc -->
 
- Date       | Version | Description                                                             | Author
- ---------- | ------- | ------------------------------------------------------------------------| --------------------
- 15.11.2021 | 1.0     | Initial version                                                         |
- 07.01.2022 | 1.1     | Add reference to the Static Discovery Configuration Guide \[UG-SDCG\]   | Petteri Kivimäki
+ Date       | Version | Description                                                                                                                                                 | Author
+ ---------- |---------|-------------------------------------------------------------------------------------------------------------------------------------------------------------| --------------------
+ 15.11.2021 | 1.0     | Initial version                                                                                                                                             |
+ 07.01.2022 | 1.1     | Add reference to the Static Discovery Configuration Guide \[UG-SDCG\]                                                                                       | Petteri Kivimäki
  08.01.2022 | 1.2     | Add party name to section [2.5](#25-access-point-installation) and TLS truststore to section [2.10](#210-location-of-configuration-and-generated-passwords) | Petteri Kivimäki
- 04.02.2022 | 1.3     | Add upgrade instructions. Add section about log files                   | Petteri Kivimäki
- 23.04.2022 | 1.4     | Add port number to the Access Point Installation section. Update package repository URL | Petteri Kivimäki
- 28.04.2022 | 1.5     | Minor changes                                                           | Petteri Kivimäki
+ 04.02.2022 | 1.3     | Add upgrade instructions. Add section about log files                                                                                                       | Petteri Kivimäki
+ 23.04.2022 | 1.4     | Add port number to the Access Point Installation section. Update package repository URL                                                                     | Petteri Kivimäki
+ 28.04.2022 | 1.5     | Minor changes                                                                                                                                               | Petteri Kivimäki
+ 22.05.2023 | 1.6     | Update references                                                                                                                                           | Petteri Kivimäki
 
 ## License <!-- omit in toc -->
 
@@ -56,14 +57,14 @@ The document is intended for readers with a moderate knowledge of Linux server m
 
 ### 1.2 Terms and abbreviations
 
-See eDelivery definitions documentation \[[TERMS](#Ref_TERMS)\].
+See eDelivery documentation \[[TERMS](#Ref_TERMS)\].
 
 ### 1.3 References
 
-1. <a id="Ref_TERMS" class="anchor"></a>\[TERMS\] CEF Definitions - eDelivery Definitions, <https://ec.europa.eu/cefdigital/wiki/display/CEFDIGITAL/CEF+Definitions#CEFDefinitions-eDeliveryDefinitions>
-2. <a id="Ref_DOMIBUS_ADMIN_GUIDE" class="anchor"></a>\[DOMIBUS_ADMIN_GUIDE\] Access Point Administration Guide - Domibus 4.2.5, <https://ec.europa.eu/cefdigital/wiki/download/attachments/447677321/%28eDelivery%29%28AP%29%28AG%29%284.2.5%29%288.9.6%29.pdf>
-3. <a id="Ref_WS_PLUGIN" class="anchor"></a>\[WS_PLUGIN\] Access Point Interface Control Document - WS Plugin, <https://ec.europa.eu/cefdigital/wiki/download/attachments/447677321/%28eDelivery%29%28AP%29%28ICD%29%28WS%20plugin%29%281.7%29.pdf>
-4. <a id="Ref_PLUGIN_COOKBOOK" class="anchor"></a>\[PLUGIN_COOKBOOK\] Domibus Plugin Cookbook, <https://ec.europa.eu/cefdigital/wiki/download/attachments/447677321/%28eDelivery%29%28AP%29%28Plugin-CB%29%28Domibus.4.2.5%29%284.5%29.pdf>
+1. <a id="Ref_TERMS" class="anchor"></a>\[TERMS\] eDelivery Documentation, <https://ec.europa.eu/digital-building-blocks/wikis/display/DIGITAL/eDelivery>
+2. <a id="Ref_DOMIBUS_ADMIN_GUIDE" class="anchor"></a>\[DOMIBUS_ADMIN_GUIDE\] Access Point Administration Guide - Domibus 5.1.0, <https://ec.europa.eu/digital-building-blocks/wikis/download/attachments/660440359/%28eDelivery%29%28AP%29%28AG%29%28Domibus%205.1%29%2819.6%29.pdf>
+3. <a id="Ref_WS_PLUGIN" class="anchor"></a>\[WS_PLUGIN\] Access Point Interface Control Document - WS Plugin, <https://ec.europa.eu/digital-building-blocks/wikis/download/attachments/660440359/%28eDelivery%29%28AP%29%28ICD%29%28WS%20plugin%29%28Domibus%205.1%29%283.4%29.pdf>
+4. <a id="Ref_PLUGIN_COOKBOOK" class="anchor"></a>\[PLUGIN_COOKBOOK\] Domibus Plugin Cookbook, <https://ec.europa.eu/digital-building-blocks/wikis/download/attachments/660440359/%28eDelivery%29%28AP%29%28Plugin-CB%29%28Domibus.5.1%29%286.4%29.pdf>
 5. <a id="Ref_UG-DDCG" class="anchor"></a>\[UG-DDCG\] Harmony eDelivery Access - Dynamic Discovery Configuration Guide. Document ID: [UG-DDCG](dynamic_discovery_configuration_guide.md)
 6. <a id="Ref_UG-SDCG" class="anchor"></a>\[UG-SDCG\] Harmony eDelivery Access - Static Discovery Configuration Guide. Document ID: [UG-SDCG](static_discovery_configuration_guide.md)
 
