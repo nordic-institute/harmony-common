@@ -1,17 +1,18 @@
 # Harmony eDelivery Access - Static Discovery Configuration Guide <!-- omit in toc -->
 
-Version: 1.2  
+Version: 1.3  
 Doc. ID: UG-SDCG
 
 ---
 
 ## Version history <!-- omit in toc -->
 
- Date       | Version | Description                                                     | Author
- ---------- | ------- | --------------------------------------------------------------- | --------------------
- 30.12.2021 | 1.0     | Initial version                                                 | Petteri Kivimäki
+ Date       | Version | Description                                                                                                                         | Author
+ ---------- |---------|-------------------------------------------------------------------------------------------------------------------------------------| --------------------
+ 30.12.2021 | 1.0     | Initial version                                                                                                                     | Petteri Kivimäki
  08.01.2022 | 1.1     | Remove sections about creating TLS truststore manually, update One-Way SSL configuration instructions, update example configuration | Petteri Kivimäki
- 16.02.2022 | 1.2     | Minor updates on SSL configuration details                      | Petteri Kivimäki
+ 16.02.2022 | 1.2     | Minor updates on SSL configuration details                                                                                          | Petteri Kivimäki
+ 22.05.2023 | 1.3     | Updates on importing TLS certificates, changing the sign key alias and references                                                   | Petteri Kivimäki
  
 ## License <!-- omit in toc -->
 
@@ -74,14 +75,14 @@ The main terms used in this document are:
 
 - AP - Access Point, a component that participants use to send and receive messages in an eDelivery network.
 
-See eDelivery definitions documentation \[[TERMS](#Ref_TERMS)\].
+See eDelivery documentation \[[TERMS](#Ref_TERMS)\].
 
 ### 1.3 References
 
-1. <a id="Ref_TERMS" class="anchor"></a>\[TERMS\] CEF Definitions - eDelivery Definitions, <https://ec.europa.eu/cefdigital/wiki/display/CEFDIGITAL/CEF+Definitions#CEFDefinitions-eDeliveryDefinitions>
+1. <a id="Ref_TERMS" class="anchor"></a>\[TERMS\] eDelivery Documentation, <https://ec.europa.eu/digital-building-blocks/wikis/display/DIGITAL/eDelivery>
 2. <a id="Ref_IG-AP" class="anchor"></a>\[IG-AP\] Harmony eDelivery Access - Access Point Installation Guide. Document ID: [IG-AS](harmony-ap_installation_guide.md)
-3. <a id="Ref_DOMIBUS_ADMIN_GUIDE" class="anchor"></a>\[DOMIBUS_ADMIN_GUIDE\] Access Point Administration Guide - Domibus 4.2.5, <https://ec.europa.eu/cefdigital/wiki/download/attachments/447677321/%28eDelivery%29%28AP%29%28AG%29%284.2.5%29%288.9.6%29.pdf>
-4. <a id="Ref_WS_PLUGIN" class="anchor"></a>\[WS_PLUGIN\] Access Point Interface Control Document - WS Plugin, <https://ec.europa.eu/cefdigital/wiki/download/attachments/447677321/%28eDelivery%29%28AP%29%28ICD%29%28WS%20plugin%29%281.7%29.pdf>
+3. <a id="Ref_DOMIBUS_ADMIN_GUIDE" class="anchor"></a>\[DOMIBUS_ADMIN_GUIDE\] Access Point Administration Guide - Domibus 5.1.0, <https://ec.europa.eu/digital-building-blocks/wikis/download/attachments/660440359/%28eDelivery%29%28AP%29%28AG%29%28Domibus%205.1%29%2819.6%29.pdf>
+4. <a id="Ref_WS_PLUGIN" class="anchor"></a>\[WS_PLUGIN\] Access Point Interface Control Document - WS Plugin, <https://ec.europa.eu/digital-building-blocks/wikis/download/attachments/660440359/%28eDelivery%29%28AP%29%28ICD%29%28WS%20plugin%29%28Domibus%205.1%29%283.4%29.pdf>
 
 ## 2. Configure Static Discovery
 
@@ -140,27 +141,26 @@ For example, this block from a `PMode` file is taken from an Access Point owned 
 ```
 
 The sign key is stored in `/etc/harmony-ap/ap-keystore.jks`. The password of the keystore can be found in the
-`/etc/harmony-ap/domibus.properties` file in the `domibus.security.keystore.password` property. The alias is updated
-using the command below:
+`/etc/harmony-ap/domibus.properties` file in the `domibus.security.keystore.password` property or in the Properties
+section of the Harmony Access Point UI. The alias is updated using the command below:
 
 ```bash
 sudo keytool -changealias -alias "selfsigned" -destalias "<party_name>" -keypass <ap_keystore_password> -keystore /etc/harmony-ap/ap-keystore.jks -storepass <ap_keystore_password>
 ```
 
-Also, the `domibus.security.key.private.alias` property in the `/etc/harmony-ap/domibus.properties` file must be updated
-with the new alias. Open the file with a text editor and update the property value:
-
-```properties
-#Private key
-#The alias from the keystore of the private key
-domibus.security.key.private.alias=selfsigned
-```
-
-Restart the `harmony-ap` service to apply the changes:
+Restart the `harmony-ap` service to apply the change:
 
 ```bash
 sudo systemctl restart harmony-ap
 ```
+
+Also, the `domibus.security.key.private.alias` property must be updated with the new alias. The property value can 
+be updated following the steps below:
+
+1. Click Properties.
+2. Search for `domibus.security.key.private.alias`.
+3. Update the Property Value field with the new alias.
+4. Click Save.
 
 ### 2.3 TLS Configuration
 
@@ -284,7 +284,7 @@ the policy domain where the Access Point is registered.
 Trusted sign certificates can be imported using the admin UI. The certificates can be imported as a JKS bundle containing 
 multiple certificates or separately for each party.
 
-In the admin UI, a JSK bundle can be imported by selecting Truststore and then Upload. Instead, a single sign certificate 
+In the admin UI, a JKS bundle can be imported by selecting Truststore and then Upload. Instead, a single sign certificate 
 for a specific party can be imported following the steps below:
 
 1. Click PMode and then Parties.
@@ -299,39 +299,27 @@ The channel where trusted TLS certificates of data exchange parties are distribu
 different eDelivery policy domains. If you don't know where to get them, please contact the domain authority of 
 the policy domain where the Access Point is registered.
 
-The TLS certificate truststore located in `/etc/harmony-ap/tls-truststore.jks` can not be updated through the admin UI.
 By default, the TLS truststore contains one trusted TLS certificate which is the Access Point's own public TLS certificate.
-The alias of the Access Point's own TLS certificate is the party name of the Access Point owner. If the party name of the 
-owner wasn't defined during the installation process, the default value is `selfsigned`. If the same Access Point acts 
+The alias of the Access Point's own TLS certificate is the party name of the Access Point owner. If the party name of the
+owner wasn't defined during the installation process, the default value is `selfsigned`. If the same Access Point acts
 as a sender and receiver, it must trust its own TLS certificate.
 
-If the certificate to be imported is a TLS certificate of a data exchange party, it's recommended to use the party name 
-of the other party as an alias for the certificate. Instead, if the certificate to be imported is a root certificate 
+If the certificate to be imported is a TLS certificate of a data exchange party, it's recommended to use the party name
+of the other party as an alias for the certificate. Instead, if the certificate to be imported is a root certificate
 of a trusted certificate authority, then the name of the certificate authority is a good alternative to be used as an alias.
 
-The following command can be used to import a trusted TLS certificate to the TLS certificate truststore:
+Trusted TLS certificates can be imported using the admin UI. The certificates can be imported as a JKS bundle containing
+multiple certificates or separately for each party. Trusted TLS certificates can be imported following the steps below:
 
-```bash
-sudo keytool -import -alias <party_name> -file </path/to/tls_certificate.crt> -keystore /etc/harmony-ap/tls-truststore.jks -storepass <tls_truststore_password>
-```
-
-All the trusted TLS certificates can be listed using the following command:
-
-```bash
-keytool -list -v -keystore /etc/harmony-ap/tls-truststore.jks -storepass <tls_truststore_password>
-```
-
-A trusted TLS certificate can be deleted using the following command:
-
-```bash
-sudo keytool -delete -noprompt -alias <party_name> -keystore /etc/harmony-ap/tls-truststore.jks -storepass <tls_truststore_password>
-```
-
-Restart the `harmony-ap` service to apply the changes:
-
-```bash
-sudo systemctl restart harmony-ap
-```
+1. Clieck Certificates and then TLS.
+2. If you want to upload a JKS bundle, click Upload.
+  - Select the JKS file to be uploaded.
+  - Add the password of the JKS file.
+  - Click OK.
+3. If you want to upload a single certificate for a specific party, click Add Certificate.
+  - Select the certificate file to be uploaded.
+  - Use the party name as the TLS certificate alias.
+  - Click OK.
 
 ### 2.5 Export Certificates from Keystores
 
@@ -491,7 +479,8 @@ Click OK and then Save.
 ### 3.4 Export Certificates
 
 The sign certificate is stored in `/etc/harmony-ap/ap-keystore.jks`. The password of the keystore can be found in the
-`/etc/harmony-ap/domibus.properties` file in the `domibus.security.keystore.password` property. 
+`/etc/harmony-ap/domibus.properties` file in the `domibus.security.keystore.password` property or in the Properties
+section of the Harmony Access Point UI. 
 
 The TLS certificate is stored in `/etc/harmony-ap/tls-keystore.jks`. The password of the keystore can be found in the
 `/etc/harmony-ap/tomcat-conf/server.xml` file in the `keystorePass` property. 
@@ -542,15 +531,13 @@ The sign certificate of the Access Point 2 (`org2_gw`) is imported using the adm
 4. Select the certificate to be imported (`org2_sign_certificate.cer`).
 5. Click OK and then click Save.
 
-The TLS certificate is imported on the command line. The TLS truststore is located in `/etc/harmony-ap/tls-truststore.jks`. 
-The password of the truststore can be found in the `/etc/harmony-ap/tomcat-conf/server.xml` file in the `truststorePass`
-property.
+The TLS certificate of the Access Point 2 (`org2_gw`) is imported using the admin UI by following the steps below:
 
-Import the TLS certificate of Access Point 2 (`org2_gw`). The command asks should the certificate be trusted and the answer is **yes**.
-
-```bash
-sudo keytool -import -alias org2_gw -file org2_tls_certificate.cer -keystore /etc/harmony-ap/tls-truststore.jks -storepass <tls_truststore_password>
-```
+1. Click Certificates and then TLS.
+2. Click Add Certificate.
+3. Select the certificate file to be uploaded (`org2_tls_certificate.cer`).
+4. Use the party name `org2_gw` as the TLS certificate alias.
+5. Click OK.
 
 #### 3.5.2 Access Point 2
 
@@ -562,15 +549,13 @@ The sign certificate of the Access Point 1 (`org1_gw`) is imported using the adm
 4. Select the certificate to be imported (`org1_sign_certificate.cer`).
 5. Click OK and then click Save.
 
-The TLS certificate is imported on the command line. The TLS truststore is located in `/etc/harmony-ap/tls-truststore.jks`. 
-The password of the truststore can be found in the `/etc/harmony-ap/tomcat-conf/server.xml` file in the `truststorePass`
-property.
+The TLS certificate of the Access Point 1 (`org1_gw`) is imported using the admin UI by following the steps below:
 
-Import the TLS certificate of Access Point 1 (`org1_gw`). The command asks should the certificate be trusted and the answer is **yes**.
-
-```bash
-sudo keytool -import -alias org1_gw -file org1_tls_certificate.cer -keystore /etc/harmony-ap/tls-truststore.jks -storepass <tls_truststore_password>
-```
+1. Click Certificates and then TLS.
+2. Click Add Certificate.
+3. Select the certificate file to be uploaded (`org1_tls_certificate.cer`).
+4. Use the party name `org1_gw` as the TLS certificate alias.
+5. Click OK.
 
 ### 3.6 Configure One-Way SSL
 
