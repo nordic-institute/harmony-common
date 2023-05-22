@@ -197,6 +197,8 @@ domibus.auth.unsecureLoginAllowed=false
 #Cron expression that specifies the frequency of the password expiration check
 #domibus.passwordPolicies.check.cron=0 0 0/1 * * ?
 
+domibus.passwordPolicy.defaultUser.create=false
+
 # ---------------------------------- Plugin Users Password Policy -----------------------------------
 
 #Password minimum complexity rules (empty to disable password complexity enforcement)
