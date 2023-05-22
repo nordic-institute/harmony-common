@@ -95,8 +95,7 @@ domibus.database.schema=harmony_ap
 #MySQL
 #Connector/J 8.0.x
 domibus.datasource.driverClassName=com.mysql.cj.jdbc.Driver
-domibus.datasource.url=jdbc:mysql://${domibus.database.serverName}:${domibus.database.port}/${domibus.database.schema}?useSSL=false&useLegacyDatetimeCode=false&serverTimezone=UTC
-
+domibus.datasource.url=jdbc:mysql://${domibus.database.serverName}:${domibus.database.port}/${domibus.database.schema}?useSSL=false&allowPublicKeyRetrieval=true&useLegacyDatetimeCode=false&serverTimezone=UTC
 domibus.datasource.user={{dbuser}}
 domibus.datasource.password={{dbpassword}}
 domibus.datasource.maxLifetime=30

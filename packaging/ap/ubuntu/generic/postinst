@@ -212,7 +212,7 @@ case "$1" in
   if [[ -n $2 ]] && dpkg --compare-versions "$2" lt "2.0.0"; then
     # Migrate properties on upgrade
     update_prop 'domibus\.entityManagerFactory\.jpaProperty\.hibernate\.dialect' 'org.hibernate.dialect.MySQL8Dialect'
-    update_prop 'domibus\.datasource\.url' 'jdbc:mysql://${domibus.database.serverName}:${domibus.database.port}/${domibus.database.schema}?useSSL=false&useLegacyDatetimeCode=false&serverTimezone=UTC'
+    update_prop 'domibus\.datasource\.url' 'jdbc:mysql://${domibus.database.serverName}:${domibus.database.port}/${domibus.database.schema}?useSSL=false&allowPublicKeyRetrieval=true&useLegacyDatetimeCode=false&serverTimezone=UTC'
     update_prop 'domibus\.entityManagerFactory\.jpaProperty\.hibernate\.connection\.driver_class' 'com.mysql.cj.jdbc.Driver'
 
     delete_prop 'domibus\.datasource\.xa.*'
