@@ -212,8 +212,14 @@ case "$1" in
   if [[ -n $2 ]] && dpkg --compare-versions "$2" lt "2.0.0"; then
     # Migrate properties on upgrade
     update_prop 'domibus\.entityManagerFactory\.jpaProperty\.hibernate\.dialect' 'org.hibernate.dialect.MySQL8Dialect'
-    update_prop 'domibus\.datasource\.url' 'jdbc:mysql://${domibus.database.serverName}:${domibus.database.port}/${domibus.database.schema}?useSSL=false&allowPublicKeyRetrieval=true&useLegacyDatetimeCode=false&serverTimezone=UTC'
+    update_prop 'domibus\.datasource\.url' 'jdbc:mysql://${domibus.database.serverName}:${domibus.database.port}/${domibus.database.schema}?sslMode=disabled&allowPublicKeyRetrieval=true&useLegacyDatetimeCode=false&serverTimezone=UTC'
     update_prop 'domibus\.entityManagerFactory\.jpaProperty\.hibernate\.connection\.driver_class' 'com.mysql.cj.jdbc.Driver'
+
+    rename_prop 'domibus\.datasource\.minPoolSize' 'domibus.datasource.minimumIdle'
+
+    if [[ "$(get_prop 'domibus.datasource.maxLifetime')" == "30" ]]; then
+      update_prop 'domibus\.datasource\.maxLifetime' '1800'
+    fi
 
     delete_prop 'domibus\.datasource\.xa.*'
     delete_prop 'domibus\.jms\.queue\.ui\.replication'
@@ -229,6 +235,8 @@ case "$1" in
       rename_prop 'domibus\.dynamicdiscovery\.partyid\.type' 'domibus.dynamicdiscovery.oasisclient.partyid.responder.role'
       rename_prop 'domibus\.dynamicdiscovery\.partyid\.responder\.role' 'domibus.dynamicdiscovery.oasisclient.partyid.responder.role'
     fi
+
+    echo 'domibus.passwordPolicy.defaultUser.create=false' >>/etc/harmony-ap/domibus.properties
   fi
 
   # Required to support upgrade from 1.0.0 to 1.1.0

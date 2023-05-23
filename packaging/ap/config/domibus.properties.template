@@ -95,11 +95,12 @@ domibus.database.schema=harmony_ap
 #MySQL
 #Connector/J 8.0.x
 domibus.datasource.driverClassName=com.mysql.cj.jdbc.Driver
-domibus.datasource.url=jdbc:mysql://${domibus.database.serverName}:${domibus.database.port}/${domibus.database.schema}?useSSL=false&allowPublicKeyRetrieval=true&useLegacyDatetimeCode=false&serverTimezone=UTC
+domibus.datasource.url=jdbc:mysql://${domibus.database.serverName}:${domibus.database.port}/${domibus.database.schema}?sslMode=disabled&allowPublicKeyRetrieval=true&useLegacyDatetimeCode=false&serverTimezone=UTC
 domibus.datasource.user={{dbuser}}
 domibus.datasource.password={{dbpassword}}
-domibus.datasource.maxLifetime=30
-domibus.datasource.minPoolSize=5
+domibus.datasource.idleTimeout=600
+domibus.datasource.maxLifetime=1800
+domibus.datasource.minimumIdle=5
 domibus.datasource.maxPoolSize=100
 
 # ---------------------------------- EntityManagerFactory ----------------------
