@@ -5,20 +5,22 @@ After=network.target
 [Service]
 Type=forking
 
+PIDFile=/opt/harmony-ap/temp/harmony-ap.pid
 Environment=CATALINA_PID=/opt/harmony-ap/temp/harmony-ap.pid
 Environment=CATALINA_HOME=/opt/harmony-ap
 Environment=CATALINA_BASE=/opt/harmony-ap
 Environment=CATALINA_OUT=/var/log/harmony-ap/catalina.out
 Environment='CATALINA_OPTS=-Xms256M -Xmx512M -server -XX:+UseParallelGC'
-Environment='JAVA_OPTS=-Djava.awt.headless=true -Djava.security.egd=file:/dev/./urandom'
-ExecStart=/opt/harmony-ap/bin/startup.sh
-ExecStop=/opt/harmony-ap/bin/shutdown.sh
+Environment='JAVA_OPTS=-Djava.awt.headless=true -Djava.security.egd=file:/dev/urandom'
 
+ExecStart=/opt/harmony-ap/bin/startup.sh
+ExecStop=/opt/harmony-ap/bin/shutdown.sh 15
 User=harmony-ap
 Group=harmony-ap
 UMask=0007
-RestartSec=10
-Restart=always
+RestartSec=30
+Restart=on-failure
+SuccessExitStatus=143
 
 [Install]
 WantedBy=multi-user.target

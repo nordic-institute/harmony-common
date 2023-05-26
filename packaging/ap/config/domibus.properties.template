@@ -3,8 +3,6 @@
 #Specifies if Domibus should run in cluster mode. This affects for instance whether the Quartz jobs are clustered.
 #domibus.deployment.clustered=false
 
-#Don't forget to configure the Atomikos properties related to clustering; more info in the Atomikos section
-
 # ---------------------------------- GUI -------------------------
 
 # The title shown in the Tab of Admin Console (default value: "Domibus")
@@ -59,37 +57,17 @@ domibus.security.truststore.password={{truststorepass}}
 # ---------------------------------- Database ----------------------------------
 
 #Database server name
-domibus.database.serverName=localhost
+domibus.database.serverName={{dbhost}}
 
 #Database port
-domibus.database.port=3306
+domibus.database.port={{dbport}}
 
 #General schema. Mandatory only if Domibus is configured in multi-tenancy mode.
 #domibus.database.general.schema=general_schema
 
 #Domibus schema. If Domibus is configured in multi-tenancy mode this property is used to define the schema for the default domain.
 #Please comment this property, if Domibus is configured in single-tenancy mode with Oracle database.
-domibus.database.schema=harmony_ap
-
-#XA Datasource
-#MySQL
-#Connector/J 8.0.x
-#domibus.datasource.xa.xaDataSourceClassName=com.mysql.cj.jdbc.MysqlXADataSource
-
-#domibus.datasource.xa.maxLifetime=60
-#domibus.datasource.xa.minPoolSize=5
-#domibus.datasource.xa.maxPoolSize=200
-#domibus.datasource.xa.borrowConnectionTimeout=30
-#domibus.datasource.xa.reapTimeout=0
-#domibus.datasource.xa.maxIdleTime=60
-#domibus.datasource.xa.maintenanceInterval=60
-
-#XA properties
-#domibus.datasource.xa.property.user={{dbuser}}
-#domibus.datasource.xa.property.password={{dbpassword}}
-
-#MySQL
-#domibus.datasource.xa.property.url=jdbc:mysql://${domibus.database.serverName}:${domibus.database.port}/${domibus.database.schema}?pinGlobalTxToPhysicalConnection=true&useSSL=false&allowPublicKeyRetrieval=true
+domibus.database.schema={{dbschema}}
 
 #Non-XA Datasource
 #MySQL
@@ -114,10 +92,7 @@ domibus.entityManagerFactory.jpaProperty.hibernate.connection.driver_class=com.m
 domibus.entityManagerFactory.jpaProperty.hibernate.dialect=org.hibernate.dialect.MySQL8Dialect
 domibus.entityManagerFactory.jpaProperty.hibernate.id.new_generator_mappings=false
 
-
 #domibus.entityManagerFactory.jpaProperty.hibernate.format_sql=true
-#domibus.entityManagerFactory.jpaProperty.hibernate.transaction.factory_class=org.hibernate.engine.transaction.internal.jta.CMTTransactionFactory
-#domibus.entityManagerFactory.jpaProperty.hibernate.transaction.jta.platform=com.atomikos.icatch.jta.hibernate4.AtomikosJ2eePlatform
 
 # ---------------------------------- Security ----------------------------------
 

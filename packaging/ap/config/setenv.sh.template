@@ -1,7 +1,5 @@
 #!/bin/sh
-
-export JAVA_OPTS="$JAVA_OPTS -Djava.protocol.handler.pkgs=org.apache.catalina.webresources \
-   -Ddomibus.config.location=/etc/harmony-ap -Ddomibus.work.location=/opt/harmony-ap/work \
-   -Djavax.net.ssl.trustStore=/etc/harmony-ap/tls-truststore.jks \
-   -Djavax.net.ssl.trustStorePassword={{tls_truststore_password}}"
-
+export JAVA_OPTS="$JAVA_OPTS \
+ -Ddomibus.config.location=/etc/harmony-ap -Ddomibus.work.location=/opt/harmony-ap/work \
+ -Djavax.net.ssl.trustStore=/etc/harmony-ap/tls-truststore.jks \
+ -Djavax.net.ssl.trustStorePassword={{tls_truststore_password}}"
