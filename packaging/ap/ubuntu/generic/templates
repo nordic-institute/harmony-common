@@ -11,10 +11,14 @@ Template: harmony-ap/adminuser
 Type: string
 Default: harmony
 Description: Harmony Access Point administator username
+  If an administrator user already exists,
+  a new one won't be created.
 
 Template: harmony-ap/adminpassword
 Type: password
 Description: Harmony Access Point administator initial password
+  This is the initial password for a new user.
+  An existing user's password won't be updated.
 
 Template: harmony-ap/serverdn
 Type: string
@@ -23,9 +27,43 @@ Description: Distinguished name of generated self-signed server certificate
 Template: harmony-ap/partyname
 Type: string
 Default: selfsigned
-Description: Harmony Access Point owner Party Name
+Description: Harmony Access Point owner party name
 
 Template: harmony-ap/tomcatport
 Type: string
 Default: 8443
-Description: Harmony Access Point port number
+Description: Harmony Access Point web server port number
+
+Template: harmony-ap/database-host
+Type: string
+Default: localhost
+Description: Database host
+  Use "localhost" to use local database installed
+  on the same host.
+
+Template: harmony-ap/database-port
+Type: string
+Default: 3306
+Description: Database port
+  Must match database configuration.
+
+Template: harmony-ap/database-schema
+Type: string
+Default: harmony_ap
+Description: Database schema name
+  When using a remote database, the schema must exist.
+
+Template: harmony-ap/database-user
+Type: string
+Default: harmony_ap
+Description: Database user name
+  When using a remote database, the database user must exist
+  and have rights to the "${db_schema}" database schema.
+
+Template: harmony-ap/database-password
+Type: password
+Description: Database user initial password
+  When initializing a local database, leave blank to generate
+  a random password.
+  When upgrading, leave blank to use existing password
+  from configuration.

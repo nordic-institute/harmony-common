@@ -68,4 +68,18 @@
     <sqlFile dbms="mysql" relativeToChangelogFile="true" path="migrations/mysql-5.1.0-data.ddl"/>
   </changeSet>
 
+  <!-- adds the initial admin user unless one already exists -->
+  <changeSet author="harmony" id="default-admin-user" runOnChange="true" runOrder="last">
+    <preConditions onFail="CONTINUE">
+      <sqlCheck  expectedResult="0">SELECT COUNT(*) FROM TB_USER_ROLES U JOIN TB_USER_ROLE R ON U.ROLE_ID = R.ID_PK WHERE R.ROLE_NAME='ROLE_ADMIN'</sqlCheck>
+    </preConditions>
+    <sql dbms="mysql">
+      INSERT INTO TB_USER (ID_PK, USER_NAME, USER_PASSWORD, USER_ENABLED, USER_DELETED, DEFAULT_PASSWORD)
+        VALUES ('197001010000000001', '${adminUser}', '${adminPassword}', 1, 0, 0);
+
+      INSERT INTO TB_USER_ROLES (USER_ID, ROLE_ID)
+        VALUES ('197001010000000001', '197001010000000001');
+    </sql>
+  </changeSet>
+
 </databaseChangeLog>
