@@ -909,4 +909,7 @@ activeMQ.embedded.configurationFile=file:///${domibus.config.location}/internal/
 #Cron expression that specifies the frequency of test messages sent to monitor the C2-C3 connections
 #domibus.monitoring.connection.cron=0 0 0/2 ? * * *
 
-# ------------------------------------------------------------------------------------
+# --------------------------- Payload Decompression Validation -----------------------
+
+#Domibus validates decompressed payload if activated
+domibus.payload.decompression.validation.active=true
