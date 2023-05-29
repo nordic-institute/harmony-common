@@ -16,6 +16,7 @@ Doc. ID: IG-AP
  23.04.2022 | 1.4     | Add port number to the Access Point Installation section. Update package repository URL                                                                     | Petteri Kivimäki
  28.04.2022 | 1.5     | Minor changes                                                                                                                                               | Petteri Kivimäki
  22.05.2023 | 1.6     | Update references                                                                                                                                           | Petteri Kivimäki
+ 29.05.2023 | 1.7     | Update installation and version upgrade instructions                                                                                                        | Jarkko Hyöty
 
 ## License <!-- omit in toc -->
 
@@ -153,6 +154,22 @@ sudo apt update
 
 ### 2.5 Access Point Installation
 
+#### External database setup (optional)
+
+When using an external MySQL 8 database, it is necessary to create the database schema and user befor installing the access point. The schema and user can be created using the following SQL DDL statements (adjust user and schema name as needed):
+
+```sql
+create schema if not exists harmony_ap;
+alter schema harmony_ap charset=utf8mb4 collate=utf8mb4_bin;
+create user if not exists harmony_ap@'%';
+alter user harmony_ap@'%' identified by '<password>';
+grant all on harmony_ap.* to harmony_ap@'%';
+```
+
+When using a local database, the installer creates the database schema and user, if necessary.
+
+#### Access point install
+
 Issue the following command to install the Harmony eDelivery Access Access Point:
 ```bash
 sudo apt install harmony-ap
@@ -176,6 +193,12 @@ Upon the first installation of the Access Point, the system asks for the followi
   - *note:* different eDelivery policy domains may have different requirements for the `Distinguished Name`. If you're not sure about the requirements, please contact the domain authority of the policy domain where the Access Point is registered;
 - port number that the Access Point listens to. The default is `8443`;
   - the Access Point admin UI, backend interface and AS4 interface all run on the defined port.
+- Access point database configuration. When using a local database, accept the defaults.
+  - Database host. The default is `localhost`.
+  - Database port.  The default is `3306`.
+  - Database schema name. The default is `harmony_ap`.
+  - Database user name. The default is `harmony_ap`.
+  - Database password. There is no default. Leave blank to generate a random password when installing a local database.
 
 See the Static Discovery Configuration Guide \[[UG-SDCG](static_discovery_configuration_guide.md)\] and the Dynamic Discovery Configuration Guide \[[UG-DDCG](dynamic_discovery_configuration_guide.md)\] for more information about how to configure different discovery options.
 
@@ -249,8 +272,16 @@ The Access Point application log files are located in the `/var/log/harmony-ap/`
 
 ## 3 Version Upgrade
 
-The the `harmony-ap` service is automatically stopped for the upgrade and automatically restarted after the upgrade if
-the service has been enabled. Otherwise, the service must be manually restarted after the upgrade.
+It is recommended to take a backup of the system (database and configuration in `/etc/harmony-ap`) before the upgrade.
+
+If you are using an external database, you need to grant the Harmony access point database user additional rights before the upgrade. The additional rights can be revoked afterwards.
+
+```sql
+-- mysql
+grant SYSTEM_VARIABLES_ADMIN on *.* to harmony_ap'@'%'
+```
+
+The the `harmony-ap` service is automatically stopped for the upgrade and automatically restarted after the upgrade if the service has been enabled. Otherwise, the service must be manually restarted after the upgrade.
 
 Update package repository metadata:
 ```bash
@@ -261,6 +292,7 @@ Issue the following command to run the upgrade:
 ```bash
 sudo apt upgrade
 ```
+If the installer asks for database configuration, accept the existing configuration read from `/etc/harmony-ap/domibus.properties`. Leaving the database password blank uses the password from configuration.
 
 If starting the service at system startup hasn't been enabled, the `harmony-ap` service must be started manually after
 the upgrade:
