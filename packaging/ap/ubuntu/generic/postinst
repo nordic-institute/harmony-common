@@ -86,6 +86,7 @@ case "$1" in
     fi
 
     echo 'domibus.passwordPolicy.defaultUser.create=false' >>/etc/harmony-ap/domibus.properties
+    echo 'domibus.payload.decompression.validation.active=true' >>/etc/harmony-ap/domibus.properties
 
     # fix startup.sh ("source" does not work with sh)
     sed -i "/source \/opt\/harmony-ap\/bin\/setjavahome.sh/d" /opt/harmony-ap/bin/startup.sh
