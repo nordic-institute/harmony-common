@@ -3,7 +3,7 @@ set -e
 
 # CHANGE VERSION NUMBERS BELOW AS NEEDED
 # Version of Harmony Access Point
-APVERSION="2.0.0-SNAPSHOT"
+APVERSION="2.0.0"
 
 # Version of Harmony SMP
 SMPVERSION=1.4.0
