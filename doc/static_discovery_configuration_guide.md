@@ -1,6 +1,6 @@
 # Harmony eDelivery Access - Static Discovery Configuration Guide <!-- omit in toc -->
 
-Version: 1.3  
+Version: 1.4  
 Doc. ID: UG-SDCG
 
 ---
@@ -13,7 +13,8 @@ Doc. ID: UG-SDCG
  08.01.2022 | 1.1     | Remove sections about creating TLS truststore manually, update One-Way SSL configuration instructions, update example configuration | Petteri Kivimäki
  16.02.2022 | 1.2     | Minor updates on SSL configuration details                                                                                          | Petteri Kivimäki
  22.05.2023 | 1.3     | Updates on importing TLS certificates, changing the sign key alias and references                                                   | Petteri Kivimäki
- 
+ 30.05.2023 | 1.4     | Update WS Plugin interface path                                                                                                     | Petteri Kivimäki
+
 ## License <!-- omit in toc -->
 
 This document is licensed under the Creative Commons Attribution-ShareAlike 4.0 International License.
@@ -592,7 +593,7 @@ sudo systemctl restart harmony-ap
 Send a request to Access Point 1 (`org1_gw`) using the curl command below. The request (`submitRequest.xml`) can be downloaded [here](configuration_examples/static_discovery/submitRequest.xml?raw=1). The content inside the payload's `value` element must be [base64 encoded](https://www.base64encode.org/).
 
 ```bash
-curl -u org1:<org1_plugin_user_password> --header "Content-Type: text/xml;charset=UTF-8" --data @submitRequest.xml https://<AP1_IP_OR_FQDN>:8443/services/backend -v -k
+curl -u org1:<org1_plugin_user_password> --header "Content-Type: text/xml;charset=UTF-8" --data @submitRequest.xml https://<AP1_IP_OR_FQDN>:8443/services/wsplugin -v -k
 ```
 
 A successful response looks like this:
@@ -611,7 +612,7 @@ A successful response looks like this:
 List received and pending messages on the Access Point 2 (`org2_gw`). The request (`listPendingMessagesRequest.xml`) can be downloaded [here](configuration_examples/static_discovery/listPendingMessagesRequest.xml?raw=1).
 
 ```bash
-curl -u org2:<org2_plugin_user_password> --header "Content-Type: text/xml;charset=UTF-8" --data @listPendingMessagesRequest.xml https://<AP2_IP_OR_FQDN>:8443/services/backend -v -k
+curl -u org2:<org2_plugin_user_password> --header "Content-Type: text/xml;charset=UTF-8" --data @listPendingMessagesRequest.xml https://<AP2_IP_OR_FQDN>:8443/services/wsplugin -v -k
 ```
 
 A successful response looks like this:
@@ -630,7 +631,7 @@ A successful response looks like this:
 Retrieve the test message from Access Point 2 (`org2_gw`). The request (`retrieveMessageRequest.xml`) can be downloaded [here](configuration_examples/static_discovery/retrieveMessageRequest.xml?raw=1). Before sending the message, replace the `MESSAGE_ID` placeholder with the ID (`messageID`) of the test message.
 
 ```bash
-curl -u org2:<org2_plugin_user_password> --header "Content-Type: text/xml;charset=UTF-8" --data @retrieveMessageRequest.xml https://<AP2_IP_OR_FQDN>:8443/services/backend -v -k
+curl -u org2:<org2_plugin_user_password> --header "Content-Type: text/xml;charset=UTF-8" --data @retrieveMessageRequest.xml https://<AP2_IP_OR_FQDN>:8443/services/wsplugin -v -k
 ```
 
 A successful response looks like this:
@@ -716,5 +717,5 @@ the values of the `From` and `To`, and `originalSender` and `finalRecipient` pro
 Then, send the updated request to Access Point 2 (`org2_gw`) using the curl command below. The request (`submitRequestSwitched.xml`) can be downloaded [here](configuration_examples/static_discovery/submitRequestSwitched.xml?raw=1).
 
 ```bash
-curl -u org2:<org2_plugin_user_password> --header "Content-Type: text/xml;charset=UTF-8" --data @submitRequestSwitched.xml https://<AP2_IP_OR_FQDN>:8443/services/backend -v -k
+curl -u org2:<org2_plugin_user_password> --header "Content-Type: text/xml;charset=UTF-8" --data @submitRequestSwitched.xml https://<AP2_IP_OR_FQDN>:8443/services/wsplugin -v -k
 ```
