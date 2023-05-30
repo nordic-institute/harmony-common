@@ -154,11 +154,14 @@ sudo apt update
 
 ### 2.5 Access Point Installation
 
-#### External database setup (optional)
+#### External MySQL 8 database setup (optional)
 
-When using an external MySQL 8 database, it is necessary to create the database schema and user befor installing the access point. The schema and user can be created using the following SQL DDL statements (adjust user and schema name as needed):
+When using an _external_ database (MySQL 8 required), it is necessary to create the database schema and user before installing the access point. Please also make sure that the external database accepts connections from the Access Point host.
+
+The schema and user can be created using the following SQL DDL statements (adjust user and schema name as needed; the default _harmony_ap_ is used in the example):
 
 ```sql
+-- mysql
 create schema if not exists harmony_ap;
 alter schema harmony_ap charset=utf8mb4 collate=utf8mb4_bin;
 create user if not exists harmony_ap@'%';
@@ -166,7 +169,13 @@ alter user harmony_ap@'%' identified by '<password>';
 grant all on harmony_ap.* to harmony_ap@'%';
 ```
 
-When using a local database, the installer creates the database schema and user, if necessary.
+It is also necessary to [populate MySQL time zone information tables](https://dev.mysql.com/doc/refman/8.0/en/time-zone-support.html#time-zone-installation), e.g. using the following command as root on the external database host:
+
+```bash
+mysql_tzinfo_to_sql /usr/share/zoneinfo/posix | mysql -u root mysql
+```
+
+When using a _local database_, the installer handles these additional steps.
 
 #### Access point install
 
@@ -274,12 +283,22 @@ The Access Point application log files are located in the `/var/log/harmony-ap/`
 
 It is recommended to take a backup of the system (database and configuration in `/etc/harmony-ap`) before the upgrade.
 
+### 3.1 Additional steps for an external database
+
 If you are using an external database, you need to grant the Harmony access point database user additional rights before the upgrade. The additional rights can be revoked afterwards.
 
 ```sql
 -- mysql
 grant SYSTEM_VARIABLES_ADMIN on *.* to harmony_ap'@'%'
 ```
+
+When using an external database, it is also necessary to [manually populate MySQL time zone information tables](https://dev.mysql.com/doc/refman/8.0/en/time-zone-support.html#time-zone-installation), e.g. using the following command as root on the external database host:
+
+```bash
+mysql_tzinfo_to_sql /usr/share/zoneinfo/posix | mysql -u root mysql
+```
+
+### 3.2 Upgrade
 
 The the `harmony-ap` service is automatically stopped for the upgrade and automatically restarted after the upgrade if the service has been enabled. Otherwise, the service must be manually restarted after the upgrade.
 
