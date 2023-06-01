@@ -1,6 +1,6 @@
 # Harmony eDelivery Access - Service Metadata Publisher Installation Guide <!-- omit in toc -->
 
-Version: 1.8  
+Version: 1.9  
 Doc. ID: IG-SMP
 ---
 
@@ -17,6 +17,7 @@ Doc. ID: IG-SMP
  23.04.2022 | 1.6     | Add port number to the SMP Installation section. Update package repository URL                          | Petteri Kivimäki
  28.04.2022 | 1.7     | Minor changes                                                                                           | Petteri Kivimäki
  22.01.2023 | 1.8     | Update SMP Admin Guide link                                                                             | Petteri Kivimäki
+ 01.06.2023 | 1.9     | Add more information about allowed characters in certificates                                           | Petteri Kivimäki
  
 ## License <!-- omit in toc -->
 
@@ -66,6 +67,8 @@ See eDelivery documentation \[[TERMS](#Ref_TERMS)\].
 1. <a id="Ref_TERMS" class="anchor"></a>\[TERMS\] eDelivery Documentation, <https://ec.europa.eu/digital-building-blocks/wikis/display/DIGITAL/eDelivery>
 2. <a id="Ref_SMP_ADMIN_GUIDE" class="anchor"></a>\[SMP_ADMIN_GUIDE\] SMP Administration Guide - SMP 4.2, <https://ec.europa.eu/digital-building-blocks/wikis/download/attachments/551518321/%28eDelivery%29%28SMP%29%28AG%29%28SMP%204.2-FR%29%283.5%29.pdf>
 3. <a id="Ref_UG-DDCG" class="anchor"></a>\[UG-DDCG\] Harmony eDelivery Access - Dynamic Discovery Configuration Guide. Document ID: [UG-DDCG](dynamic_discovery_configuration_guide.md)
+4. <a id="Ref_RFC5280" class="anchor"></a>\[RFC5280\] RFC 5280: Internet X.509 Public Key Infrastructure Certificate and Certificate Revocation List (CRL) Profile, <https://www.rfc-editor.org/rfc/rfc5280>
+5. <a id="Ref_PS" class="anchor"></a>\[PS\] PrintableString, <https://en.wikipedia.org/wiki/PrintableString>
 
 ## 2. Installation
 
@@ -178,6 +181,7 @@ Upon the first installation of the SMP, the system asks for the following inform
       ```bash
       CN=example.com, O=My Organisation, C=FI
       ```
+  - the `Distinguished Name` (`DN`) uniquely identifies an entity in an X.509 certificate \[[RFC5280](#Ref_RFC5280)\]. The following attribute types are commonly found in the `DN`: `CN = Common name, O = Organization name, C = Country code`. It's recommended to use PrintableString characters \[[PS](#Ref_PS)\] in the attribute type values;
   - *note:* different eDelivery policy domains may have different requirements for the `Distinguished Name`. If you're not sure about the requirements, please contact the domain authority of the policy domain where the SMP is registered.
 - port number that the SMP listens to. The default is `8443`;
   - the SMP admin UI and metadata query interface run on the defined port;
