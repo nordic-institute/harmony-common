@@ -1,5 +1,13 @@
 # Changelog
 
+## Access Point - 2.0.0 - 2023-06-05
+
+- NEDS-100: Add support for defining message attachment name using the `businessContentAttachment` property.
+- NEDS-107: Improve remote database support.
+- NEDS-108: Make database schema name configurable.
+- NEDS-111: Merge changes from Domibus 5.1 into Harmony Access Point.
+- NEDS-126: Fix incorrect support URL in the Access Point UI.
+
 ## Access Point - 1.4.0 - 2023-02-08
 
 - NEDS-104: Implement database migrations using Liquibase for Harmony Access Point.
