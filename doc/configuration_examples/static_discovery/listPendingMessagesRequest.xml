@@ -1,4 +1,4 @@
-<soap:Envelope xmlns:soap="http://www.w3.org/2003/05/soap-envelope" xmlns:_1="http://org.ecodex.backend/1_1/">
+<soap:Envelope xmlns:soap="http://www.w3.org/2003/05/soap-envelope" xmlns:_1="http://eu.domibus.wsplugin/">
     <soap:Header/>
       <soap:Body>
           <_1:listPendingMessagesRequest></_1:listPendingMessagesRequest>

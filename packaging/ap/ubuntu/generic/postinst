@@ -1,28 +1,96 @@
 #!/bin/bash
-set -e
-
 . /usr/share/debconf/confmodule
+
+set -euo pipefail
+
+SUCCESS=false
+DROPDBONERROR=false
+DROPCONFIGONERROR=false
 
 escape_for_sed() {
     printf '%s\n' "$1" | sed -e 's/[\/&]/\\&/g'
 }
 
-SUCCESS=false
-DROPDBONERROR=false
-
 cleanup() {
   if [ ! "$SUCCESS" = true ]; then
-    rm -f /etc/harmony-ap/*.jks
+    if [ "$DROPCONFIGONERROR" = true ]; then
+      rm -f /etc/harmony-ap/*.jks
+      rm -f /etc/harmony-ap/domibus.properties
+    fi
     if [ "$DROPDBONERROR" = true ]; then
-      mysql -e "DROP SCHEMA harmony_ap; DROP USER harmony_ap@localhost"
+      mysql -e "DROP SCHEMA $DB_SCHEMA; DROP USER '$DBUSER'@localhost" >&2
     fi;
   fi
 }
 
+update_prop() {
+  local prop="$1"
+  local value; value="$(escape_for_sed "$2")";
+  sed --in-place --regexp-extended "s/^${prop}\s*=.*$/${prop}=${value}/" /etc/harmony-ap/domibus.properties
+}
+
+delete_prop() {
+  local prop="$1";
+  sed --in-place --regexp-extended "/^${prop}\s*=.*/d" /etc/harmony-ap/domibus.properties
+}
+
+get_prop() {
+  local prop="$1";
+  local default="${2:-}"
+  grep -m1 -Po "^${prop}\s*=\s*\K.*$" /etc/harmony-ap/domibus.properties 2>/dev/null || echo "$default"
+}
+
+rename_prop() {
+  local old="$1";
+  local new; new="$(escape_for_sed "$2")";
+  sed --in-place --regexp-extended "s/^${old}\s*=\s*(.*)$/${new}=\1/" /etc/harmony-ap/domibus.properties
+}
+
 case "$1" in
  configure)
-
   trap cleanup EXIT
+
+  if [[ -n $2 && -f /etc/harmony-ap/domibus.properties ]] && dpkg --compare-versions "$2" lt "2.0.0"; then
+    # Migrate old properties on upgrade
+    update_prop 'domibus\.entityManagerFactory\.jpaProperty\.hibernate\.dialect' 'org.hibernate.dialect.MySQL8Dialect'
+
+    if [[ "$(get_prop 'domibus.database.serverName' 'localhost')" == "localhost" ]]; then
+      update_prop 'domibus\.datasource\.url' 'jdbc:mysql://${domibus.database.serverName}:${domibus.database.port}/${domibus.database.schema}?sslMode=disabled&allowPublicKeyRetrieval=true&useLegacyDatetimeCode=false&serverTimezone=UTC'
+    else
+      jdbcUrl="$(get_prop 'domibus\.datasource\.url')"
+      update_prop 'domibus\.datasource\.url' "$jdbcUrl&useLegacyDatetimeCode=false&serverTimezone=UTC"
+      echo "Please verify that '$(get_prop 'domibus\.datasource\.url')' is correct"
+    fi
+
+    update_prop 'domibus\.entityManagerFactory\.jpaProperty\.hibernate\.connection\.driver_class' 'com.mysql.cj.jdbc.Driver'
+
+    rename_prop 'domibus\.datasource\.minPoolSize' 'domibus.datasource.minimumIdle'
+
+    if [[ "$(get_prop 'domibus.datasource.maxLifetime')" == "30" ]]; then
+      update_prop 'domibus\.datasource\.maxLifetime' '1800'
+    fi
+
+    delete_prop 'domibus\.datasource\.xa.*'
+    delete_prop 'domibus\.jms\.queue\.ui\.replication'
+    delete_prop 'domibus\.ui\.replication.\enabled.*'
+    delete_prop 'domibus\.entityManagerFactory\.jpaProperty\.hibernate\.transaction\.factory_class'
+    delete_prop 'domibus\.entityManagerFactory\.jpaProperty\.hibernate\.transaction\.jta\.platform'
+    delete_prop 'com\.atomikos\..*'
+
+    if [[ "$(get_prop 'domibus.dynamicdiscovery.client.specification')" == "PEPPOL" ]]; then
+      rename_prop 'domibus\.dynamicdiscovery\.partyid\.type' 'domibus.dynamicdiscovery.peppolclient.partyid.type'
+      rename_prop 'domibus\.dynamicdiscovery\.partyid\.responder\.role' 'domibus.dynamicdiscovery.peppolclient.partyid.responder.role'
+    else
+      rename_prop 'domibus\.dynamicdiscovery\.partyid\.type' 'domibus.dynamicdiscovery.oasisclient.partyid.responder.role'
+      rename_prop 'domibus\.dynamicdiscovery\.partyid\.responder\.role' 'domibus.dynamicdiscovery.oasisclient.partyid.responder.role'
+    fi
+
+    echo 'domibus.passwordPolicy.defaultUser.create=false' >>/etc/harmony-ap/domibus.properties
+    echo 'domibus.payload.decompression.validation.active=true' >>/etc/harmony-ap/domibus.properties
+
+    # fix startup.sh ("source" does not work with sh)
+    sed -i "/source \/opt\/harmony-ap\/bin\/setjavahome.sh/d" /opt/harmony-ap/bin/startup.sh
+  fi
 
   db_get harmony-ap/usedynamicdiscovery
   USEDYNAMIC="$RET"
@@ -40,85 +108,78 @@ case "$1" in
   db_get harmony-ap/serverdn
   SERVERDN="$RET"
   db_get harmony-ap/tomcatport
-  TOMCATPORT="$RET"
+  TOMCATPORT="${RET:-8443}"
+
+  db_get harmony-ap/database-schema
+  DB_SCHEMA="${RET:-$(get_prop 'domibus.database.schema' 'harmony_ap')}"
+  db_get harmony-ap/database-host
+  DB_HOST="${RET:-$(get_prop 'domibus.database.serverName' 'localhost')}"
+  db_get harmony-ap/database-port
+  DB_PORT="${RET:-$(get_prop 'domibus.database.port' '3306')}"
+
+  db_get harmony-ap/database-user
+  DBUSER="${RET:-$(get_prop 'domibus.datasource.user')}"
+
+  db_get harmony-ap/database-password
+  DBPASSWORD="${RET:-$(get_prop 'domibus.datasource.password')}"
   db_stop
 
   export LIQUIBASE_HOME=/opt/harmony-ap/liquibase
-  export URL=jdbc:mysql://localhost:3306/harmony_ap
+  export URL="jdbc:mysql://$DB_HOST:$DB_PORT/$DB_SCHEMA"
+  export LIQUIBASE_SHOW_BANNER=false
 
-  SCHEMA_EXISTS=$(mysql -s -N -e "SELECT SCHEMA_NAME FROM INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME='harmony_ap'");
-  if [ -z "$SCHEMA_EXISTS" ]; then
-    DROPDBONERROR=true
-    echo "Creating database schema harmony_ap" >&2
+  if [[ "$DB_HOST" = "localhost" ]]; then
+    SCHEMA_EXISTS=$(mysql -w -s -N -e "show schemas like '$DB_SCHEMA'");
+    if [ -z "$SCHEMA_EXISTS" ]; then
+      DROPDBONERROR=true
+      echo "Creating database schema $DB_SCHEMA" >&2
 
-    DBUSER=harmony_ap
-    DBPASSWORD=$(openssl rand -base64 12)
+      DBUSER=${DBUSER:-harmony_ap}
+      DBPASSWORD=${DBPASSWORD:-$(openssl rand -base64 12)}
 
-    mysql -e \
-      "create schema harmony_ap; \
-      alter database harmony_ap charset=utf8mb4 collate=utf8mb4_bin; \
-      create user $DBUSER@localhost identified by '$DBPASSWORD'; \
-      grant all on harmony_ap.* to $DBUSER@localhost; \
-      grant xa_recover_admin on *.* to $DBUSER@localhost;"
+      cat <<EOF | mysql >&2
+CREATE SCHEMA $DB_SCHEMA;
+ALTER SCHEMA $DB_SCHEMA charset=utf8mb4 collate=utf8mb4_bin;
+CREATE USER IF NOT EXISTS '$DBUSER'@localhost;
+ALTER USER '$DBUSER'@localhost IDENTIFIED BY '$DBPASSWORD';
+GRANT ALL ON $DB_SCHEMA.* TO '$DBUSER'@localhost;
+EOF
 
-    echo "Apply Liquibase migrations"  >&2
-
-    $LIQUIBASE_HOME/liquibase.sh \
-      --classpath=/opt/harmony-ap/lib/mysql-connector-java-8.0.26.jar \
-      --driver=com.mysql.cj.jdbc.Driver \
-      --url=$URL \
-      --username=$DBUSER \
-      --password=$DBPASSWORD \
-      --changeLogFile=/opt/harmony-ap/db/db.changelog.xml \
-      update
-
-    HASHEDPASSWORD=$(java -cp "/opt/harmony-ap/webapps/ROOT/WEB-INF/lib/*" \
-      eu.domibus.api.util.BCryptPasswordHash "$APASSWORD")
-
-    mysql -e "INSERT INTO harmony_ap.TB_USER (ID_PK, USER_NAME, USER_PASSWORD, USER_ENABLED, USER_DELETED, DEFAULT_PASSWORD) \
-       VALUES ('1', '$AUSER', '$HASHEDPASSWORD', 1, 0, 0);
-        INSERT INTO harmony_ap.TB_USER_ROLES (USER_ID, ROLE_ID) VALUES ('1', '1');"
-  else
-    echo "Schema harmony_ap already exists. Update database" >&2
-
-    DBUSER=$(grep "domibus.datasource.user" /etc/harmony-ap/domibus.properties | cut -d'=' -f2 | head -n 1)
-    DBPASSWORD=$(grep "domibus.datasource.password" /etc/harmony-ap/domibus.properties | cut -d'=' -f2 | head -n 1)
-
-    if [[ -z $DBUSER || -z $DBPASSWORD ]]; then
-      echo 'Existing database credentials not found'
-      exit 1
     fi
+  fi
 
-    # If current Harmony AP version (<= 1.3.1) doesn't use Liquibase, change log must be synced before
-    # applying migrations. Liquibase is not used if DATABASECHANGELOG table does not exist.
-    CHANGELOG_EXISTS=$(mysql -e "show tables in harmony_ap like 'DATABASECHANGELOG';")
-    if [ -z "$CHANGELOG_EXISTS" ]; then
-      echo "No Liquibase detected. Sync change log" >&2
+  if [[ -z $DBUSER || -z $DBPASSWORD ]]; then
+    echo 'Existing database credentials not found'
+    exit 1
+  fi
 
-      $LIQUIBASE_HOME/liquibase.sh \
-        --classpath=/opt/harmony-ap/lib/mysql-connector-java-8.0.26.jar \
-        --driver=com.mysql.cj.jdbc.Driver \
-        --url=$URL \
-        --username=$DBUSER \
-        --password=$DBPASSWORD \
-        --changeLogFile=/opt/harmony-ap/db/db.changelog.xml \
-        --contexts=legacy \
-        changelog-sync
-    fi
+  echo "Applying database migrations..." >&2
 
-    echo "Update database" >&2
+  if [[ "$DB_HOST" = "localhost" ]]; then
+    mysql_tzinfo_to_sql /usr/share/zoneinfo/posix | mysql -u root mysql >&2
+    systemctl restart mysql
+    mysqladmin -w -s -u root ping &>/dev/null
+    mysql -s -e "GRANT SYSTEM_VARIABLES_ADMIN ON *.* TO '$DBUSER'@'localhost';" >&2
+  fi
 
-    $LIQUIBASE_HOME/liquibase.sh \
-      --classpath=/opt/harmony-ap/lib/mysql-connector-java-8.0.26.jar \
-      --driver=com.mysql.cj.jdbc.Driver \
-      --url=$URL \
-      --username=$DBUSER \
-      --password=$DBPASSWORD \
-      --changeLogFile=/opt/harmony-ap/db/db.changelog.xml \
-      update
+  HASHEDPASSWORD=$(java -cp "/opt/harmony-ap/webapps/ROOT/WEB-INF/lib/*" eu.domibus.api.util.BCryptPasswordHash "$APASSWORD")
+
+  # using defaultsFile to avoid revealing passwords in the process listing
+  $LIQUIBASE_HOME/liquibase.sh --defaultsFile=<(echo "\
+classpath:/opt/harmony-ap/lib/mysql-connector-j-8.0.33.jar
+driver:com.mysql.cj.jdbc.Driver
+url:$URL
+username:$DBUSER
+password:$DBPASSWORD
+changeLogFile:/opt/harmony-ap/db/db.changelog.xml") \
+  update -DadminUser="$AUSER" -DadminPassword="$HASHEDPASSWORD" >&2
+
+  if [[ "$DB_HOST" = "localhost" ]]; then
+    mysql -s -e "REVOKE SYSTEM_VARIABLES_ADMIN ON *.* FROM '$DBUSER'@'localhost';" >&2
   fi
 
   if [ ! -f /etc/harmony-ap/domibus.properties ]; then
+    DROPCONFIGONERROR=true
     rm -f /etc/harmony-ap/*.jks
 
     KEYSTOREPASS=$(openssl rand -base64 12)
@@ -126,20 +187,21 @@ case "$1" in
     TLSKEYPASS=$(openssl rand -base64 12)
     TLSTRUSTSTOREPASS=$(openssl rand -base64 12)
 
-    keytool -J-Dkeystore.pkcs12.legacy -genkeypair -keyalg RSA -alias $PARTYNAME -keystore /etc/harmony-ap/ap-keystore.jks -storepass $KEYSTOREPASS \
-      -keypass $KEYSTOREPASS -validity 333 -keysize 3072 -dname "$SERVERDN" 2>/dev/null
+    keytool -J-Dkeystore.pkcs12.legacy -genkeypair -keyalg RSA -alias "$PARTYNAME" -keystore /etc/harmony-ap/ap-keystore.jks -storepass "$KEYSTOREPASS" \
+      -keypass "$KEYSTOREPASS" -validity 333 -keysize 3072 -dname "$SERVERDN" 2>/dev/null
 
-    keytool -J-Dkeystore.pkcs12.legacy -genkeypair -keyalg RSA -alias $PARTYNAME -keystore /etc/harmony-ap/tls-keystore.jks -storepass $TLSKEYPASS \
-      -keypass $TLSKEYPASS -validity 333 -keysize 3072 -dname "$SERVERDN" 2>/dev/null
+    keytool -J-Dkeystore.pkcs12.legacy -genkeypair -keyalg RSA -alias "$PARTYNAME" -keystore /etc/harmony-ap/tls-keystore.jks -storepass "$TLSKEYPASS" \
+      -keypass "$TLSKEYPASS" -validity 333 -keysize 3072 -dname "$SERVERDN" 2>/dev/null
 
-    keytool -J-Dkeystore.pkcs12.legacy -genkeypair -alias mock -keystore /etc/harmony-ap/ap-truststore.jks -storepass $TRUSTSTOREPASS \
-      -keypass $TRUSTSTOREPASS -dname "CN=mock" 2>/dev/null
-    keytool -delete -alias mock -keystore /etc/harmony-ap/ap-truststore.jks -storepass $TRUSTSTOREPASS 2>/dev/null
+    keytool -J-Dkeystore.pkcs12.legacy -genkeypair -alias mock -keystore /etc/harmony-ap/ap-truststore.jks -storepass "$TRUSTSTOREPASS" \
+      -keypass "$TRUSTSTOREPASS" -dname "CN=mock" 2>/dev/null
+    keytool -delete -alias mock -keystore /etc/harmony-ap/ap-truststore.jks -storepass "$TRUSTSTOREPASS" 2>/dev/null
 
-    keytool -export -alias $PARTYNAME -file /etc/harmony-ap/selfsigned.cer \
-      -keystore /etc/harmony-ap/tls-keystore.jks -storepass $TLSKEYPASS 2>/dev/null
-    keytool -J-Dkeystore.pkcs12.legacy -import -noprompt -alias $PARTYNAME -file /etc/harmony-ap/selfsigned.cer \
-      -keystore /etc/harmony-ap/tls-truststore.jks -storepass $TLSTRUSTSTOREPASS 2>/dev/null
+    keytool -export -alias "$PARTYNAME" -file /etc/harmony-ap/selfsigned.cer \
+      -keystore /etc/harmony-ap/tls-keystore.jks -storepass "$TLSKEYPASS" 2>/dev/null
+
+    keytool -J-Dkeystore.pkcs12.legacy -import -noprompt -alias "$PARTYNAME" -file /etc/harmony-ap/selfsigned.cer \
+      -keystore /etc/harmony-ap/tls-truststore.jks -storepass "$TLSTRUSTSTOREPASS" 2>/dev/null
     rm -f /etc/harmony-ap/selfsigned.cer
 
     E_KEYSTOREPASS=$(escape_for_sed "$KEYSTOREPASS")
@@ -152,21 +214,39 @@ case "$1" in
     E_PARTYNAME=$(escape_for_sed "$PARTYNAME")
     E_TOMCATPORT=$(escape_for_sed "$TOMCATPORT")
 
-    sed -e "s/{{tls_keystore_password}}/$E_TLSKEYPASS/" -e "s/{{tls_truststore_password}}/$E_TLSTRUSTSTOREPASS/" \
+    sed \
+      -e "s/{{tls_keystore_password}}/$E_TLSKEYPASS/" \
+      -e "s/{{tls_truststore_password}}/$E_TLSTRUSTSTOREPASS/" \
       -e "s/{{tomcat_port}}/$E_TOMCATPORT/" \
-        /opt/harmony-ap/setup/server.xml.template > /etc/harmony-ap/tomcat-conf/server.xml
+      /opt/harmony-ap/setup/server.xml.template > /etc/harmony-ap/tomcat-conf/server.xml
 
-    sed -e "s/{{tls_truststore_password}}/$E_TLSTRUSTSTOREPASS/" \
-        /opt/harmony-ap/setup/clientauthentication.xml.template > /etc/harmony-ap/clientauthentication.xml
+    sed \
+      -e "s/{{tls_truststore_password}}/$E_TLSTRUSTSTOREPASS/" \
+      /opt/harmony-ap/setup/clientauthentication.xml.template > /etc/harmony-ap/clientauthentication.xml
 
-    sed -e "s/{{keystorepass}}/$E_KEYSTOREPASS/" -e "s/{{truststorepass}}/$E_TRUSTSTOREPASS/" \
-      -e "s/{{dbuser}}/$E_DBUSER/" -e "s/{{dbpassword}}/$E_DBPASSWORD/" \
-      -e "s/{{dynamicdiscovery}}/$USEDYNAMIC/" -e "s/{{smlzone}}/$E_SMLZONE/" \
+    sed \
+      -e "s/{{keystorepass}}/$E_KEYSTOREPASS/" \
+      -e "s/{{truststorepass}}/$E_TRUSTSTOREPASS/" \
+      -e "s/{{dbuser}}/$E_DBUSER/" \
+      -e "s/{{dbpassword}}/$E_DBPASSWORD/" \
+      -e "s/{{dynamicdiscovery}}/$USEDYNAMIC/" \
+      -e "s/{{smlzone}}/$E_SMLZONE/" \
       -e "s/{{partyname}}/$E_PARTYNAME/" \
-        /opt/harmony-ap/setup/domibus.properties.template > /etc/harmony-ap/domibus.properties
+      -e "s/{{dbschema}}/$DB_SCHEMA/" \
+      -e "s/{{dbhost}}/$DB_HOST/" \
+      -e "s/{{dbport}}/$DB_PORT/" \
+      /opt/harmony-ap/setup/domibus.properties.template > /etc/harmony-ap/domibus.properties
 
-    sed -e "s/{{tls_truststore_password}}/$E_TLSTRUSTSTOREPASS/" \
-        /opt/harmony-ap/setup/setenv.sh.template > /opt/harmony-ap/bin/setenv.sh
+    if [[ "$DB_HOST" != "localhost" ]]; then
+      # prefer encrypted connection for remote database
+      update_prop 'domibus\.datasource\.url' \
+        'jdbc:mysql://${domibus.database.serverName}:${domibus.database.port}/${domibus.database.schema}?sslMode=preferred&useLegacyDatetimeCode=false&serverTimezone=UTC'
+    fi
+
+    sed \
+      -e "s/{{tls_truststore_password}}/$E_TLSTRUSTSTOREPASS/" \
+      /opt/harmony-ap/setup/setenv.sh.template > /opt/harmony-ap/bin/setenv.sh
+    chmod +x /opt/harmony-ap/bin/setenv.sh
 
     # Check if Tomcat runs on a privileged port - port number below 1024
     PORT_NUMBER_REGEX='^((6553[0-5])|(655[0-2][0-9])|(65[0-4][0-9]{2})|(6[0-4][0-9]{3})|([1-5][0-9]{4})|([0-5]{0,5})|([0-9]{1,4}))$'
@@ -178,7 +258,17 @@ case "$1" in
           setcap cap_net_bind_service+ep /usr/lib/jvm/java-8-openjdk-amd64/jre/bin/java
         fi
     fi
+  else
+    # update database properies
+    [[ -n $DB_HOST    ]] && update_prop 'domibus\.database\.serverName' "$DB_HOST"
+    [[ -n $DB_PORT    ]] && update_prop 'domibus\.database\.port'       "$DB_PORT"
+    [[ -n $DB_SCHEMA  ]] && update_prop 'domibus\.database\.schema'     "$DB_SCHEMA"
+    [[ -n $DBUSER     ]] && update_prop 'domibus\.datasource\.user'     "$DBUSER"
+    [[ -n $DBPASSWORD ]] && update_prop 'domibus\.datasource\.password' "$DBPASSWORD"
   fi
+
+  DROPCONFIGONERROR=false
+  DROPDBONERROR=false
 
   # Required to support upgrade from 1.0.0 to 1.1.0
   if [ ! -f /opt/harmony-ap/bin/setenv.sh ]; then
@@ -192,31 +282,28 @@ case "$1" in
   fi
 
   # Check validity of user and group
-  if [ "`id -u harmony-ap`" -eq 0 ]; then
-      echo "The Harmony AP system user must not have uid 0 (root).Please fix this and reinstall this package." >&2
+  if [ "$(id -u harmony-ap)" -eq 0 ]; then
+      echo "The Harmony AP system user must not have uid 0 (root). Please fix this and reinstall this package." >&2
       exit 1
   fi
-  if [ "`id -g harmony-ap`" -eq 0 ]; then
+  if [ "$(id -g harmony-ap)" -eq 0 ]; then
       echo "The Harmony AP system user must not have root as primary group. Please fix this and reinstall this package." >&2
       exit 1
   fi
 
-  # Check if the Tomcat startup.sh script loads the setjavahome.sh script and update the
-  # startup.sh script if needed
-  if [ -f /opt/harmony-ap/bin/setjavahome.sh ] && ! grep -Fxq "source /opt/harmony-ap/bin/setjavahome.sh" /opt/harmony-ap/bin/startup.sh; then
-    REPLACEMENT="source \/opt\/harmony-ap\/bin\/setjavahome.sh"
-    # Get the line number of the second last line of the script header
-    START_LINE_NUMBER=$(grep -n '# Start Script' /opt/harmony-ap/bin/startup.sh | cut -d ":" -f 1)
-    # Line number of the first empty line in the script
-    LINE_NUMBER=$(($START_LINE_NUMBER+2))
-    # Replace the first empty line
-    sed -i "${LINE_NUMBER}s/^$/$REPLACEMENT/" /opt/harmony-ap/bin/startup.sh
+  # Check if the setenv.sh script loads the setjavahome.sh script and update if needed
+  if [ -f /opt/harmony-ap/bin/setjavahome.sh ] && ! grep -Fq "/opt/harmony-ap/bin/setjavahome.sh" /opt/harmony-ap/bin/setenv.sh; then
+    sed -i '1a . /opt/harmony-ap/bin/setjavahome.sh' /opt/harmony-ap/bin/setenv.sh
   fi
 
   mkdir -p /opt/harmony-ap/temp
+  mkdir -p /opt/harmony-ap/work
+  mkdir -p /opt/harmony-ap/logs
 
-  chown -R harmony-ap:harmony-ap /opt/harmony-ap
-  chmod -R 0755 /opt/harmony-ap
+  chown -R root:harmony-ap /opt/harmony-ap
+  chmod -R u=rwX,g=rX,o=rX /opt/harmony-ap
+  chown -R harmony-ap /opt/harmony-ap/temp /opt/harmony-ap/logs /opt/harmony-ap/work
+  chmod -R u=rwX,g=rX,o= /opt/harmony-ap/temp /opt/harmony-ap/logs /opt/harmony-ap/work
 
   # nicer log directory permissions
   mkdir -p /var/log/harmony-ap
@@ -237,13 +324,12 @@ case "$1" in
   SUCCESS=true
  ;;
 
-
  abort-upgrade|abort-remove|abort-deconfigure)
  ;;
 
  *)
-    log "postinst called with unknown argument \`$1'" >&2
-    exit 1
+  echo "postinst called with unknown argument '$1'" >&2
+  exit 1
  ;;
 esac
 

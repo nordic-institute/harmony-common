@@ -1,20 +1,23 @@
 # Harmony eDelivery Access - Access Point Installation Guide <!-- omit in toc -->
 
-Version: 1.5  
+Version: 1.8  
 Doc. ID: IG-AP
 
 ---
 
 ## Version history <!-- omit in toc -->
 
- Date       | Version | Description                                                             | Author
- ---------- | ------- | ------------------------------------------------------------------------| --------------------
- 15.11.2021 | 1.0     | Initial version                                                         |
- 07.01.2022 | 1.1     | Add reference to the Static Discovery Configuration Guide \[UG-SDCG\]   | Petteri Kivimäki
+ Date       | Version | Description                                                                                                                                                 | Author
+ ---------- |---------|-------------------------------------------------------------------------------------------------------------------------------------------------------------| --------------------
+ 15.11.2021 | 1.0     | Initial version                                                                                                                                             |
+ 07.01.2022 | 1.1     | Add reference to the Static Discovery Configuration Guide \[UG-SDCG\]                                                                                       | Petteri Kivimäki
  08.01.2022 | 1.2     | Add party name to section [2.5](#25-access-point-installation) and TLS truststore to section [2.10](#210-location-of-configuration-and-generated-passwords) | Petteri Kivimäki
- 04.02.2022 | 1.3     | Add upgrade instructions. Add section about log files                   | Petteri Kivimäki
- 23.04.2022 | 1.4     | Add port number to the Access Point Installation section. Update package repository URL | Petteri Kivimäki
- 28.04.2022 | 1.5     | Minor changes                                                           | Petteri Kivimäki
+ 04.02.2022 | 1.3     | Add upgrade instructions. Add section about log files                                                                                                       | Petteri Kivimäki
+ 23.04.2022 | 1.4     | Add port number to the Access Point Installation section. Update package repository URL                                                                     | Petteri Kivimäki
+ 28.04.2022 | 1.5     | Minor changes                                                                                                                                               | Petteri Kivimäki
+ 22.05.2023 | 1.6     | Update references                                                                                                                                           | Petteri Kivimäki
+ 29.05.2023 | 1.7     | Update installation and version upgrade instructions                                                                                                        | Jarkko Hyöty
+ 01.06.2023 | 1.8     | Add more information about allowed characters in certificates                                                                                               | Petteri Kivimäki
 
 ## License <!-- omit in toc -->
 
@@ -56,16 +59,18 @@ The document is intended for readers with a moderate knowledge of Linux server m
 
 ### 1.2 Terms and abbreviations
 
-See eDelivery definitions documentation \[[TERMS](#Ref_TERMS)\].
+See eDelivery documentation \[[TERMS](#Ref_TERMS)\].
 
 ### 1.3 References
 
-1. <a id="Ref_TERMS" class="anchor"></a>\[TERMS\] CEF Definitions - eDelivery Definitions, <https://ec.europa.eu/cefdigital/wiki/display/CEFDIGITAL/CEF+Definitions#CEFDefinitions-eDeliveryDefinitions>
-2. <a id="Ref_DOMIBUS_ADMIN_GUIDE" class="anchor"></a>\[DOMIBUS_ADMIN_GUIDE\] Access Point Administration Guide - Domibus 4.2.5, <https://ec.europa.eu/cefdigital/wiki/download/attachments/447677321/%28eDelivery%29%28AP%29%28AG%29%284.2.5%29%288.9.6%29.pdf>
-3. <a id="Ref_WS_PLUGIN" class="anchor"></a>\[WS_PLUGIN\] Access Point Interface Control Document - WS Plugin, <https://ec.europa.eu/cefdigital/wiki/download/attachments/447677321/%28eDelivery%29%28AP%29%28ICD%29%28WS%20plugin%29%281.7%29.pdf>
-4. <a id="Ref_PLUGIN_COOKBOOK" class="anchor"></a>\[PLUGIN_COOKBOOK\] Domibus Plugin Cookbook, <https://ec.europa.eu/cefdigital/wiki/download/attachments/447677321/%28eDelivery%29%28AP%29%28Plugin-CB%29%28Domibus.4.2.5%29%284.5%29.pdf>
+1. <a id="Ref_TERMS" class="anchor"></a>\[TERMS\] eDelivery Documentation, <https://ec.europa.eu/digital-building-blocks/wikis/display/DIGITAL/eDelivery>
+2. <a id="Ref_DOMIBUS_ADMIN_GUIDE" class="anchor"></a>\[DOMIBUS_ADMIN_GUIDE\] Access Point Administration Guide - Domibus 5.1.0, <https://ec.europa.eu/digital-building-blocks/wikis/download/attachments/660440359/%28eDelivery%29%28AP%29%28AG%29%28Domibus%205.1%29%2819.6%29.pdf>
+3. <a id="Ref_WS_PLUGIN" class="anchor"></a>\[WS_PLUGIN\] Access Point Interface Control Document - WS Plugin, <https://ec.europa.eu/digital-building-blocks/wikis/download/attachments/660440359/%28eDelivery%29%28AP%29%28ICD%29%28WS%20plugin%29%28Domibus%205.1%29%283.4%29.pdf>
+4. <a id="Ref_PLUGIN_COOKBOOK" class="anchor"></a>\[PLUGIN_COOKBOOK\] Domibus Plugin Cookbook, <https://ec.europa.eu/digital-building-blocks/wikis/download/attachments/660440359/%28eDelivery%29%28AP%29%28Plugin-CB%29%28Domibus.5.1%29%286.4%29.pdf>
 5. <a id="Ref_UG-DDCG" class="anchor"></a>\[UG-DDCG\] Harmony eDelivery Access - Dynamic Discovery Configuration Guide. Document ID: [UG-DDCG](dynamic_discovery_configuration_guide.md)
 6. <a id="Ref_UG-SDCG" class="anchor"></a>\[UG-SDCG\] Harmony eDelivery Access - Static Discovery Configuration Guide. Document ID: [UG-SDCG](static_discovery_configuration_guide.md)
+7. <a id="Ref_RFC5280" class="anchor"></a>\[RFC5280\] RFC 5280: Internet X.509 Public Key Infrastructure Certificate and Certificate Revocation List (CRL) Profile, <https://www.rfc-editor.org/rfc/rfc5280>
+8. <a id="Ref_PS" class="anchor"></a>\[PS\] PrintableString, <https://en.wikipedia.org/wiki/PrintableString>
 
 ## 2 Installation
 
@@ -152,6 +157,31 @@ sudo apt update
 
 ### 2.5 Access Point Installation
 
+#### External MySQL 8 database setup (optional)
+
+When using an _external_ database (MySQL 8 required), it is necessary to create the database schema and user before installing the access point. Please also make sure that the external database accepts connections from the Access Point host.
+
+The schema and user can be created using the following SQL DDL statements (adjust user and schema name as needed; the default _harmony_ap_ is used in the example):
+
+```sql
+-- mysql
+create schema if not exists harmony_ap;
+alter schema harmony_ap charset=utf8mb4 collate=utf8mb4_bin;
+create user if not exists harmony_ap@'%';
+alter user harmony_ap@'%' identified by '<password>';
+grant all on harmony_ap.* to harmony_ap@'%';
+```
+
+It is also necessary to [populate MySQL time zone information tables](https://dev.mysql.com/doc/refman/8.0/en/time-zone-support.html#time-zone-installation), e.g. using the following command as root on the external database host:
+
+```bash
+mysql_tzinfo_to_sql /usr/share/zoneinfo/posix | mysql -u root mysql
+```
+
+When using a _local database_, the installer handles these additional steps.
+
+#### Access point install
+
 Issue the following command to install the Harmony eDelivery Access Access Point:
 ```bash
 sudo apt install harmony-ap
@@ -172,9 +202,16 @@ Upon the first installation of the Access Point, the system asks for the followi
       ```bash
       CN=example.com, O=My Organisation, C=FI
       ```
+  - the `Distinguished Name` (`DN`) uniquely identifies an entity in an X.509 certificate \[[RFC5280](#Ref_RFC5280)\]. The following attribute types are commonly found in the `DN`: `CN = Common name, O = Organization name, C = Country code`. It's recommended to use PrintableString characters \[[PS](#Ref_PS)\] in the attribute type values;
   - *note:* different eDelivery policy domains may have different requirements for the `Distinguished Name`. If you're not sure about the requirements, please contact the domain authority of the policy domain where the Access Point is registered;
 - port number that the Access Point listens to. The default is `8443`;
   - the Access Point admin UI, backend interface and AS4 interface all run on the defined port.
+- Access point database configuration. When using a local database, accept the defaults.
+  - Database host. The default is `localhost`.
+  - Database port.  The default is `3306`.
+  - Database schema name. The default is `harmony_ap`.
+  - Database user name. The default is `harmony_ap`.
+  - Database password. There is no default. Leave blank to generate a random password when installing a local database.
 
 See the Static Discovery Configuration Guide \[[UG-SDCG](static_discovery_configuration_guide.md)\] and the Dynamic Discovery Configuration Guide \[[UG-DDCG](dynamic_discovery_configuration_guide.md)\] for more information about how to configure different discovery options.
 
@@ -248,8 +285,26 @@ The Access Point application log files are located in the `/var/log/harmony-ap/`
 
 ## 3 Version Upgrade
 
-The the `harmony-ap` service is automatically stopped for the upgrade and automatically restarted after the upgrade if
-the service has been enabled. Otherwise, the service must be manually restarted after the upgrade.
+It is recommended to take a backup of the system (database and configuration in `/etc/harmony-ap`) before the upgrade.
+
+### 3.1 Additional steps for an external database
+
+If you are using an external database, you need to grant the Harmony access point database user additional rights before the upgrade. The additional rights can be revoked afterwards.
+
+```sql
+-- mysql
+grant SYSTEM_VARIABLES_ADMIN on *.* to harmony_ap'@'%'
+```
+
+When using an external database, it is also necessary to [manually populate MySQL time zone information tables](https://dev.mysql.com/doc/refman/8.0/en/time-zone-support.html#time-zone-installation), e.g. using the following command as root on the external database host:
+
+```bash
+mysql_tzinfo_to_sql /usr/share/zoneinfo/posix | mysql -u root mysql
+```
+
+### 3.2 Upgrade
+
+The the `harmony-ap` service is automatically stopped for the upgrade and automatically restarted after the upgrade if the service has been enabled. Otherwise, the service must be manually restarted after the upgrade.
 
 Update package repository metadata:
 ```bash
@@ -260,6 +315,7 @@ Issue the following command to run the upgrade:
 ```bash
 sudo apt upgrade
 ```
+If the installer asks for database configuration, accept the existing configuration read from `/etc/harmony-ap/domibus.properties`. Leaving the database password blank uses the password from configuration.
 
 If starting the service at system startup hasn't been enabled, the `harmony-ap` service must be started manually after
 the upgrade:

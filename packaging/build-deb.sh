@@ -3,7 +3,7 @@ set -e
 
 # CHANGE VERSION NUMBERS BELOW AS NEEDED
 # Version of Harmony Access Point
-APVERSION=1.4.0
+APVERSION="2.0.0"
 
 # Version of Harmony SMP
 SMPVERSION=1.4.0
@@ -57,20 +57,20 @@ cp -r ap build/harmony
 cp -r smp build/harmony
 
 cd commonbin
-if [ ! -f apache-tomcat-9.0.52.tar.gz ]; then
+if [ ! -f apache-tomcat-9.0.75.tar.gz ]; then
   echo "Fetching tomcat 9"
-  curl -O -s https://archive.apache.org/dist/tomcat/tomcat-9/v9.0.52/bin/apache-tomcat-9.0.52.tar.gz
+  curl -O -s "https://dlcdn.apache.org/tomcat/tomcat-9/v9.0.75/bin/apache-tomcat-9.0.75.tar.gz"
 fi
 
-if [ ! -f mysql-connector-java-8.0.26.jar ]; then
+if [ ! -f mysql-connector-j-8.0.33.jar ]; then
   echo "Fetching mysql connector"
-  curl -O -s https://repo1.maven.org/maven2/mysql/mysql-connector-java/8.0.26/mysql-connector-java-8.0.26.jar
+  curl -O -s "https://repo1.maven.org/maven2/com/mysql/mysql-connector-j/8.0.33/mysql-connector-j-8.0.33.jar"
 fi
 
 cd "$DIR"
 
 mkdir -p commonbin/tomcat9
-tar -xvzf commonbin/apache-tomcat-9.0.52.tar.gz -C commonbin/tomcat9 --strip-components=1
+tar -xvzf commonbin/apache-tomcat-9.0.75.tar.gz -C commonbin/tomcat9 --strip-components=1
 rm commonbin/tomcat9/conf/logging.properties
 rm commonbin/tomcat9/conf/server.xml
 
@@ -79,10 +79,10 @@ rm -rf commonbin/harmony-ap
 
 mkdir -p commonbin/harmony-ap
 
-unzip "$HARMONY_AP_REPO_PATH/Domibus-MSH-tomcat/target/harmony-MSH-tomcat-$APVERSION.war" -d commonbin/harmony-ap
+unzip "$HARMONY_AP_REPO_PATH/Tomcat/Domibus-MSH-tomcat-distribution/target/harmony-MSH-tomcat-distribution-$APVERSION.war" -d commonbin/harmony-ap
 
 # copy ws plugin jar
-cp "$HARMONY_AP_REPO_PATH/Domibus-default-ws-plugin/target/harmony-default-ws-plugin-$APVERSION.jar" commonbin/ws-plugin.jar
+cp "$HARMONY_AP_REPO_PATH/Plugin-WS/Domibus-default-ws-plugin/target/harmony-default-ws-plugin-$APVERSION.jar" commonbin/ws-plugin.jar
 
 # cleanup
 rm -rf commonbin/harmony-smp

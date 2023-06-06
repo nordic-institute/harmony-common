@@ -71,7 +71,7 @@ case "$1" in
     echo "Apply Liquibase migrations"  >&2
 
     $LIQUIBASE_HOME/liquibase.sh \
-      --classpath=/opt/harmony-smp/lib/mysql-connector-java-8.0.26.jar \
+      --classpath=/opt/harmony-smp/lib/mysql-connector-j-8.0.33.jar \
       --driver=com.mysql.cj.jdbc.Driver \
       --url=$URL \
       --username=$DBUSER \
@@ -126,7 +126,7 @@ case "$1" in
       echo "No Liquibase detected. Sync change log" >&2
 
       $LIQUIBASE_HOME/liquibase.sh \
-        --classpath=/opt/harmony-smp/lib/mysql-connector-java-8.0.26.jar \
+        --classpath=/opt/harmony-smp/lib/mysql-connector-j-8.0.33.jar \
         --driver=com.mysql.cj.jdbc.Driver \
         --url=$URL \
         --username=$DBUSER \
@@ -139,7 +139,7 @@ case "$1" in
     echo "Update database" >&2
 
     $LIQUIBASE_HOME/liquibase.sh \
-      --classpath=/opt/harmony-smp/lib/mysql-connector-java-8.0.26.jar \
+      --classpath=/opt/harmony-smp/lib/mysql-connector-j-8.0.33.jar \
       --driver=com.mysql.cj.jdbc.Driver \
       --url=$URL \
       --username=$DBUSER \

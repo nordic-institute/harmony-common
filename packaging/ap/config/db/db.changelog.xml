@@ -1,10 +1,85 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <databaseChangeLog
-        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
-        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
-                      http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.18.xsd">
+  xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog  http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.18.xsd">
 
-    <include file="/opt/harmony-ap/db/migrations/0001-init.sql"/>
+  <changeSet author="harmony" id="2.0.0-pre-migration-fix" failOnError="false">
+    <!-- fix unique constraint names that differ from Domibus 4.2.5 (created during Harmony 1.4 clean install) -->
+    <preConditions onFail="MARK_RAN" onError="HALT">
+      <changeSetExecuted id="0001:001" author="root" changeLogFile="/opt/harmony-ap/db/migrations/0001-init.sql"/>
+      <indexExists tableName="TB_USER_ROLE" indexName="ROLE_NAME"/>
+    </preConditions>
+    <sql><![CDATA[
+      ALTER TABLE TB_PM_LEG_MPC RENAME INDEX PARTYMPCMAP_ID_PK TO UK_7H5NW411791GF4LG1YH6SI1WD;
+      ALTER TABLE TB_ENCRYPTION_KEY RENAME INDEX KEY_USAGE TO UQ_KEY_USAGE;
+      ALTER TABLE TB_USER_ROLE RENAME INDEX ROLE_NAME TO UQ_ROLE_NAME;
+    ]]>
+    </sql>
+  </changeSet>
+
+  <changeSet author="harmony" id="2.0.0-migration-1">
+    <preConditions onFail="MARK_RAN" onError="HALT">
+      <changeSetExecuted id="0001:001" author="root" changeLogFile="/opt/harmony-ap/db/migrations/0001-init.sql"/>
+    </preConditions>
+    <sqlFile dbms="mysql" relativeToChangelogFile="true" path="migrations/mysql-4.2.5-to-4.2.6-migration.ddl" />
+    <sqlFile dbms="mysql" relativeToChangelogFile="true" path="migrations/mysql-4.2.9-to-5.0-migration.ddl" />
+  </changeSet>
+  <changeSet author="harmony" id="2.0.0-migration-2">
+    <preConditions onFail="MARK_RAN" onError="HALT">
+      <changeSetExecuted id="0001:001" author="root" changeLogFile="/opt/harmony-ap/db/migrations/0001-init.sql"/>
+    </preConditions>
+    <sqlFile dbms="mysql" relativeToChangelogFile="true" endDelimiter="//" path="migrations/mysql-4.2.9-to-5.0-data-migration-step1.ddl" />
+    <sql dbms="mysql">
+        CALL MIGRATE_42_TO_50_utc_conversion(@@SESSION.time_zone);
+    </sql>
+    <sqlFile dbms="mysql" relativeToChangelogFile="true" endDelimiter="//" path="migrations/mysql-4.2.9-to-5.0-data-migration-step2.ddl" />
+  </changeSet>
+  <changeSet author="harmony" id="2.0.0-migration-3">
+    <preConditions onFail="MARK_RAN" onError="HALT">
+      <changeSetExecuted id="0001:001" author="root" changeLogFile="/opt/harmony-ap/db/migrations/0001-init.sql"/>
+    </preConditions>
+    <sqlFile dbms="mysql" relativeToChangelogFile="true" path="migrations/mysql-4.2.9-to-5.0-data-migration-step3.ddl" />
+    <sqlFile dbms="mysql" relativeToChangelogFile="true" endDelimiter="//" path="migrations/mysql-4.2.9-to-5.0-data-migration-step4.ddl" />
+  </changeSet>
+  <changeSet author="harmony" id="2.0.0-migration-4">
+    <preConditions onFail="MARK_RAN" onError="HALT">
+      <changeSetExecuted id="0001:001" author="root" changeLogFile="/opt/harmony-ap/db/migrations/0001-init.sql"/>
+    </preConditions>
+    <sqlFile dbms="mysql" relativeToChangelogFile="true" path="migrations/mysql-5.0-to-5.0.1-migration.ddl" />
+    <sqlFile dbms="mysql" relativeToChangelogFile="true" path="migrations/mysql-5.0.1-to-5.0.2-migration.ddl" />
+  </changeSet>
+  <changeSet author="harmony" id="2.0.0-migration-5">
+    <preConditions onFail="MARK_RAN" onError="HALT">
+      <changeSetExecuted id="0001:001" author="root" changeLogFile="/opt/harmony-ap/db/migrations/0001-init.sql"/>
+    </preConditions>
+    <sqlFile dbms="mysql" relativeToChangelogFile="true" path="migrations/mysql-5.0-to-5.1-migration.ddl" />
+    <sqlFile dbms="mysql" relativeToChangelogFile="true" path="migrations/mysql-5.1-data-migration.ddl" />
+  </changeSet>
+
+  <changeSet author="harmony" id="2.0.0-init">
+    <preConditions onFail="MARK_RAN" onError="HALT">
+      <not>
+        <changeSetExecuted id="0001:001" author="root" changeLogFile="/opt/harmony-ap/db/migrations/0001-init.sql"/>
+      </not>
+    </preConditions>
+
+    <sqlFile dbms="mysql" relativeToChangelogFile="true" path="migrations/mysql-5.1.0.ddl"/>
+    <sqlFile dbms="mysql" relativeToChangelogFile="true" path="migrations/mysql-5.1.0-data.ddl"/>
+  </changeSet>
+
+  <!-- adds the initial admin user unless one already exists -->
+  <changeSet author="harmony" id="default-admin-user" runOnChange="true" runOrder="last">
+    <preConditions onFail="CONTINUE">
+      <sqlCheck  expectedResult="0">SELECT COUNT(*) FROM TB_USER_ROLES U JOIN TB_USER_ROLE R ON U.ROLE_ID = R.ID_PK WHERE R.ROLE_NAME='ROLE_ADMIN'</sqlCheck>
+    </preConditions>
+    <sql dbms="mysql">
+      INSERT INTO TB_USER (ID_PK, USER_NAME, USER_PASSWORD, USER_ENABLED, USER_DELETED, DEFAULT_PASSWORD)
+        VALUES ('197001010000000001', '${adminUser}', '${adminPassword}', 1, 0, 0);
+
+      INSERT INTO TB_USER_ROLES (USER_ID, ROLE_ID)
+        VALUES ('197001010000000001', '197001010000000001');
+    </sql>
+  </changeSet>
 
 </databaseChangeLog>

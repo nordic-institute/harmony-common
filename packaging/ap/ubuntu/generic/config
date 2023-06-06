@@ -1,8 +1,13 @@
 #!/bin/bash
 
+get_prop() {
+  local prop="$1";
+  grep -m1 -Po "^${prop}\s*=\s*\K.*$" /etc/harmony-ap/domibus.properties 2>/dev/null || echo ""
+}
 . /usr/share/debconf/confmodule
 
 if [ "$1" = "configure" ] || [ "$1" = "reconfigure" ]; then
+
   db_input high harmony-ap/usedynamicdiscovery
   db_go
 
@@ -11,7 +16,6 @@ if [ "$1" = "configure" ] || [ "$1" = "reconfigure" ]; then
 
   if [ "$USEDYNAMIC" = true ]; then
     db_input high harmony-ap/smlzone
-    SMLZONE="$RET"
   fi
 
   db_beginblock
@@ -22,6 +26,40 @@ if [ "$1" = "configure" ] || [ "$1" = "reconfigure" ]; then
   db_input high harmony-ap/tomcatport || true
   db_endblock
   db_go
+
+  db_beginblock
+  DB_HOST="$(get_prop domibus.database.serverName)"
+  if [[ -n "$DB_HOST" ]]; then
+    db_set harmony-ap/database-host "$DB_HOST"
+  fi
+  db_input high harmony-ap/database-host
+  DB_PORT="$(get_prop domibus.database.port)"
+  if [[ -n "$DB_PORT" ]]; then
+    db_set harmony-ap/database-port "$DB_PORT"
+  fi
+  db_input high harmony-ap/database-port
+  DB_SCHEMA="$(get_prop domibus.database.schema)"
+  if [[ -n "$DB_SCHEMA" ]]; then
+    db_set harmony-ap/database-schema "$DB_SCHEMA"
+  fi
+  db_input high harmony-ap/database-schema
+  db_endblock
+  db_go
+
+  db_get harmony-ap/database-schema
+  DB_SCHEMA="$RET"
+
+  db_beginblock
+  DB_USER="$(get_prop domibus.database.user)"
+  if [[ -n "$DB_USER" ]]; then
+    db_set harmony-ap/database-user "$DB_USER"
+  fi
+  db_subst harmony-ap/database-user db_schema "$DB_SCHEMA"
+  db_input high harmony-ap/database-user
+  db_input high harmony-ap/database-password
+  db_endblock
+  db_go
+
 fi
 
 # TODO add some checking of values?

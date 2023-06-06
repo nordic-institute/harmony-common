@@ -1,6 +1,6 @@
 # Harmony eDelivery Access - Dynamic Discovery Configuration Guide <!-- omit in toc -->
 
-Version: 1.4  
+Version: 1.5  
 Doc. ID: UG-DDCG
 
 ---
@@ -14,6 +14,7 @@ Doc. ID: UG-DDCG
  06.01.2022 | 1.2     | Minor updates                                                   | Petteri Kivimäki
  16.02.2022 | 1.3     | Minor updates                                                   | Petteri Kivimäki
  22.01.2023 | 1.4     | Update SMP Admin Guide link                                     | Petteri Kivimäki
+ 22.05.2023 | 1.5     | Update references                                               | Petteri Kivimäki
   
 ## License <!-- omit in toc -->
 
@@ -72,14 +73,14 @@ The main terms used in this document are:
 - SMP - Service Metadata Provider, a component that provides a public API for service discovery that interested parties can use to access service metadata;
 - AP - Access Point, a component that participants use to send and receive messages in an eDelivery network.
 
-See eDelivery definitions documentation \[[TERMS](#Ref_TERMS)\].
+See eDelivery documentation \[[TERMS](#Ref_TERMS)\].
 
 ### 1.3 References
 
-1. <a id="Ref_TERMS" class="anchor"></a>\[TERMS\] CEF Definitions - eDelivery Definitions, <https://ec.europa.eu/cefdigital/wiki/display/CEFDIGITAL/CEF+Definitions#CEFDefinitions-eDeliveryDefinitions>
+1. <a id="Ref_TERMS" class="anchor"></a>\[TERMS\] eDelivery Documentation, <https://ec.europa.eu/digital-building-blocks/wikis/display/DIGITAL/eDelivery>
 2. <a id="Ref_IG-AP" class="anchor"></a>\[IG-AP\] Harmony eDelivery Access - Access Point Installation Guide. Document ID: [IG-AS](harmony-ap_installation_guide.md)
 3. <a id="Ref_IG-SMP" class="anchor"></a>\[IG-SMP\] Harmony eDelivery Access - Service Metadata Publisher Installation Guide. Document ID: [IG-SMP](harmony-smp_installation_guide.md)
-4. <a id="Ref_DOMIBUS_ADMIN_GUIDE" class="anchor"></a>\[DOMIBUS_ADMIN_GUIDE\] Access Point Administration Guide - Domibus 4.2.5, <https://ec.europa.eu/cefdigital/wiki/download/attachments/447677321/%28eDelivery%29%28AP%29%28AG%29%284.2.5%29%288.9.6%29.pdf>
+4. <a id="Ref_DOMIBUS_ADMIN_GUIDE" class="anchor"></a>\[DOMIBUS_ADMIN_GUIDE\] Access Point Administration Guide - Domibus 5.1.0, <https://ec.europa.eu/digital-building-blocks/wikis/download/attachments/660440359/%28eDelivery%29%28AP%29%28AG%29%28Domibus%205.1%29%2819.6%29.pdf>
 5. <a id="Ref_SMP_ADMIN_GUIDE" class="anchor"></a>\[SMP_ADMIN_GUIDE\] SMP Administration Guide - SMP 4.2, <https://ec.europa.eu/digital-building-blocks/wikis/download/attachments/551518321/%28eDelivery%29%28SMP%29%28AG%29%28SMP%204.2-FR%29%283.5%29.pdf>
 6. <a id="Ref_UG-SDCG" class="anchor"></a>\[UG-SDCG\] Harmony eDelivery Access - Static Discovery Configuration Guide. Document ID: [UG-SDCG](static_discovery_configuration_guide.md)
 
