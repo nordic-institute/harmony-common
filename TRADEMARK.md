@@ -29,11 +29,13 @@ that your use isn’t in NIIS’s best interest, we can revoke your right to use
 3. If you are a licensee of trademarks and have been provided with special trademark usage guidelines with your
 license agreement, please follow those in addition to these guidelines. If your license agreement does not provide
 usage guidelines in matters not regulated in the agreement, follow these guidelines.
-4. Open-source license vs trademarks. The open-source MIT License allows you to redistribute and use the software
-under certain conditions. Nevertheless, the MIT License does not include an implied right or license to use a
+4. Open-source license vs trademarks. The open-source EUPL-1.2 License allows you to redistribute and use the software
+under certain conditions. Nevertheless, the EUPL-1.2 License does not include an implied right or license to use a
 trademark related to the licensed software or other materials. The trademarks and logos need to be used consistent
 with trademark law.
 5. Harmony eDelivery is licensed under the EUPL-1.2 license.
+6. The Harmony eDelivery documentation is licensed under the Creative Commons Attribution-ShareAlike 4.0 International
+License.
 
 ## 2 Fair Use of Trademarks and Logos
 
