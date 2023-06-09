@@ -115,5 +115,5 @@ at our sole discretion and release new versions without notice. The current vers
 
 ## 6 Q&A
 
-1. **Question**: Does this also mean that if I compile Harmony eDelivery Access (without changing any actual code) and create my metapackages to distribute in a country, for instance, I should always modify the frontend code and remove the Harmony eDelivery Access logos?
+1. **Question**: Does this also mean that if I compile Harmony eDelivery Access without changing any actual code, I should always modify the frontend code and remove the Harmony eDelivery Access logos?
    1. **Answer**: In this case, you don’t need to remove the Harmony eDelivery Access logos from the frontend because you’re still using the original Harmony eDelivery Access software. However, the data exchange service that’s built using Harmony eDelivery Access should be called something else.
