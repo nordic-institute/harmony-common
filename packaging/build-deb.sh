@@ -56,21 +56,23 @@ mkdir -p build/harmony
 cp -r ap build/harmony
 cp -r smp build/harmony
 
+TOMCAT_VERSION=9.0.76
+MYSQLJ_VERSION=8.0.33
 cd commonbin
-if [ ! -f apache-tomcat-9.0.75.tar.gz ]; then
+if [ ! -f tomcat-$TOMCAT_VERSION.tar.gz ]; then
   echo "Fetching tomcat 9"
-  curl -O -s "https://dlcdn.apache.org/tomcat/tomcat-9/v9.0.75/bin/apache-tomcat-9.0.75.tar.gz"
+  curl -O -s "https://repo1.maven.org/maven2/org/apache/tomcat/tomcat/$TOMCAT_VERSION/tomcat-$TOMCAT_VERSION.tar.gz"
 fi
 
-if [ ! -f mysql-connector-j-8.0.33.jar ]; then
+if [ ! -f mysql-connector-j-$MYSQLJ_VERSION.jar ]; then
   echo "Fetching mysql connector"
-  curl -O -s "https://repo1.maven.org/maven2/com/mysql/mysql-connector-j/8.0.33/mysql-connector-j-8.0.33.jar"
+  curl -O -s "https://repo1.maven.org/maven2/com/mysql/mysql-connector-j/$MYSQLJ_VERSION/mysql-connector-j-$MYSQLJ_VERSION.jar"
 fi
 
 cd "$DIR"
 
 mkdir -p commonbin/tomcat9
-tar -xvzf commonbin/apache-tomcat-9.0.75.tar.gz -C commonbin/tomcat9 --strip-components=1
+tar -xvzf commonbin/tomcat-$TOMCAT_VERSION.tar.gz -C commonbin/tomcat9 --strip-components=1
 rm commonbin/tomcat9/conf/logging.properties
 rm commonbin/tomcat9/conf/server.xml
 
