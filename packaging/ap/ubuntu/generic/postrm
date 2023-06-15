@@ -6,10 +6,10 @@ if [[ "$1" == "remove" ]]; then
   rm -rf /opt/harmony-ap
 elif [[ "$1" == "purge" ]]; then
   db_purge
-  rm -rf /etc/harmony-ap
+  rm -rf /etc/harmony-ap /var/opt/harmony-ap
 elif [[ "$1" == "abort-install" ]]; then
   rm -rf /etc/harmony-ap
-  rm -rf /opt/harmony-ap
+  rm -rf /opt/harmony-ap /var/opt/harmony-ap
 fi
 
 db_stop

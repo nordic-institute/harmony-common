@@ -5,27 +5,14 @@
     <!-- pattern definition -->
     <property name="encoderPattern" value="%d{ISO8601} [%X{d_user}] [%X{d_domain}] [%X{d_messageId}] [%thread] %5p %c{1}:%domibusLine - %m%n" scope="global"/>
     <property name="statisticsPattern" value="%d{ISO8601} %5p %c{1}:%domibusLine - %m%n" scope="global"/>
+    <property name="logdir" value="/var/log/harmony-ap" />
 
     <!-- multitenancy: start include domains config files here -->
     <!--<include optional="true" file="${catalina.home}/conf/domibus/domain_name-logback.xml"/>-->
     <!-- multitenancy: end include domains config files here -->
 
-    <appender name="atomikos" class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>/var/log/harmony-ap/atomikos.log</file>
-        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
-            <!-- rollover daily -->
-            <fileNamePattern>/var/log/harmony-ap/atomikos-%d{yyyy-MM-dd}.%i.log</fileNamePattern>
-            <!-- each file should be at most 30MB, keep 60 days worth of history, but at most 20GB -->
-            <maxFileSize>30MB</maxFileSize>
-            <maxHistory>60</maxHistory>
-            <totalSizeCap>20GB</totalSizeCap>
-        </rollingPolicy>
-        <encoder>
-            <pattern>%d{ISO8601} [%X{d_user}] [%X{d_messageId}] %5p %c{1}:%domibusLine - %m%n</pattern>
-        </encoder>
-    </appender>
     <appender name="file" class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>/var/log/harmony-ap/domibus.log</file>
+        <file>${logdir}/domibus.log</file>
         <!-- multitenancy: uncomment this
         <filter class="eu.domibus.logging.DomibusLoggerDomainFilter">
             <domain></domain>
@@ -42,7 +29,7 @@
         </filter>
         <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
             <!-- rollover daily -->
-            <fileNamePattern>/var/log/harmony-ap/domibus-%d{yyyy-MM-dd}.%i.log</fileNamePattern>
+            <fileNamePattern>${logdir}/domibus-%d{yyyy-MM-dd}.%i.log</fileNamePattern>
             <!-- each file should be at most 30MB, keep 60 days worth of history, but at most 20GB -->
             <maxFileSize>30MB</maxFileSize>
             <maxHistory>60</maxHistory>
@@ -53,13 +40,13 @@
         </encoder>
     </appender>
     <appender name="error_file" class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>${catalina.home}/logs/domibus-error.log</file>
+        <file>${logdir}/domibus-error.log</file>
         <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
             <level>WARN</level>
         </filter>
         <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
             <!-- rollover daily -->
-            <fileNamePattern>/var/log/harmony-ap/domibus-error-%d{yyyy-MM-dd}.%i.log</fileNamePattern>
+            <fileNamePattern>${logdir}/domibus-error-%d{yyyy-MM-dd}.%i.log</fileNamePattern>
             <!-- each file should be at most 30MB, keep 60 days worth of history, but at most 20GB -->
             <maxFileSize>30MB</maxFileSize>
             <maxHistory>60</maxHistory>
@@ -70,7 +57,7 @@
         </encoder>
     </appender>
     <appender name="security_file" class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>/var/log/harmony-ap/security.log</file>
+        <file>${logdir}/security.log</file>
         <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
             <level>INFO</level>
         </filter>
@@ -89,7 +76,7 @@
         </filter>
         <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
             <!-- rollover daily -->
-            <fileNamePattern>/var/log/harmony-ap/security-%d{yyyy-MM-dd}.%i.log</fileNamePattern>
+            <fileNamePattern>${logdir}/security-%d{yyyy-MM-dd}.%i.log</fileNamePattern>
             <!-- each file should be at most 30MB, keep 60 days worth of history, but at most 20GB -->
             <maxFileSize>30MB</maxFileSize>
             <maxHistory>60</maxHistory>
@@ -100,7 +87,7 @@
         </encoder>
     </appender>
     <appender name="business_file" class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>/var/log/harmony-ap/business.log</file>
+        <file>${logdir}/business.log</file>
         <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
             <level>INFO</level>
         </filter>
@@ -119,7 +106,7 @@
         </filter>
         <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
             <!-- rollover daily -->
-            <fileNamePattern>/var/log/harmony-ap/business-%d{yyyy-MM-dd}.%i.log</fileNamePattern>
+            <fileNamePattern>${logdir}/business-%d{yyyy-MM-dd}.%i.log</fileNamePattern>
             <!-- each file should be at most 30MB, keep 60 days worth of history, but at most 20GB -->
             <maxFileSize>30MB</maxFileSize>
             <maxHistory>60</maxHistory>
@@ -131,7 +118,7 @@
     </appender>
 
     <appender name="statistic_file" class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>/var/log/harmony-ap/statistic.log</file>
+        <file>${logdir}/statistic.log</file>
         <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
             <level>INFO</level>
         </filter>
@@ -143,7 +130,7 @@
             <onMatch>NEUTRAL</onMatch>
         </filter>
         <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
-            <fileNamePattern>/var/log/harmony-ap/statistics-%d{yyyy-MM-dd}.%i.log</fileNamePattern>
+            <fileNamePattern>${logdir}/statistics-%d{yyyy-MM-dd}.%i.log</fileNamePattern>
             <maxFileSize>30MB</maxFileSize>
             <maxHistory>60</maxHistory>
             <totalSizeCap>20GB</totalSizeCap>
@@ -167,10 +154,6 @@
 
     <logger name="eu.domibus.statistic" level="INFO" additivity="false">
         <appender-ref ref="statistic_file"/>
-    </logger>
-
-    <logger name="com.atomikos" level="ERROR">
-        <appender-ref ref="atomikos"/>
     </logger>
 
     <!--  In order to enable logging of request/responses please change the loglevel to INFO -->

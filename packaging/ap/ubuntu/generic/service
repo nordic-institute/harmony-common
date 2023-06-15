@@ -5,8 +5,9 @@ After=network.target
 [Service]
 Type=forking
 
-PIDFile=/opt/harmony-ap/temp/harmony-ap.pid
-Environment=CATALINA_PID=/opt/harmony-ap/temp/harmony-ap.pid
+PIDFile=/run/harmony-ap/harmony-ap.pid
+Environment=CATALINA_PID=/run/harmony-ap/harmony-ap.pid
+Environment=CATALINA_TMPDIR=/var/tmp/harmony-ap
 Environment=CATALINA_HOME=/opt/harmony-ap
 Environment=CATALINA_BASE=/opt/harmony-ap
 Environment=CATALINA_OUT=/var/log/harmony-ap/catalina.out

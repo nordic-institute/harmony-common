@@ -296,23 +296,38 @@ changeLogFile:/opt/harmony-ap/db/db.changelog.xml") \
     sed -i '1a . /opt/harmony-ap/bin/setjavahome.sh' /opt/harmony-ap/bin/setenv.sh
   fi
 
-  mkdir -p /opt/harmony-ap/temp
-  mkdir -p /opt/harmony-ap/work
-  mkdir -p /opt/harmony-ap/logs
+  if [ -d /opt/harmony-ap/work ]; then 
+    # move work directory to a new location
+    mkdir -p /var/opt/harmony-ap
+    sed -i \
+      's|-Ddomibus.work.location=/opt/harmony-ap/work|-Ddomibus.work.location=/var/opt/harmony-ap/work|' \
+      /opt/harmony-ap/bin/setenv.sh
+    if ! grep -Fq 'workDir="/var/opt/harmony-ap/tomcat"' /etc/harmony-ap/tomcat-conf/server.xml; then
+      sed -i -E 's|(<Host name="localhost")|\1 workDir="/var/opt/harmony-ap/tomcat"|' /etc/harmony-ap/tomcat-conf/server.xml
+    fi
+    mv /opt/harmony-ap/work /var/opt/harmony-ap/
+  fi
 
+  mkdir -m 0750 -p /run/harmony-ap /var/tmp/harmony-ap /var/opt/harmony-ap/work /var/opt/harmony-ap/tomcat
+  chown -R harmony-ap:harmony-ap /run/harmony-ap /var/tmp/harmony-ap /var/opt/harmony-ap
+  chmod -R -x,u=rwX,g=rX,o= /var/opt/harmony-ap
+
+  # fix app folder permissions
   chown -R root:harmony-ap /opt/harmony-ap
-  chmod -R u=rwX,g=rX,o=rX /opt/harmony-ap
-  chown -R harmony-ap /opt/harmony-ap/temp /opt/harmony-ap/logs /opt/harmony-ap/work
-  chmod -R u=rwX,g=rX,o= /opt/harmony-ap/temp /opt/harmony-ap/logs /opt/harmony-ap/work
-
+  chmod -R -x,u=rwX,g=rX,o=X /opt/harmony-ap
+  chmod  ug+x /opt/harmony-ap/bin/*.sh
+  
   # nicer log directory permissions
   mkdir -p /var/log/harmony-ap
   chmod 1770 /var/log/harmony-ap
   chown harmony-ap:adm /var/log/harmony-ap
 
-  # config folder permissions
+  # config folder needs to be writable by harmony-ap
   chown -R harmony-ap:harmony-ap /etc/harmony-ap
-  chmod -R 0751 /etc/harmony-ap
+  chmod -R -x,u=rwX,g=rX,o=X /etc/harmony-ap
+  chown -R root:harmony-ap \
+    /etc/harmony-ap/tomcat-conf \
+    /etc/harmony-ap/plugins/lib
 
   # reload service configuration
   systemctl daemon-reload
