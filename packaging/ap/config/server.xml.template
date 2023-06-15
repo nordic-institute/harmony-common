@@ -150,7 +150,8 @@
       </Realm>
 
       <Host name="localhost"  appBase="webapps"
-            unpackWARs="true" autoDeploy="true">
+            unpackWARs="false" autoDeploy="false" 
+            workDir="/var/opt/harmony-ap/tomcat">
 
       <Valve className="org.apache.catalina.valves.ErrorReportValve"
              showReport="false" showServerInfo="false" />

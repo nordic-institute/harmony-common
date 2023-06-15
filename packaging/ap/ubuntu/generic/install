@@ -25,3 +25,4 @@
 ../../../ap/config/liquibase/* /opt/harmony-ap/liquibase
 ../../../ap/config/db/* /opt/harmony-ap/db
 ../../../../../../CHANGELOG.md /usr/share/doc/harmony-ap/
+../../../ap/config/tmpfiles.d/* /usr/lib/tmpfiles.d/
