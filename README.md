@@ -27,7 +27,7 @@ The source code is licensed under the [EUPL 1.2](LICENSE.md) open-source license
 
 Harmony eDelivery Access by [NIIS](https://niis.org) is a free and actively maintained open-source component for joining one or more eDelivery policy domains. Harmony eDelivery Access provides a unified technology stack, an automated installation and upgrade process for selected platforms, and step-by-step installation and upgrade instructions.
 
-Harmony eDelivery Access is based on upon the [Domibus](https://ec.europa.eu/cefdigital/code/projects/EDELIVERY/repos/domibus/) and the [SMP](https://ec.europa.eu/cefdigital/code/projects/EDELIVERY/repos/smp) open source projects by the [European Commission](https://ec.europa.eu/). 
+Harmony eDelivery Access is based on upon the [Domibus](https://ec.europa.eu/digital-building-blocks/code/projects/EDELIVERY/repos/domibus/) and the [SMP](https://ec.europa.eu/digital-building-blocks/code/projects/EDELIVERY/repos/smp) open source projects by the [European Commission](https://ec.europa.eu/). 
  
 Please visit the Harmony eDelivery Access [website](https://edelivery.digital) for more information.
 
