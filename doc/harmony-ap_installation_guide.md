@@ -1,6 +1,6 @@
 # Harmony eDelivery Access - Access Point Installation Guide <!-- omit in toc -->
 
-Version: 1.8  
+Version: 1.9  
 Doc. ID: IG-AP
 
 ---
@@ -18,6 +18,7 @@ Doc. ID: IG-AP
  22.05.2023 | 1.6     | Update references                                                                                                                                           | Petteri Kivimäki
  29.05.2023 | 1.7     | Update installation and version upgrade instructions                                                                                                        | Jarkko Hyöty
  01.06.2023 | 1.8     | Add more information about allowed characters in certificates                                                                                               | Petteri Kivimäki
+ 22.06.2023 | 1.9     | Add a note about the default password expiration policy                                                                                                     | Petteri Kivimäki
 
 ## License <!-- omit in toc -->
 
@@ -195,6 +196,7 @@ Upon the first installation of the Access Point, the system asks for the followi
   - the value can be edited later by changing the `domibus.smlzone` property in the `/etc/harmony-ap/domibus.properties` configuration file;
 - username of the administrative user - username to use to log in to administrative UI;
 - initial password for the administrative user;
+  - *note:* the default password expiration policy is 90 days and it applies to the administrative user too;
 - party name of the Access Point owner organisation;
   - if you don't know the party name of the owner, use the default value (`selfsigned`);
 - `Distinguished Name` for generated self-signed content and transport certificates;
