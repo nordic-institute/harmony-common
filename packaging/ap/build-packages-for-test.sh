@@ -50,3 +50,4 @@ fi
 
 clone_repository "$AP_REPO" "$COMMON_REPO" "$SMP_REPO"
 build_packages
+install_harmony
