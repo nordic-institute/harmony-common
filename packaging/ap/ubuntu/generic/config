@@ -8,80 +8,55 @@ get_prop() {
 
 if [ "$1" = "configure" ] || [ "$1" = "reconfigure" ]; then
 
-  if [[ -z "${USE_DYNAMIC}" ]]; then
-    db_input high harmony-ap/usedynamicdiscovery
-    db_go
-  else 
-    db_set harmony-ap/usedynamicdiscovery "$USE_DYNAMIC"
-    USEDYNAMIC=$USE_DYNAMIC
-  fi
+  db_input high harmony-ap/usedynamicdiscovery
+  db_go
+
+  db_get harmony-ap/usedynamicdiscovery
+  USEDYNAMIC="$RET"
 
   if [ "$USEDYNAMIC" = true ]; then
-    if [[ -z "${SML_ZONE}" ]]; then
-      db_input high harmony-ap/smlzone
-      db_go
-    else 
-      db_set harmony-ap/smlzone "$SML_ZONE"
-    fi
+    db_input high harmony-ap/smlzone
   fi
 
   db_beginblock
-  if [[ -z "${ADM_USER}" ]]; then
-    db_input high harmony-ap/adminuser || true
-  else 
-    db_set harmony-ap/adminuser "$ADM_USER"
-  fi
-  if [[ -z "${ADM_PASS}" ]]; then
-    db_input high harmony-ap/adminpassword || true
-  else 
-    db_set harmony-ap/adminpassword "$ADM_PASS"
-  fi
-  if [[ -z "${PARTY_NAME}" ]]; then
-    db_input high harmony-ap/partyname || true
-  else 
-    db_set harmony-ap/partyname "$PARTY_NAME"
-  fi
-  if [[ -z "${SERVER_DN}" ]]; then
-    db_input high harmony-ap/serverdn || true
-  else 
-    db_set harmony-ap/serverdn "$SERVER_DN"
-  fi
-  if [[ -z "${TOMCAT_PORT}" ]]; then
-    db_input high harmony-ap/tomcatport || true
-  else 
-    db_set harmony-ap/tomcatport "$TOMCAT_PORT"
-  fi
+  db_input high harmony-ap/adminuser || true
+  db_input high harmony-ap/adminpassword || true
+  db_input high harmony-ap/partyname || true
+  db_input high harmony-ap/serverdn || true
+  db_input high harmony-ap/tomcatport || true
   db_endblock
   db_go
 
   db_beginblock
-  if [[ -z "${DB_HOST}" ]]; then
-    db_input high harmony-ap/database-host
-  else 
+  DB_HOST="$(get_prop domibus.database.serverName)"
+  if [[ -n "$DB_HOST" ]]; then
     db_set harmony-ap/database-host "$DB_HOST"
   fi
-  if [[ -z "${DB_PORT}" ]]; then
-    db_input high harmony-ap/database-port
-  else 
+  db_input high harmony-ap/database-host
+  DB_PORT="$(get_prop domibus.database.port)"
+  if [[ -n "$DB_PORT" ]]; then
     db_set harmony-ap/database-port "$DB_PORT"
   fi
-  if [[ -z "${DB_SCHEMA}" ]]; then
-    db_input high harmony-ap/database-schema
-  else 
+  db_input high harmony-ap/database-port
+  DB_SCHEMA="$(get_prop domibus.database.schema)"
+  if [[ -n "$DB_SCHEMA" ]]; then
     db_set harmony-ap/database-schema "$DB_SCHEMA"
   fi
-  if [[ -z "${DB_USER}" ]]; then
-    db_input high harmony-ap/database-user
-  else 
+  db_input high harmony-ap/database-schema
+  db_endblock
+  db_go
+
+  db_get harmony-ap/database-schema
+  DB_SCHEMA="$RET"
+
+  db_beginblock
+  DB_USER="$(get_prop domibus.database.user)"
+  if [[ -n "$DB_USER" ]]; then
     db_set harmony-ap/database-user "$DB_USER"
   fi
-  if [[ -z "${DB_PASS}" ]]; then
-    db_input high harmony-ap/database-password
-  else 
-    db_set harmony-ap/database-password "$DB_PASS"
-  fi
-  
   db_subst harmony-ap/database-user db_schema "$DB_SCHEMA"
+  db_input high harmony-ap/database-user
+  db_input high harmony-ap/database-password
   db_endblock
   db_go
 

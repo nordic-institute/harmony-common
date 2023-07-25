@@ -24,7 +24,19 @@ build_packages() {
 }
 
 install_harmony() {
-  apt install ./packaging/build/ubuntu20.04/harmony-ap.deb
+  export DEBIAN_FRONTEND="noninteractive"
+  sudo debconf-set-selections <<< "harmony-ap harmony-ap/usedynamicdiscovery boolean $USE_DYNAMIC"
+  sudo debconf-set-selections <<< "harmony-ap harmony-ap/adminuser string $ADM_USER"
+  sudo debconf-set-selections <<< "harmony-ap harmony-ap/adminpassword password $ADM_PASS"
+  sudo debconf-set-selections <<< "harmony-ap harmony-ap/serverdn string $SERVER_DN"
+  sudo debconf-set-selections <<< "harmony-ap harmony-ap/partyname string $PARTY_NAME"
+  sudo debconf-set-selections <<< "harmony-ap harmony-ap/tomcatport string $TOMCAT_PORT"
+  sudo debconf-set-selections <<< "harmony-ap harmony-ap/database-host string $DB_HOST"
+  sudo debconf-set-selections <<< "harmony-ap harmony-ap/database-port string $DB_PORT"
+  sudo debconf-set-selections <<< "harmony-ap harmony-ap/database-schema string $DB_SCHEMA"
+  sudo debconf-set-selections <<< "harmony-ap harmony-ap/database-user string $DB_USER"
+  sudo debconf-set-selections <<< "harmony-ap harmony-ap/database-password password $DB_PASS"
+  sudo apt install -y ./packaging/build/ubuntu20.04/harmony-ap.deb
 }
 
 while getopts ":a:c:s:" options; do
