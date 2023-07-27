@@ -4,22 +4,26 @@ After=network.target
 
 [Service]
 Type=forking
+AmbientCapabilities=CAP_NET_BIND_SERVICE
+TasksMax=infinity
 
-Environment=JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64
+Environment=JAVA_HOME=/usr/lib/jvm/java-11-openjdk-amd64
 Environment=CATALINA_PID=/opt/harmony-smp/temp/harmony-ap.pid
 Environment=CATALINA_HOME=/opt/harmony-smp
 Environment=CATALINA_BASE=/opt/harmony-smp
 Environment=CATALINA_OUT=/var/log/harmony-smp/catalina.out
 Environment='CATALINA_OPTS=-Xms256M -Xmx512M -server -XX:+UseParallelGC'
-Environment='JAVA_OPTS=-Djava.awt.headless=true -Djava.security.egd=file:/dev/./urandom'
+Environment='JAVA_OPTS=-Djava.awt.headless=true -Djava.security.egd=file:/dev/./urandom -Dsmp.configuration.file=/etc/harmony-smp/smp.config.properties -Dsmp.init.configuration.file=/etc/harmony-smp/smp.init.properties'
+
 ExecStart=/opt/harmony-smp/bin/startup.sh
 ExecStop=/opt/harmony-smp/bin/shutdown.sh
 
 User=harmony-smp
 Group=harmony-smp
 UMask=0007
-RestartSec=10
-Restart=always
+RestartSec=30
+Restart=on-failure
+SuccessExitStatus=143
 
 [Install]
 WantedBy=multi-user.target

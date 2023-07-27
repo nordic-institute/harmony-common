@@ -4,4 +4,5 @@
         maxWaitMillis="10000" username="{{dbuser}}" password="{{dbpassword}}"
         url="jdbc:mysql://localhost:3306/harmony_smp"
     />
+    <Manager pathname="" />
 </Context>

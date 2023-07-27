@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+  xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog  http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.18.xsd">
+
+  <changeSet author="harmony" id="2.0.0-migration">
+    <preConditions onFail="MARK_RAN" onError="HALT">
+      <changeSetExecuted id="0002:001" author="root" changeLogFile="/opt/harmony-smp/db/migrations/0002-Upgrade_4.2.sql"/>
+    </preConditions>
+    <sqlFile dbms="mysql" relativeToChangelogFile="true" path="migrations/mysql5innoDb-4.2_to_5.0-step_01.sql" />
+    <sqlFile dbms="mysql" relativeToChangelogFile="true" path="migrations/mysql5innoDb-4.2_to_5.0-step_02.sql" />
+    <rollback>
+      <sqlFile dbms="mysql" relativeToChangelogFile="true" path="migrations/mysql5innoDb-4.2_to_5.0-rollback.sql" />
+    </rollback>
+  </changeSet>
+
+  <changeSet author="harmony" id="2.0.0-migrate-properties">
+    <preConditions onFail="MARK_RAN" onError="HALT">
+      <changeSetExecuted id="0002:001" author="root" changeLogFile="/opt/harmony-smp/db/migrations/0002-Upgrade_4.2.sql"/>
+      <sqlCheck  expectedResult="1">SELECT COUNT(*) FROM SMP_CONFIGURATION WHERE PROPERTY_NAME='configuration.dir'</sqlCheck>
+    </preConditions>
+    <sql dbms="mysql"><![CDATA[
+      INSERT IGNORE INTO SMP_CONFIGURATION (PROPERTY_NAME, CREATED_ON, LAST_UPDATED_ON, PROPERTY_VALUE) VALUES 
+      ('smp.keystore.type', NOW(), NOW(), 'JKS'),
+      ('smp.truststore.type', NOW(), NOW(), 'JKS');
+      UPDATE SMP_CONFIGURATION SET PROPERTY_NAME='smp.automation.authentication.external.tls.clientCert.enabled' 
+        WHERE PROPERTY_NAME='authentication.blueCoat.enabled';
+      DELETE FROM SMP_CONFIGURATION WHERE PROPERTY_NAME='configuration.dir';
+    ]]>
+    </sql>
+  </changeSet>
+
+  <changeSet author="harmony" id="2.0.0-migration-cleanup">
+    <preConditions onFail="MARK_RAN" onError="HALT">
+      <changeSetExecuted id="0002:001" author="root" changeLogFile="/opt/harmony-smp/db/migrations/0002-Upgrade_4.2.sql"/>
+    </preConditions>
+    <sqlFile dbms="mysql" relativeToChangelogFile="true" path="migrations/mysql5innoDb-4.2_to_5.0-cleanup.sql" />
+  </changeSet>
+
+  <changeSet author="harmony" id="2.0.0-init">
+    <preConditions onFail="MARK_RAN" onError="HALT">
+      <not>
+        <changeSetExecuted id="0001:001" author="root" changeLogFile="/opt/harmony-smp/db/migrations/0001-Init.sql"/>
+        <changeSetExecuted id="0002:001" author="root" changeLogFile="/opt/harmony-smp/db/migrations/0002-Upgrade_4.2.sql"/>
+      </not>
+    </preConditions>
+    <sqlFile dbms="mysql" relativeToChangelogFile="true" path="migrations/mysql5innodb.ddl"/>
+  </changeSet>
+
+  <!-- adds the initial admin user unless one already exists -->
+  <changeSet author="harmony" id="default-admin-user" runOnChange="true" runOrder="last">
+    <preConditions onFail="CONTINUE">
+      <changeLogPropertyDefined property="adminPassword"/>
+      <sqlCheck  expectedResult="0">SELECT COUNT(*) FROM SMP_USER U WHERE U.APPLICATION_ROLE='SYSTEM_ADMIN'</sqlCheck>
+    </preConditions>
+    <sql dbms="mysql"><![CDATA[
+      INSERT INTO SMP_USER (ID, USERNAME, ACTIVE, APPLICATION_ROLE, CREATED_ON, LAST_UPDATED_ON)
+      VALUES (1, '${adminUser}', 1, 'SYSTEM_ADMIN', NOW(), NOW());
+
+      INSERT INTO SMP_CREDENTIAL (ID, FK_USER_ID, CREDENTIAL_ACTIVE, CREDENTIAL_NAME, CREDENTIAL_VALUE,
+        CREDENTIAL_TYPE, CREDENTIAL_TARGET, CREATED_ON, LAST_UPDATED_ON)
+        VALUES (1, 1, 1, '${adminUser}', '${adminPassword}', 'USERNAME_PASSWORD', 'UI', NOW(),  NOW());
+    ]]>
+    </sql>
+  </changeSet>
+
+</databaseChangeLog>

@@ -1,7 +1,7 @@
 #!/bin/bash
-set -e
-
 . /usr/share/debconf/confmodule
+
+set -euo pipefail
 
 escape_for_sed() {
     printf '%s\n' "$1" | sed -e 's/[\/&]/\\&/g'
@@ -42,6 +42,7 @@ case "$1" in
 
   export LIQUIBASE_HOME=/opt/harmony-smp/liquibase
   export URL=jdbc:mysql://localhost:3306/harmony_smp
+  export LIQUIBASE_SHOW_BANNER=false
 
   SCHEMA_EXISTS=$(mysql -s -N -e "SELECT SCHEMA_NAME FROM INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME='harmony_smp'");
   if [ -z "$SCHEMA_EXISTS" ]; then
@@ -70,44 +71,17 @@ case "$1" in
 
     echo "Apply Liquibase migrations"  >&2
 
+    HASHEDPASSWORD=$(java -cp "/opt/harmony-smp/webapps/ROOT/WEB-INF/lib/*" \
+      eu.europa.ec.edelivery.smp.utils.BCryptPasswordHash "$APASSWORD")
+
     $LIQUIBASE_HOME/liquibase.sh \
       --classpath=/opt/harmony-smp/lib/mysql-connector-j-8.0.33.jar \
       --driver=com.mysql.cj.jdbc.Driver \
       --url=$URL \
-      --username=$DBUSER \
-      --password=$DBPASSWORD \
-      --changeLogFile=/opt/harmony-smp/db/db.changelog.yaml \
-      update
-
-    HASHEDPASSWORD=$(java -cp "/opt/harmony-smp/webapps/ROOT/WEB-INF/lib/*" \
-      eu.europa.ec.edelivery.smp.utils.BCryptPasswordHash "$APASSWORD")
-
-    mysql harmony_smp -e \
-      "INSERT INTO SMP_USER (ID, USERNAME, PASSWORD, ROLE, ACTIVE, CREATED_ON, LAST_UPDATED_ON, PASSWORD_CHANGED)
-         VALUES(1, '$AUSER', '$HASHEDPASSWORD', 'SYSTEM_ADMIN', 1, NOW(), NOW(), NOW());
-
-       INSERT INTO SMP_CONFIGURATION (PROPERTY, VALUE, CREATED_ON, LAST_UPDATED_ON)
-         VALUES ('contextPath.output', 'true', NOW(), NOW());
-       INSERT INTO SMP_CONFIGURATION (PROPERTY, VALUE, CREATED_ON, LAST_UPDATED_ON)
-         VALUES ('bdmsl.integration.enabled', '$INTEGRATESML', NOW(), NOW());
-       INSERT INTO SMP_CONFIGURATION (PROPERTY, VALUE, CREATED_ON, LAST_UPDATED_ON)
-         VALUES ('bdmsl.integration.url', '$SMLURL', NOW(), NOW());
-       INSERT INTO SMP_CONFIGURATION (PROPERTY, VALUE, CREATED_ON, LAST_UPDATED_ON)
-         VALUES ('bdmsl.integration.tls.disableCNCheck', 'false', NOW(), NOW());
-       INSERT INTO SMP_CONFIGURATION (PROPERTY, VALUE, CREATED_ON, LAST_UPDATED_ON)
-         VALUES ('bdmsl.integration.logical.address', '$SMPURL', NOW(), NOW());
-       INSERT INTO SMP_CONFIGURATION (PROPERTY, VALUE, CREATED_ON, LAST_UPDATED_ON)
-         VALUES ('bdmsl.integration.physical.address', '$SMPIP', NOW(), NOW());
-       INSERT INTO SMP_CONFIGURATION (PROPERTY, VALUE, CREATED_ON, LAST_UPDATED_ON)
-         VALUES ('bdmsl.integration.tls.serverSubjectRegex', '', NOW(), NOW());
-       INSERT INTO SMP_CONFIGURATION (PROPERTY, VALUE, CREATED_ON, LAST_UPDATED_ON)
-         VALUES ('smp.keystore.filename', 'smp-keystore.jks', NOW(), NOW());
-       INSERT INTO SMP_CONFIGURATION (PROPERTY, VALUE, CREATED_ON, LAST_UPDATED_ON)
-         VALUES ('smp.truststore.filename', 'smp-truststore.jks', NOW(), NOW());
-       INSERT INTO SMP_CONFIGURATION (PROPERTY, VALUE, CREATED_ON, LAST_UPDATED_ON)
-         VALUES ('authentication.blueCoat.enabled', 'false', NOW(), NOW());
-       INSERT INTO SMP_CONFIGURATION (PROPERTY, VALUE, CREATED_ON, LAST_UPDATED_ON)
-         VALUES ('configuration.dir', '/etc/harmony-smp/', NOW(), NOW());"
+      --username="$DBUSER" \
+      --password="$DBPASSWORD" \
+      --changeLogFile=/opt/harmony-smp/db/db.changelog.xml \
+      update -DadminUser="$AUSER" -DadminPassword="$HASHEDPASSWORD"
   else
     echo "Schema harmony_smp already exists. Update database" >&2
 
@@ -119,65 +93,39 @@ case "$1" in
       exit 1
     fi
 
-    # If current Harmony SMP version (<= 1.3.1) doesn't use Liquibase, change log must be synced before
-    # applying migrations. Liquibase is not used if DATABASECHANGELOG table does not exist.
-    CHANGELOG_EXISTS=$(mysql -e "show tables in harmony_smp like 'DATABASECHANGELOG';")
-    if [ -z "$CHANGELOG_EXISTS" ]; then
-      echo "No Liquibase detected. Sync change log" >&2
-
-      $LIQUIBASE_HOME/liquibase.sh \
-        --classpath=/opt/harmony-smp/lib/mysql-connector-j-8.0.33.jar \
-        --driver=com.mysql.cj.jdbc.Driver \
-        --url=$URL \
-        --username=$DBUSER \
-        --password=$DBPASSWORD \
-        --changeLogFile=/opt/harmony-smp/db/db.changelog.yaml \
-        --contexts=legacy \
-        changelog-sync
-    fi
-
     echo "Update database" >&2
 
     $LIQUIBASE_HOME/liquibase.sh \
       --classpath=/opt/harmony-smp/lib/mysql-connector-j-8.0.33.jar \
       --driver=com.mysql.cj.jdbc.Driver \
       --url=$URL \
-      --username=$DBUSER \
-      --password=$DBPASSWORD \
-      --changeLogFile=/opt/harmony-smp/db/db.changelog.yaml \
+      --username="$DBUSER" \
+      --password="$DBPASSWORD" \
+      --changeLogFile=/opt/harmony-smp/db/db.changelog.xml \
       update
-
   fi
 
   if [ ! -f /etc/harmony-smp/tomcat-conf/server.xml ]; then
-    rm -f /etc/harmony-smp/*.jks
+    rm -f /etc/harmony-smp/*.p12
 
     KEYSTOREPASS=$(openssl rand -base64 12)
-    keytool -genkeypair -keyalg RSA -alias selfsigned -keystore /etc/harmony-smp/smp-keystore.jks -storepass $KEYSTOREPASS \
-        -keypass $KEYSTOREPASS -validity 333 -keysize 3072 -dname "$SERVERDN" 2>/dev/null
-
-    mysql harmony_smp -e  "INSERT INTO SMP_CONFIGURATION (PROPERTY, VALUE, CREATED_ON, LAST_UPDATED_ON)
-         VALUES ('smp.keystore.password', '{DEC}{$KEYSTOREPASS}', NOW(), NOW())
-         ON DUPLICATE KEY UPDATE VALUE='{DEC}{$KEYSTOREPASS}', LAST_UPDATED_ON=NOW();"
+    keytool -genkeypair -keyalg RSA -alias selfsigned -keystore /etc/harmony-smp/smp-keystore.p12 -storetype PKCS12 -storepass "$KEYSTOREPASS" \
+        -keypass "$KEYSTOREPASS" -validity 333 -keysize 3072 -dname "$SERVERDN" 2>/dev/null
 
     TRUSTSTOREPASS=$(openssl rand -base64 12)
-    keytool -genkeypair -alias mock -keystore /etc/harmony-smp/smp-truststore.jks -storepass $TRUSTSTOREPASS \
-      -keypass $TRUSTSTOREPASS -dname "CN=mock" 2>/dev/null
-    keytool -delete -alias mock -keystore /etc/harmony-smp/smp-truststore.jks -storepass $TRUSTSTOREPASS 2>/dev/null
-
-    mysql harmony_smp -e  "INSERT INTO SMP_CONFIGURATION (PROPERTY, VALUE, CREATED_ON, LAST_UPDATED_ON)
-         VALUES ('smp.truststore.password', '{DEC}{$TRUSTSTOREPASS}', NOW(), NOW())
-         ON DUPLICATE KEY UPDATE VALUE='{DEC}{$TRUSTSTOREPASS}', LAST_UPDATED_ON=NOW();"
+    keytool -genkeypair -alias mock -keystore /etc/harmony-smp/smp-truststore.p12 -storetype PKCS12 -storepass "$TRUSTSTOREPASS" \
+      -keypass "$TRUSTSTOREPASS" -dname "CN=mock" 2>/dev/null
+    keytool -delete -alias mock -keystore /etc/harmony-smp/smp-truststore.p12 -storepass "$TRUSTSTOREPASS" 2>/dev/null
 
     TLSKEYPASS=$(openssl rand -base64 12)
-    keytool -genkeypair -keyalg RSA -alias selfsigned -keystore /etc/harmony-smp/tls-keystore.jks -storepass $TLSKEYPASS \
-        -keypass $TLSKEYPASS -validity 333 -keysize 3072 -dname "$SERVERDN" 2>/dev/null
+    keytool -genkeypair -keyalg RSA -alias selfsigned -keystore /etc/harmony-smp/tls-keystore.p12 -storetype PKCS12 -storepass "$TLSKEYPASS" \
+        -keypass "$TLSKEYPASS" -validity 333 -keysize 3072 -dname "$SERVERDN" 2>/dev/null
 
     TLSTRUSTSTOREPASS=$(openssl rand -base64 12)
     keytool -export -alias selfsigned -file /etc/harmony-smp/selfsigned.cer \
-        -keystore /etc/harmony-smp/tls-keystore.jks -storepass $TLSKEYPASS 2>/dev/null
+        -keystore /etc/harmony-smp/tls-keystore.p12 -storepass "$TLSKEYPASS" 2>/dev/null
     keytool -import -noprompt -alias selfsigned -file /etc/harmony-smp/selfsigned.cer \
-        -keystore /etc/harmony-smp/tls-truststore.jks -storepass $TLSTRUSTSTOREPASS 2>/dev/null
+        -keystore /etc/harmony-smp/tls-truststore.p12 -storepass "$TLSTRUSTSTOREPASS" 2>/dev/null
     rm -f /etc/harmony-smp/selfsigned.cer
 
     E_TLSKEYPASS=$(escape_for_sed "$TLSKEYPASS")
@@ -189,6 +137,7 @@ case "$1" in
 
     sed -e "s/{{tls_truststore_password}}/$E_TLSTRUSTSTOREPASS/" \
         /opt/harmony-smp/setup/setenv.sh.template > /opt/harmony-smp/bin/setenv.sh
+    chmod +x /opt/harmony-smp/bin/setenv.sh
 
     E_DBUSER=$(escape_for_sed "$DBUSER")
     E_DBPASSWORD=$(escape_for_sed "$DBPASSWORD")
@@ -196,18 +145,36 @@ case "$1" in
         -e "s/{{dbpassword}}/$E_DBPASSWORD/" \
         /opt/harmony-smp/setup/context.xml.template > /etc/harmony-smp/tomcat-conf/context.xml
 
-    # Check if Tomcat runs on a privileged port - port number below 1024
-    PORT_NUMBER_REGEX='^((6553[0-5])|(655[0-2][0-9])|(65[0-4][0-9]{2})|(6[0-4][0-9]{3})|([1-5][0-9]{4})|([0-5]{0,5})|([0-9]{1,4}))$'
-    if [[ $E_TOMCATPORT =~ $PORT_NUMBER_REGEX && $E_TOMCATPORT -lt 1024 ]]; then
-        echo "Tomcat will run on a privileged port" >&2
-        setcap cap_net_bind_service+ep /usr/lib/jvm/java-8-openjdk-amd64/jre/bin/java
+    cat >/etc/harmony-smp/smp.init.properties <<EOF
+# Initial configuration
+
+smp.keystore.filename=smp-keystore.p12
+smp.keystore.password={DEC}{$KEYSTOREPASS}
+smp.keystore.type=PKCS12
+
+smp.truststore.filename=smp-truststore.p12
+smp.truststore.password={DEC}{$TRUSTSTOREPASS}
+smp.truststore.type=PKCS12
+
+contextPath.output=true
+
+bdmsl.integration.enabled=$INTEGRATESML
+EOF
+
+    if [[ $INTEGRATESML = "true" ]]; then
+      cat >>/etc/harmony-smp/smp.init.properties <<EOF
+bdmsl.integration.url=$SMLURL
+bdmsl.integration.tls.disableCNCheck=false
+bdmsl.integration.logical.address=$SMPURL
+bdmsl.integration.physical.address=$SMPIP
+bdmsl.integration.tls.serverSubjectRegex=
+EOF
     fi
   fi
+  DROPDBONERROR=false
 
-  # Required to support upgrade from 1.0.0 to 1.1.0
-  if [ ! -f /opt/harmony-smp/bin/setenv.sh ]; then
-    echo "Create /opt/harmony-smp/bin/setenv.sh file" >&2
-    cp /opt/harmony-smp/setup/setenv.sh /opt/harmony-smp/bin/setenv.sh
+  if [[ -n $2 ]]; then
+    sed -i -E '\|^export CLASSPATH=/etc/harmony-smp.*|d' /opt/harmony-smp/bin/setenv.sh || true
   fi
 
   # Make sure the administrative user exists
@@ -216,11 +183,11 @@ case "$1" in
   fi
 
   # check validity of user and group
-  if [ "`id -u harmony-smp`" -eq 0 ]; then
+  if [ "$(id -u harmony-smp)" -eq 0 ]; then
     echo "The Harmony SMP system user 'harmony-smp' must not have uid 0 (root).Please fix this and reinstall this package." >&2
     exit 1
   fi
-  if [ "`id -g harmony-smp`" -eq 0 ]; then
+  if [ "$(id -g harmony-smp)" -eq 0 ]; then
     echo "The Harmony SMP system user 'harmony-smp' must not have root as primary group. Please fix this and reinstall this package." >&2
     exit 1
   fi
@@ -228,7 +195,7 @@ case "$1" in
   mkdir -p /opt/harmony-smp/temp
 
   chown -R harmony-smp:harmony-smp /opt/harmony-smp
-  chmod -R 0755 /opt/harmony-smp
+  chmod -R u=Xrw,g=Xr,o=X /opt/harmony-smp
 
   # nicer log directory permissions
   mkdir -p /var/log/harmony-smp
@@ -237,10 +204,10 @@ case "$1" in
 
   # config folder permissions
   chown -R harmony-smp:harmony-smp /etc/harmony-smp
-  chmod -R 0751 /etc/harmony-smp
+  chmod -R u=Xrw,g=Xr,o=X /etc/harmony-smp
 
+  systemctl daemon-reload
   if [ "$(systemctl is-enabled harmony-smp)" = "enabled" ]; then
-    systemctl daemon-reload
     systemctl start harmony-smp 2>/dev/null || true
   fi
 
