@@ -3,18 +3,14 @@
 
 set -euo pipefail
 
-escape_for_sed() {
-    printf '%s\n' "$1" | sed -e 's/[\/&]/\\&/g'
-}
-
 SUCCESS=false
 DROPDBONERROR=false
 
 cleanup() {
   db_stop
   if [ ! "$SUCCESS" = true ]; then
-    if [ "$DROPDBONERROR" = true ]; then
-      mysql -e "DROP SCHEMA harmony_smp; DROP USER $DBUSER@localhost"
+    if [[ "$DROPDBONERROR" = true && "$DB_HOST" = localhost ]]; then
+      mysql -e "DROP SCHEMA $DB_SCHEMA; DROP USER $DB_USER@localhost"
     fi;
   fi
 }
@@ -40,85 +36,85 @@ case "$1" in
   db_get harmony-smp/tomcatport
   TOMCATPORT="$RET"
 
+  db_get harmony-smp/jdbc-url || true
+  JDBC_URL="${RET:-jdbc:mysql://localhost:3306/harmony_smp}"
+  db_get harmony-smp/database-schema || true
+  DB_SCHEMA="${RET:-harmony_smp}"
+  db_get harmony-smp/database-user || true
+  DB_USER="${RET:-harmony_smp}"
+  db_get harmony-smp/database-password || true
+  DB_PASSWORD="${RET}"
+  db_get harmony-smp/database-host || true
+  DB_HOST="${RET:-localhost}"
+
+  AUSER=""
+  HASHEDPASSWORD=""
+
   export LIQUIBASE_HOME=/opt/harmony-smp/liquibase
-  export URL=jdbc:mysql://localhost:3306/harmony_smp
   export LIQUIBASE_SHOW_BANNER=false
 
-  SCHEMA_EXISTS=$(mysql -s -N -e "SELECT SCHEMA_NAME FROM INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME='harmony_smp'");
-  if [ -z "$SCHEMA_EXISTS" ]; then
+  if [[ "$DB_HOST" = localhost ]]; then
+    SCHEMA_EXISTS=$(mysql -s -N -e "SELECT SCHEMA_NAME FROM INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME='$DB_SCHEMA'");
 
-    db_input high harmony-smp/adminuser || true
-    db_input high harmony-smp/adminpassword || true
-    db_go
+    if [ -z "$SCHEMA_EXISTS" ]; then
+      echo "Creating database schema $DB_SCHEMA" >&2
 
-    db_get harmony-smp/adminuser
-    AUSER="$RET"
-    db_get harmony-smp/adminpassword
-    APASSWORD="$RET"
-    db_reset harmony-smp/adminpassword
+      DB_PASSWORD=${DB_PASSWORD:-$(openssl rand -base64 12)}
 
-    echo "Creating database schema harmony_smp" >&2
+      mysql -e \
+        "create schema $DB_SCHEMA; \
+        alter schema $DB_SCHEMA charset=utf8mb4 collate=utf8mb4_bin; \
+        create user if not exists $DB_USER@localhost; \
+        alter user $DB_USER@localhost identified by '$DB_PASSWORD'; \
+        grant all on $DB_SCHEMA.* to $DB_USER@localhost;" 1>&2
 
-    DBUSER=harmony_smp
-    DBPASSWORD=$(openssl rand -base64 12)
-
-    mysql -e \
-      "create schema harmony_smp; \
-      alter database harmony_smp charset=utf8mb4 collate=utf8mb4_bin; \
-      create user $DBUSER@localhost identified by '$DBPASSWORD'; \
-      grant all on harmony_smp.* to $DBUSER@localhost;"
-    DROPDBONERROR=true
-
-    echo "Apply Liquibase migrations"  >&2
-
-    HASHEDPASSWORD=$(java -cp "/opt/harmony-smp/webapps/ROOT/WEB-INF/lib/*" \
-      eu.europa.ec.edelivery.smp.utils.BCryptPasswordHash "$APASSWORD")
-
-    $LIQUIBASE_HOME/liquibase.sh \
-      --classpath=/opt/harmony-smp/lib/mysql-connector-j-8.0.33.jar \
-      --driver=com.mysql.cj.jdbc.Driver \
-      --url=$URL \
-      --username="$DBUSER" \
-      --password="$DBPASSWORD" \
-      --changeLogFile=/opt/harmony-smp/db/db.changelog.xml \
-      update -DadminUser="$AUSER" -DadminPassword="$HASHEDPASSWORD"
-  else
-    echo "Schema harmony_smp already exists. Update database" >&2
-
-    DBUSER=$(xmlstarlet sel -t -v "/Context/Resource/@username" /etc/harmony-smp/tomcat-conf/context.xml)
-    DBPASSWORD=$(xmlstarlet sel -t -v "/Context/Resource/@password" /etc/harmony-smp/tomcat-conf/context.xml)
-
-    if [[ -z $DBUSER || -z $DBPASSWORD ]]; then
-      echo 'Existing database credentials not found'
-      exit 1
+      DROPDBONERROR=true
     fi
-
-    echo "Update database" >&2
-
-    $LIQUIBASE_HOME/liquibase.sh \
-      --classpath=/opt/harmony-smp/lib/mysql-connector-j-8.0.33.jar \
-      --driver=com.mysql.cj.jdbc.Driver \
-      --url=$URL \
-      --username="$DBUSER" \
-      --password="$DBPASSWORD" \
-      --changeLogFile=/opt/harmony-smp/db/db.changelog.xml \
-      update
   fi
 
+  echo "Apply Liquibase migrations"  >&2
+
+  if [[ -z $DB_USER || -z $DB_PASSWORD ]]; then
+    echo 'Existing database credentials not found' >&2
+    exit 1
+  fi
+
+  db_get harmony-smp/adminuser
+  AUSER="$RET"
+  db_get harmony-smp/adminpassword
+  APASSWORD="$RET"
+  HASHEDPASSWORD=$(java -cp "/opt/harmony-smp/webapps/ROOT/WEB-INF/lib/*" \
+    eu.europa.ec.edelivery.smp.utils.BCryptPasswordHash "$APASSWORD")
+
+  $LIQUIBASE_HOME/liquibase.sh \
+    --classpath=/opt/harmony-smp/lib/mysql-connector-j-8.0.33.jar \
+    --driver=com.mysql.cj.jdbc.Driver \
+    --url="$JDBC_URL" \
+    --username="$DB_USER" \
+    --password="$DB_PASSWORD" \
+    --changeLogFile=/opt/harmony-smp/db/db.changelog.xml \
+    update -DadminUser="$AUSER" -DadminPassword="$HASHEDPASSWORD" 1>&2
+
   if [ ! -f /etc/harmony-smp/tomcat-conf/server.xml ]; then
+    cp /opt/harmony-smp/setup/context.xml.template /etc/harmony-smp/tomcat-conf
+
     rm -f /etc/harmony-smp/*.p12
 
     KEYSTOREPASS=$(openssl rand -base64 12)
-    keytool -genkeypair -keyalg RSA -alias selfsigned -keystore /etc/harmony-smp/smp-keystore.p12 -storetype PKCS12 -storepass "$KEYSTOREPASS" \
+    keytool -genkeypair -keyalg RSA -alias selfsigned \
+        -keystore /etc/harmony-smp/smp-keystore.p12 -storetype PKCS12 -storepass "$KEYSTOREPASS" \
         -keypass "$KEYSTOREPASS" -validity 333 -keysize 3072 -dname "$SERVERDN" 2>/dev/null
 
     TRUSTSTOREPASS=$(openssl rand -base64 12)
-    keytool -genkeypair -alias mock -keystore /etc/harmony-smp/smp-truststore.p12 -storetype PKCS12 -storepass "$TRUSTSTOREPASS" \
+    keytool -genkeypair -alias mock \
+      -keystore /etc/harmony-smp/smp-truststore.p12 -storetype PKCS12 -storepass "$TRUSTSTOREPASS" \
       -keypass "$TRUSTSTOREPASS" -dname "CN=mock" 2>/dev/null
-    keytool -delete -alias mock -keystore /etc/harmony-smp/smp-truststore.p12 -storepass "$TRUSTSTOREPASS" 2>/dev/null
+    keytool -delete -alias mock \
+      -keystore /etc/harmony-smp/smp-truststore.p12 -storepass "$TRUSTSTOREPASS" 2>/dev/null
 
     TLSKEYPASS=$(openssl rand -base64 12)
-    keytool -genkeypair -keyalg RSA -alias selfsigned -keystore /etc/harmony-smp/tls-keystore.p12 -storetype PKCS12 -storepass "$TLSKEYPASS" \
+    keytool -genkeypair -keyalg RSA -alias selfsigned \
+        -keystore /etc/harmony-smp/tls-keystore.p12 -storetype PKCS12 -storepass "$TLSKEYPASS" \
         -keypass "$TLSKEYPASS" -validity 333 -keysize 3072 -dname "$SERVERDN" 2>/dev/null
 
     TLSTRUSTSTOREPASS=$(openssl rand -base64 12)
@@ -128,22 +124,20 @@ case "$1" in
         -keystore /etc/harmony-smp/tls-truststore.p12 -storepass "$TLSTRUSTSTOREPASS" 2>/dev/null
     rm -f /etc/harmony-smp/selfsigned.cer
 
-    E_TLSKEYPASS=$(escape_for_sed "$TLSKEYPASS")
-    E_TLSTRUSTSTOREPASS=$(escape_for_sed "$TLSTRUSTSTOREPASS")
-    E_TOMCATPORT=$(escape_for_sed "$TOMCATPORT")
-    sed -e "s/{{tls_keystore_password}}/$E_TLSKEYPASS/" -e "s/{{tls_truststore_password}}/$E_TLSTRUSTSTOREPASS/" \
-        -e "s/{{tomcat_port}}/$E_TOMCATPORT/" \
-        /opt/harmony-smp/setup/server.xml.template > /etc/harmony-smp/tomcat-conf/server.xml
+    env -i \
+      tls_keystore_password="$TLSKEYPASS" \
+      tls_truststore_password="$TLSTRUSTSTOREPASS" \
+      tomcat_port="$TOMCATPORT" \
+      envsubst </opt/harmony-smp/setup/server.xml.template >/etc/harmony-smp/tomcat-conf/server.xml
 
-    sed -e "s/{{tls_truststore_password}}/$E_TLSTRUSTSTOREPASS/" \
-        /opt/harmony-smp/setup/setenv.sh.template > /opt/harmony-smp/bin/setenv.sh
+    env -i dbuser="$DB_USER" dbpassword="$DB_PASSWORD" jdbcurl="$JDBC_URL" \
+      envsubst </opt/harmony-smp/setup/context.xml.template >/etc/harmony-smp/tomcat-conf/context.xml
+
+    env -i \
+      tls_truststore_password="$TLSTRUSTSTOREPASS" \
+      envsubst '$tls_truststore_password' </opt/harmony-smp/setup/setenv.sh.template >/opt/harmony-smp/bin/setenv.sh
+
     chmod +x /opt/harmony-smp/bin/setenv.sh
-
-    E_DBUSER=$(escape_for_sed "$DBUSER")
-    E_DBPASSWORD=$(escape_for_sed "$DBPASSWORD")
-    sed -e "s/{{dbuser}}/$E_DBUSER/" \
-        -e "s/{{dbpassword}}/$E_DBPASSWORD/" \
-        /opt/harmony-smp/setup/context.xml.template > /etc/harmony-smp/tomcat-conf/context.xml
 
     cat >/etc/harmony-smp/smp.init.properties <<EOF
 # Initial configuration
@@ -170,11 +164,22 @@ bdmsl.integration.physical.address=$SMPIP
 bdmsl.integration.tls.serverSubjectRegex=
 EOF
     fi
+  else
+    xmlstarlet edit --inplace \
+      --update "/Context/Resource/@username" --value "$DB_USER" \
+      --update "/Context/Resource/@password" --value "$DB_PASSWORD" \
+      --update "/Context/Resource/@url" --value "$JDBC_URL" \
+      /etc/harmony-smp/tomcat-conf/context.xml
   fi
-  DROPDBONERROR=false
 
-  if [[ -n $2 ]]; then
+  DROPDBONERROR=false
+  db_reset harmony-smp/adminpassword
+  db_reset harmony-smp/database-password
+  DB_PASSWORD=
+
+  if dpkg --compare-versions "$2" lt-nl "2.0.0"; then
     sed -i -E '\|^export CLASSPATH=/etc/harmony-smp.*|d' /opt/harmony-smp/bin/setenv.sh || true
+    echo "JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64" >>/opt/harmony-smp/bin/setenv.sh || true
   fi
 
   # Make sure the administrative user exists

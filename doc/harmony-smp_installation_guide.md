@@ -18,7 +18,8 @@ Doc. ID: IG-SMP
  28.04.2022 | 1.7     | Minor changes                                                                                           | Petteri Kivimäki
  22.01.2023 | 1.8     | Update SMP Admin Guide link                                                                             | Petteri Kivimäki
  01.06.2023 | 1.9     | Add more information about allowed characters in certificates                                           | Petteri Kivimäki
- 
+ 31.07.2023 | 1.10    | Updates for SMP version 2.0                                                                             | Jarkko Hyöty
+
 ## License <!-- omit in toc -->
 
 This document is licensed under the Creative Commons Attribution-ShareAlike 4.0 International License.
@@ -169,6 +170,25 @@ sudo apt update
 
 ### 2.6 SMP Installation
 
+#### External MySQL 8 database setup (optional)
+
+When using an _external_ database (MySQL 8 required), it is necessary to create the database schema and user before installing the SMP. 
+Please also make sure that the external database accepts connections from the SMP host.
+
+The schema and user can be created using the following SQL DDL statements (adjust user and schema name as needed; the default _harmony_smp_ is used in the example):
+
+```sql
+-- mysql
+create schema if not exists harmony_smp;
+alter schema harmony_smp charset=utf8mb4 collate=utf8mb4_bin;
+create user if not exists harmony_smp@'%';
+alter user harmony_smp@'%' identified by '<password>';
+grant all on harmony_smp.* to harmony_smp@'%';
+```
+When using a _local database_, the installer handles these additional steps.
+
+### SMP install
+
 Issue the following command to install the Harmony eDelivery Access SMP:
 ```bash
 sudo apt install harmony-smp
@@ -176,22 +196,28 @@ sudo apt install harmony-smp
 
 Upon the first installation of the SMP, the system asks for the following information.
 
+- Port number that the SMP listens to. The default is `8443`;
+  - the SMP admin UI and metadata query interface run on the defined port;
+- SMP point database configuration. When using a local database, accept the defaults.
+  - Database host. The default is `localhost`.
+  - Database port.  The default is `3306`.
+  - Database schema name. The default is `harmony_smp`.
+  - Database user name. The default is `harmony_smp`.
+  - Database password. There is no default. Leave blank to generate a random password when installing a local database.
 - `Distinguished Name` for generated self-signed content and transport certificates;
   - for example:
       ```bash
       CN=example.com, O=My Organisation, C=FI
       ```
-  - the `Distinguished Name` (`DN`) uniquely identifies an entity in an X.509 certificate \[[RFC5280](#Ref_RFC5280)\]. The following attribute types are commonly found in the `DN`: `CN = Common name, O = Organization name, C = Country code`. It's recommended to use PrintableString characters \[[PS](#Ref_PS)\] in the attribute type values;
-  - *note:* different eDelivery policy domains may have different requirements for the `Distinguished Name`. If you're not sure about the requirements, please contact the domain authority of the policy domain where the SMP is registered.
-- port number that the SMP listens to. The default is `8443`;
-  - the SMP admin UI and metadata query interface run on the defined port;
-- do you want the SMP installation to publish information to some Service Metadata Locator (SML);  
+  - The `Distinguished Name` (`DN`) uniquely identifies an entity in an X.509 certificate \[[RFC5280](#Ref_RFC5280)\]. The following attribute types are commonly found in the `DN`: `CN = Common name, O = Organization name, C = Country code`. It's recommended to use PrintableString characters \[[PS](#Ref_PS)\] in the attribute type values;
+  - *Note:* different eDelivery policy domains may have different requirements for the `Distinguished Name`. If you're not sure about the requirements, please contact the domain authority of the policy domain where the SMP is registered.
+- Do you want the SMP installation to publish information to some Service Metadata Locator (SML);  
   - if yes then: 
     - full URL of the SML server, including protocol and port, e.g., `https://<HOST>:8443`;
     - full URL of this SMP server as seen from public Internet, including protocol and port, e.g., `https://<HOST>:8443`;
     - public IP address of this SMP server (reachable from public Internet), e.g., `172.2.3.14`;
-- username of the administrative user - username to use to log in to administrative UI;
-- initial password for the administrative user.
+- Username of the administrative user - username to use to log in to administrative UI;
+- Initial password for the administrative user.
 
 See the Dynamic Discovery Configuration Guide \[[UG-DDCG](dynamic_discovery_configuration_guide.md)\] for more information about how to configure dynamic discovery.
 
