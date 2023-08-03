@@ -7,7 +7,6 @@ Type=forking
 AmbientCapabilities=CAP_NET_BIND_SERVICE
 TasksMax=infinity
 
-Environment=JAVA_HOME=/usr/lib/jvm/java-11-openjdk-amd64
 Environment=CATALINA_PID=/opt/harmony-smp/temp/harmony-ap.pid
 Environment=CATALINA_HOME=/opt/harmony-smp
 Environment=CATALINA_BASE=/opt/harmony-smp

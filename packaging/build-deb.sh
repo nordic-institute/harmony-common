@@ -56,7 +56,7 @@ mkdir -p build/harmony
 cp -r ap build/harmony
 cp -r smp build/harmony
 
-TOMCAT_VERSION=9.0.76
+TOMCAT_VERSION=9.0.78
 MYSQLJ_VERSION=8.0.33
 cd commonbin
 if [ ! -f tomcat-$TOMCAT_VERSION.tar.gz ]; then

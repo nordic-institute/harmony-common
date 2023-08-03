@@ -32,3 +32,39 @@ Template: harmony-smp/tomcatport
 Type: string
 Default: 8443
 Description: Port number of this SMP server
+
+Template: harmony-smp/database-host
+Type: string
+Default: localhost
+Description: Database host
+  Use "localhost" to use local database installed
+  on the same host.
+
+Template: harmony-smp/database-port
+Type: string
+Default: 3306
+Description: Database port
+  Must match database configuration.
+
+Template: harmony-smp/database-schema
+Type: string
+Default: harmony_smp
+Description: Database schema name
+  When using a remote database, the schema must exist.
+
+Template: harmony-smp/database-user
+Type: string
+Default: harmony_smp
+Description: Database user name
+  When using a remote database, the database user must exist
+  and have rights to the "${db_schema}" database schema.
+
+Template: harmony-smp/database-password
+Type: password
+Description: Database user initial password
+  When initializing a local database, leave blank to generate
+  a random password.
+
+Template: harmony-smp/jdbc-url
+Type: string
+Description: Database JDBC URL

@@ -7,5 +7,5 @@ Standards-Version: 3.8.3
 
 Package: harmony-smp
 Architecture: all
-Depends: openjdk-11-jre-headless | java11-runtime-headless | java11-runtime, mysql-server, mysql-client, xmlstarlet
+Depends: openjdk-11-jre-headless | java11-runtime-headless | java11-runtime | java8-runtime-headless | java8-runtime, mysql-server, mysql-client, xmlstarlet, gettext-base
 Description: Harmony eDelivery Access - Service Metadata Publisher
