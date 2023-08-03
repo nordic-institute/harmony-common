@@ -55,7 +55,7 @@ buildInDocker() {
        -u builder \
        -v "$(pwd)/../harmony-smp/":/mnt \
        harmony-compile \
-       mvn clean -f harmony-pom.xml install "${SMP_ARGUMENTS[@]}"
+       mvn clean -f pom.xml install "${SMP_ARGUMENTS[@]}"
 
     # Build Docker image for the build
     docker build -q -f docker/Dockerfile-build -t harmony-build --build-arg uid=$(id -u) --build-arg gid=$(id -g) .
@@ -74,7 +74,7 @@ buildLocally() {
     cd ../harmony-access-point/
     mvn clean -f pom.xml install "${AP_ARGUMENTS[@]}"
     cd ../harmony-smp/
-    mvn clean -f harmony-pom.xml install "${SMP_ARGUMENTS[@]}"
+    mvn clean -f pom.xml install "${SMP_ARGUMENTS[@]}"
 
     # Build packages
     cd ../harmony-common/packaging/
