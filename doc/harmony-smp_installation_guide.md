@@ -1,6 +1,6 @@
 # Harmony eDelivery Access - Service Metadata Publisher Installation Guide <!-- omit in toc -->
 
-Version: 1.9  
+Version: 1.10  
 Doc. ID: IG-SMP
 ---
 
