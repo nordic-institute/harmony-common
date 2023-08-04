@@ -17,6 +17,8 @@ clone_repository() {
 
 build_packages() {
   cd harmony-common
+  chmod a+x prepare_buildhost.sh
+  chmod a+x build_packages.sh
   ./prepare_buildhost.sh
   ./build_packages.sh -s -d
   cp packaging/build/ubuntu20.04/harmony-ap*.deb packaging/build/ubuntu20.04/harmony-ap.deb
