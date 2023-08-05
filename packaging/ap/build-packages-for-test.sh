@@ -20,7 +20,6 @@ build_packages() {
   chmod a+x prepare_buildhost.sh
   chmod a+x build_packages.sh
   ./prepare_buildhost.sh
-  npm install -g npm@9.8.1
   ./build_packages.sh -s -d
   cp packaging/build/ubuntu20.04/harmony-ap*.deb packaging/build/ubuntu20.04/harmony-ap.deb
 
