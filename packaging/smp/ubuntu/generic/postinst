@@ -165,11 +165,15 @@ bdmsl.integration.tls.serverSubjectRegex=
 EOF
     fi
   else
-    xmlstarlet edit --inplace \
+    xmlstarlet edit --pf --inplace \
       --update "/Context/Resource/@username" --value "$DB_USER" \
       --update "/Context/Resource/@password" --value "$DB_PASSWORD" \
       --update "/Context/Resource/@url" --value "$JDBC_URL" \
       /etc/harmony-smp/tomcat-conf/context.xml
+
+    xmlstarlet edit --pf --inplace \
+      --update '(//Connector[@SSLEnabled="true"]/@port)[1]' --value "$TOMCATPORT" \
+      /etc/harmony-smp/tomcat-conf/server.xml
   fi
 
   DROPDBONERROR=false

@@ -253,7 +253,7 @@ In addition to installing required dependencies, the installation process comple
 - creates linux user `harmony-smp` that is used to run the SMP service;
 - creates MySQL database user `harmony_smp` and generates random password for it;
 - creates MySQL database schema `harmony_smp` and populates it with needed metadata;
-- loads initial configuration into database;
+- creates initial configuration (`/etc/harmony-smp/smp.init.properties`)
 - generates self-signed certificates for content encryption and for transport encryption;
 - installs `systemd` service `harmony-smp` but does not enable or start it.
 

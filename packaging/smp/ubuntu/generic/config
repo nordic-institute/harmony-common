@@ -1,29 +1,31 @@
 #!/bin/bash
 
-if [[ -x /usr/bin/xmlstarlet && -f /etc/harmony-smp/tomcat-conf/context.xml ]]; then
-  # during initial install (preconfigure) it is possible that xmlstarlet is not yet available
-  get_prop() {
-    local prop="$1";
-    local default="${2:-}"
-    xmlstarlet sel -t -v "/Context/Resource/@$prop" /etc/harmony-smp/tomcat-conf/context.xml 2>/dev/null || echo "$default"
-  }
+# during initial install (preconfigure) it is possible that xmlstarlet is not yet available
+if [[ -x /usr/bin/xmlstarlet ]]; then
+  __xmlstarlet() { xmlstarlet "$@" 2>/dev/null; }
 else
-  get_prop() { echo "${2:-}"; }
+  __xmlstarlet() { return 1; }
 fi
+__get_prop() { __xmlstarlet sel -t -v "$1" "/etc/harmony-smp/tomcat-conf/$2" || echo "${3:-}"; }
+get_ctx_prop() { __get_prop "/Context/Resource/@$1" context.xml "${2:-}"; }
+get_srv_prop() { __get_prop "//Connector[@SSLEnabled=\"true\"]/@$1" server.xml "${2:-}"; }
 
 . /usr/share/debconf/confmodule
+trap db_stop EXIT
 
 if [ "$1" = "configure" ] || [ "$1" = "reconfigure" ]; then
 
+  TOMCAT_PORT=$(get_srv_prop port);
+  [[ -n "$TOMCAT_PORT" ]] && db_set harmony_smp/tomcatport "$TOMCAT_PORT"
   db_input high harmony-smp/tomcatport
   db_go
 
   db_get harmony-smp/database-user
-  DB_USER=$(get_prop username "${RET:-harmony_smp}")
-  DB_PASSWORD=$(get_prop password)
+  DB_USER=$(get_ctx_prop username "${RET:-harmony_smp}")
+  DB_PASSWORD=$(get_ctx_prop password)
 
   db_get harmony-smp/jdbc-url
-  JDBC_URL=$(get_prop url "${RET:-jdbc:mysql://localhost:3306/harmony_smp}")
+  JDBC_URL=$(get_ctx_prop url "${RET:-jdbc:mysql://localhost:3306/harmony_smp}")
 
   DB_HOST="localhost"
   DB_PORT="3306"
@@ -97,6 +99,6 @@ if [ "$1" = "configure" ] || [ "$1" = "reconfigure" ]; then
   db_input high harmony-smp/adminpassword
   db_go
 
+  db_stop
 fi
 
-db_stop
