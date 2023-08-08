@@ -246,21 +246,21 @@ An SMP server is registered in SML by completing the steps below:
   - Only a user with the `SYSTEM_ADMIN` role can register, unregister and change the SMP registration.
 - Open the "System settings / Domains" section.
 - Click the "Create domain" button and the "Domain data" tab appears.
-- Provide the folowing information and click Save
-  - Domain Code
-  - Response signature Certificate (Signature CertAlias)
+- Provide the following information and click "Save":
+  - Domain Code.
+  - Response signature Certificate (Signature CertAlias).
 - After the domain is saved, provide the rest of the configuration:
-  - Resource Types
-      - Enable `edelivery-oasis-smp-1.0-servicegroup (smp-1)`
-      - Click Save
-  - Members
+  - Resource Types:
+      - Enable `edelivery-oasis-smp-1.0-servicegroup (smp-1)`.
+      - Click "Save".
+  - Members:
       - Invite the system admin user as `ADMIN` for the domain (or create a separate user for managing the domain).
-      - Click Save
+      - Click "Save".
   - SML integration:
-    - SML domain
-    - SML SMP identifier
-    - SML ClientCert Alias
-    - Enable use ClientCert Header authentication 
+    - SML domain.
+    - SML SMP identifier.
+    - SML ClientCert Alias.
+    - Enable use ClientCert Header authentication. 
     - Click the "Save" button to save the changes.
     - Click the "Register" button to send a registration request to SML.
       - If sending the registration request fails because of an authentication issue, please contact the SML admin for details.
@@ -277,31 +277,31 @@ A final recipient is registered using its identifier. Allowed identifier types a
 policy domain. Identifiers consist of identifier type and identifier value. These values may be represented as two separate 
 fields or as a single field where type and value are concatenated.
 
-In the SMP UI and documentation a final recipient is represented by a *Resource*. The final recipient (`C4`) party is 
+In the SMP UI and documentation a final recipient is represented by a "Resource". The final recipient (`C4`) party is 
 identified by the fields "Resource identifier" and "Resource scheme".
 
 A final recipient (`C4`) party is registered in SMP by completing the steps below:
 
 - Log in to the SMP UI using a user with the `ADMIN` role for the SMP domain.
   - Only a user with the `ADMIN` role can add, delete and modify final recipients.
-- Open the *Administration / Edit domains* section.
-  - Select the domain, open the *Group* tab
-    - Click `Create` button to create a new group
-- Open the *Administration / Edit groups* section.
-  - Select the domain and group, open *Resources* tab
-  - Click the "Create" button and the *Resource details dialog* appears.
+- Open the "Administration / Edit domains" section.
+  - Select the domain, open the "Group" tab:
+    - Click "Create" button to create a new group.
+- Open the "Administration / Edit groups" section.
+  - Select the domain and group, open "Resources" tab.
+  - Click the "Create" button and the "Resource details dialog" appears.
   - Provide the following information:
-    - Resource type (Oasis SMP 1.0 ServiceGroup)
+    - Resource type (Oasis SMP 1.0 ServiceGroup).
     - Resource (participant) identifier (e.g. `c4`).
     - Resource (participant) scheme (e.g. `urn:oasis:names:tc:ebcore:partyid-type:unregistered`).  
       There are two supported alternatives 1) and 2):
       1. Starts with `urn:oasis:names:tc:ebcore:partyid-type:(iso6523:|unregistered:)`.
       2. Is up to 25 characters long with form `[domain]-[identifierArea]-[identifierType]` (e.g.: `busdox-actorid-upis`) and may only contain the following characters: `[a-z0-9]`. 
-    - Click Save
-- Open the *Administration / Edit resources* section.
-  - Select the previously created resource
-  - Click the *Edit document* button on the *Resource details* tab
-  - Click *Generate* button, which should generate the following documents:
+    - Click "Save".
+- Open the "Administration / Edit resources" section.
+  - Select the previously created resource.
+  - Click the "Edit document" button on the "Resource details" tab.
+  - Click "Generate" button, which should generate the following documents:
     ```xml
     <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
     <ServiceGroup xmlns="http://docs.oasis-open.org/bdxr/ns/SMP/2016/05" xmlns:ns2="http://www.w3.org/2000/09/xmldsig#">
@@ -320,32 +320,32 @@ Services provided by the final recipient are registered in SMP where interested 
 A service is registered in SMP by completing the steps below:
 
 - Log in to the SMP UI using a user with the `ADMIN` role to the resource (service group).
-  - If you followed the instructions in the previous sections, this is the SYSTEM_ADMIN user
-- Open the *Administration / Edit resources* section.
-- Select the resource with identifier *c4*
-- Open Subresources tab
-- Click *Create* button
+  - If you followed the instructions in the previous sections, this is the `SYSTEM_ADMIN` user
+- Open the "Administration / Edit resources" section.
+- Select the resource with identifier `c4`.
+- Open "Subresources" tab.
+- Click "Create" button.
 - Provide the following information:
   - Subresource (Document) identifier scheme (*optional*).
   - Subresource (Document) identifier.
-  - Click *Save*
-- Select the created subresource, click *Edit*
-- Click the "Document wizard" button and an *Service Metada Wizard* diaglog appears.
+  - Click "Save".
+- Select the created subresource, click "Edit".
+- Click the "Document wizard" button and an "Service Metada Wizard" diaglog appears.
 - Provide the following information:
-  - Process identifier
-  - Process scheme
+  - Process identifier.
+  - Process scheme.
   - Transport profile.
     - The default is `bdxr-transport-ebms3-as4-v1p0`.
   - Access point URL.
     - The URL of the Access Point (`C3`) where the AS4 requests are sent, e.g., `https://<HOST>:8443/services/msh`.
-  - Upload certificate (required)
+  - Upload certificate (required).
     - Certificate for encrypting messages. Note that this is the content encryption certificate of Access Point (`C3`), not the certificate of the final recipient.
   - Service description.
   - Technical Contact URL.
-  - Click the "OK" button to close the *Service Metada Wizard* dialog.
+  - Click the "OK" button to close the "Service Metada Wizard" dialog.
 - Click the "Save" button to save the changes.
 
-After saving, it's possible to review the new `ServiceMetadata` record by clicking the subresource "Open URL" link in the *Search/Reesources* section. The record should look like this:
+After saving, it's possible to review the new `ServiceMetadata` record by clicking the subresource "Open URL" link in the "Search/Resources" section. The record should look like this:
 
 ```xml
 <SignedServiceMetadata>
