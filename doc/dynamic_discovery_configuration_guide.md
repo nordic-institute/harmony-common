@@ -1,6 +1,6 @@
 # Harmony eDelivery Access - Dynamic Discovery Configuration Guide <!-- omit in toc -->
 
-Version: 1.6  
+Version: 1.7  
 Doc. ID: UG-DDCG
 
 ---
@@ -16,7 +16,8 @@ Doc. ID: UG-DDCG
  22.01.2023 | 1.4     | Update SMP Admin Guide link                                                 | Petteri Kivimäki
  22.05.2023 | 1.5     | Update references                                                           | Petteri Kivimäki
  04.08.2023 | 1.6     | Update DomiSMP Admin Guide link                                             | Petteri Kivimäki
-  
+ 08.08.2023 | 1.7     | Updates for SMP version 2.0                                                 | Jarkko Hyöty
+
 ## License <!-- omit in toc -->
 
 This document is licensed under the Creative Commons Attribution-ShareAlike 4.0 International License.
@@ -24,27 +25,29 @@ To view a copy of this license, visit <https://creativecommons.org/licenses/by-s
  
 ## Table of Contents <!-- omit in toc -->
 
-- [License](#license)
-- [1 Introduction](#1-introduction)
-  - [1.1 Target Audience](#11-target-audience)
-  - [1.2 Terms and abbreviations](#12-terms-and-abbreviations)
-  - [1.3 References](#13-references)
-  - [1.4 Prerequisites](#14-prerequisites)
-- [2. Dynamic Discovery for Sending Parties](#2-dynamic-discovery-for-sending-parties)
-  - [2.1 Prerequisites](#21-prerequisites)
-  - [2.2 Configuring Dynamic Discovery in Sender AP](#22-configuring-dynamic-discovery-in-sender-ap)
-  - [2.3 TLS Configuration and Certificates](#23-tls-configuration-and-certificates)
-- [3. Dynamic Discovery for Receiving Parties](#3-dynamic-discovery-for-receiving-parties)
-  - [3.1 Prerequisites](#31-prerequisites)
-  - [3.2 Keys and Certificates](#32-keys-and-certificates)
-  - [3.3 Registering SMP in SML](#33-registering-smp-in-sml)
-  - [3.4 Registering Final Recipient in SML](#34-registering-final-recipient-in-sml)
-  - [3.5 Registering Services in SMP](#35-registering-services-in-smp)
-  - [3.6 Configuring Dynamic Discovery in Receiving AP](#36-configuring-dynamic-discovery-in-receiving-ap)
-    - [3.6.1 TLS Configuration and Certificates](#361-tls-configuration-and-certificates)
-    - [3.6.2 Final Recipient in Plugin Configuration and AS4 Message](#362-final-recipient-in-plugin-configuration-and-as4-message)
-    - [3.6.3 Specifying Document Identifier Scheme and Document Identifier in AP PMode and AS4 Message](#363-specifying-document-identifier-scheme-and-document-identifier-in-ap-pmode-and-as4-message)
-    - [3.6.4 Specifying Process Scheme and Process Identifier in AP PMode and in AS4 Message](#364-specifying-process-scheme-and-process-identifier-in-ap-pmode-and-in-as4-message)
+<!-- vim-markdown-toc GFM -->
+
+* [1 Introduction](#1-introduction)
+  * [1.1 Target Audience](#11-target-audience)
+  * [1.2 Terms and abbreviations](#12-terms-and-abbreviations)
+  * [1.3 References](#13-references)
+* [2. Dynamic Discovery for Sending Parties](#2-dynamic-discovery-for-sending-parties)
+  * [2.1 Prerequisites](#21-prerequisites)
+  * [2.2 Configuring Dynamic Discovery in Sender AP](#22-configuring-dynamic-discovery-in-sender-ap)
+  * [2.3 TLS Configuration and Certificates](#23-tls-configuration-and-certificates)
+* [3. Dynamic Discovery for Receiving Parties](#3-dynamic-discovery-for-receiving-parties)
+  * [3.1 Prerequisites](#31-prerequisites)
+  * [3.2 Keys and Certificates](#32-keys-and-certificates)
+  * [3.3 Registering SMP in SML](#33-registering-smp-in-sml)
+  * [3.4 Registering Final Recipient in SMP](#34-registering-final-recipient-in-smp)
+  * [3.5 Registering Services in SMP](#35-registering-services-in-smp)
+  * [3.6 Configuring Dynamic Discovery in Receiving AP](#36-configuring-dynamic-discovery-in-receiving-ap)
+    * [3.6.1 TLS Configuration and Certificates](#361-tls-configuration-and-certificates)
+    * [3.6.2 Final Recipient in Plugin Configuration and AS4 Message](#362-final-recipient-in-plugin-configuration-and-as4-message)
+    * [3.6.3 Specifying Document Identifier Scheme and Document Identifier in AP PMode and AS4 Message](#363-specifying-document-identifier-scheme-and-document-identifier-in-ap-pmode-and-as4-message)
+    * [3.6.4 Specifying Process Scheme and Process Identifier in AP PMode and in AS4 Message](#364-specifying-process-scheme-and-process-identifier-in-ap-pmode-and-in-as4-message)
+
+<!-- vim-markdown-toc -->
  
 ## 1 Introduction
 
@@ -172,7 +175,7 @@ party (`C3`):
 
 See sections [3.6.3](#363-specifying-document-identifier-scheme-and-document-identifier-in-ap-pmode-and-as4-message)
 and [3.6.4](#364-specifying-process-scheme-and-process-identifier-in-ap-pmode-and-in-as4-message) for details.
-              
+ 
 See the Domibus Administration Guide \[[DOMIBUS_ADMIN_GUIDE](#Ref_DOMIBUS_ADMIN_GUIDE])\] for more details.
 
 ### 2.3 TLS Configuration and Certificates
@@ -241,64 +244,72 @@ An SMP server is registered in SML by completing the steps below:
 
 - Log in to the SMP UI using a user with the `SYSTEM_ADMIN` role.
   - Only a user with the `SYSTEM_ADMIN` role can register, unregister and change the SMP registration.
-- Open the "Domain" section.
-- Click the "New" button and the "New Domain" dialog appears.
-- Provide the following information:
-  - Domain properties:
-      - Domain Code
-      - SML domain
-      - Response signature Certificate (Signature CertAlias)
-  - SML integration data:
-    - SML SMP identifier
-    - SML ClientCert Alias
-      - SML clientCert Header is populated automatically once SML ClientCert Alias is selected.
-- Click the "OK" button to close the "New Domain" dialog.
-- Click the "Save" button to save the changes.
-  - **Note:** Changes are not saved if the "Save" button is not clicked.
-- Select the new domain and click the "Register" button to send a registration request to SML.
-  - If sending the registration request fails because of an authentication issue, please contact the SML admin for details.
+- Open the "System settings / Domains" section.
+- Click the "Create domain" button and the "Domain data" tab appears.
+- Provide the following information and click "Save":
+  - Domain Code.
+  - Response signature Certificate (Signature CertAlias).
+- After the domain is saved, provide the rest of the configuration:
+  - Resource Types:
+      - Enable `edelivery-oasis-smp-1.0-servicegroup (smp-1)`.
+      - Click "Save".
+  - Members:
+      - Invite the system admin user as `ADMIN` for the domain (or create a separate user for managing the domain).
+      - Click "Save".
+  - SML integration:
+    - SML domain.
+    - SML SMP identifier.
+    - SML ClientCert Alias.
+    - Enable use ClientCert Header authentication. 
+    - Click the "Save" button to save the changes.
+    - Click the "Register" button to send a registration request to SML.
+      - If sending the registration request fails because of an authentication issue, please contact the SML admin for details.
 
 See the SMP Administration Guide \[[SMP_ADMIN_GUIDE](#Ref_SMP_ADMIN_GUIDE])\] for more details.
 
-### 3.4 Registering Final Recipient in SML
+### 3.4 Registering Final Recipient in SMP
 
-Only the final recipient, corner `C4` in four corner topology, is registered in SML. In other words, the other parties - 
-original sender (`C1`), initiator (`C2`) and responder (`C3`) - don't need to be registered in SML. Note that `C1` and
+Only the final recipient, corner `C4` in four corner topology, is registered in SMP. In other words, the other parties - 
+original sender (`C1`), initiator (`C2`) and responder (`C3`) - don't need to be registered in SMP. Note that `C1` and
 `C2`, as well as `C3` and `C4` can be the same organisation.
 
 A final recipient is registered using its identifier. Allowed identifier types and values depend on the eDelivery 
 policy domain. Identifiers consist of identifier type and identifier value. These values may be represented as two separate 
 fields or as a single field where type and value are concatenated.
 
-In the SMP UI and documentation a final recipient is represented by "ServiceGroup". The final recipient (`C4`) party is 
-identified by the fields "Participant identifier" and "Participant scheme".
+In the SMP UI and documentation a final recipient is represented by a "Resource". The final recipient (`C4`) party is 
+identified by the fields "Resource identifier" and "Resource scheme".
 
-A final recipient (`C4`) party is registered in SML by completing the steps below:
+A final recipient (`C4`) party is registered in SMP by completing the steps below:
 
-- Log in to the SMP UI using a user with the `SMP_ADMIN` role.
-  - Only a user with the `SMP_ADMIN` role can add, delete and modify final recipients.
-- Open the "Edit" section.
-- Click the "New" button and the "New ServiceGroup" dialog appears.
-- Provide the following information:
-  - Participant identifier
-  - Participant scheme. There are two supported alternatives a) and b):
-    1. Starts with `urn:oasis:names:tc:ebcore:partyid-type:(iso6523:|unregistered:)`.
-    2. Is up to 25 characters long with form `[domain]-[identifierArea]-[identifierType]` (e.g.: `busdox-actorid-upis`) and may only contain the following characters: `[a-z0-9]`. 
-  - Owners
-  - Domains
-- Click the "OK" button to close the "New ServiceGroup" dialog.
-- Click the "Save" button to save the changes.
-  - **Note:** Changes are not saved if the "Save" button is not clicked.
-
-After saving, it's possible to review the new `ServiceGroup` record by clicking the "OASIS ServiceGroup URL" link. The
-record should look like this:
-
-```xml
-<ServiceGroup>
-    <ParticipantIdentifier scheme="urn:oasis:names:tc:ebcore:partyid-type:unregistered">c4</ParticipantIdentifier>
-    <ServiceMetadataReferenceCollection/>
-</ServiceGroup>
-```
+- Log in to the SMP UI using a user with the `ADMIN` role for the SMP domain.
+  - Only a user with the `ADMIN` role can add, delete and modify final recipients.
+- Open the "Administration / Edit domains" section.
+  - Select the domain, open the "Group" tab:
+    - Click "Create" button to create a new group.
+- Open the "Administration / Edit groups" section.
+  - Select the domain and group, open "Resources" tab.
+  - Click the "Create" button and the "Resource details dialog" appears.
+  - Provide the following information:
+    - Resource type (Oasis SMP 1.0 ServiceGroup).
+    - Resource (participant) identifier (e.g. `c4`).
+    - Resource (participant) scheme (e.g. `urn:oasis:names:tc:ebcore:partyid-type:unregistered`).  
+      There are two supported alternatives 1) and 2):
+      1. Starts with `urn:oasis:names:tc:ebcore:partyid-type:(iso6523:|unregistered:)`.
+      2. Is up to 25 characters long with form `[domain]-[identifierArea]-[identifierType]` (e.g.: `busdox-actorid-upis`) and may only contain the following characters: `[a-z0-9]`. 
+    - Click "Save".
+- Open the "Administration / Edit resources" section.
+  - Select the previously created resource.
+  - Click the "Edit document" button on the "Resource details" tab.
+  - Click "Generate" button, which should generate the following documents:
+    ```xml
+    <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+    <ServiceGroup xmlns="http://docs.oasis-open.org/bdxr/ns/SMP/2016/05" xmlns:ns2="http://www.w3.org/2000/09/xmldsig#">
+      <ParticipantIdentifier scheme="urn:oasis:names:tc:ebcore:partyid-type:unregistered">c4</ParticipantIdentifier>
+      <ServiceMetadataReferenceCollection/>
+    </ServiceGroup>
+    ```
+  - Click the "Save" button to save the changes.
 
 See the SMP Administration Guide \[[SMP_ADMIN_GUIDE](#Ref_SMP_ADMIN_GUIDE])\] for more details.
 
@@ -308,33 +319,33 @@ Services provided by the final recipient are registered in SMP where interested 
 
 A service is registered in SMP by completing the steps below:
 
-- Log in to the SMP UI using a user with the `SMP_ADMIN` or `SERVICE_GROUP_ADMIN` (with permission to specific ServiceGroup) role.
-  - Only a user with the `SMP_ADMIN` or `SERVICE_GROUP_ADMIN` (with permission to specific ServiceGroup) role can add, delete and modify services.
-- Open the "Edit" section.
-- On the row of the participant who owns the service, click the "Add service metadata" icon in the "Actions" column and the "New ServiceMetada" dialog appears.
-- Click the "Metadata wizard" button and the "ServiceMetadaWizard" appears.
+- Log in to the SMP UI using a user with the `ADMIN` role to the resource (service group).
+  - If you followed the instructions in the previous sections, this is the `SYSTEM_ADMIN` user
+- Open the "Administration / Edit resources" section.
+- Select the resource with identifier `c4`.
+- Open "Subresources" tab.
+- Click "Create" button.
 - Provide the following information:
-  - Document identifier scheme (*optional*).
-  - Document identifier.
-- Click the "Generate XML" button and an XML template appears.
-- Update the following elements:
-  - Process scheme (`[enterProcessType]`).
-  - Process identifier (`[enterProcessName]`).
+  - Subresource (Document) identifier scheme (*optional*).
+  - Subresource (Document) identifier.
+  - Click "Save".
+- Select the created subresource, click "Edit".
+- Click the "Document wizard" button and an "Service Metada Wizard" diaglog appears.
+- Provide the following information:
+  - Process identifier.
+  - Process scheme.
   - Transport profile.
     - The default is `bdxr-transport-ebms3-as4-v1p0`.
-  - Endpoint URL.
+  - Access point URL.
     - The URL of the Access Point (`C3`) where the AS4 requests are sent, e.g., `https://<HOST>:8443/services/msh`.
-  - Upload certificate.
+  - Upload certificate (required).
     - Certificate for encrypting messages. Note that this is the content encryption certificate of Access Point (`C3`), not the certificate of the final recipient.
   - Service description.
   - Technical Contact URL.
-- Click the "OK" button to close the "ServiceMetadaWizard" dialog.
-- Click the "OK" button to close the "New ServiceMetada" dialog.
+  - Click the "OK" button to close the "Service Metada Wizard" dialog.
 - Click the "Save" button to save the changes.
-  - **Note:** Changes are not saved if the "Save" button is not clicked.
 
-After saving, it's possible to review the new `ServiceMetadata` record by clicking the "URL" link. The
-record should look like this:
+After saving, it's possible to review the new `ServiceMetadata` record by clicking the subresource "Open URL" link in the "Search/Resources" section. The record should look like this:
 
 ```xml
 <SignedServiceMetadata>
