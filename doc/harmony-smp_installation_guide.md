@@ -1,6 +1,6 @@
 # Harmony eDelivery Access - Service Metadata Publisher Installation Guide <!-- omit in toc -->
 
-Version: 1.11  
+Version: 1.12  
 Doc. ID: IG-SMP
 ---
 
@@ -20,6 +20,7 @@ Doc. ID: IG-SMP
  01.06.2023 | 1.9     | Add more information about allowed characters in certificates                                           | Petteri Kivimäki
  31.07.2023 | 1.10    | Updates for SMP version 2.0                                                                             | Jarkko Hyöty
  04.08.2023 | 1.11    | Update DomiSMP Admin Guide link                                                                         | Petteri Kivimäki
+ 09.08.2023 | 1.12    | Update section 2.10                                                                                     | Jarkko Hyöty
 
 ## License <!-- omit in toc -->
 
@@ -28,25 +29,30 @@ To view a copy of this license, visit <https://creativecommons.org/licenses/by-s
  
 ## Table of Contents <!-- omit in toc -->
 
-- [License](#license)
-- [1 Introduction](#1-introduction)
-  - [1.1 Target Audience](#11-target-audience)
-  - [1.2 Terms and abbreviations](#12-terms-and-abbreviations)
-  - [1.3 References](#13-references)
-- [2 Installation](#2-installation)
-  - [2.1 Prerequisites to Installation](#21-prerequisites-to-installation)
-  - [2.2 Network Diagram](#22-network-diagram)
-  - [2.3 Requirements for the Access Point](#23-requirements-for-the-smp)
-  - [2.4 Preparing OS](#24-preparing-os)
-  - [2.5 Setup Package Repository](#25-setup-package-repository)
-  - [2.6 SMP Installation](#26-smp-installation)
-  - [2.7 Starting harmony-ap service and enabling automatic startup](#27-starting-harmony-smp-service-and-enabling-automatic-startup)
-  - [2.8 Post-Installation Checks](#28-post-installation-checks)
-  - [2.9 Changes made to system during installation](#29-changes-made-to-system-during-installation)
-  - [2.10 Location of configuration and generated passwords](#210-location-of-configuration-and-generated-passwords)
-  - [2.11 Securing SMP user interface](#211-securing-smp-user-interface)
-  - [2.12 Log files](#212-log-files)
-- [3 Version Upgrade](#3-version-upgrade)
+<!-- vim-markdown-toc GFM -->
+
+* [1 Introduction](#1-introduction)
+  * [1.1 Target Audience](#11-target-audience)
+  * [1.2 Terms and abbreviations](#12-terms-and-abbreviations)
+  * [1.3 References](#13-references)
+* [2. Installation](#2-installation)
+  * [2.1 Prerequisites to Installation](#21-prerequisites-to-installation)
+  * [2.2 Network Diagram](#22-network-diagram)
+  * [2.3 Requirements for the SMP](#23-requirements-for-the-smp)
+  * [2.4 Preparing OS](#24-preparing-os)
+  * [2.5 Setup Package Repository](#25-setup-package-repository)
+  * [2.6 SMP Installation](#26-smp-installation)
+    * [External MySQL 8 database setup (optional)](#external-mysql-8-database-setup-optional)
+    * [SMP install](#smp-install)
+  * [2.7 Starting harmony-smp Service and Enabling Automatic Startup](#27-starting-harmony-smp-service-and-enabling-automatic-startup)
+  * [2.8 Post-Installation Checks](#28-post-installation-checks)
+  * [2.9 Changes Made to System During Installation](#29-changes-made-to-system-during-installation)
+  * [2.10 Location of Configuration and Generated Passwords](#210-location-of-configuration-and-generated-passwords)
+  * [2.11 Securing SMP user interface](#211-securing-smp-user-interface)
+  * [2.12 Log Files](#212-log-files)
+* [3 Version Upgrade](#3-version-upgrade)
+
+<!-- vim-markdown-toc -->
 
 ## 1 Introduction
 
@@ -188,7 +194,7 @@ grant all on harmony_smp.* to harmony_smp@'%';
 ```
 When using a _local database_, the installer handles these additional steps.
 
-### SMP install
+#### SMP install
 
 Issue the following command to install the Harmony eDelivery Access SMP:
 ```bash
@@ -266,10 +272,10 @@ During the installation process, multiple random passwords are generated.
 | **Password purpose** | **Password location** |
 |---|---|
 | Password for `harmony-smp` MySQL user  | Configuration file: `/etc/harmony-smp/tomcat-conf/context.xml` |
-| Content encryption keystore (`/etc/harmony-smp/smp-keystore.jks`) password | MySQL database table `SMP_CONFIGURATION` with key `smp.keystore.password`. The format is `{DEC}{$PASSWORD}` where `$PASSWORD` is the keystore password. Content of this keystore can be changed using UI.|
-| Content encryption truststore (`/etc/harmony-smp/smp-truststore.jks`) password | MySQL database table `SMP_CONFIGURATION` with key `smp.truststore.password`. The format is `{DEC}{$PASSWORD}` where `$PASSWORD` is the truststore password. |
-| TLS keystore (`/etc/harmony-smp/tls-keystore.jks`) password | Configuration file: `/etc/harmony-smp/tomcat-conf/server.xml`<br /><br />Property: `keystorePass` |
-| TLS truststore (`/etc/harmony-smp/tls-truststore.jks`) password | Configuration file: `/etc/harmony-smp/tomcat-conf/server.xml`<br /><br />Property: `truststorePass`<br /><br />Also, the password is stored in: `/opt/harmony-smp/bin/setenv.sh` |
+| Content encryption keystore (`/etc/harmony-smp/smp-keystore.p12`) password | File /etc/harmony-smp/smp.init.properties, property `smp.keystore.password`. The format is `{DEC}{$PASSWORD}` where `$PASSWORD` is the keystore password. Content of this keystore can be changed using UI.|
+| Content encryption truststore (`/etc/harmony-smp/smp-truststore.p12`) password | File /etc/harmony-smp/smp.init.properties, property `smp.truststore.password`. The format is `{DEC}{$PASSWORD}` where `$PASSWORD` is the truststore password. |
+| TLS keystore (`/etc/harmony-smp/tls-keystore.p12`) password | Configuration file: `/etc/harmony-smp/tomcat-conf/server.xml`<br /><br />Property: `keystorePass` |
+| TLS truststore (`/etc/harmony-smp/tls-truststore.p12`) password | Configuration file: `/etc/harmony-smp/tomcat-conf/server.xml`<br /><br />Property: `truststorePass`<br /><br />Also, the password is stored in: `/opt/harmony-smp/bin/setenv.sh` |
 
 Part of the SMP configuration is stored in MySQL database. The following properties are stored in the `SMP_CONFIGURATION` 
 table. The values are configured when the SMP is installed for the first time.
