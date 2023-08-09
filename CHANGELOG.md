@@ -1,5 +1,13 @@
 # Changelog
 
+## SMP - 2.0.0 - 2023-08-09
+
+- NEDS-127: Merge DomiSMP 5.0 into Harmony SMP code base.
+- NEDS-128: Run the SMP on Java 11.
+- NEDS-129: Support using a remote database.
+- NEDS-130: Support configuring the database schema name.
+- NEDS-132: Resolve issues that were detected during eDelivery conformance tests.
+
 ## Access Point - 2.0.0 - 2023-06-05
 
 - NEDS-100: Add support for defining message attachment name using the `businessContentAttachment` property.
