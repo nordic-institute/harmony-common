@@ -80,12 +80,12 @@
     -->
     <Connector SSLEnabled="true"
                protocol="org.apache.coyote.http11.Http11NioProtocol"
-               port="{{tomcat_port}}" maxThreads="200"
+               port="${tomcat_port}" maxThreads="200"
                scheme="https" secure="true"
-               keystoreFile="/etc/harmony-smp/tls-keystore.jks"
-               keystorePass="{{tls_keystore_password}}"
-               truststoreFile="/etc/harmony-smp/tls-truststore.jks"
-               truststorePass="{{tls_truststore_password}}"
+               keystoreFile="/etc/harmony-smp/tls-keystore.p12"
+               keystorePass="${tls_keystore_password}"
+               truststoreFile="/etc/harmony-smp/tls-truststore.p12"
+               truststorePass="${tls_truststore_password}"
                clientAuth="false"
                sslProtocol="TLS" />
     

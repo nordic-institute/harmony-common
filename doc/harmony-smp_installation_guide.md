@@ -1,6 +1,6 @@
 # Harmony eDelivery Access - Service Metadata Publisher Installation Guide <!-- omit in toc -->
 
-Version: 1.9  
+Version: 1.12  
 Doc. ID: IG-SMP
 ---
 
@@ -18,7 +18,10 @@ Doc. ID: IG-SMP
  28.04.2022 | 1.7     | Minor changes                                                                                           | Petteri Kivimäki
  22.01.2023 | 1.8     | Update SMP Admin Guide link                                                                             | Petteri Kivimäki
  01.06.2023 | 1.9     | Add more information about allowed characters in certificates                                           | Petteri Kivimäki
- 
+ 31.07.2023 | 1.10    | Updates for SMP version 2.0                                                                             | Jarkko Hyöty
+ 04.08.2023 | 1.11    | Update DomiSMP Admin Guide link                                                                         | Petteri Kivimäki
+ 09.08.2023 | 1.12    | Update section 2.10                                                                                     | Jarkko Hyöty
+
 ## License <!-- omit in toc -->
 
 This document is licensed under the Creative Commons Attribution-ShareAlike 4.0 International License.
@@ -26,29 +29,34 @@ To view a copy of this license, visit <https://creativecommons.org/licenses/by-s
  
 ## Table of Contents <!-- omit in toc -->
 
-- [License](#license)
-- [1 Introduction](#1-introduction)
-  - [1.1 Target Audience](#11-target-audience)
-  - [1.2 Terms and abbreviations](#12-terms-and-abbreviations)
-  - [1.3 References](#13-references)
-- [2 Installation](#2-installation)
-  - [2.1 Prerequisites to Installation](#21-prerequisites-to-installation)
-  - [2.2 Network Diagram](#22-network-diagram)
-  - [2.3 Requirements for the Access Point](#23-requirements-for-the-smp)
-  - [2.4 Preparing OS](#24-preparing-os)
-  - [2.5 Setup Package Repository](#25-setup-package-repository)
-  - [2.6 SMP Installation](#26-smp-installation)
-  - [2.7 Starting harmony-ap service and enabling automatic startup](#27-starting-harmony-smp-service-and-enabling-automatic-startup)
-  - [2.8 Post-Installation Checks](#28-post-installation-checks)
-  - [2.9 Changes made to system during installation](#29-changes-made-to-system-during-installation)
-  - [2.10 Location of configuration and generated passwords](#210-location-of-configuration-and-generated-passwords)
-  - [2.11 Securing SMP user interface](#211-securing-smp-user-interface)
-  - [2.12 Log files](#212-log-files)
-- [3 Version Upgrade](#3-version-upgrade)
+<!-- vim-markdown-toc GFM -->
+
+* [1 Introduction](#1-introduction)
+  * [1.1 Target Audience](#11-target-audience)
+  * [1.2 Terms and abbreviations](#12-terms-and-abbreviations)
+  * [1.3 References](#13-references)
+* [2. Installation](#2-installation)
+  * [2.1 Prerequisites to Installation](#21-prerequisites-to-installation)
+  * [2.2 Network Diagram](#22-network-diagram)
+  * [2.3 Requirements for the SMP](#23-requirements-for-the-smp)
+  * [2.4 Preparing OS](#24-preparing-os)
+  * [2.5 Setup Package Repository](#25-setup-package-repository)
+  * [2.6 SMP Installation](#26-smp-installation)
+    * [External MySQL 8 database setup (optional)](#external-mysql-8-database-setup-optional)
+    * [SMP install](#smp-install)
+  * [2.7 Starting harmony-smp Service and Enabling Automatic Startup](#27-starting-harmony-smp-service-and-enabling-automatic-startup)
+  * [2.8 Post-Installation Checks](#28-post-installation-checks)
+  * [2.9 Changes Made to System During Installation](#29-changes-made-to-system-during-installation)
+  * [2.10 Location of Configuration and Generated Passwords](#210-location-of-configuration-and-generated-passwords)
+  * [2.11 Securing SMP user interface](#211-securing-smp-user-interface)
+  * [2.12 Log Files](#212-log-files)
+* [3 Version Upgrade](#3-version-upgrade)
+
+<!-- vim-markdown-toc -->
 
 ## 1 Introduction
 
-Harmony eDelivery Access Service Metadata Publisher (SMP) enables dynamic discovery in eDelivery policy domains. Harmony eDelivery Access SMP is based on the SMP open source project by the European Commission.
+Harmony eDelivery Access Service Metadata Publisher (SMP) enables dynamic discovery in eDelivery policy domains. Harmony eDelivery Access SMP is based on the DomiSMP open source project by the European Commission.
 
 ### 1.1 Target Audience
 
@@ -65,7 +73,7 @@ See eDelivery documentation \[[TERMS](#Ref_TERMS)\].
 ### 1.3 References
 
 1. <a id="Ref_TERMS" class="anchor"></a>\[TERMS\] eDelivery Documentation, <https://ec.europa.eu/digital-building-blocks/wikis/display/DIGITAL/eDelivery>
-2. <a id="Ref_SMP_ADMIN_GUIDE" class="anchor"></a>\[SMP_ADMIN_GUIDE\] SMP Administration Guide - SMP 4.2, <https://ec.europa.eu/digital-building-blocks/wikis/download/attachments/551518321/%28eDelivery%29%28SMP%29%28AG%29%28SMP%204.2-FR%29%283.5%29.pdf>
+2. <a id="Ref_SMP_ADMIN_GUIDE" class="anchor"></a>\[SMP_ADMIN_GUIDE\] DomiSMP Administration Guide - DomiSMP 5.0, <https://ec.europa.eu/digital-building-blocks/wikis/download/attachments/674510184/%28eDelivery%29%28SMP%29%28AG%29%28DomiSMP%205.0%29%283.7%29.pdf>
 3. <a id="Ref_UG-DDCG" class="anchor"></a>\[UG-DDCG\] Harmony eDelivery Access - Dynamic Discovery Configuration Guide. Document ID: [UG-DDCG](dynamic_discovery_configuration_guide.md)
 4. <a id="Ref_RFC5280" class="anchor"></a>\[RFC5280\] RFC 5280: Internet X.509 Public Key Infrastructure Certificate and Certificate Revocation List (CRL) Profile, <https://www.rfc-editor.org/rfc/rfc5280>
 5. <a id="Ref_PS" class="anchor"></a>\[PS\] PrintableString, <https://en.wikipedia.org/wiki/PrintableString>
@@ -169,6 +177,25 @@ sudo apt update
 
 ### 2.6 SMP Installation
 
+#### External MySQL 8 database setup (optional)
+
+When using an _external_ database (MySQL 8 required), it is necessary to create the database schema and user before installing the SMP. 
+Please also make sure that the external database accepts connections from the SMP host.
+
+The schema and user can be created using the following SQL DDL statements (adjust user and schema name as needed; the default _harmony_smp_ is used in the example):
+
+```sql
+-- mysql
+create schema if not exists harmony_smp;
+alter schema harmony_smp charset=utf8mb4 collate=utf8mb4_bin;
+create user if not exists harmony_smp@'%';
+alter user harmony_smp@'%' identified by '<password>';
+grant all on harmony_smp.* to harmony_smp@'%';
+```
+When using a _local database_, the installer handles these additional steps.
+
+#### SMP install
+
 Issue the following command to install the Harmony eDelivery Access SMP:
 ```bash
 sudo apt install harmony-smp
@@ -176,22 +203,28 @@ sudo apt install harmony-smp
 
 Upon the first installation of the SMP, the system asks for the following information.
 
+- Port number that the SMP listens to. The default is `8443`;
+  - the SMP admin UI and metadata query interface run on the defined port;
+- SMP point database configuration. When using a local database, accept the defaults.
+  - Database host. The default is `localhost`.
+  - Database port.  The default is `3306`.
+  - Database schema name. The default is `harmony_smp`.
+  - Database user name. The default is `harmony_smp`.
+  - Database password. There is no default. Leave blank to generate a random password when installing a local database.
 - `Distinguished Name` for generated self-signed content and transport certificates;
   - for example:
       ```bash
       CN=example.com, O=My Organisation, C=FI
       ```
-  - the `Distinguished Name` (`DN`) uniquely identifies an entity in an X.509 certificate \[[RFC5280](#Ref_RFC5280)\]. The following attribute types are commonly found in the `DN`: `CN = Common name, O = Organization name, C = Country code`. It's recommended to use PrintableString characters \[[PS](#Ref_PS)\] in the attribute type values;
-  - *note:* different eDelivery policy domains may have different requirements for the `Distinguished Name`. If you're not sure about the requirements, please contact the domain authority of the policy domain where the SMP is registered.
-- port number that the SMP listens to. The default is `8443`;
-  - the SMP admin UI and metadata query interface run on the defined port;
-- do you want the SMP installation to publish information to some Service Metadata Locator (SML);  
+  - The `Distinguished Name` (`DN`) uniquely identifies an entity in an X.509 certificate \[[RFC5280](#Ref_RFC5280)\]. The following attribute types are commonly found in the `DN`: `CN = Common name, O = Organization name, C = Country code`. It's recommended to use PrintableString characters \[[PS](#Ref_PS)\] in the attribute type values;
+  - *Note:* different eDelivery policy domains may have different requirements for the `Distinguished Name`. If you're not sure about the requirements, please contact the domain authority of the policy domain where the SMP is registered.
+- Do you want the SMP installation to publish information to some Service Metadata Locator (SML);  
   - if yes then: 
     - full URL of the SML server, including protocol and port, e.g., `https://<HOST>:8443`;
     - full URL of this SMP server as seen from public Internet, including protocol and port, e.g., `https://<HOST>:8443`;
     - public IP address of this SMP server (reachable from public Internet), e.g., `172.2.3.14`;
-- username of the administrative user - username to use to log in to administrative UI;
-- initial password for the administrative user.
+- Username of the administrative user - username to use to log in to administrative UI;
+- Initial password for the administrative user.
 
 See the Dynamic Discovery Configuration Guide \[[UG-DDCG](dynamic_discovery_configuration_guide.md)\] for more information about how to configure dynamic discovery.
 
@@ -226,7 +259,7 @@ In addition to installing required dependencies, the installation process comple
 - creates linux user `harmony-smp` that is used to run the SMP service;
 - creates MySQL database user `harmony_smp` and generates random password for it;
 - creates MySQL database schema `harmony_smp` and populates it with needed metadata;
-- loads initial configuration into database;
+- creates initial configuration (`/etc/harmony-smp/smp.init.properties`)
 - generates self-signed certificates for content encryption and for transport encryption;
 - installs `systemd` service `harmony-smp` but does not enable or start it.
 
@@ -239,10 +272,10 @@ During the installation process, multiple random passwords are generated.
 | **Password purpose** | **Password location** |
 |---|---|
 | Password for `harmony-smp` MySQL user  | Configuration file: `/etc/harmony-smp/tomcat-conf/context.xml` |
-| Content encryption keystore (`/etc/harmony-smp/smp-keystore.jks`) password | MySQL database table `SMP_CONFIGURATION` with key `smp.keystore.password`. The format is `{DEC}{$PASSWORD}` where `$PASSWORD` is the keystore password. Content of this keystore can be changed using UI.|
-| Content encryption truststore (`/etc/harmony-smp/smp-truststore.jks`) password | MySQL database table `SMP_CONFIGURATION` with key `smp.truststore.password`. The format is `{DEC}{$PASSWORD}` where `$PASSWORD` is the truststore password. |
-| TLS keystore (`/etc/harmony-smp/tls-keystore.jks`) password | Configuration file: `/etc/harmony-smp/tomcat-conf/server.xml`<br /><br />Property: `keystorePass` |
-| TLS truststore (`/etc/harmony-smp/tls-truststore.jks`) password | Configuration file: `/etc/harmony-smp/tomcat-conf/server.xml`<br /><br />Property: `truststorePass`<br /><br />Also, the password is stored in: `/opt/harmony-smp/bin/setenv.sh` |
+| Content encryption keystore (`/etc/harmony-smp/smp-keystore.p12`) password | File /etc/harmony-smp/smp.init.properties, property `smp.keystore.password`. The format is `{DEC}{$PASSWORD}` where `$PASSWORD` is the keystore password. Content of this keystore can be changed using UI.|
+| Content encryption truststore (`/etc/harmony-smp/smp-truststore.p12`) password | File /etc/harmony-smp/smp.init.properties, property `smp.truststore.password`. The format is `{DEC}{$PASSWORD}` where `$PASSWORD` is the truststore password. |
+| TLS keystore (`/etc/harmony-smp/tls-keystore.p12`) password | Configuration file: `/etc/harmony-smp/tomcat-conf/server.xml`<br /><br />Property: `keystorePass` |
+| TLS truststore (`/etc/harmony-smp/tls-truststore.p12`) password | Configuration file: `/etc/harmony-smp/tomcat-conf/server.xml`<br /><br />Property: `truststorePass`<br /><br />Also, the password is stored in: `/opt/harmony-smp/bin/setenv.sh` |
 
 Part of the SMP configuration is stored in MySQL database. The following properties are stored in the `SMP_CONFIGURATION` 
 table. The values are configured when the SMP is installed for the first time.

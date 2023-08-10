@@ -6,7 +6,7 @@ set -e
 APVERSION="2.0.0"
 
 # Version of Harmony SMP
-SMPVERSION=1.4.0
+SMPVERSION=2.0.0
 
 # NO VERSIONING RELATED MODIFICATIONS ARE NECESSARY AFTER THIS POINT!
 
@@ -56,7 +56,7 @@ mkdir -p build/harmony
 cp -r ap build/harmony
 cp -r smp build/harmony
 
-TOMCAT_VERSION=9.0.76
+TOMCAT_VERSION=9.0.78
 MYSQLJ_VERSION=8.0.33
 cd commonbin
 if [ ! -f tomcat-$TOMCAT_VERSION.tar.gz ]; then
@@ -92,7 +92,7 @@ rm -rf commonbin/harmony-smp
 # explode smp war
 mkdir -p commonbin/harmony-smp
 
-unzip "$HARMONY_SMP_REPO_PATH/smp-webapp/target/harmonysmp-$SMPVERSION.war" -d commonbin/harmony-smp
+unzip "$HARMONY_SMP_REPO_PATH/smp-webapp/target/harmonysmp.war" -d commonbin/harmony-smp
 
 prepare ubuntu20.04
 builddeb build/harmony/ap/ubuntu focal ubuntu20.04

@@ -1,10 +1,85 @@
 #!/bin/bash
 
+# during initial install (preconfigure) it is possible that xmlstarlet is not yet available
+if [[ -x /usr/bin/xmlstarlet ]]; then
+  __xmlstarlet() { xmlstarlet "$@" 2>/dev/null; }
+else
+  __xmlstarlet() { return 1; }
+fi
+__get_prop() { __xmlstarlet sel -t -v "$1" "/etc/harmony-smp/tomcat-conf/$2" || echo "${3:-}"; }
+get_ctx_prop() { __get_prop "/Context/Resource/@$1" context.xml "${2:-}"; }
+get_srv_prop() { __get_prop "//Connector[@SSLEnabled=\"true\"]/@$1" server.xml "${2:-}"; }
+
 . /usr/share/debconf/confmodule
+trap db_stop EXIT
 
 if [ "$1" = "configure" ] || [ "$1" = "reconfigure" ]; then
-  db_input high harmony-smp/serverdn
+
+  TOMCAT_PORT=$(get_srv_prop port);
+  [[ -n "$TOMCAT_PORT" ]] && db_set harmony_smp/tomcatport "$TOMCAT_PORT"
   db_input high harmony-smp/tomcatport
+  db_go
+
+  db_get harmony-smp/database-user
+  DB_USER=$(get_ctx_prop username "${RET:-harmony_smp}")
+  DB_PASSWORD=$(get_ctx_prop password)
+
+  db_get harmony-smp/jdbc-url
+  JDBC_URL=$(get_ctx_prop url "${RET:-jdbc:mysql://localhost:3306/harmony_smp}")
+
+  DB_HOST="localhost"
+  DB_PORT="3306"
+  DB_SCHEMA="harmony_smp"
+  DB_OPT=""
+  pat='^jdbc:mysql://([^/:]*)(:([0-9]+))?(/([^\?]*)(.*))?$'
+  if [[ "$JDBC_URL" =~ $pat ]]; then
+    DB_HOST=${BASH_REMATCH[1]:-$DB_HOST}
+    DB_PORT=${BASH_REMATCH[3]:-$DB_PORT}
+    DB_SCHEMA=${BASH_REMATCH[5]:-$DB_SCHEMA}
+    DB_OPT=${BASH_REMATCH[6]}
+
+    db_beginblock
+
+    db_set harmony-smp/database-host "$DB_HOST"
+    db_input high harmony-smp/database-host
+
+    db_set harmony-smp/database-port "$DB_PORT"
+    db_input high harmony-smp/database-port
+
+    db_set harmony-smp/database-schema "$DB_SCHEMA"
+    db_input high harmony-smp/database-schema
+
+    db_endblock
+    db_go
+
+    db_get harmony-smp/database-host
+    DB_HOST="${RET:-localhost}"
+    db_get harmony-smp/database-port
+    DB_PORT="${RET:-3306}"
+    db_get harmony-smp/database-schema
+    DB_SCHEMA="${RET:-harmony_smp}"
+
+    db_set harmony-smp/jdbc-url "jdbc:mysql://$DB_HOST:$DB_PORT/$DB_SCHEMA$DB_OPT"
+  else
+    echo "WARN: Unable to parse '$JDBC_URL'" >&2
+    db_set harmony-smp/jdbc-url "$JDBC_URL"
+  fi
+
+  if [[ -n "$DB_USER" ]]; then
+    db_set harmony-smp/database-user "$DB_USER"
+  fi
+  db_subst harmony-smp/database-user db_schema "$DB_SCHEMA"
+  db_input high harmony-smp/database-user
+  db_go
+
+  db_get harmony-smp/database-user
+  if [[ -n "$DB_PASSWORD" && -n "$DB_USER" && "$DB_USER" = "$RET" ]]; then
+    db_set harmony-smp/database-password "$DB_PASSWORD"
+  fi
+  db_input high harmony-smp/database-password
+  db_go
+
+  db_input high harmony-smp/serverdn
   db_input high harmony-smp/integratewithsml
   db_go
 
@@ -19,6 +94,11 @@ if [ "$1" = "configure" ] || [ "$1" = "reconfigure" ]; then
     db_endblock
     db_go
   fi
+
+  db_input high harmony-smp/adminuser
+  db_input high harmony-smp/adminpassword
+  db_go
+
+  db_stop
 fi
 
-db_stop
