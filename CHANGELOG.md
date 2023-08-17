@@ -1,5 +1,10 @@
 # Changelog
 
+## Access Point and SMP - 2.1.0 - 2023-08-17
+
+- NEDS-133: Access Point: Support Ubuntu 22.04
+- NEDS-134: SMP: Support Ubuntu 22.04
+
 ## SMP - 2.0.0 - 2023-08-09
 
 - NEDS-127: Merge DomiSMP 5.0 into Harmony SMP code base.
