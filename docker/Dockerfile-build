@@ -1,4 +1,4 @@
-FROM ubuntu:20.04
+FROM ubuntu:22.04
 LABEL maintainer="Nordic Institute for Interoperability Solutions <edelivery@niis.org>"
 
 ENV DEBIAN_FRONTEND=noninteractive

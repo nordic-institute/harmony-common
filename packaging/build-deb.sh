@@ -3,10 +3,10 @@ set -e
 
 # CHANGE VERSION NUMBERS BELOW AS NEEDED
 # Version of Harmony Access Point
-APVERSION="2.0.0"
+APVERSION="2.1.0"
 
 # Version of Harmony SMP
-SMPVERSION=2.0.0
+SMPVERSION=2.1.0
 
 # NO VERSIONING RELATED MODIFICATIONS ARE NECESSARY AFTER THIS POINT!
 
@@ -97,3 +97,7 @@ unzip "$HARMONY_SMP_REPO_PATH/smp-webapp/target/harmonysmp.war" -d commonbin/har
 prepare ubuntu20.04
 builddeb build/harmony/ap/ubuntu focal ubuntu20.04
 builddeb build/harmony/smp/ubuntu focal ubuntu20.04
+
+prepare ubuntu22.04
+builddeb build/harmony/ap/ubuntu jammy ubuntu22.04
+builddeb build/harmony/smp/ubuntu jammy ubuntu22.04
