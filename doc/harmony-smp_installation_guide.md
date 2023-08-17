@@ -1,6 +1,6 @@
 # Harmony eDelivery Access - Service Metadata Publisher Installation Guide <!-- omit in toc -->
 
-Version: 1.12  
+Version: 1.13  
 Doc. ID: IG-SMP
 ---
 
@@ -21,6 +21,7 @@ Doc. ID: IG-SMP
  31.07.2023 | 1.10    | Updates for SMP version 2.0                                                                             | Jarkko Hyöty
  04.08.2023 | 1.11    | Update DomiSMP Admin Guide link                                                                         | Petteri Kivimäki
  09.08.2023 | 1.12    | Update section 2.10                                                                                     | Jarkko Hyöty
+ 17.08.2023 | 1.13    | Update system requirements                                                                              | Jarkko Hyöty
 
 ## License <!-- omit in toc -->
 
@@ -85,6 +86,7 @@ See eDelivery documentation \[[TERMS](#Ref_TERMS)\].
 The SMP is officially supported on the following platforms:
 
 * Ubuntu Server 20.04 Long-Term Support (LTS) operating system on a x86-64 platform.
+* Ubuntu Server 22.04 Long-Term Support (LTS) operating system on a x86-64 platform.
 
 The software can be installed both on physical and virtualized hardware.
 
@@ -104,8 +106,8 @@ The table below lists the required connections between different components.
 **Connection Type** | **Source** | **Target** | **Target Ports** | **Protocol** | **Note** |
 -----------|------------|-----------|-----------|-----------|-----------|
 Out | SMP | SML | 443, 8443, other | tcp | |
-In  | Data Exchange Partner Access Point | SMP | 8443* | tcp | URL paths: `/{participantIdentifier}` and `/{participantIdentifier}/services/{documentIdentifier}` |
-In | Admin | SMP | 8443* | tcp | Source in the internal network<br /><br />URL paths: `/` and `/ui` |
+In  | Data Exchange Partner Access Point | SMP | 8443\* | tcp | URL paths: `/{participantIdentifier}` and `/{participantIdentifier}/services/{documentIdentifier}` |
+In | Admin | SMP | 8443\* | tcp | Source in the internal network<br /><br />URL paths: `/` and `/ui` |
 
 \* The port number for inbound connections is configurable and the value can be set during the SMP installation process. Port `8443` is used by default.
 
@@ -131,7 +133,7 @@ Minimum recommended hardware parameters:
 
 Requirements to software and settings:
 
-* an installed and configured Ubuntu 20.04 LTS x86-64 operating system;
+* an installed and configured Ubuntu 20.04 or 22.04 LTS x86-64 operating system;
 * if the SMP is separated from other networks by a firewall and/or NAT, the necessary connections to and from the SMP are allowed;
 * if the SMP has a private IP address, a corresponding NAT record must be created in the firewall;
 * enabling auxiliary services which are necessary for the functioning and management of the operating system (such as DNS, NTP, and SSH) stay outside the scope of this guide.

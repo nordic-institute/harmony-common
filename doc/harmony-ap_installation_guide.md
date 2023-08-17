@@ -1,6 +1,6 @@
 # Harmony eDelivery Access - Access Point Installation Guide <!-- omit in toc -->
 
-Version: 1.9  
+Version: 1.10  
 Doc. ID: IG-AP
 
 ---
@@ -19,6 +19,7 @@ Doc. ID: IG-AP
  29.05.2023 | 1.7     | Update installation and version upgrade instructions                                                                                                        | Jarkko Hyöty
  01.06.2023 | 1.8     | Add more information about allowed characters in certificates                                                                                               | Petteri Kivimäki
  22.06.2023 | 1.9     | Add a note about the default password expiration policy                                                                                                     | Petteri Kivimäki
+ 17.08.2023 | 1.10    | Update system requirements                                                                                                                                  | Jarkko Hyöty
 
 ## License <!-- omit in toc -->
 
@@ -80,6 +81,7 @@ See eDelivery documentation \[[TERMS](#Ref_TERMS)\].
 The Access Point is officially supported on the following platforms:
 
 * Ubuntu Server 20.04 Long-Term Support (LTS) operating system on a x86-64 platform.
+* Ubuntu Server 22.04 Long-Term Support (LTS) operating system on a x86-64 platform.
 
 The software can be installed both on physical and virtualized hardware.
 
@@ -101,9 +103,9 @@ The table below lists the required connections between different components.
 Out | Access Point | Data Exchange Partner Access Point | 443, 8443, other | tcp | |
 Out | Access Point | SMP | 443, 8443, other | tcp | |
 Out | Access Point | Backend (push) | 80, 443, other | tcp | Target in the internal network |
-In  | Data Exchange Partner Access Point | Access Point | 8443* | tcp | URL path: `/services/msh` |
-In | Backend (submit, pull) | Access Point | 8443* | tcp | Source in the internal network<br /><br />URL path: `/services/backend` |
-In | Admin | Access Point | 8443* | tcp | Source in the internal network<br /><br />URL path: `/` |
+In  | Data Exchange Partner Access Point | Access Point | 8443\* | tcp | URL path: `/services/msh` |
+In  | Backend (submit, pull) | Access Point | 8443\* | tcp | Source in the internal network<br /><br />URL path: `/services/backend` |
+In  | Admin | Access Point | 8443\* | tcp | Source in the internal network<br /><br />URL path: `/` |
 
 \* The port number for inbound connections is configurable and the value can be set during the Access Point installation process. Port `8443` is used by default.
 
@@ -128,7 +130,7 @@ Minimum recommended hardware parameters:
 
 Requirements to software and settings:
 
-* an installed and configured Ubuntu 20.04 LTS x86-64 operating system;
+* an installed and configured Ubuntu 20.04 or 22.04 LTS x86-64 operating system;
 * if the Access Point is separated from other networks by a firewall and/or NAT, the necessary connections to and from the Access Point are allowed;
 * if the Access Point has a private IP address, a corresponding NAT record must be created in the firewall;
 * enabling auxiliary services which are necessary for the functioning and management of the operating system (such as DNS, NTP, and SSH) stay outside the scope of this guide.
