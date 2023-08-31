@@ -1,7 +1,42 @@
 #!/bin/bash
 
-# make it possible to easily exec into the container
+# Make it possible to easily exec into the container
 [[ "$1" = "bash" || "$1" = "sh" ]] && { shift; exec /bin/bash "$@"; }
+
+if [[ $1 == "help" ]]; then
+  cat <<__EOF
+  Harmony eDelivery Access - Access Point version ${HARMONY_VERSION:-UNKNOWN}
+
+  Parameters configurable via environment and/or configuration file
+  (location can be passed by variable HARMONY_PARAM_FILE).
+  Environment variables override the parameter file.
+
+  param                            (default)
+  --------------------------------------------------
+  DB_HOST                          *required*
+  DB_PORT                          3306
+  DB_SCHEMA                        harmony_ap
+  DB_USER                          harmony_ap
+  DB_PASSWORD                      *required*
+
+  MAX_MEM                          512m
+
+  # The following params can not be set once written to config:
+
+  PARTY_NAME                       selfsigned
+  SERVER_FQDN                      *output of 'hostname -f'*
+  SERVER_DN                        CN=*SERVER_FQDN*
+  SECURITY_KEYSTORE_PASSWORD       *random*
+  SECURITY_TRUSTSTORE_PASSWORD     *random*
+  TLS_KEYSTORE_PASSWORD            *random*
+  TLS_TRUSTSTORE_PASSWORD          *random*
+  USE_DYNAMIC_DISCOVERY            false
+  SML_ZONE                         *empty*
+  ADMIN_USER                       harmony
+  ADMIN_PASSWORD                   *random*
+__EOF
+  exit 1
+fi
 
 # force initialization
 INIT=false
@@ -9,28 +44,6 @@ INIT=false
 
 set -euo pipefail
 umask 027
-
-# Configurable parameters (see documentation)
-# Param                            Default value
-# --------------------------------------------------
-# DB_HOST                          *required*
-# DB_PORT                          (3306)
-# DB_SCHEMA                        (harmony_ap)
-# DB_USER                          (harmony_ap)
-# DB_PASSWORD                      *required
-#
-# -- the following can not be overridden once set:
-#
-# PARTY_NAME                       (selfsigned)
-# SERVER_DN                        (CN=$PARTY_NAME)
-# SECURITY_KEYSTORE_PASSWORD       *random*
-# SECURITY_TRUSTSTORE_PASSWORD     *random*
-# TLS_KEYSTORE_PASSWORD            *random*
-# TLS_TRUSTSTORE_PASSWORD          *random*
-# USE_DYNAMIC_DISCOVERY            false
-# SML_ZONE                         -
-# ADMIN_USER                       harmony
-# ADMIN_PASSWORD                   *random*
 
 # runtime state
 HARMONY_BASE=/var/opt/harmony-ap
@@ -44,6 +57,10 @@ error() { echo "$(date --utc -Iseconds) ERROR [entrypoint] $*" >&2; }
 set_prop() {
   local prop="$1"
   local value="${2:-}"
+  # escape \ -> \\ (required by java property file syntax)
+  value="${value//\\/\\\\}"
+  # escape Spring ${property} placeholders: $ -> ${:$}
+  value="${value//\$\{/\$\{:\$\}\{}"
   crudini --inplace --set ${HARMONY_BASE}/etc/domibus.properties "" "$prop" "$value"
 }
 
@@ -57,6 +74,9 @@ get_prop() {
   local default="${2:-}"
   local value
   value=$(crudini --get ${HARMONY_BASE}/etc/domibus.properties "" "$prop" 2>/dev/null)
+  # Unescape: \\ -> \, ${:$} -> $
+  value="${value//\\\\/\\}"
+  value="${value//\$\{:\$\}\{/\$\{}"
   echo "${value:-$default}"
 }
 
@@ -71,7 +91,7 @@ if [[ -n ${HARMONY_PARAM_FILE:-} && -f $HARMONY_PARAM_FILE ]]; then
   log "Reading parameters from $HARMONY_PARAM_FILE..."
   while IFS='=' read -r key value
   do
-    if [[ -n "$key" && -z "${!key:-}" && -n "$value" && $key != \#* ]]; then
+    if [[ $key != \#* && -n "$key" && -z "${!key:-}" && -n "$value" ]]; then
       printf -v "${key}" '%s' "${value}"
     fi
   done < "${HARMONY_PARAM_FILE}"
@@ -141,7 +161,7 @@ classpath:${HARMONY_HOME}/lib/mysql-connector-j-8.0.33.jar
 driver:com.mysql.cj.jdbc.Driver
 url:$URL
 username:$DB_USER
-password:$DB_PASSWORD
+password:${DB_PASSWORD//\\/\\\\}
 changeLogFile:db.changelog.xml") \
     update -DadminUser="$_AUSER" -DadminPassword="$HASHEDPASSWORD" 2>&1 | sed 's/^/    /'
 
@@ -266,6 +286,7 @@ exec tini -e 143 -- $JAVA_HOME/bin/java @<(echo "\
 -Xms256m -Xmx${MAX_MEM:-512m}
 -XX:+UseParallelGC
 -XX:+ExitOnOutOfMemoryError
+-XX:MaxMetaspaceSize=256m
 --add-opens=java.base/java.lang=ALL-UNNAMED
 --add-opens=java.base/java.io=ALL-UNNAMED
 --add-opens=java.base/java.util=ALL-UNNAMED
