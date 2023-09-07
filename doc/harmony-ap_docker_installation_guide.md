@@ -32,11 +32,11 @@ The document is intended for readers with a moderate knowledge of Docker, comput
 
 ### Terms and abbreviations
 
-See eDelivery documentation \[[TERMS](#Ref_TERMS)\].
+See introduction to eDelivery and Harmony eDelivery Access \[[INTRODUCTION](#Ref_INTRODUCTION)\].
 
 ### References
 
-1. <a id="Ref_TERMS" class="anchor"></a>\[TERMS\] eDelivery Documentation, <https://ec.europa.eu/digital-building-blocks/wikis/display/DIGITAL/eDelivery>
+1. <a id="Ref_INTRODUCTION" class="anchor"></a>\[INTRODUCTION\] Report: Introduction to eDelivery and Harmony eDelivery Access, <https://www.niis.org/niis-publications/2021/12/19/report-introduction-to-edelivery-and-harmony-edelivery-access>
 2. <a id="Ref_DOMIBUS_ADMIN_GUIDE" class="anchor"></a>\[DOMIBUS_ADMIN_GUIDE\] Access Point Administration Guide - Domibus 5.1.0, <https://ec.europa.eu/digital-building-blocks/wikis/download/attachments/660440359/%28eDelivery%29%28AP%29%28AG%29%28Domibus%205.1%29%2819.6%29.pdf>
 3. <a id="Ref_WS_PLUGIN" class="anchor"></a>\[WS_PLUGIN\] Access Point Interface Control Document - WS Plugin, <https://ec.europa.eu/digital-building-blocks/wikis/download/attachments/660440359/%28eDelivery%29%28AP%29%28ICD%29%28WS%20plugin%29%28Domibus%205.1%29%283.4%29.pdf>
 4. <a id="Ref_PLUGIN_COOKBOOK" class="anchor"></a>\[PLUGIN_COOKBOOK\] Domibus Plugin Cookbook, <https://ec.europa.eu/digital-building-blocks/wikis/download/attachments/660440359/%28eDelivery%29%28AP%29%28Plugin-CB%29%28Domibus.5.1%29%286.4%29.pdf>
@@ -140,7 +140,7 @@ The values are _literal_ (except leading or trailing spaces are trimmed). A line
 
 Using a parameter file:
 ```bash
-docker run --rm -it 
+docker run --rm -it \
   -e HARMONY_PROPERTIES=/run/harmony.properties \
   -v /path/to/harmony.properties:/run/harmony.properties \
   -v harmony-ap-data:/var/opt/harmony-ap \
@@ -149,15 +149,15 @@ docker run --rm -it
 
 #### Volumes
 
-For persisting access point runtime state (including e.g. the various keystores), 
+For persisting Access Point runtime state (including e.g. the various keystores), 
 one should map a volume over `/var/opt/harmony-ap`.
 
 #### Advanced configuration
 
-Issue the following command to initialize the access point configuration without starting the application and then modify the stored configuration as needed, for example:
+Issue the following command to initialize the Access Point configuration without starting the application and then modify the stored configuration as needed, for example:
 
 ```bash
-docker run --rm -it 
+docker run --rm -it  \
   -e DB_HOST=<db host> \
   -e DB_PASSWORD=<db password> \
   -e ADMIN_PASSWORD=<admin password> \
@@ -166,17 +166,17 @@ docker run --rm -it
 ```
 
 ```bash
-docker run --rm -it 
+docker run --rm -it \ 
   -v harmony-ap-data:/var/opt/harmony-ap \
   niis/harmony-ap:2.1.0 bash
 ```
 
 ### Running the container
 
-Minimal example providing only the required parameters (the database must be available). The access point listens on port 8443 (HTTPS), which should be forwarded to a suitable host port.
+Minimal example providing only the required parameters (the database must be available). The Access Point listens on port 8443 (HTTPS), which should be forwarded to a suitable host port.
 
 ```bash
-docker run --name harmony-ap -d
+docker run --name harmony-ap -d \
   -e DB_HOST=<db host> \
   -e DB_PASSWORD=<db password> \
   -e ADMIN_PASSWORD=<admin password> \
@@ -210,12 +210,16 @@ Access Point configuration files are located below the `/var/opt/harmony-ap` dir
 
 The Access Point application logs to the standard output.
 
+```bash
+docker logs -f <container-name>
+```
+
 ## Updating to a new version of the image
 
 Run a container from the new image attaching the data volume from the old container.
 
 ```bash
-docker run -d
+docker run -d \
   -v harmony-ap-data:/var/opt/harmony-ap \
   -p 8443:8443
   niis/harmony-ap:<version>
@@ -223,7 +227,7 @@ docker run -d
 
 ## Docker compose example
 
-The following example defines an access point and a database using [Docker compose](https://docs.docker.com/compose/gettingstarted/):
+The following example defines an Access Point and a database using [Docker compose](https://docs.docker.com/compose/gettingstarted/):
 
 ```yaml
 # Example harmony-ap compose file
@@ -241,7 +245,7 @@ services:
       - PARTY_NAME=org1_gw
       - SERVER_FQDN=harmony-ap
     volumes:
-      - ap2_data:/var/opt/harmony-ap
+      - ap_data:/var/opt/harmony-ap
     ports:
       - "8443:8443"
     restart: on-failure
