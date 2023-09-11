@@ -9,8 +9,6 @@ COPY packaging/commonbin/tomcat9/lib /opt/harmony-ap/lib/
 COPY packaging/commonbin/tomcat9/conf/web.xml /opt/harmony-ap/conf/
 COPY packaging/commonbin/tomcat9/conf/catalina.properties /opt/harmony-ap/conf/
 COPY packaging/ap/config/activemq.xml /opt/harmony-ap/internal/
-COPY packaging/ap/config/domibus.properties.template /opt/harmony-ap/setup/
-COPY packaging/ap/config/clientauthentication.xml.template /opt/harmony-ap/setup/
 COPY packaging/ap/config/*Policy*.xml /opt/harmony-ap/policies/
 COPY packaging/ap/config/signOnly.xml /opt/harmony-ap/policies/
 COPY packaging/ap/config/doNothingPolicy.xml /opt/harmony-ap/policies/
@@ -18,6 +16,8 @@ COPY packaging/ap/config/LICENSE.txt /usr/share/doc/harmony-ap/
 COPY packaging/ap/config/3RD-PARTY-NOTICES.txt /usr/share/doc/harmony-ap/
 COPY packaging/ap/config/liquibase /opt/harmony-ap/liquibase
 COPY packaging/ap/config/db /opt/harmony-ap/db
+COPY packaging/ap/docker/clientauthentication.xml.template /opt/harmony-ap/setup/
+COPY packaging/ap/docker/domibus.properties.template /opt/harmony-ap/setup/
 COPY packaging/ap/docker/logback.xml /opt/harmony-ap/setup/
 COPY packaging/ap/docker/logging.properties /opt/harmony-ap/conf/
 COPY packaging/ap/docker/server.xml.template /opt/harmony-ap/setup/

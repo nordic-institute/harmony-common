@@ -1,4 +1,8 @@
 #!/bin/bash
+# runtime state
+HARMONY_BASE=/var/opt/harmony-ap
+# static and read-only
+HARMONY_HOME=/opt/harmony-ap
 
 # Make it possible to easily exec into the container
 [[ "$1" = "bash" || "$1" = "sh" ]] && { shift; exec /bin/bash "$@"; }
@@ -29,6 +33,7 @@ if [[ $1 == "help" ]]; then
   SECURITY_KEYSTORE_PASSWORD       *random*
   SECURITY_TRUSTSTORE_PASSWORD     *random*
   TLS_KEYSTORE_PASSWORD            *random*
+  TLS_KEYSTORE_FILE                ${HARMONY_BASE}/etc/tls-keystore.p12
   TLS_TRUSTSTORE_PASSWORD          *random*
   USE_DYNAMIC_DISCOVERY            false
   SML_ZONE                         *empty*
@@ -44,11 +49,6 @@ INIT=false
 
 set -euo pipefail
 umask 027
-
-# runtime state
-HARMONY_BASE=/var/opt/harmony-ap
-# static and read-only
-HARMONY_HOME=/opt/harmony-ap
 
 log() { echo "$(date --utc -Iseconds) INFO [entrypoint] $*"; }
 warn() { echo "$(date --utc -Iseconds) WARN [entrypoint] $*" >&2; }
@@ -180,47 +180,47 @@ changeLogFile:db.changelog.xml") \
   SECURITY_TRUSTSTORE_PASSWORD="$(get_prop domibus.security.truststore.password "${SECURITY_TRUSTSTORE_PASSWORD:-$(openssl rand -base64 12)}")"
 
   TLS_KEYSTORE_PASSWORD="$(get_tomcat_prop keystorePass "${TLS_KEYSTORE_PASSWORD:-$(openssl rand -base64 12)}")"
+  TLS_KEYSTORE_FILE="$(get_tomcat_prop keystoreFile "${TLS_KEYSTORE_FILE:-$HARMONY_BASE/etc/tls-keystore.p12}")"
   TLS_TRUSTSTORE_PASSWORD="${TLS_TRUSTSTORE_PASSWORD:-$(openssl rand -base64 12)}"
 
-  if [ ! -f ${HARMONY_BASE}/etc/ap-keystore.jks ]; then
+  if [ ! -f ${HARMONY_BASE}/etc/ap-keystore.p12 ]; then
     log "Creating keystore..."
-    keytool -storetype jks -genkeypair -keyalg RSA -alias "$PARTY_NAME" -keystore ${HARMONY_BASE}/etc/ap-keystore.jks -storepass "$SECURITY_KEYSTORE_PASSWORD" \
+    keytool -storetype pkcs12 -genkeypair -keyalg RSA -alias "$PARTY_NAME" -keystore ${HARMONY_BASE}/etc/ap-keystore.p12 -storepass "$SECURITY_KEYSTORE_PASSWORD" \
       -keypass "$SECURITY_KEYSTORE_PASSWORD" -validity 333 -keysize 3072 -dname "$SERVER_DN" 2>/dev/null
   fi
 
-  if [ ! -f ${HARMONY_BASE}/etc/ap-truststore.jks ]; then
+  if [ ! -f ${HARMONY_BASE}/etc/ap-truststore.p12 ]; then
     log "Creating empty truststore..."
-    keytool -storetype jks -genkeypair -alias mock -keystore ${HARMONY_BASE}/etc/ap-truststore.jks \
+    keytool -storetype pkcs12 -genkeypair -alias mock -keystore ${HARMONY_BASE}/etc/ap-truststore.p12 \
       -storepass "$SECURITY_TRUSTSTORE_PASSWORD" \
       -keypass "$SECURITY_TRUSTSTORE_PASSWORD" -dname "CN=mock" 2>/dev/null
-    keytool -delete -alias mock -keystore ${HARMONY_BASE}/etc/ap-truststore.jks -storepass "$SECURITY_TRUSTSTORE_PASSWORD" 2>/dev/null
+    keytool -delete -alias mock -keystore ${HARMONY_BASE}/etc/ap-truststore.p12 -storepass "$SECURITY_TRUSTSTORE_PASSWORD" 2>/dev/null
   fi
 
-  if [ ! -f ${HARMONY_BASE}/etc/tls-keystore.jks ]; then
+  if [ ! -f "${TLS_KEYSTORE_FILE}" ]; then
     log "Creating TLS keystore..."
-    keytool -storetype jks -genkeypair -keyalg RSA -alias "$PARTY_NAME" \
-      -keystore ${HARMONY_BASE}/etc/tls-keystore.jks -storepass "$TLS_KEYSTORE_PASSWORD" \
-      -keypass "$TLS_KEYSTORE_PASSWORD" -validity 333 -keysize 3072 -dname "$SERVER_DN" 2>/dev/null
+    keytool -storetype pkcs12 -genkeypair -keyalg RSA -alias "$PARTY_NAME" \
+      -keystore "${TLS_KEYSTORE_FILE}" -storepass "$TLS_KEYSTORE_PASSWORD" \
+      -validity 333 -keysize 3072 -dname "$SERVER_DN" 2>/dev/null
   fi
 
-  if [ ! -f ${HARMONY_BASE}/etc/tls-truststore.jks ]; then
+  if [ ! -f ${HARMONY_BASE}/etc/tls-truststore.p12 ]; then
     log "Creating TLS truststore..."
     keytool -export -alias "$PARTY_NAME" \
-      -keystore ${HARMONY_BASE}/etc/tls-keystore.jks \
+      -keystore "$TLS_KEYSTORE_FILE" \
       -storepass "$TLS_KEYSTORE_PASSWORD" 2>/dev/null | keytool \
-        -storetype jks -import -noprompt -alias "$PARTY_NAME" \
-        -keystore ${HARMONY_BASE}/etc/tls-truststore.jks \
+        -storetype pkcs12 -import -noprompt -alias "$PARTY_NAME" \
+        -keystore ${HARMONY_BASE}/etc/tls-truststore.p12 \
         -storepass "$TLS_TRUSTSTORE_PASSWORD" 2>/dev/null
   fi
 
-  if [[ ! -f ${HARMONY_BASE}/etc/domibus.properties ]]; then
-    sed -E 's/\{\{[^}]*\}\}//' ${HARMONY_HOME}/setup/domibus.properties.template > ${HARMONY_BASE}/etc/domibus.properties
-  fi
-
-  cp -n ${HARMONY_HOME}/conf/* ${HARMONY_BASE}/conf/
+  cp -n ${HARMONY_HOME}/setup/domibus.properties.template ${HARMONY_BASE}/etc/domibus.properties
+  chmod 640 ${HARMONY_BASE}/etc/domibus.properties
 
   cp -n ${HARMONY_HOME}/setup/server.xml.template ${HARMONY_BASE}/conf/server.xml
   chmod 640 ${HARMONY_BASE}/conf/server.xml
+
+  cp -n ${HARMONY_HOME}/conf/* ${HARMONY_BASE}/conf/
 
   cp -n ${HARMONY_HOME}/setup/clientauthentication.xml.template ${HARMONY_BASE}/etc/clientauthentication.xml
   chmod 640 ${HARMONY_BASE}/etc/clientauthentication.xml
@@ -233,13 +233,16 @@ changeLogFile:db.changelog.xml") \
 
   xmlstarlet edit --pf --inplace \
     --update '//Connector[@SSLEnabled="true"]/@keystorePass' --value "$TLS_KEYSTORE_PASSWORD" \
+    --update '//Connector[@SSLEnabled="true"]/@keystoreFile' --value "$TLS_KEYSTORE_FILE" \
     --update '//Connector[@SSLEnabled="true"]/@truststorePass' --value "$TLS_TRUSTSTORE_PASSWORD" \
     ${HARMONY_BASE}/conf/server.xml
 
   xmlstarlet edit --pf --inplace \
     -N s='http://cxf.apache.org/configuration/security' \
-    --update '//s:keyStore/@password' --value "$TLS_TRUSTSTORE_PASSWORD" \
-    --update '//s:keyStore/@file' --value "/var/opt/harmony-ap/etc/tls-truststore.jks" \
+    --update '//s:trustManagers/s:keyStore/@password' --value "$TLS_TRUSTSTORE_PASSWORD" \
+    --update '//s:trustManagers/s:keyStore/@file' --value "/var/opt/harmony-ap/etc/tls-truststore.p12" \
+    --update '//s:keyManagers/s:keyStore/@password' --value "$TLS_KEYSTORE_PASSWORD" \
+    --update '//s:keyManagers/s:keyStore/@file' --value "$TLS_KEYSTORE_FILE" \
     ${HARMONY_BASE}/etc/clientauthentication.xml
 
   set_prop domibus.database.serverName "$DB_HOST"
@@ -297,7 +300,7 @@ exec tini -e 143 -- $JAVA_HOME/bin/java @<(echo "\
 -Djava.security.egd=file:/dev/urandom
 -Djava.util.logging.config.file=$CATALINA_BASE/conf/logging.properties
 -Djava.util.logging.manager=org.apache.juli.ClassLoaderLogManager
--Djavax.net.ssl.trustStore=${HARMONY_BASE}/etc/tls-truststore.jks
+-Djavax.net.ssl.trustStore=${HARMONY_BASE}/etc/tls-truststore.p12
 -Djavax.net.ssl.trustStorePassword=\"$_TLS_TRUSTSTORE_PASSWORD\"
 -Dlogback.configurationFile=${HARMONY_BASE}/etc/logback.xml
 -Dcatalina.base=$CATALINA_BASE
