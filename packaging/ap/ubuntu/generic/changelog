@@ -1,3 +1,9 @@
+harmony-ap (2.2.0-0) stable; urgency=low
+
+  * Container support
+
+ -- Nordic Institute for Interoperability Solutions (NIIS) <edelivery@niis.org>  Tue, 12 Sep 2023 13:24:15 +0300
+
 harmony-ap (2.1.0-0) stable; urgency=medium
 
   * Ubuntu 22.04 support
