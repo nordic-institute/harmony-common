@@ -274,7 +274,7 @@ services:
   harmony-db:
     image: mysql:8
     environment:
-      - MYSQL_RANDOM_ROOT_PASSWORD=1
+      - MYSQL_ROOT_PASSWORD=root_password
       - MYSQL_DATABASE=harmony_ap
       - MYSQL_USER=harmony_ap
       - MYSQL_PASSWORD=dbpassword

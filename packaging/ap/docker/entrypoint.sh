@@ -219,8 +219,8 @@ changeLogFile:db.changelog.xml") \
 
   cp -n ${HARMONY_HOME}/setup/server.xml.template ${HARMONY_BASE}/conf/server.xml
   chmod 640 ${HARMONY_BASE}/conf/server.xml
-
   cp -n ${HARMONY_HOME}/conf/* ${HARMONY_BASE}/conf/
+  ln -sfn ${HARMONY_BASE}/conf ${HARMONY_BASE}/etc/tomcat-conf
 
   cp -n ${HARMONY_HOME}/setup/clientauthentication.xml.template ${HARMONY_BASE}/etc/clientauthentication.xml
   chmod 640 ${HARMONY_BASE}/etc/clientauthentication.xml
