@@ -18,6 +18,27 @@ To view a copy of this license, visit <https://creativecommons.org/licenses/by-s
  
 ## Table of Contents <!-- omit in toc -->
 
+<!-- vim-markdown-toc GFM -->
+
+* [Introduction](#introduction)
+  * [Target Audience](#target-audience)
+  * [Terms and abbreviations](#terms-and-abbreviations)
+  * [References](#references)
+* [Network Diagram](#network-diagram)
+* [Access Point setup](#access-point-setup)
+  * [External MySQL 8 database setup](#external-mysql-8-database-setup)
+  * [Configuration](#configuration)
+    * [Volumes](#volumes)
+    * [Advanced configuration](#advanced-configuration)
+  * [Running the container](#running-the-container)
+  * [Installing Custom Plugins](#installing-custom-plugins)
+  * [Location of Configuration and Generated Passwords](#location-of-configuration-and-generated-passwords)
+* [Logging](#logging)
+* [Updating to a new version of the image](#updating-to-a-new-version-of-the-image)
+* [Docker compose example](#docker-compose-example)
+
+<!-- vim-markdown-toc -->
+
 ## Introduction
 
 Harmony eDelivery Access Access Point is an AS4 Access Point for joining eDelivery policy domains. The Access Point is based on the Domibus open source project by the European Commission.
@@ -199,7 +220,7 @@ FROM niis/harmony-ap:2.1.0
 
 # additional plugins
 COPY custom-plugin.jar  /opt/harmony-ap/plugins/lib
-COPY custom-plugin.conf /opt/harmony-ap/plugins/lib/config
+COPY custom-plugin.conf /opt/harmony-ap/plugins/config
 ```
 
 ### Location of Configuration and Generated Passwords 
