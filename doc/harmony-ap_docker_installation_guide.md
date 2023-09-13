@@ -99,7 +99,7 @@ In addition, it's strongly recommended to use URL path filtering for the Access 
 
 ### External MySQL 8 database setup
 
-The access point container requires an external database.
+The Access Point container requires an external database.
 
 Note. It is necessary to [populate MySQL time zone information tables](https://dev.mysql.com/doc/refman/8.0/en/time-zone-support.html#time-zone-installation), e.g. using the following command as root on the external database host:
 
@@ -122,7 +122,7 @@ See also the [Docker compose example](#docker-compose-example) for using a MySQL
 
 ### Configuration
 
-The access point image supports the following configuration parameters that can be supplied via environment variables and/or a configuration file mapped into the container. If both are used, environment variables take precedence.
+The Access Point image supports the following configuration parameters that can be supplied via environment variables and/or a configuration file mapped into the container. If both are used, environment variables take precedence.
 
 See the Static Discovery Configuration Guide \[[UG-SDCG](static_discovery_configuration_guide.md)\] and the Dynamic Discovery Configuration Guide \[[UG-DDCG](dynamic_discovery_configuration_guide.md)\] for more information about how to configure different discovery options.
 
@@ -137,8 +137,8 @@ See the Static Discovery Configuration Guide \[[UG-SDCG](static_discovery_config
   | PARTY_NAME*                    | selfsigned | Party name of the Access Point owner organisation
   | SERVER_FQDN*                   | *hostname* | Fully qualified domain name for the TLS certificate.
   | SERVER_DN*                     | CN=*SERVER_FQDN* | TLS certificate subject DN. If omitted, derived from the FQDN.
-  | SECURITY_KEYSTORE_PASSWORD\*   | *random*   | AP keystore password \*\*
-  | SECURITY_TRUSTSTORE_PASSWORD\* | *random*   | AP truststore password \*\*
+  | SECURITY_KEYSTORE_PASSWORD\*   | *random*   | Access Point keystore password \*\*
+  | SECURITY_TRUSTSTORE_PASSWORD\* | *random*   | Access Point truststore password \*\*
   | TLS_KEYSTORE_PASSWORD\*        | *random*   | TLS keystore password \*\*
   | TLS_TRUSTSTORE_PASSWORD\*      | *random*   | TLS truststore password \*\*
   | USE_DYNAMIC_DISCOVERY\*        | false      | Is dynamic discovery in use
@@ -210,7 +210,7 @@ docker run --name harmony-ap -d \
 
 The Access Point comes with one default plugin - the Web Service (WS) Plugin. See the WS Plugin documentation \[[WS_PLUGIN](#Ref_WS_PLUGIN)\] for more details.
 
-Additional plugins can be added by customizing the Harmony AP docker image. 
+Additional plugins can be added by customizing the Harmony Access Point docker image. 
 
 See the [Docker documentation](https://docs.docker.com/build/building/packaging/) for more information about creating Docker images and the Domibus Plugin Cookbook \[[PLUGIN_COOKBOOK](#Ref_PLUGIN_COOKBOOK)\] for more information on developing custom plugins.
 

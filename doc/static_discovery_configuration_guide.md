@@ -30,7 +30,7 @@ To view a copy of this license, visit <https://creativecommons.org/licenses/by-s
   * [1.3 References](#13-references)
 * [2. Configure Static Discovery](#2-configure-static-discovery)
   * [2.1 Prerequisites](#21-prerequisites)
-    * [Note about using Harmony AP container version](#note-about-using-harmony-ap-container-version)
+    * [Note about Using Harmony Access Point Container Version](#note-about-using-harmony-access-point-container-version)
   * [2.2 Change the Sign Key Alias](#22-change-the-sign-key-alias)
   * [2.3 TLS Configuration](#23-tls-configuration)
     * [2.3.1 One-Way SSL](#231-one-way-ssl)
@@ -110,9 +110,9 @@ The table below gives an overview of different keystore and truststore files tha
 | `/etc/harmony-ap/tls-truststore.jks` | `/etc/harmony-ap/tomcat-conf/server.xml` | `truststorePass` | Truststore for trusted public TLS certificates. |
 
 
-#### Note about using Harmony AP container version
+#### Note about Using Harmony Access Point Container Version
 
-Harmony AP configuration is located at `/var/opt/harmony-ap/etc` instead of `/etc/harmony-ap` (for convinience, `/etc/harmony-ap` is a symbolic link to that directory).
+Harmony Access Point configuration is located at `/var/opt/harmony-ap/etc` instead of `/etc/harmony-ap` (for convinience, `/etc/harmony-ap` is a symbolic link to that directory).
 
 The commands in the guide need to be executed inside the container. For example:
 
