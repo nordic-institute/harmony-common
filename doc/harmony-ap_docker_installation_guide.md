@@ -162,7 +162,7 @@ The values are _literal_ (except leading or trailing spaces are trimmed). A line
 Using a parameter file:
 ```bash
 docker run --rm -it \
-  -e HARMONY_PROPERTIES=/run/harmony.properties \
+  -e HARMONY_PARAM_FILE=/run/harmony.properties \
   -v /path/to/harmony.properties:/run/harmony.properties \
   -v harmony-ap-data:/var/opt/harmony-ap \
   niis/harmony-ap:2.1.0

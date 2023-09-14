@@ -1,6 +1,6 @@
 # Harmony eDelivery Access - Static Discovery Configuration Guide <!-- omit in toc -->
 
-Version: 1.4  
+Version: 1.5  
 Doc. ID: UG-SDCG
 
 ---
@@ -14,6 +14,7 @@ Doc. ID: UG-SDCG
  16.02.2022 | 1.2     | Minor updates on SSL configuration details                                                                                          | Petteri Kivimäki
  22.05.2023 | 1.3     | Updates on importing TLS certificates, changing the sign key alias and references                                                   | Petteri Kivimäki
  30.05.2023 | 1.4     | Update WS Plugin interface path                                                                                                     | Petteri Kivimäki
+ 14.09.2023 | 1.5     | Notes about using the containerized version                                                                                         | Jarkko Hyöty
 
 ## License <!-- omit in toc -->
 
@@ -123,7 +124,7 @@ sudo keytool -keystore /etc/harmony-ap/ap-keystore.jks -storepass <ap_keystore_p
 Can be run inside the container with [`docker exec`](https://docs.docker.com/engine/reference/commandline/exec/) (using "sudo" in the container is unnecessary):
 
 ```bash
-docker exec -it <container name> keytool -keystore /etc/harmony-ap/ap-keystore.jks -storepass <ap_keystore_password> -list
+docker exec -it <container name> keytool -keystore /etc/harmony-ap/ap-keystore.p12 -storepass <ap_keystore_password> -list
 ```
 
 If editing configuration files manually is needed, files can be copied to/from a container using [`docker cp`](https://docs.docker.com/engine/reference/commandline/cp/).
