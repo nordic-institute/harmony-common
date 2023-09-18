@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<configuration>
+  <conversionRule conversionWord="domibusLine" converterClass="eu.domibus.logging.DomibusLineOfCallerConverter" />
+  <!-- pattern definition -->
+  <property name="encoderPattern" 
+    value="%d{yyyy-MM-dd HH:mm:ss.SX} %5p [%X{d_user}] [%X{d_domain}] [%X{d_messageId}] [%thread] %c{1}:%domibusLine - %m%n" 
+    scope="global"/>
+
+  <property name="statisticsPattern" value="%d{ISO8601} %5p %c{1}:%domibusLine - %m%n" scope="global"/>
+
+  <appender name="stdout" class="ch.qos.logback.core.ConsoleAppender">
+    <encoder>
+      <pattern>${encoderPattern}</pattern>
+    </encoder>
+  </appender>
+
+  <appender name="statistic" class="ch.qos.logback.core.ConsoleAppender">
+    <encoder>
+      <pattern>${statisticsPattern}</pattern>
+    </encoder>
+  </appender>
+
+  <logger name="eu.domibus" level="INFO" />
+
+  <logger name="eu.domibus.statistic" level="INFO" additivity="false">
+    <appender-ref ref="statistic"/>
+  </logger>
+
+  <!--  In order to enable logging of request/responses please change the loglevel to INFO -->
+  <logger name="org.apache.cxf" level="WARN"/>
+
+  <root level="WARN">
+    <appender-ref ref="stdout"/>
+  </root>
+
+</configuration>

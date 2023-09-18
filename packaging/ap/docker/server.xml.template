@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<Server port="-1">
+  <Listener className="org.apache.catalina.startup.VersionLoggerListener" logArgs="false" />
+  <Listener className="org.apache.catalina.core.JreMemoryLeakPreventionListener" />
+  <Listener className="org.apache.catalina.mbeans.GlobalResourcesLifecycleListener" />
+  <Listener className="org.apache.catalina.core.ThreadLocalLeakPreventionListener" />
+
+  <Service name="Catalina">
+
+    <Connector
+      SSLEnabled="true"
+      protocol="org.apache.coyote.http11.Http11NioProtocol"
+      port="8443"
+      maxThreads="200"
+      scheme="https"
+      secure="true"
+      keystoreFile="/var/opt/harmony-ap/etc/tls-keystore.p12"
+      keystorePass=""
+      truststoreFile="/var/opt/harmony-ap/etc/tls-truststore.p12"
+      truststorePass=""
+      clientAuth="want"
+      sslProtocol="TLS"
+      />
+
+    <Engine name="Catalina" defaultHost="localhost">
+      <Host name="localhost" 
+        appBase="/opt/harmony-ap/webapps" 
+        createDirs="false"
+        unpackWARs="false" 
+        autoDeploy="false" 
+        workDir="/var/opt/harmony-ap/work">
+
+        <Valve className="org.apache.catalina.valves.ErrorReportValve"
+          showReport="false" showServerInfo="false" />
+
+        <Context path="">
+          <Manager pathname=""/>
+          <JarScanner><JarScanFilter defaultTldScan="false"/></JarScanner>
+        </Context>
+
+      </Host>
+    </Engine>
+  </Service>
+
+</Server>

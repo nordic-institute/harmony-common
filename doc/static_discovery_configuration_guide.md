@@ -1,6 +1,6 @@
 # Harmony eDelivery Access - Static Discovery Configuration Guide <!-- omit in toc -->
 
-Version: 1.4  
+Version: 1.5  
 Doc. ID: UG-SDCG
 
 ---
@@ -14,6 +14,7 @@ Doc. ID: UG-SDCG
  16.02.2022 | 1.2     | Minor updates on SSL configuration details                                                                                          | Petteri Kivimäki
  22.05.2023 | 1.3     | Updates on importing TLS certificates, changing the sign key alias and references                                                   | Petteri Kivimäki
  30.05.2023 | 1.4     | Update WS Plugin interface path                                                                                                     | Petteri Kivimäki
+ 14.09.2023 | 1.5     | Notes about using the containerized version                                                                                         | Jarkko Hyöty
 
 ## License <!-- omit in toc -->
 
@@ -22,40 +23,44 @@ To view a copy of this license, visit <https://creativecommons.org/licenses/by-s
  
 ## Table of Contents <!-- omit in toc -->
 
-- [License](#license)
-- [1 Introduction](#1-introduction)
-  - [1.1 Target Audience](#11-target-audience)
-  - [1.2 Terms and abbreviations](#12-terms-and-abbreviations)
-  - [1.3 References](#13-references)
-- [2. Configure Static Discovery](#2-configure-static-discovery)
-  - [2.1 Prerequisites](#21-prerequisites)
-  - [2.2 Change the Sign Key Alias](#22-change-the-sign-key-alias)
-  - [2.3 TLS Configuration](#23-tls-configuration)
-    - [2.3.1 One-Way SSL](#231-one-way-ssl)
-    - [2.3.2 Two-Way SSL](#232-two-way-ssl)
-  - [2.4 Import Trusted Certificates to Truststores](#24-import-trusted-certificates-to-truststores)
-    - [2.4.1 Import Trusted Sign Certificates](#241-import-trusted-sign-certificates)
-    - [2.4.2 Import Trusted TLS Certificates](#242-import-trusted-tls-certificates)
-  - [2.5 Export Certificates from Keystores](#25-export-certificates-from-keystores)
-    - [2.5.1 Export Sign Certificates](#251-export-sign-certificates)
-    - [2.5.2 Export TLS Certificates](#252-export-tls-certificates)
-  - [2.6 Create Plugin Users](#26-create-plugin-users)
-- [3. Example Configuration](#3-example-configuration)
-  - [3.1 Prerequisites](#31-prerequisites)
-  - [3.2 PMode Configuration](#32-pmode-configuration)
-  - [3.3 Create Plugin Users](#33-create-plugin-users)
-    - [3.3.1 Access Point 1](#331-access-point-1)
-    - [3.3.2 Access Point 2](#332-access-point-2)
-  - [3.4 Export Certificates](#34-export-certificates)
-    - [3.4.1 Access Point 1](#341-access-point-1)
-    - [3.4.2 Access Point 2](#342-access-point-2)
-  - [3.5 Import Certificates](#35-import-certificates)
-    - [3.5.1 Access Point 1](#351-access-point-1)
-    - [3.5.2 Access Point 2](#352-access-point-2)
-  - [3.6 Configure One-Way SSL](#36-configure-one-way-ssl)
-  - [3.7 Apply Changes](#37-apply-changes)
-  - [3.8 Send Test Message](#38-send-test-message)
-  
+<!-- vim-markdown-toc GFM -->
+
+* [1 Introduction](#1-introduction)
+  * [1.1 Target Audience](#11-target-audience)
+  * [1.2 Terms and abbreviations](#12-terms-and-abbreviations)
+  * [1.3 References](#13-references)
+* [2. Configure Static Discovery](#2-configure-static-discovery)
+  * [2.1 Prerequisites](#21-prerequisites)
+    * [Note about Using Harmony Access Point Container Version](#note-about-using-harmony-access-point-container-version)
+  * [2.2 Change the Sign Key Alias](#22-change-the-sign-key-alias)
+  * [2.3 TLS Configuration](#23-tls-configuration)
+    * [2.3.1 One-Way SSL](#231-one-way-ssl)
+    * [2.3.2 Two-Way SSL](#232-two-way-ssl)
+  * [2.4 Import Trusted Certificates to Truststores](#24-import-trusted-certificates-to-truststores)
+    * [2.4.1 Import Trusted Sign Certificates](#241-import-trusted-sign-certificates)
+    * [2.4.2 Import Trusted TLS Certificates](#242-import-trusted-tls-certificates)
+  * [2.5 Export Certificates from Keystores](#25-export-certificates-from-keystores)
+    * [2.5.1 Export Sign Certificates](#251-export-sign-certificates)
+    * [2.5.2 Export TLS Certificates](#252-export-tls-certificates)
+  * [2.6 Create Plugin Users](#26-create-plugin-users)
+* [3. Example Configuration](#3-example-configuration)
+  * [3.1 Prerequisites](#31-prerequisites)
+  * [3.2 PMode Configuration](#32-pmode-configuration)
+  * [3.3 Create Plugin Users](#33-create-plugin-users)
+    * [3.3.1 Access Point 1](#331-access-point-1)
+    * [3.3.2 Access Point 2](#332-access-point-2)
+  * [3.4 Export Certificates](#34-export-certificates)
+    * [3.4.1 Access Point 1](#341-access-point-1)
+    * [3.4.2 Access Point 2](#342-access-point-2)
+  * [3.5 Import Certificates](#35-import-certificates)
+    * [3.5.1 Access Point 1](#351-access-point-1)
+    * [3.5.2 Access Point 2](#352-access-point-2)
+  * [3.6 Configure One-Way SSL](#36-configure-one-way-ssl)
+  * [3.7 Apply Changes](#37-apply-changes)
+  * [3.8 Send Test Message](#38-send-test-message)
+
+<!-- vim-markdown-toc -->
+
 ## 1 Introduction
 
 Harmony eDelivery Access supports static and dynamic discovery. This document describes configuration of participants and services for static discovery. This guide is divided in two different sections, a configuration guide and a practical configuration example.
@@ -98,12 +103,31 @@ Also, completing the configuration steps require command line access with root p
 
 The table below gives an overview of different keystore and truststore files that are accessed during the configuration process.
 
-| **Keystore/truststore file** | **Password location** | **Password property** | **Description** |
-|---|---|---|---|
-| `/etc/harmony-ap/ap-keystore.jks` | `/etc/harmony-ap/domibus.properties` | `domibus.security.keystore.password` | Keystore for sign key and certificate. |
-| `/etc/harmony-ap/ap-truststore.jks` | `/etc/harmony-ap/domibus.properties` | `domibus.security.truststore.password` | Truststore for trusted public sign certificates. |
-| `/etc/harmony-ap/tls-keystore.jks` | `/etc/harmony-ap/tomcat-conf/server.xml` | `keystorePass` | Keystore for TLS key and certificate. |
+| **Keystore/truststore file**         | **Password location**                    | **Password property** | **Description** |
+|--------------------------------------|------------------------------------------|-----------------------|----------------- |
+| `/etc/harmony-ap/ap-keystore.jks`    | `/etc/harmony-ap/domibus.properties`     | `domibus.security.keystore.password` | Keystore for sign key and certificate. |
+| `/etc/harmony-ap/ap-truststore.jks`  | `/etc/harmony-ap/domibus.properties`     | `domibus.security.truststore.password` | Truststore for trusted public sign certificates. |
+| `/etc/harmony-ap/tls-keystore.jks`   | `/etc/harmony-ap/tomcat-conf/server.xml` | `keystorePass` | Keystore for TLS key and certificate. |
 | `/etc/harmony-ap/tls-truststore.jks` | `/etc/harmony-ap/tomcat-conf/server.xml` | `truststorePass` | Truststore for trusted public TLS certificates. |
+
+
+#### Note about Using Harmony Access Point Container Version
+
+Harmony Access Point configuration is located at `/var/opt/harmony-ap/etc` instead of `/etc/harmony-ap` (for convinience, `/etc/harmony-ap` is a symbolic link to that directory).
+
+The commands in the guide need to be executed inside the container. For example:
+
+```bash
+sudo keytool -keystore /etc/harmony-ap/ap-keystore.jks -storepass <ap_keystore_password> -list
+```
+
+Can be run inside the container with [`docker exec`](https://docs.docker.com/engine/reference/commandline/exec/) (using "sudo" in the container is unnecessary):
+
+```bash
+docker exec -it <container name> keytool -keystore /etc/harmony-ap/ap-keystore.p12 -storepass <ap_keystore_password> -list
+```
+
+If editing configuration files manually is needed, files can be copied to/from a container using [`docker cp`](https://docs.docker.com/engine/reference/commandline/cp/).
 
 ### 2.2 Change the Sign Key Alias
 
@@ -149,11 +173,9 @@ section of the Harmony Access Point UI. The alias is updated using the command b
 sudo keytool -changealias -alias "selfsigned" -destalias "<party_name>" -keypass <ap_keystore_password> -keystore /etc/harmony-ap/ap-keystore.jks -storepass <ap_keystore_password>
 ```
 
-Restart the `harmony-ap` service to apply the change:
-
-```bash
-sudo systemctl restart harmony-ap
-```
+Using the UI, reload the keystore to apply the changes:
+1. Click Certificates/Keystores
+2. Click "Reload KeyStore"
 
 Also, the `domibus.security.key.private.alias` property must be updated with the new alias. The property value can 
 be updated following the steps below:
@@ -200,8 +222,14 @@ are used, the value of the `disableCNCheck` attribute might need to be set to `t
 
 Restart the `harmony-ap` service to apply the changes:
 
+Ubuntu:
 ```bash
 sudo systemctl restart harmony-ap
+```
+
+Docker container:
+```bash
+docker restart <container name>
 ```
 
 #### 2.3.2 Two-Way SSL
@@ -252,8 +280,14 @@ backend interface. In practise, after the change Two-Way SSL is required for the
 
 Restart the `harmony-ap` service to apply the changes:
 
+Ubuntu:
 ```bash
 sudo systemctl restart harmony-ap
+```
+
+Docker container:
+```bash
+docker restart <container name>
 ```
 
 ### 2.4 Import Trusted Certificates to Truststores
