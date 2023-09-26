@@ -1,6 +1,6 @@
 # Harmony eDelivery Access - Dynamic Discovery Configuration Guide <!-- omit in toc -->
 
-Version: 1.7  
+Version: 1.8  
 Doc. ID: UG-DDCG
 
 ---
@@ -17,6 +17,7 @@ Doc. ID: UG-DDCG
  22.05.2023 | 1.5     | Update references                                                           | Petteri Kivimäki
  04.08.2023 | 1.6     | Update DomiSMP Admin Guide link                                             | Petteri Kivimäki
  08.08.2023 | 1.7     | Updates for SMP version 2.0                                                 | Jarkko Hyöty
+ 14.09.2023 | 1.8     | Default to PKCS12 keystores                                                 | Jarkko Hyöty
 
 ## License <!-- omit in toc -->
 
@@ -203,7 +204,7 @@ Before starting the dynamic discovery configuration process, please complete the
 
 ### 3.2 Keys and Certificates
 
-To register SMP to SML the following certificates with private keys are needed and must be present in the SMP sign keystore (`/etc/harmony-smp/smp-keystore.jks`):
+To register SMP to SML the following certificates with private keys are needed and must be present in the SMP sign keystore (`/etc/harmony-smp/smp-keystore.p12`):
 
 - Client certificate and private key for TLS connections to SML ("SML ClientCert" in the SMP UI).
 - Metadata signing certificate and private key for signing service metadata ("Response signature Certificate" in the SMP UI).
@@ -211,7 +212,7 @@ To register SMP to SML the following certificates with private keys are needed a
 Technically, it's possible to use the same key as an SML client certificate and a response signature certificate. By default, 
 a self-signed sign certificate with a private key that are automatically generated during the installation process are
 available in the SMP sign keystore. Also, a self-signed TLS certificate with a private key are automatically generated
-during the installation process. They're available in the TLS keystore (`/etc/harmony-smp/tls-keystore.jks`).
+during the installation process. They're available in the TLS keystore (`/etc/harmony-smp/tls-keystore.p12`).
 
 Certificates used by the SMP must be trusted by the SML and Access Points using the SMP (=Access Points in a sending role). 
 The SMP sign keystore can be managed in the SMP admin UI by clicking the "Edit keystore" button under the "Domain" section. 
@@ -230,7 +231,7 @@ Instead, the SMP TLS keystore can be managed on command line only. The password 
 the `/etc/harmony-smp/tomcat-conf/server.xml` file in the `keystorePass` property. 
 
 The TLS certificate used by the SML must be trusted by the SMP. It means that the SML's public TLS certificate 
-must be imported to the SMP's TLS truststore (`/etc/harmony-smp/tls-truststore.jks`). The password of the TLS truststore 
+must be imported to the SMP's TLS truststore (`/etc/harmony-smp/tls-truststore.p12`). The password of the TLS truststore 
 can be found in the `/etc/harmony-smp/tomcat-conf/server.xml` file in the `truststorePass` property.
 
 **Note:** The certificate requirements depend on the eDelivery policy domain. If you're not sure about the requirements, please 

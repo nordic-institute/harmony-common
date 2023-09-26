@@ -30,52 +30,52 @@
 # ---------------------------------- Keystore/Truststore -----------------------
 
 #The location of the keystore
-domibus.security.keystore.location=${domibus.config.location}/ap-keystore.jks
+domibus.security.keystore.location=${domibus.config.location}/ap-keystore.p12
 #The type of the used keystore
-domibus.security.keystore.type=jks
+domibus.security.keystore.type=pkcs12
 
 #The password used to load the keystore
-domibus.security.keystore.password={{keystorepass}}
+domibus.security.keystore.password=
 
 #Private key
 #The alias from the keystore of the private key
-domibus.security.key.private.alias={{partyname}}
+domibus.security.key.private.alias=
 
 #The private key password
-domibus.security.key.private.password={{keystorepass}}
+domibus.security.key.private.password=
 
 #Truststore
 #The location of the truststore
-domibus.security.truststore.location=${domibus.config.location}/ap-truststore.jks
+domibus.security.truststore.location=${domibus.config.location}/ap-truststore.p12
 
 #Type of the used truststore
-domibus.security.truststore.type=jks
+domibus.security.truststore.type=pkcs12
 
 #The password used to load the trustStore
-domibus.security.truststore.password={{truststorepass}}
+domibus.security.truststore.password=
 
 # ---------------------------------- Database ----------------------------------
 
 #Database server name
-domibus.database.serverName={{dbhost}}
+domibus.database.serverName=
 
 #Database port
-domibus.database.port={{dbport}}
+domibus.database.port=
 
 #General schema. Mandatory only if Domibus is configured in multi-tenancy mode.
 #domibus.database.general.schema=general_schema
 
 #Domibus schema. If Domibus is configured in multi-tenancy mode this property is used to define the schema for the default domain.
 #Please comment this property, if Domibus is configured in single-tenancy mode with Oracle database.
-domibus.database.schema={{dbschema}}
+domibus.database.schema=
 
 #Non-XA Datasource
 #MySQL
 #Connector/J 8.0.x
 domibus.datasource.driverClassName=com.mysql.cj.jdbc.Driver
-domibus.datasource.url=jdbc:mysql://${domibus.database.serverName}:${domibus.database.port}/${domibus.database.schema}?sslMode=disabled&allowPublicKeyRetrieval=true&useLegacyDatetimeCode=false&serverTimezone=UTC
-domibus.datasource.user={{dbuser}}
-domibus.datasource.password={{dbpassword}}
+domibus.datasource.url=jdbc:mysql://${domibus.database.serverName}:${domibus.database.port}/${domibus.database.schema}?sslMode=preferred&allowPublicKeyRetrieval=true&useLegacyDatetimeCode=false&serverTimezone=UTC
+domibus.datasource.user=
+domibus.datasource.password=
 domibus.datasource.idleTimeout=600
 domibus.datasource.maxLifetime=1800
 domibus.datasource.minimumIdle=5
@@ -234,10 +234,10 @@ domibus.passwordPolicy.defaultUser.create=false
 # ---------------------------------- Dynamic Discovery -------------------------
 
 #Whether to use dynamic discovery or not
-domibus.dynamicdiscovery.useDynamicDiscovery={{dynamicdiscovery}}
+domibus.dynamicdiscovery.useDynamicDiscovery=
 
 #The SML zone
-domibus.smlzone={{smlzone}}
+domibus.smlzone=
 
 #The dynamic discovery client to be used for the dynamic process. Possible values: OASIS and PEPPOL. Defaults to OASIS.
 #domibus.dynamicdiscovery.client.specification=OASIS

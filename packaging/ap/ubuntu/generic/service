@@ -4,12 +4,14 @@ After=network.target
 
 [Service]
 Type=forking
+AmbientCapabilities=CAP_NET_BIND_SERVICE
+TasksMax=infinity
 
 PIDFile=/run/harmony-ap/harmony-ap.pid
 Environment=CATALINA_PID=/run/harmony-ap/harmony-ap.pid
 Environment=CATALINA_TMPDIR=/var/tmp/harmony-ap
 Environment=CATALINA_HOME=/opt/harmony-ap
-Environment=CATALINA_BASE=/opt/harmony-ap
+Environment=CATALINA_BASE=/var/opt/harmony-ap
 Environment=CATALINA_OUT=/var/log/harmony-ap/catalina.out
 Environment='CATALINA_OPTS=-Xms256M -Xmx512M -server -XX:+UseParallelGC'
 Environment='JAVA_OPTS=-Djava.awt.headless=true -Djava.security.egd=file:/dev/urandom'
