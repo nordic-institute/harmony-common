@@ -117,6 +117,7 @@ case "$1" in
     sed -i "/source \/opt\/harmony-ap\/bin\/setjavahome.sh/d" /opt/harmony-ap/bin/startup.sh    
   fi
 
+
   db_get harmony-ap/adminuser
   ADMIN_USER="$RET"
   db_get harmony-ap/adminpassword
@@ -327,6 +328,12 @@ changeLogFile:/opt/harmony-ap/db/db.changelog.xml") \
       sed -i -E 's|(<Host name="localhost")|\1 workDir="/var/opt/harmony-ap/tomcat"|' /etc/harmony-ap/tomcat-conf/server.xml
     fi
     mv /opt/harmony-ap/work /var/opt/harmony-ap/
+  fi
+
+  if [[ -n $2 ]] && dpkg --compare-versions "$2" lt "2.2.0"; then
+    xmlstarlet edit --pf --inplace \
+      --update '//Host[@appBase="webapps"]/@appBase' --value "/opt/harmony-ap/webapps" \
+      /etc/harmony-ap/tomcat-conf/server.xml
   fi
 
   mkdir -m 0750 -p /run/harmony-ap /var/tmp/harmony-ap /var/opt/harmony-ap/work /var/opt/harmony-ap/tomcat
