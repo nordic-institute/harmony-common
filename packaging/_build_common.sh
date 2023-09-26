@@ -38,15 +38,18 @@ prepare_commonbin() {
   rm commonbin/tomcat9/conf/server.xml
 
   # explode domibus war
-  rm -rf commonbin/harmony-ap
-  mkdir -p commonbin/harmony-ap
-  unzip -q "$HARMONY_AP_REPO_PATH/Tomcat/Domibus-MSH-tomcat-distribution/target/harmony-MSH-tomcat-distribution-$APVERSION.war" -d commonbin/harmony-ap
-  # copy ws plugin jar
-  cp "$HARMONY_AP_REPO_PATH/Plugin-WS/Domibus-default-ws-plugin/target/harmony-default-ws-plugin-$APVERSION.jar" commonbin/ws-plugin.jar
+  if [[ -d $HARMONY_AP_REPO_PATH ]]; then
+    rm -rf commonbin/harmony-ap
+    mkdir -p commonbin/harmony-ap
+    unzip -q "$HARMONY_AP_REPO_PATH/Tomcat/Domibus-MSH-tomcat-distribution/target/harmony-MSH-tomcat-distribution-$APVERSION.war" -d commonbin/harmony-ap
+    # copy ws plugin jar
+    cp "$HARMONY_AP_REPO_PATH/Plugin-WS/Domibus-default-ws-plugin/target/harmony-default-ws-plugin-$APVERSION.jar" commonbin/ws-plugin.jar
+  fi
 
-  # cleanup
-  rm -rf commonbin/harmony-smp
   # explode smp war
-  mkdir -p commonbin/harmony-smp
-  unzip -q "$HARMONY_SMP_REPO_PATH/smp-webapp/target/harmonysmp.war" -d commonbin/harmony-smp
+  if [[ -d $HARMONY_SMP_REPO_PATH ]]; then
+    rm -rf commonbin/harmony-smp
+    mkdir -p commonbin/harmony-smp
+    unzip -q "$HARMONY_SMP_REPO_PATH/smp-webapp/target/harmonysmp.war" -d commonbin/harmony-smp
+  fi
 }
