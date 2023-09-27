@@ -20,7 +20,7 @@ Doc. ID: IG-AP
  01.06.2023 | 1.8     | Add more information about allowed characters in certificates                                                                                               | Petteri Kivimäki
  22.06.2023 | 1.9     | Add a note about the default password expiration policy                                                                                                     | Petteri Kivimäki
  17.08.2023 | 1.10    | Update system requirements                                                                                                                                  | Jarkko Hyöty
- 14.09.2023 | 1.11    | Default to PKCS12 keystores                                                                                                                                 | Jarkko Hyöty
+ 14.09.2023 | 1.11    | Use PKCS12 keystores by default                                                                                                                             | Jarkko Hyöty
 
 ## License <!-- omit in toc -->
 
@@ -220,7 +220,7 @@ Upon the first installation of the Access Point, the system asks for the followi
 
 See the Static Discovery Configuration Guide \[[UG-SDCG](static_discovery_configuration_guide.md)\] and the Dynamic Discovery Configuration Guide \[[UG-DDCG](dynamic_discovery_configuration_guide.md)\] for more information about how to configure different discovery options.
 
-#### Configuring the Bouncy Castle cryptography provider preference order
+#### (Optional) Configuring the Bouncy Castle cryptography provider preference order
 
 The property `domibus.security.bc.provider.order` in `/etc/harmony-ap/domibus.properties` can be used to set the preference order of the [Bouncy Castle](https://www.bouncycastle.org/java.html) [Java Cryptography Architecture](https://docs.oracle.com/en/java/javase/11/security/java-cryptography-architecture-jca-reference-guide.html) cryptography provider. The preference order is the order in which security providers are searched for algorithms. The Bouncy Castle provider provides alternative implementations and some additional algorithms compared to the OpenJDK standard providers.
 
