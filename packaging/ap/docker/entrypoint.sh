@@ -22,7 +22,9 @@ if [[ $1 == "help" ]]; then
   DB_SCHEMA                        harmony_ap
   DB_USER                          harmony_ap
   DB_PASSWORD                      *required*
-
+  USE_DYNAMIC_DISCOVERY            false
+  SML_ZONE                         *empty*
+  
   MAX_MEM                          512m
 
   # The following params can not be set once written to config:
@@ -35,8 +37,6 @@ if [[ $1 == "help" ]]; then
   TLS_KEYSTORE_PASSWORD            *random*
   TLS_KEYSTORE_FILE                ${HARMONY_BASE}/etc/tls-keystore.p12
   TLS_TRUSTSTORE_PASSWORD          *random*
-  USE_DYNAMIC_DISCOVERY            false
-  SML_ZONE                         *empty*
   ADMIN_USER                       harmony
   ADMIN_PASSWORD                   *random*
 __EOF
@@ -98,7 +98,7 @@ if [[ -n ${HARMONY_PARAM_FILE:-} && -f $HARMONY_PARAM_FILE ]]; then
 fi
 
 CONF_VERSION=
-[[ -f $HARMONY_BASE/HARMONY_VERSION ]] && read -r CONF_VERSION <$HARMONY_BASE/HARMONY_VERSION
+[[ -f $HARMONY_BASE/etc/HARMONY_VERSION ]] && read -r CONF_VERSION <$HARMONY_BASE/etc/HARMONY_VERSION
 
 [[ $INIT != true ]] && log "Staring Harmony Access Point version ${HARMONY_VERSION:-UNDEFINED}..."
 
@@ -107,6 +107,9 @@ DB_HOST="${DB_HOST:-$(get_prop 'domibus.database.serverName')}"
 DB_PORT="${DB_PORT:-$(get_prop 'domibus.database.port' '3306')}"
 DB_USER="${DB_USER:-$(get_prop 'domibus.datasource.user' 'harmony_ap')}"
 DB_PASSWORD="${DB_PASSWORD:-$(get_prop 'domibus.datasource.password')}"
+USE_DYNAMIC_DISCOVERY="${USE_DYNAMIC_DISCOVERY:-$(get_prop domibus.dynamicdiscovery.useDynamicDiscovery false)}"
+SML_ZONE="${SML_ZONE:-$(get_prop domibus.smlzone)}"
+
 TLS_TRUSTSTORE_PASSWORD=$(get_tomcat_prop truststorePass "${TLS_TRUSTSTORE_PASSWORD:-}")
 
 if [[ -z $DB_HOST || -z $DB_PASSWORD ]]; then
@@ -148,8 +151,8 @@ if [[ $INIT = "true" || $HARMONY_VERSION != "$CONF_VERSION" || ! -f ${HARMONY_BA
   else
     log "Applying database migrations..."
     export LIQUIBASE_HOME=${HARMONY_HOME}/liquibase
-    export URL="jdbc:mysql://$DB_HOST:$DB_PORT/$DB_SCHEMA"
     export LIQUIBASE_SHOW_BANNER=false
+    URL="jdbc:mysql://$DB_HOST:$DB_PORT/$DB_SCHEMA"
     _AUSER="${ADMIN_USER:-harmony}"
     _APASSWORD="${ADMIN_PASSWORD:-$(openssl rand -base64 12)}"
     HASHEDPASSWORD=$(java -cp "${HARMONY_HOME}/webapps/ROOT/WEB-INF/lib/*" \
@@ -173,8 +176,6 @@ changeLogFile:db.changelog.xml") \
   PARTY_NAME="$(get_prop domibus.security.key.private.alias "${PARTY_NAME:-selfsigned}")"
   SERVER_FQDN="${SERVER_FQDN:-$(hostname -f)}"
   SERVER_DN="${SERVER_DN:-CN=$SERVER_FQDN}"
-  SML_ZONE="$(get_prop domibus.smlzone "${SML_ZONE:-}")"
-  USE_DYNAMIC_DISCOVERY=$(get_prop domibus.dynamicdiscovery.useDynamicDiscovery "${USE_DYNAMIC_DISCOVERY:-false}")
 
   SECURITY_KEYSTORE_PASSWORD="$(get_prop domibus.security.keystore.password "${SECURITY_KEYSTORE_PASSWORD:-$(openssl rand -base64 12)}")"
   SECURITY_TRUSTSTORE_PASSWORD="$(get_prop domibus.security.truststore.password "${SECURITY_TRUSTSTORE_PASSWORD:-$(openssl rand -base64 12)}")"
@@ -260,7 +261,7 @@ changeLogFile:db.changelog.xml") \
   set_prop domibus.dynamicdiscovery.useDynamicDiscovery "${USE_DYNAMIC_DISCOVERY:-false}"
   set_prop domibus.smlzone "${SML_ZONE:-}"
 
-  [[ $_DB_AVAILABLE == "true" ]] && echo "$HARMONY_VERSION" >$HARMONY_BASE/HARMONY_VERSION
+  [[ $_DB_AVAILABLE == "true" ]] && echo "$HARMONY_VERSION" >$HARMONY_BASE/etc/HARMONY_VERSION
   log "Configuration done"
 else
   # always update database properies to make it possible to rotate DB credentials
@@ -269,6 +270,8 @@ else
   [[ -n $DB_SCHEMA   ]] && set_prop 'domibus.database.schema'     "$DB_SCHEMA"
   [[ -n $DB_USER     ]] && set_prop 'domibus.datasource.user'     "$DB_USER"
   [[ -n $DB_PASSWORD ]] && set_prop 'domibus.datasource.password' "$DB_PASSWORD"
+  [[ -n $SML_ZONE    ]] && set_prop 'domibus.smlzone'             "$SML_ZONE"
+  [[ -n $USE_DYNAMIC_DISCOVERY ]] && set_prop 'domibus.dynamicdiscovery.useDynamicDiscovery' "$USE_DYNAMIC_DISCOVERY"
 fi
 
 if [[ $INIT = "true" ]]; then

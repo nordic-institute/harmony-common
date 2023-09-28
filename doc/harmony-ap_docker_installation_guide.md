@@ -7,9 +7,9 @@ Doc. ID: IG-AP-D
 
 ## Version history <!-- omit in toc -->
 
- Date       | Version | Description                                                  | Author
- ---------- |---------|--------------------------------------------------------------| --------------------
- 05.09.2023 | 1.0     | Initial version                                              | Jarkko Hyöty
+Date       | Version | Description                                                  | Author
+---------- |---------|--------------------------------------------------------------| --------------------
+26.09.2023 | 1.0     | Initial version                                              | Jarkko Hyöty
 
 ## License <!-- omit in toc -->
 
@@ -134,9 +134,9 @@ See the Static Discovery Configuration Guide \[[UG-SDCG](static_discovery_config
   | DB_USER                        | harmony_ap | Database user
   | DB_PASSWORD                    | *required* | Database password
   | MAX_MEM                        | 512m       | Maximum (Java) heap for the application
-  | PARTY_NAME*                    | selfsigned | Party name of the Access Point owner organisation
-  | SERVER_FQDN*                   | *hostname* | Fully qualified domain name for the TLS certificate.
-  | SERVER_DN*                     | CN=*SERVER_FQDN* | TLS certificate subject DN. If omitted, derived from the FQDN.
+  | PARTY_NAME\*                   | selfsigned | Party name of the Access Point owner organisation
+  | SERVER_FQDN\*                  | *hostname* | Fully qualified domain name for the TLS certificate.
+  | SERVER_DN\*                    | CN=*SERVER_FQDN* | TLS certificate subject DN. If omitted, derived from the FQDN.
   | SECURITY_KEYSTORE_PASSWORD\*   | *random*   | Access Point keystore password \*\*
   | SECURITY_TRUSTSTORE_PASSWORD\* | *random*   | Access Point truststore password \*\*
   | TLS_KEYSTORE_PASSWORD\*        | *random*   | TLS keystore password \*\*
@@ -237,13 +237,19 @@ docker logs -f <container-name>
 
 ## Updating to a new version of the image
 
-Run a container from the new image attaching the data volume from the old container.
+Stop the old container and run a new container from the new image, attaching the data volume(s)
+from the old container.
 
+For example, assuming the container name is `harmony-ap`:
 ```bash
+docker stop harmony-ap
+docker rename harmony-ap harmony-ap-old
 docker run -d \
-  -v harmony-ap-data:/var/opt/harmony-ap \
-  -p 8443:8443
-  niis/harmony-ap:<version>
+  --name harmony-ap \
+  --volumes-from harmony-ap-old \
+  -p 8443:8443 \
+  niis/harmony-ap:<new_version>
+docker rm harmony-ap-old
 ```
 
 ## Docker compose example
@@ -254,7 +260,7 @@ The following example defines an Access Point and a database using [Docker compo
 # Example harmony-ap compose file
 services:
   harmony-ap:
-    image: niis/harmony-ap:2.1.0
+    image: niis/harmony-ap:2.2.0
     depends_on:
       - harmony-db
     environment:

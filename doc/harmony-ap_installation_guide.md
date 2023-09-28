@@ -1,6 +1,6 @@
 # Harmony eDelivery Access - Access Point Installation Guide <!-- omit in toc -->
 
-Version: 1.10  
+Version: 1.11  
 Doc. ID: IG-AP
 
 ---
@@ -20,6 +20,7 @@ Doc. ID: IG-AP
  01.06.2023 | 1.8     | Add more information about allowed characters in certificates                                                                                               | Petteri Kivimäki
  22.06.2023 | 1.9     | Add a note about the default password expiration policy                                                                                                     | Petteri Kivimäki
  17.08.2023 | 1.10    | Update system requirements                                                                                                                                  | Jarkko Hyöty
+ 14.09.2023 | 1.11    | Use PKCS12 keystores by default                                                                                                                             | Jarkko Hyöty
 
 ## License <!-- omit in toc -->
 
@@ -219,6 +220,12 @@ Upon the first installation of the Access Point, the system asks for the followi
 
 See the Static Discovery Configuration Guide \[[UG-SDCG](static_discovery_configuration_guide.md)\] and the Dynamic Discovery Configuration Guide \[[UG-DDCG](dynamic_discovery_configuration_guide.md)\] for more information about how to configure different discovery options.
 
+#### (Optional) Configuring the Bouncy Castle cryptography provider preference order
+
+The property `domibus.security.bc.provider.order` in `/etc/harmony-ap/domibus.properties` can be used to set the preference order of the [Bouncy Castle](https://www.bouncycastle.org/java.html) [Java Cryptography Architecture](https://docs.oracle.com/en/java/javase/11/security/java-cryptography-architecture-jca-reference-guide.html) cryptography provider. The preference order is the order in which security providers are searched for algorithms. The Bouncy Castle provider provides alternative implementations and some additional algorithms compared to the OpenJDK standard providers.
+
+By default (when the property is not defined), the provider is added to the last position. To match the behavior of the Domibus Access Point, the provider can be inserted at position `3`. However, that breaks standard PKCS12 keystores when using Java 11, and should only be used to resolve potential compatibility issues (no such issues are currently known). A restart of the harmony-ap is required after changing the property.
+
 ### 2.6 Starting harmony-ap Service and Enabling Automatic Startup 
 
 To start `harmony-ap` service issue the following command:
@@ -252,7 +259,7 @@ Custom plugins can be installed by following the steps below:
 
 1. stop the `harmony-ap` service (`sudo systemctl stop harmony-ap`);
 2. copy the custom plugin `jar` file to the plugins folder (`/etc/harmony-ap/plugins/lib`);
-3. copy the custom plugin configuration files to the config folder (`/etc/harmony-ap/plugins/lib/config`);
+3. copy the custom plugin configuration files to the config folder (`/etc/harmony-ap/plugins/config`);
 4. start the `harmony-ap` service (`sudo systemctl start harmony-ap`).
 
 See the Domibus Plugin Cookbook \[[PLUGIN_COOKBOOK](#Ref_PLUGIN_COOKBOOK)\] for more information on developing custom plugins.
@@ -278,10 +285,10 @@ During the installation process, multiple random passwords are generated.
 | **Password purpose** | **Password location** |
 |---|---|
 | Password for `harmony-ap` MySQL user | Configuration file: `/etc/harmony-ap/domibus.properties`<br /><br />Properties: `domibus.datasource.xa.property.password` and `domibus.datasource.password`. |
-| Content encryption keystore (`/etc/harmony-ap/ap-keystore.jks`) password | Configuration file: `/etc/harmony-ap/domibus.properties`<br /><br />Properties: `domibus.security.keystore.password` and `domibus.security.key.private.password`. Content of this keystore can be changed using the administrative UI. |
-| Content encryption truststore (`/etc/harmony-ap/ap-truststore.jks`) password | Configuration file: `/etc/harmony-ap/domibus.properties`<br /><br />Properties: `domibus.security.truststore.password`. Content of this keystore can be changed using the administrative UI. |
-| TLS keystore (`/etc/harmony-ap/tls-keystore.jks`) password | Configuration file: `/etc/harmony-ap/conf/server.xml`<br /><br />Property: `keystorePass` |
-| TLS truststore (`/etc/harmony-ap/tls-truststore.jks`) password | Configuration file: `/etc/harmony-ap/conf/server.xml`<br /><br />Property: `truststorePass` |
+| Content encryption keystore (`/etc/harmony-ap/ap-keystore.p12`) password | Configuration file: `/etc/harmony-ap/domibus.properties`<br /><br />Properties: `domibus.security.keystore.password` and `domibus.security.key.private.password`. Content of this keystore can be changed using the administrative UI. |
+| Content encryption truststore (`/etc/harmony-ap/ap-truststore.p12`) password | Configuration file: `/etc/harmony-ap/domibus.properties`<br /><br />Properties: `domibus.security.truststore.password`. Content of this keystore can be changed using the administrative UI. |
+| TLS keystore (`/etc/harmony-ap/tls-keystore.p12`) password | Configuration file: `/etc/harmony-ap/conf/server.xml`<br /><br />Property: `keystorePass` |
+| TLS truststore (`/etc/harmony-ap/tls-truststore.p12`) password | Configuration file: `/etc/harmony-ap/conf/server.xml`<br /><br />Property: `truststorePass` |
 
 ### 2.11 Log Files
 

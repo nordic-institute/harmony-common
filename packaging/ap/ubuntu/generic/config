@@ -4,27 +4,43 @@ get_prop() {
   local prop="$1";
   grep -m1 -Po "^${prop}\s*=\s*\K.*$" /etc/harmony-ap/domibus.properties 2>/dev/null || echo ""
 }
+
 . /usr/share/debconf/confmodule
 
 if [ "$1" = "configure" ] || [ "$1" = "reconfigure" ]; then
 
+  USEDYNAMIC="$(get_prop domibus.dynamicdiscovery.useDynamicDiscovery)"
+  if [[ -n "$USEDYNAMIC" ]]; then
+    db_set harmony-ap/usedynamicdiscovery "$USEDYNAMIC"
+  fi
   db_input high harmony-ap/usedynamicdiscovery
   db_go
 
   db_get harmony-ap/usedynamicdiscovery
-  USEDYNAMIC="$RET"
+  USEDYNAMIC="${RET}"
 
+  SML_ZONE="$(get_prop domibus.smlzone)"
+  if [[ -n "$SML_ZONE" ]]; then
+    db_set harmony-ap/smlzone "$SML_ZONE"
+  fi
   if [ "$USEDYNAMIC" = true ]; then
     db_input high harmony-ap/smlzone
+    db_go
   fi
 
   db_beginblock
   db_input high harmony-ap/adminuser || true
   db_input high harmony-ap/adminpassword || true
+  db_endblock
+  db_go
+
   db_input high harmony-ap/partyname || true
+  db_get harmony-ap/serverdn
+  if [[ -z $RET ]]; then
+    db_set harmony-ap/serverdn "CN=$(hostname -f)"
+  fi
   db_input high harmony-ap/serverdn || true
   db_input high harmony-ap/tomcatport || true
-  db_endblock
   db_go
 
   db_beginblock
@@ -63,5 +79,4 @@ if [ "$1" = "configure" ] || [ "$1" = "reconfigure" ]; then
 fi
 
 # TODO add some checking of values?
-
 db_stop
