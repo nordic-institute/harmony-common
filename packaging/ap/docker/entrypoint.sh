@@ -24,7 +24,7 @@ if [[ $1 == "help" ]]; then
   DB_PASSWORD                      *required*
   USE_DYNAMIC_DISCOVERY            false
   SML_ZONE                         *empty*
-  
+
   MAX_MEM                          512m
 
   # The following params can not be set once written to config:
@@ -32,6 +32,8 @@ if [[ $1 == "help" ]]; then
   PARTY_NAME                       selfsigned
   SERVER_FQDN                      *output of 'hostname -f'*
   SERVER_DN                        CN=*SERVER_FQDN*
+  SERVER_SAN                       DNS:*SERVER_FQDN*
+  SECURITY_DN                      CN=*PARTY_NAME*
   SECURITY_KEYSTORE_PASSWORD       *random*
   SECURITY_TRUSTSTORE_PASSWORD     *random*
   TLS_KEYSTORE_PASSWORD            *random*
@@ -141,6 +143,7 @@ if [[ $INIT = "true" || $HARMONY_VERSION != "$CONF_VERSION" || ! -f ${HARMONY_BA
   mkdir -p -m 0750 \
     "${HARMONY_BASE}/etc" \
     "${HARMONY_BASE}/etc/plugins" \
+    "${HARMONY_BASE}/etc/certs" \
     "${HARMONY_BASE}/conf" \
     "${HARMONY_BASE}/log" \
     "${HARMONY_BASE}/work"
@@ -176,6 +179,8 @@ changeLogFile:db.changelog.xml") \
   PARTY_NAME="$(get_prop domibus.security.key.private.alias "${PARTY_NAME:-selfsigned}")"
   SERVER_FQDN="${SERVER_FQDN:-$(hostname -f)}"
   SERVER_DN="${SERVER_DN:-CN=$SERVER_FQDN}"
+  SERVER_SAN="${SERVER_SAN:-DNS:$SERVER_FQDN}"
+  SECURITY_DN="${SECURITY_DN:-CN=$PARTY_NAME}"
 
   SECURITY_KEYSTORE_PASSWORD="$(get_prop domibus.security.keystore.password "${SECURITY_KEYSTORE_PASSWORD:-$(openssl rand -base64 12)}")"
   SECURITY_TRUSTSTORE_PASSWORD="$(get_prop domibus.security.truststore.password "${SECURITY_TRUSTSTORE_PASSWORD:-$(openssl rand -base64 12)}")"
@@ -187,7 +192,10 @@ changeLogFile:db.changelog.xml") \
   if [ ! -f ${HARMONY_BASE}/etc/ap-keystore.p12 ]; then
     log "Creating keystore..."
     keytool -storetype pkcs12 -genkeypair -keyalg RSA -alias "$PARTY_NAME" -keystore ${HARMONY_BASE}/etc/ap-keystore.p12 -storepass "$SECURITY_KEYSTORE_PASSWORD" \
-      -keypass "$SECURITY_KEYSTORE_PASSWORD" -validity 333 -keysize 3072 -dname "$SERVER_DN" 2>/dev/null
+      -keypass "$SECURITY_KEYSTORE_PASSWORD" -validity 333 -keysize 3072 -dname "$SECURITY_DN" 2>/dev/null
+
+    keytool -export -alias "$PARTY_NAME" -keystore ${HARMONY_BASE}/etc/ap-keystore.p12 -storepass "$SECURITY_KEYSTORE_PASSWORD" \
+      -file "$HARMONY_BASE/etc/certs/security-${PARTY_NAME}.cer"
   fi
 
   if [ ! -f ${HARMONY_BASE}/etc/ap-truststore.p12 ]; then
@@ -202,7 +210,11 @@ changeLogFile:db.changelog.xml") \
     log "Creating TLS keystore..."
     keytool -storetype pkcs12 -genkeypair -keyalg RSA -alias "$PARTY_NAME" \
       -keystore "${TLS_KEYSTORE_FILE}" -storepass "$TLS_KEYSTORE_PASSWORD" \
-      -validity 333 -keysize 3072 -dname "$SERVER_DN" 2>/dev/null
+      -validity 333 -keysize 3072 -dname "$SERVER_DN" -ext "SAN=$SERVER_SAN" 2>/dev/null
+
+    keytool -export -alias "$PARTY_NAME" \
+      -keystore "${TLS_KEYSTORE_FILE}" -storepass "$TLS_KEYSTORE_PASSWORD" \
+      -file "$HARMONY_BASE/etc/certs/tls-${PARTY_NAME}.cer"
   fi
 
   if [ ! -f ${HARMONY_BASE}/etc/tls-truststore.p12 ]; then

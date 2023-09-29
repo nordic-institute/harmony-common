@@ -114,7 +114,7 @@ case "$1" in
     set_prop 'domibus.payload.decompression.validation.active' 'true'
 
     # fix startup.sh ("source" does not work with sh)
-    sed -i "/source \/opt\/harmony-ap\/bin\/setjavahome.sh/d" /opt/harmony-ap/bin/startup.sh    
+    sed -i "/source \/opt\/harmony-ap\/bin\/setjavahome.sh/d" /opt/harmony-ap/bin/startup.sh
   fi
 
 
@@ -126,6 +126,10 @@ case "$1" in
   PARTY_NAME="$RET"
   db_get harmony-ap/serverdn
   SERVER_DN="$RET"
+  db_get harmony-ap/serversan
+  SERVER_SAN="$RET"
+  db_get harmony-ap/securitydn
+  SECURITY_DN="${RET:-$SERVER_DN}"
   db_get harmony-ap/tomcatport
   TOMCAT_PORT="${RET:-8443}"
 
@@ -137,10 +141,10 @@ case "$1" in
 
   if [ ! "$USE_DYNAMIC_DISCOVERY" = true ]; then
     USE_DYNAMIC_DISCOVERY=false
-  else 
+  else
     SML_ZONE="${SML_ZONE:-$(get_prop 'domibus.smlzone')}"
   fi
- 
+
   db_get harmony-ap/database-schema
   DB_SCHEMA="${RET:-$(get_prop 'domibus.database.schema' 'harmony_ap')}"
   db_get harmony-ap/database-host
@@ -227,6 +231,8 @@ changeLogFile:/opt/harmony-ap/db/db.changelog.xml") \
     PARTY_NAME="${PARTY_NAME:-selfsigned}"
     SERVER_FQDN="${SERVER_FQDN:-$(hostname -f)}"
     SERVER_DN="${SERVER_DN:-CN=$SERVER_FQDN}"
+    SERVER_SAN="${SERVER_SAN:-DNS:$SERVER_FQDN}"
+    SECURITY_DN="${SECURITY_DN:-CN=$PARTY_NAME}"
 
     SECURITY_KEYSTORE_PASSWORD="$(get_prop 'domibus.security.keystore.password' "$(openssl rand -base64 12)")"
     SECURITY_TRUSTSTORE_PASSWORD="$(get_prop 'domibus.security.truststore.password' "$(openssl rand -base64 12)")"
@@ -235,9 +241,15 @@ changeLogFile:/opt/harmony-ap/db/db.changelog.xml") \
     TLS_KEYSTORE_ALIAS="$(get_tomcat_prop 'keyAlias' "$PARTY_NAME")"
     TLS_TRUSTSTORE_PASSWORD="$(get_tomcat_prop 'trustStorePass' "$(openssl rand -base64 12)")"
 
+    mkdir /etc/harmony-ap/certs
     if [[ ! -f /etc/harmony-ap/ap-keystore.p12 ]]; then
-      keytool -storetype pkcs12 -genkeypair -keyalg RSA -alias "$PARTY_NAME" -keystore /etc/harmony-ap/ap-keystore.p12 -storepass "$SECURITY_KEYSTORE_PASSWORD" \
-        -keypass "$SECURITY_KEYSTORE_PASSWORD" -validity 333 -keysize 3072 -dname "$SERVER_DN" 2>/dev/null
+      keytool -storetype pkcs12 -genkeypair -keyalg RSA -alias "$PARTY_NAME" \
+        -keystore /etc/harmony-ap/ap-keystore.p12 -storepass "$SECURITY_KEYSTORE_PASSWORD" \
+        -keypass "$SECURITY_KEYSTORE_PASSWORD" -validity 333 -keysize 3072 \
+        -dname "$SECURITY_DN" 2>/dev/null
+
+      keytool -export -alias "$PARTY_NAME" -keystore /etc/harmony-ap/ap-keystore.p12 -storepass "$SECURITY_KEYSTORE_PASSWORD" \
+        -file "/etc/harmony-ap/certs/security-${PARTY_NAME}.cer" &>/dev/null
     fi
 
     if [[ ! -f /etc/harmony-ap/ap-truststore.p12 ]]; then
@@ -250,7 +262,12 @@ changeLogFile:/opt/harmony-ap/db/db.changelog.xml") \
     if [[ ! -f /etc/harmony-ap/tls-keystore.p12 ]]; then
       keytool -storetype pkcs12 -genkeypair -keyalg RSA -alias "$PARTY_NAME" \
         -keystore "/etc/harmony-ap/tls-keystore.p12" -storepass "$TLS_KEYSTORE_PASSWORD" \
-        -validity 333 -keysize 3072 -dname "$SERVER_DN" 2>/dev/null
+        -validity 333 -keysize 3072 -dname "$SERVER_DN" \
+        -ext "SAN=$SERVER_SAN" 2>/dev/null
+
+      keytool -export -alias "$PARTY_NAME" \
+        -keystore "/etc/harmony-ap/tls-keystore.p12" -storepass "$TLS_KEYSTORE_PASSWORD" \
+        -file "/etc/harmony-ap/certs/tls-${PARTY_NAME}.cer" &>/dev/null
     fi
 
     if [[ ! -f /etc/harmony-ap/tls-truststore.p12 ]]; then
@@ -294,7 +311,7 @@ changeLogFile:/opt/harmony-ap/db/db.changelog.xml") \
     set_prop domibus.security.key.private.alias     "$PARTY_NAME"
     set_prop domibus.security.key.private.password  "$SECURITY_KEYSTORE_PASSWORD"
     set_prop domibus.security.truststore.password   "$SECURITY_TRUSTSTORE_PASSWORD"
-    
+
     if [[ "$DB_HOST" == "localhost" ]]; then
       # disable encryption when using a local database
       set_prop_raw 'domibus.datasource.url' \
@@ -318,7 +335,7 @@ changeLogFile:/opt/harmony-ap/db/db.changelog.xml") \
     sed -i '1a . /opt/harmony-ap/bin/setjavahome.sh' /opt/harmony-ap/bin/setenv.sh
   fi
 
-  if [ -d /opt/harmony-ap/work ]; then 
+  if [ -d /opt/harmony-ap/work ]; then
     # move work directory to a new location
     mkdir -p /var/opt/harmony-ap
     sed -i \
@@ -343,8 +360,8 @@ changeLogFile:/opt/harmony-ap/db/db.changelog.xml") \
   # fix app folder permissions
   chown -R root:harmony-ap /opt/harmony-ap
   chmod -R -x,u=rwX,g=rX,o=X /opt/harmony-ap
-  chmod  ug+x /opt/harmony-ap/bin/*.sh 
-  
+  chmod  ug+x /opt/harmony-ap/bin/*.sh
+
   # nicer log directory permissions
   mkdir -p /var/log/harmony-ap
   chmod 1770 /var/log/harmony-ap
