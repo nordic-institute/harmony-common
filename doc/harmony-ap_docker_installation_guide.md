@@ -9,13 +9,13 @@ Doc. ID: IG-AP-D
 
 Date       | Version | Description                                                  | Author
 ---------- |---------|--------------------------------------------------------------| --------------------
-26.09.2023 | 1.0     | Initial version                                              | Jarkko Hyöty
+29.09.2023 | 1.0     | Initial version                                              | Jarkko Hyöty
 
 ## License <!-- omit in toc -->
 
 This document is licensed under the Creative Commons Attribution-ShareAlike 4.0 International License.
 To view a copy of this license, visit <https://creativecommons.org/licenses/by-sa/4.0/>
- 
+
 ## Table of Contents <!-- omit in toc -->
 
 <!-- vim-markdown-toc GFM -->
@@ -87,13 +87,13 @@ In  | Admin | Access Point | 8443\* | tcp | Source in the internal network<br />
 
 It is strongly recommended to protect the Access Point from unwanted access using a firewall (hardware or software based). The firewall can be applied to both incoming and outgoing connections depending on the security requirements of the environment where the Access Point is deployed. It is recommended to allow incoming traffic to specific ports only from explicitly defined sources using IP filtering. **Special attention should be paid with the firewall configuration since incorrect configuration may leave the Access Point vulnerable to exploits and attacks.**
 
-In addition, it's strongly recommended to use URL path filtering for the Access Point since the admin UI, backend interface and AS4 interface all run on the same port. 
+In addition, it's strongly recommended to use URL path filtering for the Access Point since the admin UI, backend interface and AS4 interface all run on the same port.
 
 | **URL Path** | **Description** |
 |--------------|-----------------|
 | `/`          | Admin UI for managing the Access Point. |
 | `/services/backend` |  Webservice interface (submit requests, pull messages) between the Access Point and backend. |
-| `/services/msh` | AS4 interface between Access Points. | 
+| `/services/msh` | AS4 interface between Access Points. |
 
 ## Access Point setup
 
@@ -137,16 +137,18 @@ See the Static Discovery Configuration Guide \[[UG-SDCG](static_discovery_config
   | PARTY_NAME\*                   | selfsigned | Party name of the Access Point owner organisation
   | SERVER_FQDN\*                  | *hostname* | Fully qualified domain name for the TLS certificate.
   | SERVER_DN\*                    | CN=*SERVER_FQDN* | TLS certificate subject DN. If omitted, derived from the FQDN.
+  | SERVER_SAN\*                   | DNS:*SERVER_FQDN*| TLS certificate subject alternative name. If omitted, derived from the FQDN.
+  | SECURITY_DN\*                  | CN=*PARTY_NAME* | Security (sign/encrypt) certificate subject DN. If omitted, derived from the party name.
   | SECURITY_KEYSTORE_PASSWORD\*   | *random*   | Access Point keystore password \*\*
   | SECURITY_TRUSTSTORE_PASSWORD\* | *random*   | Access Point truststore password \*\*
   | TLS_KEYSTORE_PASSWORD\*        | *random*   | TLS keystore password \*\*
   | TLS_TRUSTSTORE_PASSWORD\*      | *random*   | TLS truststore password \*\*
   | USE_DYNAMIC_DISCOVERY\*        | false      | Is dynamic discovery in use
-  | SML_ZONE\*                     | *n/a*      | SML zone that you want to use; if unsure, please contact the domain authority of the policy 
+  | SML_ZONE\*                     | *n/a*      | SML zone that you want to use; if unsure, please contact the domain authority of the policy
   | ADMIN_USER\*                   | harmony    | Initial admin user for admin UI
   | ADMIN_PASSWORD\*               | *random*   | Initial admin user password
   | HARMONY_PARAM_FILE             | *n/a*      | Path to (mapped) parameter file
-  
+
 \* Can be only set once when starting a container with empty configuration.  
 \*\* Use only [printable ASCII](https://en.wikipedia.org/wiki/ASCII#Printable_characters) characters in keystore passwords.
 
@@ -170,7 +172,7 @@ docker run --rm -it \
 
 #### Volumes
 
-For persisting Access Point runtime state (including e.g. the various keystores), 
+For persisting Access Point runtime state (including e.g. the various keystores),
 one should map a volume over `/var/opt/harmony-ap`.
 
 #### Advanced configuration
@@ -187,7 +189,7 @@ docker run --rm -it  \
 ```
 
 ```bash
-docker run --rm -it \ 
+docker run --rm -it \
   -v harmony-ap-data:/var/opt/harmony-ap \
   niis/harmony-ap:2.1.0 bash
 ```
@@ -210,7 +212,7 @@ docker run --name harmony-ap -d \
 
 The Access Point comes with one default plugin - the Web Service (WS) Plugin. See the WS Plugin documentation \[[WS_PLUGIN](#Ref_WS_PLUGIN)\] for more details.
 
-Additional plugins can be added by customizing the Harmony Access Point docker image. 
+Additional plugins can be added by customizing the Harmony Access Point docker image.
 
 See the [Docker documentation](https://docs.docker.com/build/building/packaging/) for more information about creating Docker images and the Domibus Plugin Cookbook \[[PLUGIN_COOKBOOK](#Ref_PLUGIN_COOKBOOK)\] for more information on developing custom plugins.
 
@@ -223,7 +225,7 @@ COPY custom-plugin.jar  /opt/harmony-ap/plugins/lib
 COPY custom-plugin.conf /opt/harmony-ap/plugins/config
 ```
 
-### Location of Configuration and Generated Passwords 
+### Location of Configuration and Generated Passwords
 
 Access Point configuration files are located below the `/var/opt/harmony-ap` directory. See the Domibus Administration Guide \[[DOMIBUS_ADMIN_GUIDE](#Ref_DOMIBUS_ADMIN_GUIDE)\] for more details.
 

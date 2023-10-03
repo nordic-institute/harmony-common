@@ -1,9 +1,9 @@
 #!/bin/bash
 MIN_VERSION="1.4.0"
 
-if [ "$1" = "upgrade" ]; then
+if [[ "$1" = "upgrade" ]]; then
   if dpkg --compare-versions "$MIN_VERSION" gt "$2"; then
-    echo -e "\nharmony-ap: ERROR: ** Upgrade from version $2 not supported. Upgrade first to version $MIN_VERSION. **\n" >&2
+    echo -e "\nharmony-ap: ERROR: Upgrade from version $2 not supported.\n    Upgrade first to version $MIN_VERSION or later.\n" >&2
     exit 1
   fi
 fi

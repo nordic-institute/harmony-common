@@ -1,4 +1,11 @@
 #!/bin/bash
+if [[ "$1" = "configure" && -n "$2" ]]; then
+  MIN_VERSION="1.4.0"
+  if dpkg --compare-versions "$MIN_VERSION" gt "$2"; then
+    echo "harmony-ap: ERROR: Upgrade from version $2 not supported." >&2
+    exit 1
+  fi
+fi
 
 get_prop() {
   local prop="$1";
@@ -8,6 +15,12 @@ get_prop() {
 . /usr/share/debconf/confmodule
 
 if [ "$1" = "configure" ] || [ "$1" = "reconfigure" ]; then
+
+  db_beginblock
+  db_input high harmony-ap/adminuser || true
+  db_input high harmony-ap/adminpassword || true
+  db_endblock
+  db_go
 
   USEDYNAMIC="$(get_prop domibus.dynamicdiscovery.useDynamicDiscovery)"
   if [[ -n "$USEDYNAMIC" ]]; then
@@ -28,18 +41,36 @@ if [ "$1" = "configure" ] || [ "$1" = "reconfigure" ]; then
     db_go
   fi
 
-  db_beginblock
-  db_input high harmony-ap/adminuser || true
-  db_input high harmony-ap/adminpassword || true
-  db_endblock
-  db_go
-
   db_input high harmony-ap/partyname || true
-  db_get harmony-ap/serverdn
-  if [[ -z $RET ]]; then
-    db_set harmony-ap/serverdn "CN=$(hostname -f)"
+  db_go
+  db_get harmony-ap/partyname
+  PARTY_NAME=$RET
+
+  if [[ ! -f /etc/harmony-ap/ap-keystore.jks && ! -f /etc/harmony-ap/ap-keystore.p12 ]]; then
+    db_get harmony-ap/securitydn
+    if [[ -z $RET ]]; then
+      db_set harmony-ap/securitydn "CN=$PARTY_NAME"
+    fi
+    db_input high harmony-ap/securitydn || true
+    db_go
   fi
-  db_input high harmony-ap/serverdn || true
+
+  if [[ ! -f /etc/harmony-ap/tls-keystore.jks && ! -f /etc/harmony-ap/tls-keystore.p12 ]]; then
+    db_get harmony-ap/serverdn
+    if [[ -z $RET ]]; then
+      db_set harmony-ap/serverdn "CN=$(hostname -f)"
+    fi
+    db_input high harmony-ap/serverdn || true
+    db_go
+
+    db_get harmony-ap/serversan
+    if [[ -z $RET ]]; then
+      db_set harmony-ap/serversan "DNS:$(hostname -f)"
+    fi
+    db_input high harmony-ap/serversan || true
+    db_go
+  fi
+
   db_input high harmony-ap/tomcatport || true
   db_go
 

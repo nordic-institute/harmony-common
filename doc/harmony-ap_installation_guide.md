@@ -20,7 +20,7 @@ Doc. ID: IG-AP
  01.06.2023 | 1.8     | Add more information about allowed characters in certificates                                                                                               | Petteri Kivimäki
  22.06.2023 | 1.9     | Add a note about the default password expiration policy                                                                                                     | Petteri Kivimäki
  17.08.2023 | 1.10    | Update system requirements                                                                                                                                  | Jarkko Hyöty
- 14.09.2023 | 1.11    | Use PKCS12 keystores by default                                                                                                                             | Jarkko Hyöty
+ 29.09.2023 | 1.11    | Use PKCS12 keystores by default. Update certificate DN configuration.                                                                                       | Jarkko Hyöty
 
 ## License <!-- omit in toc -->
 
@@ -193,30 +193,37 @@ sudo apt install harmony-ap
 
 Upon the first installation of the Access Point, the system asks for the following information.
 
-- do you want the Access Point installation to use dynamic discovery:
-  - if yes: SML zone that you want to use;
-  - if you're not sure about the correct value, please contact the domain authority of the policy domain where the Access Point is registered;
-  - the value can be edited later by changing the `domibus.smlzone` property in the `/etc/harmony-ap/domibus.properties` configuration file;
-- username of the administrative user - username to use to log in to administrative UI;
-- initial password for the administrative user;
-  - *note:* the default password expiration policy is 90 days and it applies to the administrative user too;
-- party name of the Access Point owner organisation;
-  - if you don't know the party name of the owner, use the default value (`selfsigned`);
-- `Distinguished Name` for generated self-signed content and transport certificates;
-  - for example:
+- Whether you want the Access Point installation to use dynamic discovery.
+  - If yes: SML zone that you want to use.
+  - If you're not sure about the correct value, please contact the domain authority of the policy domain where the Access Point is registered.
+  - The value can be edited later by changing the `domibus.smlzone` property in the `/etc/harmony-ap/domibus.properties` configuration file.
+- Username of the administrative user - username to use to log in to administrative UI.
+- Initial password for the administrative user.
+  - *Note:* the default password expiration policy is 90 days and it applies to the administrative user too.
+- Party name of the Access Point owner organisation.
+  - If you don't know the party name of the owner, use the default value (`selfsigned`).
+- *Distinguished Name* for generated self-signed content (security) certificate (see **Note1** and **Note2**).
+  - For example:
       ```bash
-      CN=example.com, O=My Organisation, C=FI
+      CN=org1_gw, O=My Organisation, C=FI
       ```
-  - the `Distinguished Name` (`DN`) uniquely identifies an entity in an X.509 certificate \[[RFC5280](#Ref_RFC5280)\]. The following attribute types are commonly found in the `DN`: `CN = Common name, O = Organization name, C = Country code`. It's recommended to use PrintableString characters \[[PS](#Ref_PS)\] in the attribute type values;
-  - *note:* different eDelivery policy domains may have different requirements for the `Distinguished Name`. If you're not sure about the requirements, please contact the domain authority of the policy domain where the Access Point is registered;
-- port number that the Access Point listens to. The default is `8443`;
-  - the Access Point admin UI, backend interface and AS4 interface all run on the defined port.
+- *Distinguished name* (DN) and *Subject alternative name* (SAN) for the generated self-signed server TLS certificate (see **Note1** and **Note2**).
+  - For example:
+    ```
+    CN=ap.example.org, O=My Organization, C=FI
+    SAN=DNS:ap.example.org
+    ```
+- Port number that the Access Point listens to. 
+  - The default is `8443`; Access Point admin UI, backend interface and AS4 interface all run on the defined port.
 - Access point database configuration. When using a local database, accept the defaults.
   - Database host. The default is `localhost`.
   - Database port.  The default is `3306`.
   - Database schema name. The default is `harmony_ap`.
   - Database user name. The default is `harmony_ap`.
   - Database password. There is no default. Leave blank to generate a random password when installing a local database.
+
+**Note1:** The *Distinguished Name* (`DN`) uniquely identifies an entity in an X.509 certificate \[[RFC5280](#Ref_RFC5280)\]. The following attribute types are commonly found in the `DN`: `CN = Common name, O = Organization name, C = Country code`. It's recommended to use PrintableString characters \[[PS](#Ref_PS)\] in the attribute type values.<br />
+**Note2:** Different eDelivery policy domains may have different requirements for the *Distinguished Name*. If you're not sure about the requirements, please contact the domain authority of the policy domain where the Access Point is registered.
 
 See the Static Discovery Configuration Guide \[[UG-SDCG](static_discovery_configuration_guide.md)\] and the Dynamic Discovery Configuration Guide \[[UG-DDCG](dynamic_discovery_configuration_guide.md)\] for more information about how to configure different discovery options.
 
