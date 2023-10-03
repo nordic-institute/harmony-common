@@ -149,7 +149,7 @@ See the Static Discovery Configuration Guide \[[UG-SDCG](static_discovery_config
   | ADMIN_PASSWORD\*               | *random*   | Initial admin user password
   | HARMONY_PARAM_FILE             | *n/a*      | Path to (mapped) parameter file
 
-\* Can be only set once when starting a container with empty configuration.
+\* Can be only set once when starting a container with empty configuration.  
 \*\* Use only [printable ASCII](https://en.wikipedia.org/wiki/ASCII#Printable_characters) characters in keystore passwords.
 
 The above configuration parameters can also be passed via a configuration file mapped in the container. The location of the file inside the container is defined using the HARMONY_PARAM_FILE environment variable. For example:
