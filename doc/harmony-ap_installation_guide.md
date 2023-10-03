@@ -193,29 +193,26 @@ sudo apt install harmony-ap
 
 Upon the first installation of the Access Point, the system asks for the following information.
 
-- Whether you want the Access Point installation to use dynamic discovery:
-  - if yes: SML zone that you want to use;
-  - if you're not sure about the correct value, please contact the domain authority of the policy domain where the Access Point is registered;
-  - the value can be edited later by changing the `domibus.smlzone` property in the `/etc/harmony-ap/domibus.properties` configuration file;
+- Whether you want the Access Point installation to use dynamic discovery.
+  - If yes: SML zone that you want to use.
+  - If you're not sure about the correct value, please contact the domain authority of the policy domain where the Access Point is registered.
+  - The value can be edited later by changing the `domibus.smlzone` property in the `/etc/harmony-ap/domibus.properties` configuration file.
 - Username of the administrative user - username to use to log in to administrative UI.
 - Initial password for the administrative user.
   - *Note:* the default password expiration policy is 90 days and it applies to the administrative user too.
-- Party name of the Access Point owner organisation;
-  - if you don't know the party name of the owner, use the default value (`selfsigned`).
-- *Distinguished Name* for generated self-signed content (security) certificate.
-  - for example:
+- Party name of the Access Point owner organisation.
+  - If you don't know the party name of the owner, use the default value (`selfsigned`).
+- *Distinguished Name* for generated self-signed content (security) certificate (see **Note1** and **Note2**).
+  - For example:
       ```bash
       CN=org1_gw, O=My Organisation, C=FI
       ```
-  - the *Distinguished Name* (`DN`) uniquely identifies an entity in an X.509 certificate \[[RFC5280](#Ref_RFC5280)\]. The following attribute types are commonly found in the `DN`: `CN = Common name, O = Organization name, C = Country code`. It's recommended to use PrintableString characters \[[PS](#Ref_PS)\] in the attribute type values;
-  - *Note:* different eDelivery policy domains may have different requirements for the *Distinguished Name*. If you're not sure about the requirements, please contact the domain authority of the policy domain where the Access Point is registered;
-- *Distinguished name* (DN) and *Subject alternative name* (SAN) for the generated self-signed server TLS certificate.
+- *Distinguished name* (DN) and *Subject alternative name* (SAN) for the generated self-signed server TLS certificate (see **Note1** and **Note2**).
   - For example:
     ```
     CN=ap.example.org, O=My Organization, C=FI
     SAN=DNS:ap.example.org
     ```
-  - *Note:* Different eDelivery policy domains may have different requirements for the server certificate. If you're not sure about the requirements, please contact the domain authority of the policy domain where the Access Point is registered;
 - Port number that the Access Point listens to. 
   - The default is `8443`; Access Point admin UI, backend interface and AS4 interface all run on the defined port.
 - Access point database configuration. When using a local database, accept the defaults.
@@ -224,6 +221,9 @@ Upon the first installation of the Access Point, the system asks for the followi
   - Database schema name. The default is `harmony_ap`.
   - Database user name. The default is `harmony_ap`.
   - Database password. There is no default. Leave blank to generate a random password when installing a local database.
+
+**Note1:** The *Distinguished Name* (`DN`) uniquely identifies an entity in an X.509 certificate \[[RFC5280](#Ref_RFC5280)\]. The following attribute types are commonly found in the `DN`: `CN = Common name, O = Organization name, C = Country code`. It's recommended to use PrintableString characters \[[PS](#Ref_PS)\] in the attribute type values.<br />
+**Note2:** Different eDelivery policy domains may have different requirements for the *Distinguished Name*. If you're not sure about the requirements, please contact the domain authority of the policy domain where the Access Point is registered.
 
 See the Static Discovery Configuration Guide \[[UG-SDCG](static_discovery_configuration_guide.md)\] and the Dynamic Discovery Configuration Guide \[[UG-DDCG](dynamic_discovery_configuration_guide.md)\] for more information about how to configure different discovery options.
 
