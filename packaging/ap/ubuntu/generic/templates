@@ -22,7 +22,15 @@ Description: Harmony Access Point administator initial password
 
 Template: harmony-ap/serverdn
 Type: string
-Description: Distinguished name of generated self-signed server certificate
+Description: Distinguished name of generated self-signed server TLS certificate
+
+Template: harmony-ap/serversan
+Type: string
+Description: Subject alternative name for server TLS certificate
+
+Template: harmony-ap/securitydn
+Type: string
+Description: Distinguished name of generated self-signed security (sign/encrypt) certificate
 
 Template: harmony-ap/partyname
 Type: string

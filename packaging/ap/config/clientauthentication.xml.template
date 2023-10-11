@@ -2,7 +2,6 @@
                                xmlns:http-conf="http://cxf.apache.org/transports/http/configuration"
                                xmlns:security="http://cxf.apache.org/configuration/security">
     <security:trustManagers>
-        <security:keyStore type="JKS" password="{{tls_truststore_password}}"
-                           file="/etc/harmony-ap/tls-truststore.jks"/>
+        <security:keyStore type="PKCS12" password="" file="/etc/harmony-ap/tls-truststore.p12"/>
     </security:trustManagers>
 </http-conf:tlsClientParameters>

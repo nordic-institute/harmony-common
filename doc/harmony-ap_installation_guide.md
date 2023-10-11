@@ -1,6 +1,6 @@
 # Harmony eDelivery Access - Access Point Installation Guide <!-- omit in toc -->
 
-Version: 1.10  
+Version: 1.11  
 Doc. ID: IG-AP
 
 ---
@@ -20,6 +20,7 @@ Doc. ID: IG-AP
  01.06.2023 | 1.8     | Add more information about allowed characters in certificates                                                                                               | Petteri Kivimäki
  22.06.2023 | 1.9     | Add a note about the default password expiration policy                                                                                                     | Petteri Kivimäki
  17.08.2023 | 1.10    | Update system requirements                                                                                                                                  | Jarkko Hyöty
+ 29.09.2023 | 1.11    | Use PKCS12 keystores by default. Update certificate DN configuration.                                                                                       | Jarkko Hyöty
 
 ## License <!-- omit in toc -->
 
@@ -192,24 +193,28 @@ sudo apt install harmony-ap
 
 Upon the first installation of the Access Point, the system asks for the following information.
 
-- do you want the Access Point installation to use dynamic discovery:
-  - if yes: SML zone that you want to use;
-  - if you're not sure about the correct value, please contact the domain authority of the policy domain where the Access Point is registered;
-  - the value can be edited later by changing the `domibus.smlzone` property in the `/etc/harmony-ap/domibus.properties` configuration file;
-- username of the administrative user - username to use to log in to administrative UI;
-- initial password for the administrative user;
-  - *note:* the default password expiration policy is 90 days and it applies to the administrative user too;
-- party name of the Access Point owner organisation;
-  - if you don't know the party name of the owner, use the default value (`selfsigned`);
-- `Distinguished Name` for generated self-signed content and transport certificates;
-  - for example:
+- Whether you want the Access Point installation to use dynamic discovery.
+  - If yes: SML zone that you want to use.
+  - If you're not sure about the correct value, please contact the domain authority of the policy domain where the Access Point is registered.
+  - The value can be edited later by changing the `domibus.smlzone` property in the `/etc/harmony-ap/domibus.properties` configuration file.
+- Username of the administrative user - username to use to log in to administrative UI.
+- Initial password for the administrative user.
+  - *Note:* the default password expiration policy is 90 days and it applies to the administrative user too.
+- Party name of the Access Point owner organisation.
+  - If you don't know the party name of the owner, use the default value (`selfsigned`).
+- *Distinguished Name* for generated self-signed content (security) certificate (see **Note1** and **Note2**).
+  - For example:
       ```bash
-      CN=example.com, O=My Organisation, C=FI
+      CN=org1_gw, O=My Organisation, C=FI
       ```
-  - the `Distinguished Name` (`DN`) uniquely identifies an entity in an X.509 certificate \[[RFC5280](#Ref_RFC5280)\]. The following attribute types are commonly found in the `DN`: `CN = Common name, O = Organization name, C = Country code`. It's recommended to use PrintableString characters \[[PS](#Ref_PS)\] in the attribute type values;
-  - *note:* different eDelivery policy domains may have different requirements for the `Distinguished Name`. If you're not sure about the requirements, please contact the domain authority of the policy domain where the Access Point is registered;
-- port number that the Access Point listens to. The default is `8443`;
-  - the Access Point admin UI, backend interface and AS4 interface all run on the defined port.
+- *Distinguished name* (DN) and *Subject alternative name* (SAN) for the generated self-signed server TLS certificate (see **Note1** and **Note2**).
+  - For example:
+    ```
+    CN=ap.example.org, O=My Organization, C=FI
+    SAN=DNS:ap.example.org
+    ```
+- Port number that the Access Point listens to. 
+  - The default is `8443`; Access Point admin UI, backend interface and AS4 interface all run on the defined port.
 - Access point database configuration. When using a local database, accept the defaults.
   - Database host. The default is `localhost`.
   - Database port.  The default is `3306`.
@@ -217,7 +222,16 @@ Upon the first installation of the Access Point, the system asks for the followi
   - Database user name. The default is `harmony_ap`.
   - Database password. There is no default. Leave blank to generate a random password when installing a local database.
 
+**Note1:** The *Distinguished Name* (`DN`) uniquely identifies an entity in an X.509 certificate \[[RFC5280](#Ref_RFC5280)\]. The following attribute types are commonly found in the `DN`: `CN = Common name, O = Organization name, C = Country code`. It's recommended to use PrintableString characters \[[PS](#Ref_PS)\] in the attribute type values.<br />
+**Note2:** Different eDelivery policy domains may have different requirements for the *Distinguished Name*. If you're not sure about the requirements, please contact the domain authority of the policy domain where the Access Point is registered.
+
 See the Static Discovery Configuration Guide \[[UG-SDCG](static_discovery_configuration_guide.md)\] and the Dynamic Discovery Configuration Guide \[[UG-DDCG](dynamic_discovery_configuration_guide.md)\] for more information about how to configure different discovery options.
+
+#### (Optional) Configuring the Bouncy Castle cryptography provider preference order
+
+The property `domibus.security.bc.provider.order` in `/etc/harmony-ap/domibus.properties` can be used to set the preference order of the [Bouncy Castle](https://www.bouncycastle.org/java.html) [Java Cryptography Architecture](https://docs.oracle.com/en/java/javase/11/security/java-cryptography-architecture-jca-reference-guide.html) cryptography provider. The preference order is the order in which security providers are searched for algorithms. The Bouncy Castle provider provides alternative implementations and some additional algorithms compared to the OpenJDK standard providers.
+
+By default (when the property is not defined), the provider is added to the last position. To match the behavior of the Domibus Access Point, the provider can be inserted at position `3`. However, that breaks standard PKCS12 keystores when using Java 11, and should only be used to resolve potential compatibility issues (no such issues are currently known). A restart of the harmony-ap is required after changing the property.
 
 ### 2.6 Starting harmony-ap Service and Enabling Automatic Startup 
 
@@ -252,7 +266,7 @@ Custom plugins can be installed by following the steps below:
 
 1. stop the `harmony-ap` service (`sudo systemctl stop harmony-ap`);
 2. copy the custom plugin `jar` file to the plugins folder (`/etc/harmony-ap/plugins/lib`);
-3. copy the custom plugin configuration files to the config folder (`/etc/harmony-ap/plugins/lib/config`);
+3. copy the custom plugin configuration files to the config folder (`/etc/harmony-ap/plugins/config`);
 4. start the `harmony-ap` service (`sudo systemctl start harmony-ap`).
 
 See the Domibus Plugin Cookbook \[[PLUGIN_COOKBOOK](#Ref_PLUGIN_COOKBOOK)\] for more information on developing custom plugins.
@@ -278,10 +292,10 @@ During the installation process, multiple random passwords are generated.
 | **Password purpose** | **Password location** |
 |---|---|
 | Password for `harmony-ap` MySQL user | Configuration file: `/etc/harmony-ap/domibus.properties`<br /><br />Properties: `domibus.datasource.xa.property.password` and `domibus.datasource.password`. |
-| Content encryption keystore (`/etc/harmony-ap/ap-keystore.jks`) password | Configuration file: `/etc/harmony-ap/domibus.properties`<br /><br />Properties: `domibus.security.keystore.password` and `domibus.security.key.private.password`. Content of this keystore can be changed using the administrative UI. |
-| Content encryption truststore (`/etc/harmony-ap/ap-truststore.jks`) password | Configuration file: `/etc/harmony-ap/domibus.properties`<br /><br />Properties: `domibus.security.truststore.password`. Content of this keystore can be changed using the administrative UI. |
-| TLS keystore (`/etc/harmony-ap/tls-keystore.jks`) password | Configuration file: `/etc/harmony-ap/conf/server.xml`<br /><br />Property: `keystorePass` |
-| TLS truststore (`/etc/harmony-ap/tls-truststore.jks`) password | Configuration file: `/etc/harmony-ap/conf/server.xml`<br /><br />Property: `truststorePass` |
+| Content encryption keystore (`/etc/harmony-ap/ap-keystore.p12`) password | Configuration file: `/etc/harmony-ap/domibus.properties`<br /><br />Properties: `domibus.security.keystore.password` and `domibus.security.key.private.password`. Content of this keystore can be changed using the administrative UI. |
+| Content encryption truststore (`/etc/harmony-ap/ap-truststore.p12`) password | Configuration file: `/etc/harmony-ap/domibus.properties`<br /><br />Properties: `domibus.security.truststore.password`. Content of this keystore can be changed using the administrative UI. |
+| TLS keystore (`/etc/harmony-ap/tls-keystore.p12`) password | Configuration file: `/etc/harmony-ap/conf/server.xml`<br /><br />Property: `keystorePass` |
+| TLS truststore (`/etc/harmony-ap/tls-truststore.p12`) password | Configuration file: `/etc/harmony-ap/conf/server.xml`<br /><br />Property: `truststorePass` |
 
 ### 2.11 Log Files
 

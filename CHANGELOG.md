@@ -1,5 +1,12 @@
 # Changelog
 
+## Access Point 2.2.0 - 2023-10-11
+
+- NEDS-110: Add support for running the Harmony Access Point in a Docker container.
+- NEDS-150: Change the Access Point default keystore type from JKS to PKCS12.
+- NEDS-151: Add support for defining the TLS certificate and security (sign + encryption) certificate Distinguished Name (DN) field values separately during the installation process.
+- NEDS-153: Update third party dependencies.
+
 ## Access Point and SMP - 2.1.0 - 2023-08-17
 
 - NEDS-133: Access Point: Support Ubuntu 22.04

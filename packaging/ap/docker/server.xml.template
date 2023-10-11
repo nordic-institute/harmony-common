@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<Server port="8005" shutdown="SHUTDOWN">
+<Server port="-1">
   <Listener className="org.apache.catalina.startup.VersionLoggerListener" logArgs="false" />
   <Listener className="org.apache.catalina.core.JreMemoryLeakPreventionListener" />
   <Listener className="org.apache.catalina.mbeans.GlobalResourcesLifecycleListener" />
@@ -15,29 +15,24 @@
       maxThreads="200"
       scheme="https"
       secure="true"
-      keystoreFile="/etc/harmony-ap/tls-keystore.p12"
+      keystoreFile="/var/opt/harmony-ap/etc/tls-keystore.p12"
       keystorePass=""
-      keyAlias=""
-      truststoreFile="/etc/harmony-ap/tls-truststore.p12"
+      truststoreFile="/var/opt/harmony-ap/etc/tls-truststore.p12"
       truststorePass=""
       clientAuth="want"
       sslProtocol="TLS"
       />
 
     <Engine name="Catalina" defaultHost="localhost">
-      <Host name="localhost"
-        appBase="/opt/harmony-ap/webapps"
+      <Host name="localhost" 
+        appBase="/opt/harmony-ap/webapps" 
         createDirs="false"
-        unpackWARs="false"
-        autoDeploy="false"
+        unpackWARs="false" 
+        autoDeploy="false" 
         workDir="/var/opt/harmony-ap/work">
 
         <Valve className="org.apache.catalina.valves.ErrorReportValve"
           showReport="false" showServerInfo="false" />
-
-        <Valve className="org.apache.catalina.valves.AccessLogValve" directory="/var/log/harmony-ap"
-               prefix="localhost_access_log" suffix=".txt"
-               pattern="%h %l %u %t &quot;%r&quot; %s %b" />
 
         <Context path="">
           <Manager pathname=""/>

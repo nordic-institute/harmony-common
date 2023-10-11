@@ -1,4 +1,27 @@
 #!/bin/bash
+MIN_VERSION="1.4.0"
+
+if [[ "$1" = "upgrade" ]]; then
+  if dpkg --compare-versions "$MIN_VERSION" gt "$2"; then
+    echo -e "\nharmony-ap: ERROR: Upgrade from version $2 not supported.\n    Upgrade first to version $MIN_VERSION or later.\n" >&2
+    exit 1
+  fi
+fi
+
 if [ "$1" = "upgrade" ]; then
   systemctl stop harmony-ap 2>/dev/null || true
+fi
+
+# Make sure the administrative user exists
+if ! getent passwd harmony-ap > /dev/null; then
+  adduser --system --quiet --no-create-home --shell /usr/sbin/nologin --group --gecos "Harmony user" harmony-ap
+fi
+# Check validity of user and group
+if [ "$(id -u harmony-ap)" -eq 0 ]; then
+    echo "The Harmony AP system user must not have uid 0 (root). Please fix this and reinstall this package." >&2
+    exit 1
+fi
+if [ "$(id -g harmony-ap)" -eq 0 ]; then
+    echo "The Harmony AP system user must not have root as primary group. Please fix this and reinstall this package." >&2
+    exit 1
 fi

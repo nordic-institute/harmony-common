@@ -4,7 +4,8 @@
 ../../../../../commonbin/tomcat9/bin/*.sh /opt/harmony-ap/bin/
 ../../../../../commonbin/tomcat9/bin/*.jar /opt/harmony-ap/bin/
 ../../../../../commonbin/tomcat9/lib/* /opt/harmony-ap/lib/
-../../../../../commonbin/tomcat9/conf/* /etc/harmony-ap/tomcat-conf/
+../../../../../commonbin/tomcat9/conf/web.xml /etc/harmony-ap/tomcat-conf/
+../../../../../commonbin/tomcat9/conf/catalina.properties /etc/harmony-ap/tomcat-conf/
 ../../../ap/config/logging.properties /etc/harmony-ap/tomcat-conf/
 ../../../ap/config/setenv.sh /opt/harmony-ap/setup/
 ../../../ap/config/setenv.sh.template /opt/harmony-ap/setup/
