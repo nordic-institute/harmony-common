@@ -41,15 +41,15 @@ buildInDocker() {
     echo "Building in docker..."
 
     # Build Docker image for compiling the code
-    docker build -q -f docker/Dockerfile-compile -t harmony-compile --build-arg uid=$(id -u) --build-arg gid=$(id -g) docker/
+    docker build -q -f docker/Dockerfile-build -t harmony-build --build-arg uid=$(id -u) --build-arg gid=$(id -g) docker/
 
     # Compile AP
     docker run -t --rm \
        --user builder \
        -v "$(pwd)/../harmony-access-point/":/mnt \
        -v harmony-mvn-cache:/home/builder/.m2 \
-       harmony-compile \
-       mvn clean -f pom.xml install "${AP_ARGUMENTS[@]}"
+       harmony-build \
+       /mnt/mvnw -f pom.xml --no-transfer-progress clean install "${AP_ARGUMENTS[@]}"
 
     # Compile SMP
     docker run -t --rm \
@@ -57,7 +57,7 @@ buildInDocker() {
        -v "$(pwd)/../harmony-smp/":/mnt \
        -v harmony-mvn-cache:/home/builder/.m2 \
        harmony-compile \
-       mvn clean -f pom.xml install "${SMP_ARGUMENTS[@]}"
+       /mnt/mvnw -f pom.xml --no-transfer-progress clean install "${SMP_ARGUMENTS[@]}"
 
     # Build Docker image for the build
     docker build -q -f docker/Dockerfile-build -t harmony-build --build-arg uid=$(id -u) --build-arg gid=$(id -g) docker/
