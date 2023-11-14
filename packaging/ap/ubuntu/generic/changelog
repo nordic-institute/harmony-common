@@ -1,3 +1,9 @@
+harmony-ap (2.2.1-0) stable; urgency=medium
+
+  * Update vulnerable dependencies
+
+ -- Nordic Institute for Interoperability Solutions (NIIS) <edelivery@niis.org>  Tue, 14 Nov 2023 12:09:06 +0200
+
 harmony-ap (2.2.0-0) stable; urgency=low
 
   * Container support

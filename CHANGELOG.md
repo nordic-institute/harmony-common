@@ -1,5 +1,9 @@
 # Changelog
 
+## Access Point 2.2.1 - 2023-11-14
+
+- NEDS-157: Update dependencies with known vulnerabilities
+
 ## Access Point 2.2.0 - 2023-10-11
 
 - NEDS-110: Add support for running the Harmony Access Point in a Docker container.
