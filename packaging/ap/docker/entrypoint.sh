@@ -244,6 +244,7 @@ changeLogFile:db.changelog.xml") \
 
   ln -sfn ${HARMONY_HOME}/plugins/lib ${HARMONY_BASE}/etc/plugins/
   cp -r -n ${HARMONY_HOME}/plugins/config ${HARMONY_BASE}/etc/plugins/
+  chmod -R u+rwX ${HARMONY_BASE}/etc/plugins/config
 
   xmlstarlet edit --pf --inplace \
     --update '//Connector[@SSLEnabled="true"]/@keystorePass' --value "$TLS_KEYSTORE_PASSWORD" \
