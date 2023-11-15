@@ -111,12 +111,14 @@ case "$1" in
     fi
 
     set_prop 'domibus.passwordPolicy.defaultUser.create' 'false'
-    set_prop 'domibus.payload.decompression.validation.active' 'true'
 
     # fix startup.sh ("source" does not work with sh)
     sed -i "/source \/opt\/harmony-ap\/bin\/setjavahome.sh/d" /opt/harmony-ap/bin/startup.sh
   fi
 
+  if [[ -n $2 && -f /etc/harmony-ap/domibus.properties ]] && dpkg --compare-versions "$2" lt "2.2.1"; then
+    set_prop 'domibus.payload.decompression.validation.active' 'false'
+  fi
 
   db_get harmony-ap/adminuser
   ADMIN_USER="$RET"

@@ -889,4 +889,4 @@ activeMQ.embedded.configurationFile=file:///${domibus.config.location}/internal/
 # --------------------------- Payload Decompression Validation -----------------------
 
 #Domibus validates decompressed payload if activated
-domibus.payload.decompression.validation.active=true
+domibus.payload.decompression.validation.active=false
