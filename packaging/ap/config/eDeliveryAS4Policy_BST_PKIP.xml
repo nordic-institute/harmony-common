@@ -40,7 +40,7 @@ local <wsse:BinarySecurityToken> element or a remote data source that contains t
                     <sp:SignBeforeEncrypting />
                     <sp:AlgorithmSuite>
                         <wsp:Policy>
-                            <sp-cxf:Basic128GCMSha256MgfSha256
+                            <sp-cxf:${algorithmSuitePlaceholder}
                                     xmlns:sp-cxf="http://e-delivery.eu/custom/security-policy"/>
                         </wsp:Policy>
                     </sp:AlgorithmSuite>
