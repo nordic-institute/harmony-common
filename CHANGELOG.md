@@ -1,5 +1,9 @@
 # Changelog
 
+## SMP - 2.1.1 - 2023-11-24
+
+- NEDS-164: Merge DomiSMP 5.0.1 into Harmony SMP code base
+
 ## Access Point 2.2.1 - 2023-11-14
 
 - NEDS-157: Update dependencies with known vulnerabilities
