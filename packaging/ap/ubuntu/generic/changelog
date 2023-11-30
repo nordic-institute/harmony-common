@@ -1,3 +1,9 @@
+harmony-ap (2.2.2-0) stable; urgency=medium
+
+  * New upstream Domibus release 5.1.1 
+
+ -- Nordic Institute for Interoperability Solutions (NIIS) <edelivery@niis.org>  Thu, 23 Nov 2023 14:19:15 +0200
+
 harmony-ap (2.2.1-0) stable; urgency=medium
 
   * Update vulnerable dependencies

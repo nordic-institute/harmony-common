@@ -39,10 +39,10 @@ A subject key identifier MAY only be used to reference an X.509v3 certificate.
                             <sp:Strict/>
                         </wsp:Policy>
                     </sp:Layout>
-                    <sp:SignBeforeEncrypting />
+                    <sp:SignBeforeEncrypting/>
                     <sp:AlgorithmSuite>
                         <wsp:Policy>
-                            <sp-cxf:Basic128GCMSha256MgfSha256
+                            <sp-cxf:${algorithmSuitePlaceholder}
                                     xmlns:sp-cxf="http://e-delivery.eu/custom/security-policy"/>
                         </wsp:Policy>
                     </sp:AlgorithmSuite>
@@ -65,9 +65,9 @@ A subject key identifier MAY only be used to reference an X.509v3 certificate.
             </sp:EncryptedParts>
             <sp:Wss11>
                 <wsp:Policy>
-                    <sp:MustSupportRefKeyIdentifier />
-                    <sp:MustSupportRefIssuerSerial />
-                    <sp:MustSupportRefEmbeddedToken />
+                    <sp:MustSupportRefKeyIdentifier/>
+                    <sp:MustSupportRefIssuerSerial/>
+                    <sp:MustSupportRefEmbeddedToken/>
                 </wsp:Policy>
             </sp:Wss11>
         </wsp:All>
