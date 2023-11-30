@@ -68,7 +68,13 @@
     <sqlFile dbms="mysql" relativeToChangelogFile="true" path="migrations/mysql-5.1.0-data.ddl"/>
   </changeSet>
 
-  <changeSet author="harmony" id="2.2.2">
+  <changeSet author="harmony" id="2.2.2-fix-constraint">
+    <sql dbms="mysql">
+      ALTER TABLE TB_EARCHIVEBATCH_UM DROP CONSTRAINT FK_EARCHIVE_BATCH_ID_FTR;
+      ALTER TABLE TB_EARCHIVEBATCH_UM ADD CONSTRAINT FK_EARCHIVE_BATCH_ID_FTR FOREIGN KEY (FK_EARCHIVE_BATCH_ID) REFERENCES TB_EARCHIVE_BATCH (ID_PK) ON DELETE CASCADE ON UPDATE RESTRICT;
+    </sql>
+  </changeSet>
+  <changeSet author="harmony" id="2.2.2-upgrade">
     <sqlFile dbms="mysql" relativeToChangelogFile="true" path="migrations/mysql-5.1-to-5.1.1-upgrade.ddl"/>
   </changeSet>
 
