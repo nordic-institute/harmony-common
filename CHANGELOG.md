@@ -5,7 +5,7 @@
 - NEDS-156: Fix constraint in AP database migrations
 - NEDS-159: Fix security assessment finding 5.2.1
 - NEDS-163: Merge Domibus 5.1.1 into Harmony Access Point
-- NEDS-166: Releease Harmony Access Point version 2.2.2
+- NEDS-166: Release Harmony Access Point version 2.2.2
 
 ## SMP - 2.1.1 - 2023-11-24
 
