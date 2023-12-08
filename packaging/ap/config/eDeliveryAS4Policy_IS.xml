@@ -43,7 +43,7 @@ its X.509 Issuer and Serial Number.
                     <sp:SignBeforeEncrypting />
                     <sp:AlgorithmSuite>
                         <wsp:Policy>
-                            <sp-cxf:Basic128GCMSha256MgfSha256
+                            <sp-cxf:${algorithmSuitePlaceholder}
                                     xmlns:sp-cxf="http://e-delivery.eu/custom/security-policy"/>
                         </wsp:Policy>
                     </sp:AlgorithmSuite>
