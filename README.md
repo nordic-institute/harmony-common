@@ -33,6 +33,8 @@ Please visit the Harmony eDelivery Access [website](https://edelivery.digital) f
 
 Harmony eDelivery Access release notes and additional support material are available in the [Harmony Knowledge Base](https://edelivery.digital/kb).
 
+The [open-source community of Harmony eDelivery Access](https://edelivery.digital/harmony-edelivery-access-community) is for anyone interested in Harmony. It's about learning from others and sharing skills and experiences. You are welcome to join the Harmony eDelivery Access Community Slack!
+
 ## Installation
 
 The easiest way to install Harmony is to use the installation packages provided by NIIS. The installation guides for Access Point and SMP are available here:
