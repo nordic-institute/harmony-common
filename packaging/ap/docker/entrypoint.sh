@@ -295,14 +295,13 @@ fi
 CATALINA_TMPDIR=/var/tmp/harmony-ap
 CATALINA_HOME=${HARMONY_HOME}
 CATALINA_BASE=${HARMONY_BASE}
-export JAVA_HOME=/usr/lib/jvm/java-11-openjdk-amd64
 
 # escape \ and " in the password
 _TLS_TRUSTSTORE_PASSWORD="${TLS_TRUSTSTORE_PASSWORD//\\/\\\\}"
 _TLS_TRUSTSTORE_PASSWORD="${_TLS_TRUSTSTORE_PASSWORD//\"/\\\"}"
 
 # @<(echo "...") is an on-the-fly generated Java command-line argument file
-exec tini -e 143 -- $JAVA_HOME/bin/java @<(echo "\
+exec tini -e 143 -- java @<(echo "\
 -Xms256m -Xmx${MAX_MEM:-512m}
 -XX:+UseParallelGC
 -XX:+ExitOnOutOfMemoryError
