@@ -66,7 +66,7 @@ See eDelivery documentation \[[TERMS](#Ref_TERMS)\].
 
 ### 1.3 References
 
-1. <a id="Ref_TERMS" class="anchor"></a>\[TERMS\] eDelivery Documentation, <https://ec.europa.eu/digital-building-blocks/wikis/display/DIGITAL/eDelivery>
+1. <a id="Ref_TERMS" class="anchor"></a>\[TERMS\] eDelivery Documentation, <https://ec.europa.eu/digital-building-blocks/sites/display/DIGITAL/eDelivery>
 2. <a id="Ref_DOMIBUS_ADMIN_GUIDE" class="anchor"></a>\[DOMIBUS_ADMIN_GUIDE\] Access Point Administration Guide - Domibus 5.1.1, <https://ec.europa.eu/digital-building-blocks/sites/download/attachments/693207754/%28eDelivery%29%28AP%29%28AG%29%28Domibus%205.1.1%29%2820.6%29.pdf>
 3. <a id="Ref_WS_PLUGIN" class="anchor"></a>\[WS_PLUGIN\] Access Point Interface Control Document - WS Plugin, <https://ec.europa.eu/digital-building-blocks/sites/download/attachments/693207754/%28eDelivery%29%28AP%29%28ICD%29%28WS%20plugin%29%28Domibus%205.1.1%29%283.7%29.pdf>
 4. <a id="Ref_PLUGIN_COOKBOOK" class="anchor"></a>\[PLUGIN_COOKBOOK\] Domibus Plugin Cookbook, <https://ec.europa.eu/digital-building-blocks/sites/download/attachments/693207754/%28eDelivery%29%28AP%29%28Plugin-CB%29%28Domibus.5.1.1%29%286.5%29.pdf>
