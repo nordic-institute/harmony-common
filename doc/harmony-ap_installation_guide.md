@@ -1,6 +1,6 @@
 # Harmony eDelivery Access - Access Point Installation Guide <!-- omit in toc -->
 
-Version: 1.11  
+Version: 1.12  
 Doc. ID: IG-AP
 
 ---
@@ -21,6 +21,7 @@ Doc. ID: IG-AP
  22.06.2023 | 1.9     | Add a note about the default password expiration policy                                                                                                     | Petteri Kivimäki
  17.08.2023 | 1.10    | Update system requirements                                                                                                                                  | Jarkko Hyöty
  29.09.2023 | 1.11    | Use PKCS12 keystores by default. Update certificate DN configuration.                                                                                       | Jarkko Hyöty
+ 15.01.2024 | 1.12    | Update links to external documents                                                                                                                          | Petteri Kivimäki
 
 ## License <!-- omit in toc -->
 
@@ -66,7 +67,7 @@ See eDelivery documentation \[[TERMS](#Ref_TERMS)\].
 
 ### 1.3 References
 
-1. <a id="Ref_TERMS" class="anchor"></a>\[TERMS\] eDelivery Documentation, <https://ec.europa.eu/digital-building-blocks/wikis/display/DIGITAL/eDelivery>
+1. <a id="Ref_TERMS" class="anchor"></a>\[TERMS\] eDelivery Documentation, <https://ec.europa.eu/digital-building-blocks/sites/display/DIGITAL/eDelivery>
 2. <a id="Ref_DOMIBUS_ADMIN_GUIDE" class="anchor"></a>\[DOMIBUS_ADMIN_GUIDE\] Access Point Administration Guide - Domibus 5.1.1, <https://ec.europa.eu/digital-building-blocks/sites/download/attachments/693207754/%28eDelivery%29%28AP%29%28AG%29%28Domibus%205.1.1%29%2820.6%29.pdf>
 3. <a id="Ref_WS_PLUGIN" class="anchor"></a>\[WS_PLUGIN\] Access Point Interface Control Document - WS Plugin, <https://ec.europa.eu/digital-building-blocks/sites/download/attachments/693207754/%28eDelivery%29%28AP%29%28ICD%29%28WS%20plugin%29%28Domibus%205.1.1%29%283.7%29.pdf>
 4. <a id="Ref_PLUGIN_COOKBOOK" class="anchor"></a>\[PLUGIN_COOKBOOK\] Domibus Plugin Cookbook, <https://ec.europa.eu/digital-building-blocks/sites/download/attachments/693207754/%28eDelivery%29%28AP%29%28Plugin-CB%29%28Domibus.5.1.1%29%286.5%29.pdf>
