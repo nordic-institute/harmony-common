@@ -1,6 +1,6 @@
 # Harmony eDelivery Access - Access Point Installation Guide <!-- omit in toc -->
 
-Version: 1.11  
+Version: 1.12  
 Doc. ID: IG-AP
 
 ---
@@ -21,6 +21,7 @@ Doc. ID: IG-AP
  22.06.2023 | 1.9     | Add a note about the default password expiration policy                                                                                                     | Petteri Kivimäki
  17.08.2023 | 1.10    | Update system requirements                                                                                                                                  | Jarkko Hyöty
  29.09.2023 | 1.11    | Use PKCS12 keystores by default. Update certificate DN configuration.                                                                                       | Jarkko Hyöty
+ 15.01.2024 | 1.12    | Update links to external documents                                                                                                                          | Petteri Kivimäki
 
 ## License <!-- omit in toc -->
 
