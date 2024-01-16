@@ -87,7 +87,7 @@ case "$1" in
     eu.europa.ec.edelivery.smp.utils.BCryptPasswordHash "$APASSWORD")
 
   $LIQUIBASE_HOME/liquibase.sh \
-    --classpath=/opt/harmony-smp/lib/mysql-connector-j-8.0.33.jar \
+    --classpath=/opt/harmony-smp/lib/mysql-connector-j-8.2.0.jar \
     --driver=com.mysql.cj.jdbc.Driver \
     --url="$JDBC_URL" \
     --username="$DB_USER" \

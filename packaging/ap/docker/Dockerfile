@@ -1,6 +1,6 @@
 FROM ubuntu:22.04 AS tmp
 
-COPY packaging/commonbin/mysql-connector-j-8.0.33.jar /opt/harmony-ap/lib/
+COPY packaging/commonbin/mysql-connector-j-8.2.0.jar /opt/harmony-ap/lib/
 COPY packaging/commonbin/harmony-ap /opt/harmony-ap/webapps/ROOT/
 COPY packaging/commonbin/ws-plugin.jar /opt/harmony-ap/plugins/lib/
 COPY packaging/commonbin/tomcat9/bin/*.sh /opt/harmony-ap/bin/

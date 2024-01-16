@@ -11,7 +11,7 @@
 
     <context:property-placeholder system-properties-mode="ENVIRONMENT" ignore-resource-not-found="false" ignore-unresolvable="false"/>
 
-    <broker useJmx="true" brokerName="${activeMQ.brokerName}"  persistent="${activeMQ.persistent}" schedulerSupport="true" dataDirectory="${domibus.work.location:${domibus.config.location}}/work/activemq_data" tmpDataDirectory="${domibus.work.location:${domibus.config.location}}/temp">
+    <broker useJmx="true" brokerName="${activeMQ.brokerName}" persistent="${activeMQ.persistent}" schedulerSupport="true" dataDirectory="${domibus.work.location:${domibus.config.location}}/work/activemq_data" tmpDataDirectory="${domibus.work.location:${domibus.config.location}}/temp" useShutdownHook="false" >
         <managementContext>
             <managementContext createConnector="true" connectorPort="${activeMQ.connectorPort}"/>
         </managementContext>

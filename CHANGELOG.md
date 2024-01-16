@@ -1,5 +1,10 @@
 # Changelog
 
+## Access Point 2.3.0 - UNRELEASED
+
+- NEDS-174: Merge Domibus 5.1.2 into Harmony Access Point
+
+
 ## Access Point 2.2.2 - 2023-12-07
 
 - NEDS-156: Fix constraint in AP database migrations
