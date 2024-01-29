@@ -214,7 +214,7 @@ GRANT ALL ON $DB_SCHEMA.* TO '$DB_USER'@localhost;" | mysql >&2
 
   # using defaultsFile to avoid revealing passwords in the process listing
   /bin/bash $LIQUIBASE_HOME/liquibase.sh --defaultsFile=<(echo "\
-classpath:/opt/harmony-ap/lib/mysql-connector-j-8.0.33.jar
+classpath:/opt/harmony-ap/lib/mysql-connector-j-8.2.0.jar
 driver:com.mysql.cj.jdbc.Driver
 url:$URL
 username:$DB_USER

@@ -163,7 +163,7 @@ if [[ $INIT = "true" || $HARMONY_VERSION != "$CONF_VERSION" || ! -f ${HARMONY_BA
 
     $LIQUIBASE_HOME/liquibase.sh --defaultsFile=<(echo "\
 searchPath:${HARMONY_HOME}/db
-classpath:${HARMONY_HOME}/lib/mysql-connector-j-8.0.33.jar
+classpath:${HARMONY_HOME}/lib/mysql-connector-j-8.2.0.jar
 driver:com.mysql.cj.jdbc.Driver
 url:$URL
 username:$DB_USER
