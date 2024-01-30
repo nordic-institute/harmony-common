@@ -313,6 +313,7 @@ exec tini -e 143 -- java @<(echo "\
 --add-opens=java.rmi/sun.rmi.transport=ALL-UNNAMED
 -Djava.awt.headless=true
 -Djava.io.tmpdir=$CATALINA_TMPDIR
+-Djava.rmi.server.hostname=127.0.0.1
 -Djava.security.egd=file:/dev/urandom
 -Djava.util.logging.config.file=$CATALINA_BASE/conf/logging.properties
 -Djava.util.logging.manager=org.apache.juli.ClassLoaderLogManager
