@@ -80,10 +80,10 @@ See eDelivery documentation \[[TERMS](#Ref_TERMS)\].
 
 ### 2.1 Prerequisites to Installation
 
-The Access Point is officially supported on the following platforms:
+The Access Point is officially supported on the following operating system:
 
-* Ubuntu Server 20.04 Long-Term Support (LTS) operating system on a x86-64 platform.
-* Ubuntu Server 22.04 Long-Term Support (LTS) operating system on a x86-64 platform.
+* Ubuntu Server 20.04 Long-Term Support (LTS).
+* Ubuntu Server 22.04 Long-Term Support (LTS).
 
 The software can be installed both on physical and virtualized hardware.
 
