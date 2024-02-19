@@ -84,7 +84,7 @@ See eDelivery documentation \[[TERMS](#Ref_TERMS)\].
 
 ### 2.1 Prerequisites to Installation
 
-The SMP is officially supported on the following operating system:
+The SMP is officially supported on the following operating systems (x86-64, arm64):
 
 * Ubuntu Server 20.04 Long-Term Support (LTS).
 * Ubuntu Server 22.04 Long-Term Support (LTS).
