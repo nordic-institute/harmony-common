@@ -22,6 +22,7 @@ Doc. ID: IG-AP
  17.08.2023 | 1.10    | Update system requirements                                                                                                                                  | Jarkko Hyöty
  29.09.2023 | 1.11    | Use PKCS12 keystores by default. Update certificate DN configuration.                                                                                       | Jarkko Hyöty
  15.01.2024 | 1.12    | Update links to external documents                                                                                                                          | Petteri Kivimäki
+ 21.02.2024 | 1.13    | Update supported operating systems                                                                                                                          | Diego Martin
 
 ## License <!-- omit in toc -->
 

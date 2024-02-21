@@ -23,6 +23,7 @@ Doc. ID: IG-SMP
  09.08.2023 | 1.12    | Update section 2.10                                                                                     | Jarkko Hyöty
  17.08.2023 | 1.13    | Update system requirements                                                                              | Jarkko Hyöty
  15.01.2024 | 1.14    | Update links to external documents                                                                      | Petteri Kivimäki
+ 21.02.2024 | 1.15    | Update supported operating systems                                                                      | Diego Martin
 
 ## License <!-- omit in toc -->
 
