@@ -1,6 +1,6 @@
 # Harmony eDelivery Access - Access Point Installation Guide <!-- omit in toc -->
 
-Version: 1.13  
+Version: 1.14  
 Doc. ID: IG-AP
 
 ---
@@ -22,7 +22,8 @@ Doc. ID: IG-AP
  17.08.2023 | 1.10    | Update system requirements                                                                                                                                  | Jarkko Hyöty
  29.09.2023 | 1.11    | Use PKCS12 keystores by default. Update certificate DN configuration.                                                                                       | Jarkko Hyöty
  15.01.2024 | 1.12    | Update links to external documents                                                                                                                          | Petteri Kivimäki
- 21.02.2024 | 1.13    | Update supported operating systems                                                                                                                          | Diego Martin
+ 28.02.2024 | 1.13    | Update WS Plugin interface path                                                                                                                             | Petteri Kivimäki
+ 01.03.2024 | 1.14    | Update supported operating systems                                                                                                                          | Diego Martin
 
 ## License <!-- omit in toc -->
 
@@ -107,7 +108,7 @@ Out | Access Point | Data Exchange Partner Access Point | 443, 8443, other | tcp
 Out | Access Point | SMP | 443, 8443, other | tcp | |
 Out | Access Point | Backend (push) | 80, 443, other | tcp | Target in the internal network |
 In  | Data Exchange Partner Access Point | Access Point | 8443\* | tcp | URL path: `/services/msh` |
-In  | Backend (submit, pull) | Access Point | 8443\* | tcp | Source in the internal network<br /><br />URL path: `/services/backend` |
+In  | Backend (submit, pull) | Access Point | 8443\* | tcp | Source in the internal network<br /><br />URL path: `/services/wsplugin` |
 In  | Admin | Access Point | 8443\* | tcp | Source in the internal network<br /><br />URL path: `/` |
 
 \* The port number for inbound connections is configurable and the value can be set during the Access Point installation process. Port `8443` is used by default.
@@ -119,7 +120,7 @@ In addition, it's strongly recommended to use URL path filtering for the Access 
 **Port** | **URL Path** | **Description** |
 ---------|----------|-----------------|
  8443    | `/` | Admin UI for managing the Access Point. |
- 8443    | `/services/backend` |  Webservice interface (submit requests, pull messages) between the Access Point and backend. |
+ 8443    | `/services/wsplugin` |  Webservice interface (submit requests, pull messages) between the Access Point and backend. |
  8443    | `/services/msh` | AS4 interface between Access Points. | 
 
 ### 2.3 Requirements for the Access Point
