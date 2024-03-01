@@ -116,6 +116,24 @@ get_tomcat_prop() {
   echo "${value:-$default}";
 }
 
+add_prefix_suffix() {
+  local brokers="$1"
+  local prefix="$2"
+  local suffix="$3"
+  local result=""
+  local IFS=","
+
+  for broker in $brokers
+  do
+    if [ -n "${broker}" ]; then
+      trimmed_broker=$(echo $broker | tr -d ' ')
+      result+="${prefix}${trimmed_broker}${suffix},"
+    fi
+  done
+
+  echo "${result%,}"
+}
+
 
 if [[ -n ${HARMONY_PARAM_FILE:-} && -f $HARMONY_PARAM_FILE ]]; then
   log "Reading parameters from $HARMONY_PARAM_FILE..."
@@ -323,9 +341,19 @@ changeLogFile:db.changelog.xml") \
   set_prop_tmp domibus.security.truststore.password   "$SECURITY_TRUSTSTORE_PASSWORD"
 
   if [[ $DEPLOYMENT_CLUSTERED = "true" ]]; then
-    log "Enabling clustered deployment, using ActiveMQ Broker at $ACTIVEMQ_BROKER_HOST"
+    log "Enabling clustered deployment"
+
+    if [[ $ACTIVEMQ_BROKER_HOST == *,* ]]; then
+      log "Multiple ActiveMQ brokers found, overriding configuration properties"
+
+      set_prop_tmp "activeMQ.transportConnector.uri"   "failover:($(add_prefix_suffix "$ACTIVEMQ_BROKER_HOST" "tcp://" ":61616"))?randomize=false"
+      set_prop_tmp "activeMQ.JMXURL"                   "$(add_prefix_suffix "$ACTIVEMQ_BROKER_HOST" "service:jmx:rmi:///jndi/rmi://" ":1199/jmxrmi")"
+    else
+      log "Single ActiveMQ broker found, using default properties"
+    fi
+
     set_prop_tmp "domibus.deployment.clustered"        "true"
-    set_prop_tmp "activeMQ.brokerName"                 "${ACTIVEMQ_BROKERNAME:-localhost}"
+    set_prop_tmp "activeMQ.brokerName"                 "${ACTIVEMQ_BROKER_NAME:-localhost}"
     set_prop_tmp "activeMQ.embedded.configurationFile" ""
     set_prop_tmp "activeMQ.broker.host"                "${ACTIVEMQ_BROKER_HOST}"
     set_prop_tmp "activeMQ.username"                   "${ACTIVEMQ_USERNAME}"
