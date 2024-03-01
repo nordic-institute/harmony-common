@@ -1,6 +1,6 @@
 # Harmony eDelivery Access - Access Point Installation Guide <!-- omit in toc -->
 
-Version: 1.13  
+Version: 1.14  
 Doc. ID: IG-AP
 
 ---
@@ -23,6 +23,7 @@ Doc. ID: IG-AP
  29.09.2023 | 1.11    | Use PKCS12 keystores by default. Update certificate DN configuration.                                                                                       | Jarkko Hyöty
  15.01.2024 | 1.12    | Update links to external documents                                                                                                                          | Petteri Kivimäki
  28.02.2024 | 1.13    | Update WS Plugin interface path                                                                                                                             | Petteri Kivimäki
+ 01.03.2024 | 1.14    | Update supported operating systems                                                                                                                          | Diego Martin
 
 ## License <!-- omit in toc -->
 
@@ -81,10 +82,10 @@ See eDelivery documentation \[[TERMS](#Ref_TERMS)\].
 
 ### 2.1 Prerequisites to Installation
 
-The Access Point is officially supported on the following platforms:
+The Access Point is officially supported on the following operating systems (x86-64, arm64):
 
-* Ubuntu Server 20.04 Long-Term Support (LTS) operating system on a x86-64 platform.
-* Ubuntu Server 22.04 Long-Term Support (LTS) operating system on a x86-64 platform.
+* Ubuntu Server 20.04 Long-Term Support (LTS).
+* Ubuntu Server 22.04 Long-Term Support (LTS).
 
 The software can be installed both on physical and virtualized hardware.
 

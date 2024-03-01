@@ -183,7 +183,7 @@ EOF
 
   if dpkg --compare-versions "$2" lt-nl "2.0.0"; then
     sed -i -E '\|^export CLASSPATH=/etc/harmony-smp.*|d' /opt/harmony-smp/bin/setenv.sh || true
-    echo "JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64" >>/opt/harmony-smp/bin/setenv.sh || true
+    echo "JAVA_HOME=$(update-java-alternatives -l | grep java-1.8 | head -n 1 | tr -s \" \" | cut -d \" \" -f 3)" >>/opt/harmony-smp/bin/setenv.sh || true
   fi
 
   # Make sure the administrative user exists
