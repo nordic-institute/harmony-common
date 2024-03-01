@@ -1,6 +1,6 @@
 # Harmony eDelivery Access - Access Point Installation Guide <!-- omit in toc -->
 
-Version: 1.12  
+Version: 1.13  
 Doc. ID: IG-AP
 
 ---
