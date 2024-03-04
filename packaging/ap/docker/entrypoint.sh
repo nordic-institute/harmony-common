@@ -346,8 +346,11 @@ changeLogFile:db.changelog.xml") \
     if [[ $ACTIVEMQ_BROKER_HOST == *,* ]]; then
       log "Multiple ActiveMQ brokers found, overriding configuration properties"
 
-      set_prop_tmp "activeMQ.transportConnector.uri"   "failover:($(add_prefix_suffix "$ACTIVEMQ_BROKER_HOST" "tcp://" ":61616"))?randomize=false"
-      set_prop_tmp "activeMQ.JMXURL"                   "$(add_prefix_suffix "$ACTIVEMQ_BROKER_HOST" "service:jmx:rmi:///jndi/rmi://" ":1199/jmxrmi")"
+      TRANSPORT_PORT="${ACTIVEMQ_TRANSPORT_PORT:-61616}"
+      JMX_PORT="${ACTIVEMQ_JMX_PORT:-1199}"
+
+      set_prop_tmp "activeMQ.transportConnector.uri"   "failover:($(add_prefix_suffix "$ACTIVEMQ_BROKER_HOST" "tcp://" ":$TRANSPORT_PORT"))?randomize=false"
+      set_prop_tmp "activeMQ.JMXURL"                   "$(add_prefix_suffix "$ACTIVEMQ_BROKER_HOST" "service:jmx:rmi:///jndi/rmi://" ":$JMX_PORT/jmxrmi")"
     else
       log "Single ActiveMQ broker found, using default properties"
     fi
