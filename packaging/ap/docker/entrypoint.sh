@@ -52,6 +52,8 @@ if [[ $1 == "help" ]]; then
   ACTIVEMQ_BROKER_NAME             localhost
   ACTIVEMQ_USERNAME                *required*
   ACTIVEMQ_PASSWORD                *required*
+  ACTIVEMQ_TRANSPORT_PORT          61616
+  ACTIVEMQ_JMX_PORT                1199
 
   # if true, offload TLS termination to an external LB. AP will use port 8080
   EXTERNAL_LB                      false
