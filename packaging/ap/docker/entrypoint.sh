@@ -119,17 +119,17 @@ get_tomcat_prop() {
 }
 
 add_prefix_suffix() {
-  local brokers="$1"
+  local comma_separated_list="$1"
   local prefix="$2"
   local suffix="$3"
   local result=""
   local IFS=","
 
-  for broker in $brokers
+  for item in $comma_separated_list
   do
-    if [ -n "${broker}" ]; then
-      trimmed_broker=$(echo $broker | tr -d ' ')
-      result+="${prefix}${trimmed_broker}${suffix},"
+    if [ -n "${item}" ]; then
+      trimmed_item=$(echo $item | tr -d ' ')
+      result+="${prefix}${trimmed_item}${suffix},"
     fi
   done
 
