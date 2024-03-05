@@ -1,6 +1,6 @@
 # Harmony eDelivery Access - Access Point Docker Installation Guide <!-- omit in toc -->
 
-Version: 1.1  
+Version: 1.2  
 Doc. ID: IG-AP-D
 
 ---
@@ -11,6 +11,7 @@ Date       | Version | Description                                           | A
 ---------- |---------|-------------------------------------------------------| --------------------
 29.09.2023 | 1.0     | Initial version                                       | Jarkko Hyöty
 15.01.2024 | 1.1     | Update document title and links to external documents | Petteri Kivimäki
+05.03.2024 | 1.2     | Added documentation for clustered environments        | Diego Martin
 
 ## License <!-- omit in toc -->
 
