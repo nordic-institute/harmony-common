@@ -1,6 +1,6 @@
 # Harmony eDelivery Access - Access Point Docker Installation Guide <!-- omit in toc -->
 
-Version: 1.1  
+Version: 1.2  
 Doc. ID: IG-AP-D
 
 ---
@@ -11,6 +11,7 @@ Date       | Version | Description                                           | A
 ---------- |---------|-------------------------------------------------------| --------------------
 29.09.2023 | 1.0     | Initial version                                       | Jarkko Hyöty
 15.01.2024 | 1.1     | Update document title and links to external documents | Petteri Kivimäki
+05.03.2024 | 1.2     | Added documentation for clustered environments        | Diego Martin
 
 ## License <!-- omit in toc -->
 
@@ -127,28 +128,41 @@ The Access Point image supports the following configuration parameters that can 
 
 See the Static Discovery Configuration Guide \[[UG-SDCG](static_discovery_configuration_guide.md)\] and the Dynamic Discovery Configuration Guide \[[UG-DDCG](dynamic_discovery_configuration_guide.md)\] for more information about how to configure different discovery options.
 
-  | Parameter                      | Default    | Notes
-  |--------------------------------|------------|--------------
-  | DB_HOST                        | *required* | Database host name
-  | DB_PORT                        | 3306       | Database port
-  | DB_SCHEMA                      | harmony_ap | Database schema
-  | DB_USER                        | harmony_ap | Database user
-  | DB_PASSWORD                    | *required* | Database password
-  | MAX_MEM                        | 512m       | Maximum (Java) heap for the application
-  | PARTY_NAME\*                   | selfsigned | Party name of the Access Point owner organisation
-  | SERVER_FQDN\*                  | *hostname* | Fully qualified domain name for the TLS certificate.
-  | SERVER_DN\*                    | CN=*SERVER_FQDN* | TLS certificate subject DN. If omitted, derived from the FQDN.
-  | SERVER_SAN\*                   | DNS:*SERVER_FQDN*| TLS certificate subject alternative name. If omitted, derived from the FQDN.
-  | SECURITY_DN\*                  | CN=*PARTY_NAME* | Security (sign/encrypt) certificate subject DN. If omitted, derived from the party name.
-  | SECURITY_KEYSTORE_PASSWORD\*   | *random*   | Access Point keystore password \*\*
-  | SECURITY_TRUSTSTORE_PASSWORD\* | *random*   | Access Point truststore password \*\*
-  | TLS_KEYSTORE_PASSWORD\*        | *random*   | TLS keystore password \*\*
-  | TLS_TRUSTSTORE_PASSWORD\*      | *random*   | TLS truststore password \*\*
-  | USE_DYNAMIC_DISCOVERY\*        | false      | Is dynamic discovery in use
-  | SML_ZONE\*                     | *n/a*      | SML zone that you want to use; if unsure, please contact the domain authority of the policy
-  | ADMIN_USER\*                   | harmony    | Initial admin user for admin UI
-  | ADMIN_PASSWORD\*               | *random*   | Initial admin user password
-  | HARMONY_PARAM_FILE             | *n/a*      | Path to (mapped) parameter file
+  | Parameter                      | Default           | Notes
+  |--------------------------------|-------------------|--------------
+  | DB_HOST                        | *required*        | Database host name
+  | DB_PORT                        | 3306              | Database port
+  | DB_SCHEMA                      | harmony_ap        | Database schema
+  | DB_USER                        | harmony_ap        | Database user
+  | DB_PASSWORD                    | *required*        | Database password
+  | MAX_MEM                        | 512m              | Maximum (Java) heap for the application
+  | PARTY_NAME\*                   | selfsigned        | Party name of the Access Point owner organisation
+  | SERVER_FQDN\*                  | *hostname*        | Fully qualified domain name for the TLS certificate.
+  | SERVER_DN\*                    | CN=*SERVER_FQDN*  | TLS certificate subject DN. If omitted, derived from the FQDN.
+  | SERVER_SAN\*                   | DNS:*SERVER_FQDN* | TLS certificate subject alternative name. If omitted, derived from the FQDN.
+  | SECURITY_DN\*                  | CN=*PARTY_NAME*   | Security (sign/encrypt) certificate subject DN. If omitted, derived from the party name.
+  | SECURITY_KEYSTORE_PASSWORD\*   | *random*          | Access Point keystore password \*\*
+  | SECURITY_TRUSTSTORE_PASSWORD\* | *random*          | Access Point truststore password \*\*
+  | TLS_KEYSTORE_PASSWORD\*        | *random*          | TLS keystore password \*\*
+  | TLS_TRUSTSTORE_PASSWORD\*      | *random*          | TLS truststore password \*\*
+  | USE_DYNAMIC_DISCOVERY\*        | false             | Is dynamic discovery in use
+  | SML_ZONE\*                     | *n/a*             | SML zone that you want to use; if unsure, please contact the domain authority of the policy
+  | ADMIN_USER\*                   | harmony           | Initial admin user for admin UI
+  | ADMIN_PASSWORD\*               | *random*          | Initial admin user password
+  | HARMONY_PARAM_FILE             | *n/a*             | Path to (mapped) parameter file
+  | DEPLOYMENT_CLUSTERED           | false             | Enables clustering support
+
+#### Clustering specific properties.
+The following properties are only used if the Access Point is running in a clustered environment by setting the parameter `DEPLOYMENT_CLUSTERED` to `true`, otherwise they are ignored.
+
+  | Parameter                      | Default                 | Notes
+  |--------------------------------|-------------------------|--------------
+  | ACTIVEMQ_BROKER_HOST           | *required if clustered* | ActiveMQ host name. Can be a comma-separated list of host names. The number of hosts needs to be the same as the number of names
+  | ACTIVEMQ_BROKER_NAME           | localhost               | ActiveMQ broker name. Can be a comma-separated list of broker names. The number of names needs to be the same as the number of hosts
+  | ACTIVEMQ_USERNAME              | *n/a*                   | ActiveMQ username allowed to connect to the broker
+  | ACTIVEMQ_PASSWORD              | *n/a*                   | ActiveMQ password allowed to connect to the broker
+  | ACTIVEMQ_TRANSPORT_PORT        | 61616                   | Port used in the ActiveMQ/s connection URI to the TCP socket that the clients will use
+  | ACTIVEMQ_JMX_PORT              | 1199                    | Port used in the ActiveMQ/s JMX monitoring URI
 
 \* Can be only set once when starting a container with empty configuration.  
 \*\* Use only [printable ASCII](https://en.wikipedia.org/wiki/ASCII#Printable_characters) characters in keystore passwords.
@@ -255,7 +269,7 @@ docker run -d \
 docker rm harmony-ap-old
 ```
 
-## Docker compose example
+## Docker compose examples
 
 The following example defines an Access Point and a database using [Docker compose](https://docs.docker.com/compose/gettingstarted/):
 
@@ -263,7 +277,7 @@ The following example defines an Access Point and a database using [Docker compo
 # Example harmony-ap compose file
 services:
   harmony-ap:
-    image: niis/harmony-ap:2.2.0
+    image: niis/harmony-ap:2.3.0
     depends_on:
       - harmony-db
     environment:
@@ -280,6 +294,7 @@ services:
       - "8443:8443"
     restart: on-failure
     mem_limit: 1500m
+
   harmony-db:
     image: mysql:8
     environment:
@@ -294,7 +309,89 @@ services:
       - db_data:/var/lib/mysql
     restart: on-failure
     mem_limit: 512m
+    
 volumes:
   ap_data:
   db_data:
+```
+
+The following example defines an Access Point in a clustered environment with two ActiveMQ brokers and a database using [Docker compose](https://docs.docker.com/compose/gettingstarted/):
+
+```yaml
+services:
+  harmony-ap:
+    image: niis/harmony-ap:2.3.0
+    depends_on:
+      - harmony-db
+      - harmony-jms-main
+      - harmony-jms-replica
+    environment:
+      - DB_HOST=harmony-db
+      - DB_SCHEMA=harmony_ap
+      - DB_PASSWORD=dbpassword
+      - ADMIN_PASSWORD=Secret
+      - USE_DYNAMIC_DISCOVERY=false
+      - PARTY_NAME=org1_gw
+      - SERVER_FQDN=harmony-ap
+      - DEPLOYMENT_CLUSTERED=true
+      - ACTIVEMQ_BROKER_HOST=harmony-jms-main,harmony-jms-replica
+      - ACTIVEMQ_BROKER_NAME=main,replica
+      - ACTIVEMQ_USERNAME=admin
+      - ACTIVEMQ_PASSWORD=admin
+    volumes:
+      - ap_data:/var/opt/harmony-ap
+    ports:
+      - "8080:8080"
+    restart: on-failure
+    mem_limit: 1500m
+    
+  harmony-jms-main:
+    image: apache/activemq-classic:5.18.2
+    environment:
+      - ACTIVEMQ_CONNECTION_USER=admin
+      - ACTIVEMQ_CONNECTION_PASSWORD=admin
+      - ACTIVEMQ_JMX_USER=admin
+      - ACTIVEMQ_JMX_PASSWORD=admin
+      - ACTIVEMQ_WEB_USER=webadmin
+      - ACTIVEMQ_WEB_PASSWORD=admin
+      - ACTIVEMQ_DATA=/var/opt/apache-activemq
+      - ACTIVEMQ_TMP=/var/tmp
+    mem_limit: 1000m
+    volumes:
+      - broker_data:/var/opt/apache-activemq
+
+  harmony-jms-replica:
+    image: apache/activemq-classic:5.18.2
+    environment:
+      - ACTIVEMQ_CONNECTION_USER=admin
+      - ACTIVEMQ_CONNECTION_PASSWORD=admin
+      - ACTIVEMQ_JMX_USER=admin
+      - ACTIVEMQ_JMX_PASSWORD=admin
+      - ACTIVEMQ_WEB_USER=webadmin
+      - ACTIVEMQ_WEB_PASSWORD=admin
+      - ACTIVEMQ_DATA=/var/opt/apache-activemq
+      - ACTIVEMQ_TMP=/var/tmp
+    mem_limit: 1000m
+    volumes:
+      - broker_data:/var/opt/apache-activemq
+    
+  harmony-db:
+    image: mysql:8
+    environment:
+      - MYSQL_ROOT_PASSWORD=root_password
+      - MYSQL_DATABASE=harmony_ap
+      - MYSQL_USER=harmony_ap
+      - MYSQL_PASSWORD=dbpassword
+    command:
+      - "--character-set-server=utf8mb4"
+      - "--collation-server=utf8mb4_bin"
+    volumes:
+      - db_data:/var/lib/mysql
+    restart: on-failure
+    mem_limit: 512m
+    
+volumes:
+  ap_data:
+  db_data:
+  broker_data:
 ```

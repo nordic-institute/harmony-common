@@ -52,6 +52,8 @@ if [[ $1 == "help" ]]; then
   ACTIVEMQ_BROKER_NAME             localhost
   ACTIVEMQ_USERNAME                *required*
   ACTIVEMQ_PASSWORD                *required*
+  ACTIVEMQ_TRANSPORT_PORT          61616
+  ACTIVEMQ_JMX_PORT                1199
 
   # if true, offload TLS termination to an external LB. AP will use port 8080
   EXTERNAL_LB                      false
@@ -114,6 +116,24 @@ get_tomcat_prop() {
   local value
   value=$(xmlstarlet sel -t -v "//Connector/@$1" ${HARMONY_BASE}/conf/server.xml 2>/dev/null)
   echo "${value:-$default}";
+}
+
+add_prefix_suffix() {
+  local comma_separated_list="$1"
+  local prefix="$2"
+  local suffix="$3"
+  local result=""
+  local IFS=","
+
+  for item in $comma_separated_list
+  do
+    if [ -n "${item}" ]; then
+      trimmed_item=$(echo $item | tr -d ' ')
+      result+="${prefix}${trimmed_item}${suffix},"
+    fi
+  done
+
+  echo "${result%,}"
 }
 
 
@@ -323,9 +343,22 @@ changeLogFile:db.changelog.xml") \
   set_prop_tmp domibus.security.truststore.password   "$SECURITY_TRUSTSTORE_PASSWORD"
 
   if [[ $DEPLOYMENT_CLUSTERED = "true" ]]; then
-    log "Enabling clustered deployment, using ActiveMQ Broker at $ACTIVEMQ_BROKER_HOST"
+    log "Enabling clustered deployment"
+
+    if [[ $ACTIVEMQ_BROKER_HOST == *,* ]]; then
+      log "Multiple ActiveMQ brokers found, overriding configuration properties"
+
+      TRANSPORT_PORT="${ACTIVEMQ_TRANSPORT_PORT:-61616}"
+      JMX_PORT="${ACTIVEMQ_JMX_PORT:-1199}"
+
+      set_prop_tmp "activeMQ.transportConnector.uri"   "failover:($(add_prefix_suffix "$ACTIVEMQ_BROKER_HOST" "tcp://" ":$TRANSPORT_PORT"))?randomize=false"
+      set_prop_tmp "activeMQ.JMXURL"                   "$(add_prefix_suffix "$ACTIVEMQ_BROKER_HOST" "service:jmx:rmi:///jndi/rmi://" ":$JMX_PORT/jmxrmi")"
+    else
+      log "Single ActiveMQ broker found, using default properties"
+    fi
+
     set_prop_tmp "domibus.deployment.clustered"        "true"
-    set_prop_tmp "activeMQ.brokerName"                 "${ACTIVEMQ_BROKERNAME:-localhost}"
+    set_prop_tmp "activeMQ.brokerName"                 "${ACTIVEMQ_BROKER_NAME:-localhost}"
     set_prop_tmp "activeMQ.embedded.configurationFile" ""
     set_prop_tmp "activeMQ.broker.host"                "${ACTIVEMQ_BROKER_HOST}"
     set_prop_tmp "activeMQ.username"                   "${ACTIVEMQ_USERNAME}"
