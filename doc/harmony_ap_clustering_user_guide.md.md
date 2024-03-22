@@ -28,7 +28,7 @@ This document is licensed under the Creative Commons Attribution-ShareAlike 4.0 
   * [2.1 Load balancing AP instances](#21-load-balancing-ap-instances)
     * [2.1.1 Sticky sessions](#211-sticky-sessions) 
   * [2.2 Message brokers](#22-message-brokers)
-    * [2.2.1 Master-slave roles](#221-master-slave-roles)
+    * [2.2.1 Primary-secondary roles](#221-primary-secondary-roles)
     * [2.2.2 Shared storage](#222-shared-storage)
     * [2.2.3 Monitoring](#223-monitoring)
     * [2.2.4 Recovering from failures](#224-recovering-from-failures)
@@ -42,17 +42,17 @@ This document is licensed under the Creative Commons Attribution-ShareAlike 4.0 
 
 ## 1 Introduction
 
-Harmony eDelivery Access Access Point offers the ability of being deployed in a cluster. This configuration will provide high availability capabilities, so it can operate continuously without intervention if some of the members of the cluster fails.
+Harmony eDelivery Access Access Point offers the ability of being deployed in a cluster. This configuration will provide high availability capabilities, so it can operate continuously without intervention if some of the cluster components fail.
 
-The high availability is achieved by deploying multiple instances of the Access Point in a cluster. The instances are configured sharing configuration to reuse the same message brokers subclusters so all the services involved have a fallback instance.
+The high availability is achieved by deploying multiple instances of the Access Point in a cluster. The Access Point instances are configured to use the same message broker subclusters so that all the services involved in the setup have a fallback instance.
 
 ### 1.1 Target Audience
 
 This document describes how to configure and run a containerized version of the Harmony eDelivery Access Access Point in a clustered environment.
 
-    The intended audience of this Clustering Guide are Access Point system administrators responsible for installing and using the Access Point software.
+The intended audience of this Clustering Guide are Access Point system administrators responsible for installing and using the Access Point software.
 
-    The document is intended for readers with a moderate knowledge of Docker, computer networks, and the eDelivery working principles.
+The document is intended for readers with a moderate knowledge of Docker, computer networks, and the eDelivery working principles.
 
 ### 1.2 Terms and abbreviations
 
@@ -65,7 +65,7 @@ See eDelivery documentation \[[TERMS](#Ref_TERMS)\].
 ### 1.3 References
 
 1. <a id="Ref_TERMS" class="anchor"></a>\[TERMS\] eDelivery Documentation, <https://ec.europa.eu/digital-building-blocks/sites/display/DIGITAL/eDelivery>
-2. <a id="Ref_DOMIBUS_ADMIN_GUIDE" class="anchor"></a>\[DOMIBUS_ADMIN_GUIDE\] Access Point Administration Guide - Domibus 5.1.0, <https://ec.europa.eu/digital-building-blocks/sites/download/attachments/660440359/%28eDelivery%29%28AP%29%28AG%29%28Domibus%205.1%29%2819.6%29.pdf>
+2. <a id="Ref_DOMIBUS_ADMIN_GUIDE" class="anchor"></a>\[DOMIBUS_ADMIN_GUIDE\] Access Point Administration Guide - Domibus 5.1.2, <https://ec.europa.eu/digital-building-blocks/sites/download/attachments/706380233/%28eDelivery%29%28AP%29%28AG%29%28Domibus%205.1.2%29%2820.7%29.pdf>
 3. <a id="Ref_AMQ-CLUSTERING" class="anchor"></a>\[AMQ-CLUSTERING\] ActiveMQ Classic Clustering Documentation <https://activemq.apache.org/components/classic/documentation/clustering>
 4. <a id="Ref_AMQ-SHAREDFILE-MASTERSLAVE" class="anchor"></a>\[AMQ-SHAREDFILE-MASTERSLAVE\] ActiveMQ Classic Shared File System Master Slave <https://activemq.apache.org/components/classic/documentation/shared-file-system-master-slave>
 
@@ -75,19 +75,21 @@ AP can be deployed in a clustered environment using any container orchestration 
 
 When using the same environment variables in a set of AP Docker containers, they will form a cluster unit. The environment variables involved in the clustering configuration are:
 
-- `DEPLOYMENT_CLUSTERED`: Enables the clustered mode when set to `true`. Unless this variable is set to `true`, the rest of the clustering configuration variables will be ignored. Required as `true` when used in a cluster, default value `false`.
-- `ACTIVEMQ_BROKER_HOST`: The hostname of the ActiveMQ broker. It can be a comma-separated list of hostnames to define a subcluster. Required.
-- `ACTIVEMQ_BROKER_NAME`: The name of the ActiveMQ broker. When using a subcluster of brokers, it must be also a comma-separated list of broker names with the same number of elements and in the same order as `ACTIVEMQ_BROKER_HOST`. Required, default value `localhost`.
-- `ACTIVEMQ_TRANSPORT_PORT`: Port used in the ActiveMQ/s connection URI to the TCP socket that the clients will use to connect to the broker. Optional, default value `61616`.
-- `ACTIVEMQ_JMX_PORT`: Port used in the ActiveMQ/s JMX monitoring URI. Optional, default value `1199`
-- `ACTIVEMQ_USERNAME`: The username to connect to the ActiveMQ broker, needs to be the same for all the members of the subcluster. Required.
-- `ACTIVEMQ_PASSWORD`: The password to connect to the ActiveMQ broker, needs to be the same for all the members of the subcluster. Required.
+| Environment variable      | Default    | Notes 
+|---------------------------|------------|--------------
+| `DEPLOYMENT_CLUSTERED`    | false      | Enables the clustered mode when set to `true`. Unless this variable is set to `true`, the rest of the clustering configuration variables will be ignored. Required as `true` when used in a cluster, the default value is `false`.
+| `ACTIVEMQ_BROKER_HOST`    | *required* | The hostname of the ActiveMQ broker. It can be a comma-separated list of hostnames to define a subcluster. Required.
+| `ACTIVEMQ_BROKER_NAME`    | localhost  | The name of the ActiveMQ broker. When using a subcluster of brokers, it must be a comma-separated list of broker names with the same number of elements and in the same order as `ACTIVEMQ_BROKER_HOST`. Required, default value `localhost`.
+| `ACTIVEMQ_TRANSPORT_PORT` | 61616      | Port used in the ActiveMQ/s connection URI to the TCP socket that the clients will use to connect to the broker. Optional, default value `61616`.
+| `ACTIVEMQ_JMX_PORT`       | 1199       | Port used in the ActiveMQ/s JMX monitoring URI. Optional, default value `1199`
+| `ACTIVEMQ_USERNAME`       | *required* | The username to connect to the ActiveMQ broker, needs to be the same for all the members of the subcluster. Required.
+| `ACTIVEMQ_PASSWORD`       | *required* | The password to connect to the ActiveMQ broker, needs to be the same for all the members of the subcluster. Required.
 
-Along with the docker environment variables is also mandatory to share the folder `/var/opt/harmony-ap` with read and write permissions. This folder contains the configuration files that are shared among the AP instances in the cluster unit.
+Along with the docker environment variables it's also mandatory to share the folder `/var/opt/harmony-ap` with read and write permissions. This folder contains the configuration files that are shared among the AP instances in the cluster unit.
 
 ### 2.1 Load balancing AP instances
 
-When using multiple instances of AP, it is recommended to use a load balancer to distribute the incoming requests among the instances. The load balancer can be a hardware device, a software solution like [HAProxy](http://www.haproxy.org/), [Nginx](https://www.nginx.com/), [Traefik](https://traefik.io/), or a service coming from a cloud provider like [Amazon ELB](https://aws.amazon.com/elasticloadbalancing/), [Google Cloud Load Balancing](https://cloud.google.com/load-balancing),  [Azure Load Balancer](https://azure.microsoft.com/en-us/products/load-balancer/).
+When using multiple instances of AP, it is recommended to use a load balancer to distribute the incoming requests among the instances. The load balancer can be a hardware device, a software solution like [HAProxy](http://www.haproxy.org/), [Nginx](https://www.nginx.com/), [Traefik](https://traefik.io/), or a cloud service like [Amazon ELB](https://aws.amazon.com/elasticloadbalancing/), [Google Cloud Load Balancing](https://cloud.google.com/load-balancing),  [Azure Load Balancer](https://azure.microsoft.com/en-us/products/load-balancer/).
 
 Using a load balancer will provide high availability and scalability to the AP instances. If one of the instances fails, the load balancer will stop sending requests to it, ensuring that the service is still available.
 
@@ -103,28 +105,28 @@ While AP can run with a single message broker, it is recommended to use a subclu
 
 When using a subcluster of brokers, the `ACTIVEMQ_BROKER_HOST` and `ACTIVEMQ_BROKER_NAME` environment variables must be set with the comma-separated list of hostnames and broker names, respectively. The number of elements in both lists must be the same, and the order of the elements must match. For example:
 
+```bash
+ACTIVEMQ_BROKER_HOST=harmony-jms-london,harmony-jms-roma,harmony-jms-berlin
+ACTIVEMQ_BROKER_NAME=london,roma,berlin
 ```
-- ACTIVEMQ_BROKER_HOST=harmony-jms-london,harmony-jms-roma,harmony-jms-berlin
-- ACTIVEMQ_BROKER_NAME=london,roma,berlin
-```
 
-#### 2.2.1 Master-slave roles
+#### 2.2.1 Primary-secondary roles
 
-ActiveMQ brokers follow a master-slave architecture, where one broker is the master and the rest are slaves. The master broker is the one that receives the messages from the AP instances, and the slaves are the ones that replicate the messages from the master and monitor the system to eventually become the new master. The master broker is elected by the boot order, the first ActiveMQ that completed the boot gets the master role, locking the subcluster to ensure that there is only one master broker.
+ActiveMQ brokers follow a primary-secondary architecture, where one broker is the primary and the rest are secondaries. The primary broker is the one that receives the messages from the AP instances, and the secondaries are the ones that replicate the messages from the primary and monitor the system to eventually become the new primary. The primary broker is elected by the boot order, the first ActiveMQ that completed the boot gets the primary role, locking the subcluster to ensure that there is only one primary broker.
 
-The master-slave architecture is transparent to the AP instances, so they can connect to any broker in the subcluster. The AP instances uses a failover URI generated from the `ACTIVEMQ_BROKER_HOST` and the `ACTIVEMQ_TRANSPORT_PORT` environment variables to connect to the brokers, so they can connect to the master broker active at any time.
+The primary-secondary architecture is transparent to the AP instances, so they can connect to any broker in the subcluster. The AP instances use a failover URI generated from the `ACTIVEMQ_BROKER_HOST` and the `ACTIVEMQ_TRANSPORT_PORT` environment variables to connect to the brokers, so they can connect to the active primary broker at any time.
 
-In order to have a reliable master-slave configuration, the brokers in the subcluster must have a unique name in the `brokerName` property in the `broker` node that can be found in the ActiveMQ XML configuration. 
+In order to have a reliable primary-secondary configuration, the brokers in the subcluster must have a unique name in the `brokerName` property in the `broker` node that can be found in the ActiveMQ XML configuration. 
 
 For more information about ActiveMQ clustering, see the ActiveMQ documentation \[[AMQ-CLUSTERING](#Ref_AMQ-CLUSTERING)\].
 
 #### 2.2.2 Shared storage
 
-The brokers persist their work in a KahaDB database. KahaDB is a file based persistence database that stores which stores the messages.
+The brokers persist their work in a KahaDB database. KahaDB is a file based persistence database that stores the messages.
 
 The brokers in the subcluster must share a volume to persist the lock status and the internal KahaDB database. The volume must be shared between all the brokers in the subcluster with read and write permissions. By default, the volume is located in the `/var/opt/apache-activemq` directory, but the location can be changed by modifying the `dataDirectory` in the `broker` node and the `directory` in the `kahaDB` node under `persistenceAdapter`.
 
-or more information about ActiveMQ the shared storage between brokers, visit the ActiveMQ Shared File System Master Slave documentation \[[AMQ-SHAREDFILE-MASTERSLAVE](#Ref_AMQ-SHAREDFILE-MASTERSLAVE)\].
+For more information about ActiveMQ the shared storage between brokers, visit the ActiveMQ Shared File System Master Slave documentation \[[AMQ-SHAREDFILE-MASTERSLAVE](#Ref_AMQ-SHAREDFILE-MASTERSLAVE)\].
 
 #### 2.2.3 Monitoring
 
@@ -134,25 +136,27 @@ The JMX monitoring URI is generated using the `ACTIVEMQ_BROKER_HOST` and the `AC
 
 #### 2.2.4 Recovering from failures
 
-The master broker creates and maintains a lock file in the shared volume to prevent other brokers from becoming the master. If the master broker fails, the lock file is removed and one of the slaves will be promoted to master locking again the system. If the old master broker is recovered, it will join the slave pool.
+The primary broker creates and maintains a lock file in the shared volume to prevent other brokers from becoming the primary. If the primary broker fails, the lock file is removed and one of the secondaries will be promoted to primary locking again the system. If the old primary broker is recovered, it will join the secondary pool.
 
 As the KahaDB database is shared between the brokers, the messages are available to all the brokers in the subcluster, even if one or more brokers fail. Any broker in the subcluster is able to continue the work of the failed broker.
 
-The AP instances will automatically reconnect to the brokers in the subcluster if the connection is lost. The failover URI will allow the AP instances to connect to the new master broker if the old one fails.
+The AP instances will automatically reconnect to the brokers in the subcluster if the connection is lost. The failover URI will allow the AP instances to connect to the new primary broker if the old one fails.
 
 ### 2.3 Data storage
 
-The AP data storage can be a single instance or distributed, depending on the requirements of the deployment, it is recommended to use a distributed database to achieve high availability.
+The AP database can be a single instance or a cluster, depending on the requirements of the deployment. iIt is recommended to use a database cluster to achieve high availability.
 
 The database connection is configured using the following environment variables of the AP Docker container:
 
-- `DB_HOST`: Database host name. Required.
-- `DB_PORT`: Database port. Optional, default value `3306`.
-- `DB_SCHEMA`: Database schema. Optional, default value `harmony_ap`.
-- `DB_USER`: Database user. Optional, default value `harmony_ap`.
-- `DB_PASSWORD`: Database password. Required.
+| Environment variable | Default    | Notes
+|----------------------|------------|--------------
+| `DB_HOST`            | *required* | Database host name.
+| `DB_PORT`            | 3306       | Database port. Optional, default value `3306`.
+| `DB_SCHEMA`          | harmony_ap | Database schema. Optional, default value `harmony_ap`.
+| `DB_USER`            | harmony_ap | Database user. Optional, default value `harmony_ap`.
+| `DB_PASSWORD`        | *required* | Database password.
 
-To achieve high availability, AP relies on the distributed database solutions provided by the cloud services such as [Amazon RDS](https://aws.amazon.com/rds/), [Google Cloud SQL](https://cloud.google.com/sql), or [Azure SQL Database](https://azure.microsoft.com/en-us/products/azure-sql/database).
+To achieve high availability, it's recommended to use a clustered database solution, such as [Amazon RDS](https://aws.amazon.com/rds/), [Google Cloud SQL](https://cloud.google.com/sql), or [Azure SQL Database](https://azure.microsoft.com/en-us/products/azure-sql/database).
 
 ## 3. Example of a clustered AP environment
 
@@ -287,7 +291,7 @@ volumes:
 
 ### 3.2 ActiveMQ configuration
 
-The configuration file `activemq.xml` used in the brokers will look like this:
+The configuration file `activemq.xml` used in the brokers looks like this:
 
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
@@ -470,7 +474,7 @@ The configuration file `activemq.xml` used in the brokers will look like this:
 
 ### 3.3 Nginx configuration
 
-The most basic configuration for the `nginx.conf` file will look like this:
+Nginx is used as a load balancer. The most basic configuration for the `nginx.conf` configuration file looks like this:
 
 ```nginx
 events { worker_connections 1024; }
