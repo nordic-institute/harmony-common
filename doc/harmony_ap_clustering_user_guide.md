@@ -37,14 +37,19 @@ This document is licensed under the Creative Commons Attribution-ShareAlike 4.0 
   * [3.1 Docker Compose configuration](#31-docker-compose-configuration)
   * [3.2 ActiveMQ configuration](#32-activemq-configuration)
   * [3.3 Nginx configuration](#33-nginx-configuration)
+  * [3.4 Running the environment](#34-running-the-environment)
 
 <!-- vim-markdown-toc -->
 
 ## 1 Introduction
 
-Harmony eDelivery Access Access Point offers the ability of being deployed in a cluster. This configuration will provide high availability capabilities, so it can operate continuously without intervention if some of the cluster components fail.
+Harmony eDelivery Access Point offers the ability of being deployed in a cluster. This configuration will provide high availability capabilities, so it can operate continuously without intervention if some of the cluster components fail.
 
 The high availability is achieved by deploying multiple instances of the Access Point in a cluster. The Access Point instances are configured to use the same message broker subclusters so that all the services involved in the setup have a fallback instance.
+
+The following diagram shows a clustered setup of the Access Point:
+
+![clustered setup](img/ug_ap_cluster_overview_diagram.svg)
 
 ### 1.1 Target Audience
 
@@ -95,7 +100,7 @@ Using a load balancer will provide high availability and scalability to the AP i
 
 #### 2.1.1 Sticky sessions
 
-The AP Admin UI requires sticky sessions enabled in the load balancer. Sticky sessions ensure that the requests from the same user are always sent to the same AP instance.
+Unlike other endpoints as `/services/wsplugin` or `/services/msh`, AP Admin UI requires sticky sessions enabled in the load balancer. Sticky sessions ensure that the requests from the same user are always sent to the same AP instance.
 
 Depending on the load balancer used, the sticky sessions setup may vary.
 
@@ -110,13 +115,17 @@ ACTIVEMQ_BROKER_HOST=harmony-jms-london,harmony-jms-roma,harmony-jms-berlin
 ACTIVEMQ_BROKER_NAME=london,roma,berlin
 ```
 
+Overview of the message brokers in a high availability setup:
+
+![primary secondary setup](img/ug_ap_cluster_activemq_primary_secondary.svg)
+
 #### 2.2.1 Primary-secondary roles
 
 ActiveMQ brokers follow a primary-secondary architecture, where one broker is the primary and the rest are secondaries. The primary broker is the one that receives the messages from the AP instances, and the secondaries are the ones that replicate the messages from the primary and monitor the system to eventually become the new primary. The primary broker is elected by the boot order, the first ActiveMQ that completed the boot gets the primary role, locking the subcluster to ensure that there is only one primary broker.
 
 The primary-secondary architecture is transparent to the AP instances, so they can connect to any broker in the subcluster. The AP instances use a failover URI generated from the `ACTIVEMQ_BROKER_HOST` and the `ACTIVEMQ_TRANSPORT_PORT` environment variables to connect to the brokers, so they can connect to the active primary broker at any time.
 
-In order to have a reliable primary-secondary configuration, the brokers in the subcluster must have a unique name in the `brokerName` property in the `broker` node that can be found in the ActiveMQ XML configuration. 
+In order to have a reliable primary-secondary configuration, the brokers in the subcluster must have a unique name in the `brokerName` property in the `broker` node that can be found in the ActiveMQ XML configuration. An example of the `broker` node in the ActiveMQ XML configuration can be found in [section 3.2](#32-activemq-configuration). 
 
 For more information about ActiveMQ clustering, see the ActiveMQ documentation \[[AMQ-CLUSTERING](#Ref_AMQ-CLUSTERING)\].
 
@@ -124,7 +133,7 @@ For more information about ActiveMQ clustering, see the ActiveMQ documentation \
 
 The brokers persist their work in a KahaDB database. KahaDB is a file based persistence database that stores the messages.
 
-The brokers in the subcluster must share a volume to persist the lock status and the internal KahaDB database. The volume must be shared between all the brokers in the subcluster with read and write permissions. By default, the volume is located in the `/var/opt/apache-activemq` directory, but the location can be changed by modifying the `dataDirectory` in the `broker` node and the `directory` in the `kahaDB` node under `persistenceAdapter`.
+The brokers in the subcluster must share a volume to persist the lock status and the internal KahaDB database. The volume must be shared between all the brokers in the subcluster with read and write permissions. By default, the volume is located in the `/var/opt/apache-activemq` directory, but the location can be changed by modifying the `dataDirectory` in the `broker` node and the `directory` in the `kahaDB` node under `persistenceAdapter`. An example of those nodes in the ActiveMQ XML configuration can be found in [section 3.2](#32-activemq-configuration).
 
 For more information about ActiveMQ the shared storage between brokers, visit the ActiveMQ Shared File System Master Slave documentation \[[AMQ-SHAREDFILE-MASTERSLAVE](#Ref_AMQ-SHAREDFILE-MASTERSLAVE)\].
 
@@ -259,13 +268,8 @@ services:
       - ACTIVEMQ_DATA=/var/opt/apache-activemq
       - ACTIVEMQ_TMP=/var/tmp
     mem_limit: 1000m
-    ports:
-      - 8161:8161
-    healthcheck:
-      test: "exit 0"
-      start_period: 10s
     volumes:
-      - ./activemq-main.xml:/opt/apache-activemq/conf/activemq.xml
+      - ./activemq-london.xml:/opt/apache-activemq/conf/activemq.xml
       - harmony-jms-data:/var/opt/apache-activemq
 
   harmony-jms-berlin:
@@ -281,7 +285,7 @@ services:
       - ACTIVEMQ_TMP=/var/tmp
     mem_limit: 1000m
     volumes:
-      - ./activemq-replica.xml:/opt/apache-activemq/conf/activemq.xml
+      - ./activemq-berlin.xml:/opt/apache-activemq/conf/activemq.xml
       - harmony-jms-data:/var/opt/apache-activemq
 
 volumes:
@@ -494,3 +498,28 @@ http {
     }
 }
 ```
+
+### 3.4 Running the environment
+
+In order to execute the environment, you need a system with [Docker](https://docs.docker.com/engine/install/) installed.
+
+To run the environment, follow these steps:
+
+1. Save the Docker Compose configuration from the example configuration in [section 3.1](#31-docker-compose-configuration) to a file named `docker-compose.yml`
+2. Save the ActiveMQ configuration from the example configuration in [section 3.2](#32-activemq-configuration) to `activemq-london.xml` and `activemq-berlin.xml` in the same folder as the previous step.
+    * In the `activemq-berlin.xml` file, change the `brokerName` property to `berlin`. Also change the transport connector URI to `tcp://harmony-jms-berlin:61616`.
+3. Save the Nginx configuration from the example configuration in [section 3.3](#33-nginx-configuration) to `nginx.conf` in the same folder as the previous step.
+4. After saving the files, you should have a folder with the following files:
+    * `docker-compose.yml`
+    * `activemq-london.xml`
+    * `activemq-berlin.xml`
+    * `nginx.conf`
+5. Open a terminal and navigate to the folder where the files are saved. Run the following command to start the environment:
+    ```bash
+    docker compose up
+    ```
+6. After the environment is started, you can access the AP Admin UI by opening a web browser and navigating to `http://localhost:8080`. You can log in with the username `admin` and the password `Secret`.
+7. To stop the environment, press `Ctrl+C` in the terminal where the environment is running. You can cleanup the environment by running the following command:
+    ```bash
+    docker compose down
+    ```
