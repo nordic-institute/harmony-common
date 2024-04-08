@@ -257,7 +257,7 @@ services:
     mem_limit: 512m
 
   harmony-jms-london:
-    image: apache/activemq-classic:5.18.2
+    image: apache/activemq-classic:5.18.3
     environment:
       - ACTIVEMQ_CONNECTION_USER=admin
       - ACTIVEMQ_CONNECTION_PASSWORD=admin
@@ -273,7 +273,7 @@ services:
       - harmony-jms-data:/var/opt/apache-activemq
 
   harmony-jms-berlin:
-    image: apache/activemq-classic:5.18.2
+    image: apache/activemq-classic:5.18.3
     environment:
       - ACTIVEMQ_CONNECTION_USER=admin
       - ACTIVEMQ_CONNECTION_PASSWORD=admin
@@ -485,6 +485,7 @@ events { worker_connections 1024; }
 
 http {
     upstream harmony-ap {
+        ip_hash;
         server harmony-ap-main:8080;
         server harmony-ap-replica:8080;
     }
