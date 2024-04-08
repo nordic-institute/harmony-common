@@ -517,10 +517,10 @@ To run the environment, follow these steps:
     * `nginx.conf`
 5. Open a terminal and navigate to the folder where the files are saved. Run the following command to start the environment:
     ```bash
-    docker compose up
+    docker compose -p local-ap-env up
     ```
-6. After the environment is started, you can access the AP Admin UI by opening a web browser and navigating to `http://localhost:8080`. You can log in with the username `admin` and the password `Secret`.
-7. To stop the environment, press `Ctrl+C` in the terminal where the environment is running. You can cleanup the environment by running the following command:
+6. After the environment is started, you can access the AP Admin UI by opening a web browser and navigating to `http://localhost:8080`. You can log in with the username `harmony` and the password `Secret`.
+7. To stop the environment, press `Ctrl+C` in the terminal where the environment is running. You can clean up the environment by running the following command:
     ```bash
-    docker compose down
+    docker compose -p local-ap-env down --volumes
     ```
