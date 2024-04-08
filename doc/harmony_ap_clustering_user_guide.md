@@ -7,9 +7,9 @@ Doc. ID: UG-AP-C
 
 ## Version history <!-- omit in toc -->
 
-Date       | Version | Description                                           | Author
----------- |---------|-------------------------------------------------------| --------------------
-22.03.2024 | 1.0     | Initial version                                       | Diego Martin
+| Date       | Version | Description     | Author       |
+|------------|---------|-----------------|--------------|
+| 22.03.2024 | 1.0     | Initial version | Diego Martin |
 
 ## License <!-- omit in toc -->
 
@@ -80,15 +80,15 @@ AP can be deployed in a clustered environment using any container orchestration 
 
 When using the same environment variables in a set of AP Docker containers, they will form a cluster unit. The environment variables involved in the clustering configuration are:
 
-| Environment variable      | Default    | Notes 
-|---------------------------|------------|--------------
-| `DEPLOYMENT_CLUSTERED`    | false      | Enables the clustered mode when set to `true`. Unless this variable is set to `true`, the rest of the clustering configuration variables will be ignored. Required as `true` when used in a cluster, the default value is `false`.
-| `ACTIVEMQ_BROKER_HOST`    | *required* | The hostname of the ActiveMQ broker. It can be a comma-separated list of hostnames to define a subcluster. Required.
-| `ACTIVEMQ_BROKER_NAME`    | localhost  | The name of the ActiveMQ broker. When using a subcluster of brokers, it must be a comma-separated list of broker names with the same number of elements and in the same order as `ACTIVEMQ_BROKER_HOST`. Required, default value `localhost`.
-| `ACTIVEMQ_TRANSPORT_PORT` | 61616      | Port used in the ActiveMQ/s connection URI to the TCP socket that the clients will use to connect to the broker. Optional, default value `61616`.
-| `ACTIVEMQ_JMX_PORT`       | 1199       | Port used in the ActiveMQ/s JMX monitoring URI. Optional, default value `1199`
-| `ACTIVEMQ_USERNAME`       | *required* | The username to connect to the ActiveMQ broker, needs to be the same for all the members of the subcluster. Required.
-| `ACTIVEMQ_PASSWORD`       | *required* | The password to connect to the ActiveMQ broker, needs to be the same for all the members of the subcluster. Required.
+| Environment variable      | Default    | Notes                                                                                                                                                                                                                                         |
+|---------------------------|------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `DEPLOYMENT_CLUSTERED`    | false      | Enables the clustered mode when set to `true`. Unless this variable is set to `true`, the rest of the clustering configuration variables will be ignored. Required as `true` when used in a cluster, the default value is `false`.            |
+| `ACTIVEMQ_BROKER_HOST`    | *required* | The hostname of the ActiveMQ broker. It can be a comma-separated list of hostnames to define a subcluster. Required.                                                                                                                          |
+| `ACTIVEMQ_BROKER_NAME`    | localhost  | The name of the ActiveMQ broker. When using a subcluster of brokers, it must be a comma-separated list of broker names with the same number of elements and in the same order as `ACTIVEMQ_BROKER_HOST`. Required, default value `localhost`. |
+| `ACTIVEMQ_TRANSPORT_PORT` | 61616      | Port used in the ActiveMQ/s connection URI to the TCP socket that the clients will use to connect to the broker. Optional, default value `61616`.                                                                                             |
+| `ACTIVEMQ_JMX_PORT`       | 1199       | Port used in the ActiveMQ/s JMX monitoring URI. Optional, default value `1199`                                                                                                                                                                |
+| `ACTIVEMQ_USERNAME`       | *required* | The username to connect to the ActiveMQ broker, needs to be the same for all the members of the subcluster. Required.                                                                                                                         |
+| `ACTIVEMQ_PASSWORD`       | *required* | The password to connect to the ActiveMQ broker, needs to be the same for all the members of the subcluster. Required.                                                                                                                         |
 
 Along with the docker environment variables it's also mandatory to share the folder `/var/opt/harmony-ap` with read and write permissions. This folder contains the configuration files that are shared among the AP instances in the cluster unit.
 
@@ -157,13 +157,13 @@ The AP database can be a single instance or a cluster, depending on the requirem
 
 The database connection is configured using the following environment variables of the AP Docker container:
 
-| Environment variable | Default    | Notes
-|----------------------|------------|--------------
-| `DB_HOST`            | *required* | Database host name.
-| `DB_PORT`            | 3306       | Database port. Optional, default value `3306`.
-| `DB_SCHEMA`          | harmony_ap | Database schema. Optional, default value `harmony_ap`.
-| `DB_USER`            | harmony_ap | Database user. Optional, default value `harmony_ap`.
-| `DB_PASSWORD`        | *required* | Database password.
+| Environment variable | Default    | Notes                                                  |
+|----------------------|------------|--------------------------------------------------------|
+| `DB_HOST`            | *required* | Database host name.                                    |
+| `DB_PORT`            | 3306       | Database port. Optional, default value `3306`.         |
+| `DB_SCHEMA`          | harmony_ap | Database schema. Optional, default value `harmony_ap`. |
+| `DB_USER`            | harmony_ap | Database user. Optional, default value `harmony_ap`.   |
+| `DB_PASSWORD`        | *required* | Database password.                                     |
 
 To achieve high availability, it's recommended to use a clustered database solution, such as [Amazon RDS](https://aws.amazon.com/rds/), [Google Cloud SQL](https://cloud.google.com/sql), or [Azure SQL Database](https://azure.microsoft.com/en-us/products/azure-sql/database).
 
