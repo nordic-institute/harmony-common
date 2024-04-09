@@ -26,7 +26,8 @@ This document is licensed under the Creative Commons Attribution-ShareAlike 4.0 
   * [1.3 References](#13-references)
 * [2. Running AP in a clustered environment](#2-running-ap-in-a-clustered-environment)
   * [2.1 Load balancing AP instances](#21-load-balancing-ap-instances)
-    * [2.1.1 Sticky sessions](#211-sticky-sessions) 
+    * [2.1.1 Mutual TLS](#211-mutual-tls)
+    * [2.1.2 Sticky sessions](#212-sticky-sessions) 
   * [2.2 Message brokers](#22-message-brokers)
     * [2.2.1 Primary-secondary roles](#221-primary-secondary-roles)
     * [2.2.2 Shared storage](#222-shared-storage)
@@ -98,9 +99,27 @@ When using multiple instances of AP, it is recommended to use a load balancer to
 
 Using a load balancer will provide high availability and scalability to the AP instances. If one of the instances fails, the load balancer will stop sending requests to it, ensuring that the service is still available.
 
-#### 2.1.1 Sticky sessions
+#### 2.1.1 Mutual TLS
 
-Unlike other endpoints as `/services/wsplugin` or `/services/msh`, AP Admin UI requires sticky sessions enabled in the load balancer. Sticky sessions ensure that the requests from the same user are always sent to the same AP instance.
+When using an external load balancer, there are several ways how mutual TLS between APs (the `/services/msh` endpoint) can be configured. The most common alternatives and AP's support for them are listed below.
+
+1. TLS is terminated at the load balancer, and the load balancer verifies the client certificate. (**supported**)
+  * **Notes:**
+    * TLS certificate is configured in the load balancer, and client APs need to trust that certificate.
+    * Supported by AWS ALB.
+    * Not supported by Azure Container App Ingress.
+2. TLS is terminated at AP, and the load balancer is configured to use SSL passthrough. (**supported**)
+  * **Notes:** 
+    * TLS session resumption does not work unless sticky sessions are enabled which might cause performance issues and/or uneven load distribution.
+    * Not supported by AWS ALB, requires NLB or classic ELB.
+    * Using TCP with Azure Container Apps Ingress requires a custom vNet.
+3. TLS is terminated at the load balancer, and the load balancer forwards the client certificate information in HTTP headers, and AP verifies the client certificate. (**not supported**)
+
+For more detailed configuration instructions for different load balancers, please refer to the load balancer's documentation.
+
+#### 2.1.2 Sticky sessions
+
+Unlike the `/services/wsplugin` or `/services/msh` endpoints, the AP Admin UI requires sticky sessions enabled in the load balancer. Sticky sessions ensure that the requests from the same user are always sent to the same AP instance.
 
 Depending on the load balancer used, the sticky sessions setup may vary.
 
