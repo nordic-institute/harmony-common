@@ -3,7 +3,8 @@
 ## Access Point 2.3.0 - UNRELEASED
 
 - NEDS-174: Merge Domibus 5.1.2 into Harmony Access Point
-
+- NEDS-109: Add support for clustered setups
+- NEDS-172: Add support for all CPU architectures, moving beyond exclusive Intel-based compatibility
 
 ## Access Point 2.2.2 - 2023-12-07
 
