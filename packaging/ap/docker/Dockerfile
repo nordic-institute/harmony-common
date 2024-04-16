@@ -24,7 +24,8 @@ COPY packaging/ap/docker/server.xml.template /opt/harmony-ap/setup/
 COPY packaging/ap/docker/entrypoint.sh /opt/harmony-ap/bin/
 COPY CHANGELOG.md /usr/share/doc/harmony-ap/
 
-RUN mkdir /opt/harmony-ap/plugins/config \
+RUN mkdir -p /opt/harmony-ap/plugins/config \
+ && mkdir -p /opt/harmony-ap/extensions/lib \
  && chmod -R ugo=rX /opt/harmony-ap/ \
  && chmod a+rx /opt/harmony-ap/bin/*.sh
 

@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-
 <spring:beans
         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xmlns:spring="http://www.springframework.org/schema/beans"
@@ -35,11 +34,11 @@
             </systemUsage>
         </systemUsage>
         <destinations>
-            <queue id="eArchiveQueue" 
+            <queue id="eArchiveQueue"
                    physicalName="domibus.internal.earchive.queue"/>
-            <queue id="eArchiveNotificationQueue" 
+            <queue id="eArchiveNotificationQueue"
                    physicalName="domibus.internal.earchive.notification.queue"/>
-            <queue id="eArchiveNotificationDLQ" 
+            <queue id="eArchiveNotificationDLQ"
                    physicalName="domibus.internal.earchive.notification.dlq"/>
             <queue id="sendMessageQueue"
                    physicalName="domibus.internal.dispatch.queue"/>
@@ -80,7 +79,7 @@
             <queue id="fsPluginSendQueue"
                    physicalName="${fsplugin.send.queue:domibus.fsplugin.send.queue}"/>
 
-            <queue id="wsPluginSendQueue" 
+            <queue id="wsPluginSendQueue"
                    physicalName="${wsplugin.send.queue:domibus.wsplugin.send.queue}"/>
 
             <!-- Internal queues of JMS backend plugin -->
