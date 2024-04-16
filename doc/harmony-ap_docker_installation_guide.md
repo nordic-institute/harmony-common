@@ -152,23 +152,23 @@ See the Static Discovery Configuration Guide \[[UG-SDCG](static_discovery_config
   | HARMONY_PARAM_FILE             | *n/a*             | Path to (mapped) parameter file
   | DEPLOYMENT_CLUSTERED           | false             | Enables clustering support
 
-#### Clustering specific properties.
-The following properties are only used if the Access Point is running in a clustered environment by setting the parameter `DEPLOYMENT_CLUSTERED` to `true`, otherwise they are ignored.
-
-  | Parameter                      | Default                 | Notes
-  |--------------------------------|-------------------------|--------------
-  | ACTIVEMQ_BROKER_HOST           | *required if clustered* | ActiveMQ host name. Can be a comma-separated list of host names. The number of hosts needs to be the same as the number of names
-  | ACTIVEMQ_BROKER_NAME           | localhost               | ActiveMQ broker name. Can be a comma-separated list of broker names. The number of names needs to be the same as the number of hosts
-  | ACTIVEMQ_USERNAME              | *n/a*                   | ActiveMQ username allowed to connect to the broker
-  | ACTIVEMQ_PASSWORD              | *n/a*                   | ActiveMQ password allowed to connect to the broker
-  | ACTIVEMQ_TRANSPORT_PORT        | 61616                   | Port used in the ActiveMQ/s connection URI to the TCP socket that the clients will use
-  | ACTIVEMQ_JMX_PORT              | 1199                    | Port used in the ActiveMQ/s JMX monitoring URI
-
 \* Can be only set once when starting a container with empty configuration.  
 \*\* Use only [printable ASCII](https://en.wikipedia.org/wiki/ASCII#Printable_characters) characters in keystore passwords.
 
-The above configuration parameters can also be passed via a configuration file mapped in the container. The location of the file inside the container is defined using the HARMONY_PARAM_FILE environment variable. For example:
-```
+#### Clustering specific properties.
+The following properties are only used if the Access Point is running in a clustered environment by setting the parameter `DEPLOYMENT_CLUSTERED` to `true`, otherwise they are ignored.
+
+  | Parameter                      | Default                  | Notes
+  |--------------------------|-------------------------|--------------
+  | ACTIVEMQ_BROKER_HOST           | *required if clustered*  | ActiveMQ host name. Can be a comma-separated list of host names. The number of hosts needs to be the same as the number of names
+  | ACTIVEMQ_BROKER_NAME           | localhost                | ActiveMQ broker name. Can be a comma-separated list of broker names. The number of names needs to be the same as the number of hosts
+  | ACTIVEMQ_USERNAME              | *required if clustered*  | ActiveMQ username allowed to connect to the broker
+  | ACTIVEMQ_PASSWORD              | *required if clustered*  | ActiveMQ password allowed to connect to the broker
+  | ACTIVEMQ_TRANSPORT_PORT        | 61616                    | Port used in the ActiveMQ/s connection URI to the TCP socket that the clients will use
+  | ACTIVEMQ_JMX_PORT              | 1199                     | Port used in the ActiveMQ/s JMX monitoring URI
+
+The configuration parameters can also be passed via a configuration file mapped in the container. The location of the file inside the container is defined using the `HARMONY_PARAM_FILE` environment variable. For example:
+```properties
 # harmony.properties
 DB_HOST=harmony-db
 DB_PASSWORD=pass"word
