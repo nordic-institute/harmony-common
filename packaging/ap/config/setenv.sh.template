@@ -1,5 +1,6 @@
 #!/bin/sh
 export JAVA_OPTS="$JAVA_OPTS \
+ -Djava.rmi.server.hostname=127.0.0.1 \
  -Ddomibus.config.location=/etc/harmony-ap \
  -Ddomibus.work.location=/var/opt/harmony-ap/work \
  -Djavax.net.ssl.trustStore=/etc/harmony-ap/tls-truststore.p12 \

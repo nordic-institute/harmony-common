@@ -1,6 +1,6 @@
 # Harmony eDelivery Access - Service Metadata Publisher Installation Guide <!-- omit in toc -->
 
-Version: 1.14  
+Version: 1.15  
 Doc. ID: IG-SMP
 ---
 
@@ -23,6 +23,7 @@ Doc. ID: IG-SMP
  09.08.2023 | 1.12    | Update section 2.10                                                                                     | Jarkko Hyöty
  17.08.2023 | 1.13    | Update system requirements                                                                              | Jarkko Hyöty
  15.01.2024 | 1.14    | Update links to external documents                                                                      | Petteri Kivimäki
+ 21.02.2024 | 1.15    | Update supported operating systems                                                                      | Diego Martin
 
 ## License <!-- omit in toc -->
 
@@ -84,10 +85,10 @@ See eDelivery documentation \[[TERMS](#Ref_TERMS)\].
 
 ### 2.1 Prerequisites to Installation
 
-The SMP is officially supported on the following platforms:
+The SMP is officially supported on the following operating systems (x86-64, arm64):
 
-* Ubuntu Server 20.04 Long-Term Support (LTS) operating system on a x86-64 platform.
-* Ubuntu Server 22.04 Long-Term Support (LTS) operating system on a x86-64 platform.
+* Ubuntu Server 20.04 Long-Term Support (LTS).
+* Ubuntu Server 22.04 Long-Term Support (LTS).
 
 The software can be installed both on physical and virtualized hardware.
 
