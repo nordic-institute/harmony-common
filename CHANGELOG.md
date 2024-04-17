@@ -1,6 +1,6 @@
 # Changelog
 
-## Access Point 2.3.0 - UNRELEASED
+## Access Point 2.3.0 - 2024-04-17
 
 - NEDS-174: Merge Domibus 5.1.2 into Harmony Access Point
 - NEDS-109: Add support for clustered setups
