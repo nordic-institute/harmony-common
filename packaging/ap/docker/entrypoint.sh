@@ -136,6 +136,24 @@ add_prefix_suffix() {
   echo "${result%,}"
 }
 
+log "User UID: $(id -u)"
+log "User GID: $(id -g)"
+
+PERMISSIONS_OK=1
+
+if [ ! -r "$HARMONY_HOME" ]; then
+    log "HARMONY_HOME='$HARMONY_HOME' is not readable."
+    PERMISSIONS_OK=0
+fi
+
+if [ ! -w "$HARMONY_BASE" ]; then
+    log "HARMONY_BASE='$HARMONY_BASE' is not writable."
+    PERMISSIONS_OK=0
+fi
+
+if [ $PERMISSIONS_OK -eq 0 ]; then
+    log "You may have issues with file permissions, more information here: https://github.com/nordic-institute/harmony-common/blob/main/doc/harmony-ap_docker_installation_guide.md#3221-distributed-file-systems"
+fi
 
 if [[ -n ${HARMONY_PARAM_FILE:-} && -f $HARMONY_PARAM_FILE ]]; then
   log "Reading parameters from $HARMONY_PARAM_FILE..."
@@ -218,8 +236,6 @@ if [[ $INIT = "true" || $HARMONY_VERSION != "$CONF_VERSION" || ! -f ${HARMONY_BA
     "${HARMONY_BASE}/conf" \
     "${HARMONY_BASE}/log" \
     "${HARMONY_BASE}/work"
-
-  chown -R harmony-ap:harmony-ap "${HARMONY_BASE}"/{etc,conf,log,work} || true
 
   if [[ $INIT = "true" && $_DB_AVAILABLE = "false" ]]; then
     warn "Initialization forced. Skipping database migrations due to DB not available."
