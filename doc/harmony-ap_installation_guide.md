@@ -325,7 +325,7 @@ mysql_tzinfo_to_sql /usr/share/zoneinfo/posix | mysql -u root mysql
 
 ### 3.2 Upgrade
 
-The the `harmony-ap` service is automatically stopped for the upgrade and automatically restarted after the upgrade if the service has been enabled. Otherwise, the service must be manually restarted after the upgrade.
+The `harmony-ap` service is automatically stopped for the upgrade and automatically restarted after the upgrade if the service has been enabled. Otherwise, the service must be manually restarted after the upgrade.
 
 Update package repository metadata:
 ```bash
