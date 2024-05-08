@@ -152,7 +152,7 @@ if [ ! -w "$HARMONY_BASE" ]; then
 fi
 
 if [ $PERMISSIONS_OK -eq 0 ]; then
-    log "You may have issues with file permissions, more information here: https://github.com/nordic-institute/harmony-common/blob/main/doc/harmony-ap_docker_installation_guide.md#3221-distributed-file-systems"
+    log "You may have issues with file permissions, more information is available here: https://github.com/nordic-institute/harmony-common/blob/main/doc/harmony-ap_docker_installation_guide.md#3221-distributed-file-systems"
 fi
 
 if [[ -n ${HARMONY_PARAM_FILE:-} && -f $HARMONY_PARAM_FILE ]]; then

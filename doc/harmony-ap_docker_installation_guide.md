@@ -126,7 +126,7 @@ alter user harmony_ap@'%' identified by '<password>';
 grant all on harmony_ap.* to harmony_ap@'%';
 ```
 
-See also the [Docker compose example](#docker-compose-example) for using a MySQL container as a database.
+See also the [Docker compose example](#61-example-of-an-ap-environment) for using a MySQL container as a database.
 
 ### 3.2 Configuration
 
@@ -190,7 +190,7 @@ one should map a volume over `/var/opt/harmony-ap`.
 
 When using a distributed file system like NFS or Samba, it is important to ensure that the file system is mounted with the correct permissions. The Access Point requires read and write access to the mapped volume.
 
-Access Point runs the service as a non-root user named `harmony-ap`, we do it because otherwise Docker would run it as root, and this is a security risk if the container becomes compromised. The default UID and GID of the `harmony-ap` user is `999`.
+The Access Point service is run as a non-root user named harmony-ap. A custom user is used to avoid running the service as root which is a security risk if the container becomes compromised. The default UID and GID of the `harmony-ap` user is `999`.
 
 If you want to use the default UID and GID, you should ensure through the mount options that the mounted volume is owned by a user with UID and GID `999`.
 
@@ -350,7 +350,7 @@ volumes:
 
 ### 6.2 Example of an AP environment in a clustered environment
 
-An example of AP running in a clustered environment can be found in the Access Point Clustering Guide \[[UG-AP-C](#Ref_UG-AP-C)\]
+An example of AP running in a clustered environment can be found in the Access Point Clustering Guide \[[UG-AP-C](#Ref_UG-AP-C)\].
 
 ### 6.3 Running the environment
 
@@ -358,7 +358,7 @@ In order to execute the environment, you need a system with [Docker](https://doc
 
 To run the environment, follow these steps:
 
-1. Save the Docker Compose configuration from the example configuration in [section 6.1](#61-example-of-an-ap-environment) to a file named `docker-compose.yml`
+1. Save the Docker Compose configuration from the example configuration in [section 6.1](#61-example-of-an-ap-environment) to a file named `docker-compose.yml`.
 2. Open a terminal and navigate to the folder where the `docker-compose.yml` file is saved. Run the following command to start the environment:
     ```bash
     docker compose -p local-ap-env up
