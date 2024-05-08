@@ -31,18 +31,21 @@ RUN mkdir -p /opt/harmony-ap/plugins/config \
 
 FROM ubuntu:22.04
 
+ARG AP_UID="999"
+ARG AP_GID="999"
+
 RUN apt-get -qqy update \
  && apt-get -qqy upgrade \
  && apt-get -qqy install openjdk-11-jre-headless mysql-client tzdata crudini xmlstarlet sed grep tini \
  && apt-get autoremove \
  && apt-get clean
 
-RUN groupadd --gid 999 harmony-ap \
- && useradd --system --uid 999 --gid 999 harmony-ap \
+RUN groupadd --gid "$AP_GID" harmony-ap \
+ && useradd --system --uid "$AP_UID" --gid "$AP_GID" harmony-ap \
  && mkdir -p -m 750 \
   /var/opt/harmony-ap \
   /var/tmp/harmony-ap \
- && chown -R 999:999 \
+ && chown -R "harmony-ap:harmony-ap" \
   /var/opt/harmony-ap \
   /var/tmp/harmony-ap \
  && ln -sf /var/opt/harmony-ap/etc /etc/harmony-ap
@@ -58,7 +61,7 @@ LABEL org.opencontainers.image.version="$VERSION"
 LABEL org.opencontainers.image.source=https://github.com/nordic-institute/harmony-access-point
 LABEL org.niis.harmony.build-id="$BUILD_ID"
 
-USER  harmony-ap
+USER harmony-ap
 WORKDIR /var/opt/harmony-ap
 ENV HARMONY_VERSION=$VERSION
 ENTRYPOINT ["/opt/harmony-ap/bin/entrypoint.sh"]

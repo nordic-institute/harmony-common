@@ -213,7 +213,7 @@ Upon the first installation of the SMP, the system asks for the following inform
   - Database host. The default is `localhost`.
   - Database port.  The default is `3306`.
   - Database schema name. The default is `harmony_smp`.
-  - Database user name. The default is `harmony_smp`.
+  - Database username. The default is `harmony_smp`.
   - Database password. There is no default. Leave blank to generate a random password when installing a local database.
 - `Distinguished Name` for generated self-signed content and transport certificates;
   - for example:
@@ -353,7 +353,7 @@ The SMP application log files are located in the `/var/log/harmony-smp/` directo
 
 ## 3 Version Upgrade
 
-The the `harmony-smp` service is automatically stopped for the upgrade and automatically restarted after the upgrade if
+The `harmony-smp` service is automatically stopped for the upgrade and automatically restarted after the upgrade if
 the service has been enabled. Otherwise, the service must be manually restarted after the upgrade.
 
 Update package repository metadata:
