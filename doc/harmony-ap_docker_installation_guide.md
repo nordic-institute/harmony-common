@@ -190,7 +190,7 @@ one should map a volume over `/var/opt/harmony-ap`.
 
 When using a distributed file system like NFS or Samba, it is important to ensure that the file system is mounted with the correct permissions. The Access Point requires read and write access to the mapped volume.
 
-The Access Point service is run as a non-root user named harmony-ap. A custom user is used to avoid running the service as root which is a security risk if the container becomes compromised. The default UID and GID of the `harmony-ap` user is `999`.
+The Access Point service is run as a non-root user named `harmony-ap`. A custom user is used to avoid running the service as root which is a security risk if the container becomes compromised. The default UID and GID of the `harmony-ap` user is `999`.
 
 If you want to use the default UID and GID, you should ensure through the mount options that the mounted volume is owned by a user with UID and GID `999`.
 
