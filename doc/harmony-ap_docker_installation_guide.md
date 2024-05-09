@@ -160,7 +160,7 @@ See the Static Discovery Configuration Guide \[[UG-SDCG](static_discovery_config
 | ADMIN_PASSWORD\*               | *random*          | Initial admin user password                                                                  |
 | HARMONY_PARAM_FILE             | *n/a*             | Path to (mapped) parameter file                                                              |
 | EXTERNAL_LB                    | false             | Offload TLS termination to an external load balancer. By enabling this option Access Point will listen on port 8080 (HTTP) instead of 8443 (HTTPS) |
-| DEPLOYMENT_CLUSTERED           | false             | Enables clustering support                                                                   |
+| DEPLOYMENT_CLUSTERED           | false             | Enables clustering support. By enabling this option Access Point will listen on port 8080 (HTTP) instead of 8443 (HTTPS)                           |
 
 \* Can be only set once when starting a container with empty configuration.  
 \*\* Use only [printable ASCII](https://en.wikipedia.org/wiki/ASCII#Printable_characters) characters in keystore passwords.
