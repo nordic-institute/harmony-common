@@ -1,6 +1,6 @@
 # Harmony eDelivery Access - Access Point Docker Installation Guide <!-- omit in toc -->
 
-Version: 1.3  
+Version: 1.4  
 Doc. ID: IG-AP-D
 
 ---
@@ -13,6 +13,7 @@ Doc. ID: IG-AP-D
 | 15.01.2024 | 1.1     | Update document title and links to external documents | Petteri Kivimäki |
 | 05.03.2024 | 1.2     | Added documentation for clustered environments        | Diego Martin     |
 | 07.05.2024 | 1.3     | Added information about distributed file systems      | Diego Martin     |
+| 09.05.2024 | 1.4     | Added instructions to use external load balancers     | Diego Martin     |
 
 ## License <!-- omit in toc -->
 
@@ -34,6 +35,8 @@ To view a copy of this license, visit <https://creativecommons.org/licenses/by-s
     * [3.2.1 Volumes](#321-volumes)
       * [3.2.1.1 Distributed file systems](#3211-distributed-file-systems)
     * [3.2.2 Advanced configuration](#322-advanced-configuration)
+    * [3.2.3 Load balancing AP](#323-load-balancing-ap)
+      * [3.2.3.1 Mutual TLS](#3231-mutual-tls)
   * [3.3 Running the container](#33-running-the-container)
   * [3.4 Installing Custom Plugins](#34-installing-custom-plugins)
   * [3.5 Location of Configuration and Generated Passwords](#35-location-of-configuration-and-generated-passwords)
@@ -156,7 +159,8 @@ See the Static Discovery Configuration Guide \[[UG-SDCG](static_discovery_config
 | ADMIN_USER\*                   | harmony           | Initial admin user for admin UI                                                              |
 | ADMIN_PASSWORD\*               | *random*          | Initial admin user password                                                                  |
 | HARMONY_PARAM_FILE             | *n/a*             | Path to (mapped) parameter file                                                              |
-| DEPLOYMENT_CLUSTERED           | false             | Enables clustering support                                                                   |
+| EXTERNAL_LB                    | false             | Offload TLS termination to an external load balancer. By enabling this option Access Point will listen on port 8080 (HTTP) instead of 8443 (HTTPS) |
+| DEPLOYMENT_CLUSTERED           | false             | Enables clustering support. By enabling this option Access Point will listen on port 8080 (HTTP) instead of 8443 (HTTPS)                           |
 
 \* Can be only set once when starting a container with empty configuration.  
 \*\* Use only [printable ASCII](https://en.wikipedia.org/wiki/ASCII#Printable_characters) characters in keystore passwords.
@@ -239,6 +243,32 @@ docker run --rm -it \
   -v harmony-ap-data:/var/opt/harmony-ap \
   niis/harmony-ap:2.3.0 bash
 ```
+
+#### 3.2.3 Load balancing AP
+
+Using an external load balancer is supported by Access Point.
+
+The load balancer can be a hardware device, a software solution like [HAProxy](http://www.haproxy.org/), [Nginx](https://www.nginx.com/), [Traefik](https://traefik.io/), or a cloud service like [Amazon ELB](https://aws.amazon.com/elasticloadbalancing/), [Google Cloud Load Balancing](https://cloud.google.com/load-balancing), [Azure Load Balancer](https://azure.microsoft.com/en-us/products/load-balancer/).
+
+##### 3.2.3.1 Mutual TLS
+
+When using an external load balancer, it is recommended to use mutual TLS (mTLS) to secure the communication. There are several ways how mTLS between APs (the `/services/msh` endpoint) can be configured. The most common alternatives and AP's support for them are listed below.
+
+1. TLS is terminated at the load balancer, and the load balancer verifies the client certificate. (**supported**)
+  * **Notes:**
+    * TLS certificate is configured in the load balancer, and client APs need to trust that certificate.
+    * Supported by AWS ALB.
+    * Not supported by Azure Container App Ingress.
+2. TLS is terminated at AP, and the load balancer is configured to use SSL passthrough. (**supported**)
+  * **Notes:**
+    * TLS session resumption does not work unless sticky sessions are enabled which might cause performance issues and/or uneven load distribution.
+    * Not supported by AWS ALB, requires NLB or classic ELB.
+    * Using TCP with Azure Container Apps Ingress requires a custom vNet.
+3. TLS is terminated at the load balancer, and the load balancer forwards the client certificate information in HTTP headers, and AP verifies the client certificate. (**not supported**)
+
+For more detailed configuration instructions for different load balancers, please refer to the load balancer's documentation.
+
+Offloading TLS termination to the load balancer can be enabled by setting the `EXTERNAL_LB` environment variable to `true`. Enabling this option will cause Access Point to listen on port 8080 (HTTP) instead of 8443 (HTTPS).
 
 ### 3.3 Running the container
 
