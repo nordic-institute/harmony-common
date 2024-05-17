@@ -1,6 +1,6 @@
 # Harmony eDelivery Access - Static Discovery Configuration Guide <!-- omit in toc -->
 
-Version: 1.6  
+Version: 1.8  
 Doc. ID: UG-SDCG
 
 ---
@@ -16,6 +16,8 @@ Doc. ID: UG-SDCG
  30.05.2023 | 1.4     | Update WS Plugin interface path                                                                                                     | Petteri Kivimäki
  14.09.2023 | 1.5     | Notes about using the containerized version                                                                                         | Jarkko Hyöty
  14.09.2023 | 1.6     | Default to PKCS12 keystores                                                                                                         | Jarkko Hyöty
+ 15.01.2024 | 1.7     | Update links to external documents                                                                                                  | Petteri Kivimäki
+ 28.02.2024 | 1.8     | Update namespaces in example responses                                                                                              | Petteri Kivimäki
 
 ## License <!-- omit in toc -->
 
@@ -86,10 +88,10 @@ See eDelivery documentation \[[TERMS](#Ref_TERMS)\].
 
 ### 1.3 References
 
-1. <a id="Ref_TERMS" class="anchor"></a>\[TERMS\] eDelivery Documentation, <https://ec.europa.eu/digital-building-blocks/wikis/display/DIGITAL/eDelivery>
+1. <a id="Ref_TERMS" class="anchor"></a>\[TERMS\] eDelivery Documentation, <https://ec.europa.eu/digital-building-blocks/sites/display/DIGITAL/eDelivery>
 2. <a id="Ref_IG-AP" class="anchor"></a>\[IG-AP\] Harmony eDelivery Access - Access Point Installation Guide. Document ID: [IG-AS](harmony-ap_installation_guide.md)
-3. <a id="Ref_DOMIBUS_ADMIN_GUIDE" class="anchor"></a>\[DOMIBUS_ADMIN_GUIDE\] Access Point Administration Guide - Domibus 5.1.0, <https://ec.europa.eu/digital-building-blocks/wikis/download/attachments/660440359/%28eDelivery%29%28AP%29%28AG%29%28Domibus%205.1%29%2819.6%29.pdf>
-4. <a id="Ref_WS_PLUGIN" class="anchor"></a>\[WS_PLUGIN\] Access Point Interface Control Document - WS Plugin, <https://ec.europa.eu/digital-building-blocks/wikis/download/attachments/660440359/%28eDelivery%29%28AP%29%28ICD%29%28WS%20plugin%29%28Domibus%205.1%29%283.4%29.pdf>
+3. <a id="Ref_DOMIBUS_ADMIN_GUIDE" class="anchor"></a>\[DOMIBUS_ADMIN_GUIDE\] Access Point Administration Guide - Domibus 5.1.0, <https://ec.europa.eu/digital-building-blocks/sites/download/attachments/660440359/%28eDelivery%29%28AP%29%28AG%29%28Domibus%205.1%29%2819.6%29.pdf>
+4. <a id="Ref_WS_PLUGIN" class="anchor"></a>\[WS_PLUGIN\] Access Point Interface Control Document - WS Plugin, <https://ec.europa.eu/digital-building-blocks/sites/download/attachments/660440359/%28eDelivery%29%28AP%29%28ICD%29%28WS%20plugin%29%28Domibus%205.1%29%283.4%29.pdf>
 
 ## 2. Configure Static Discovery
 
@@ -637,7 +639,7 @@ A successful response looks like this:
 <?xml version="1.0" encoding="UTF-8"?>
 <soap:Envelope xmlns:soap="http://www.w3.org/2003/05/soap-envelope">
    <soap:Body>
-      <ns2:submitResponse xmlns:ns2="http://org.ecodex.backend/1_1/" xmlns:ns3="http://docs.oasis-open.org/ebxml-msg/ebms/v3.0/ns/core/200704/" xmlns:ns4="http://www.w3.org/2003/05/soap-envelope" xmlns:xmime="http://www.w3.org/2005/05/xmlmime">
+      <ns2:submitResponse xmlns:ns2="http://eu.domibus.wsplugin/" xmlns:ns3="http://docs.oasis-open.org/ebxml-msg/ebms/v3.0/ns/core/200704/" xmlns:ns4="http://www.w3.org/2003/05/soap-envelope" xmlns:xmime="http://www.w3.org/2005/05/xmlmime">
          <messageID>bd3ea132-6a0d-11ec-9789-0af9f1d3371a@edelivery.digital</messageID>
       </ns2:submitResponse>
    </soap:Body>
@@ -656,7 +658,7 @@ A successful response looks like this:
 <?xml version="1.0" encoding="UTF-8"?>
 <soap:Envelope xmlns:soap="http://www.w3.org/2003/05/soap-envelope">
    <soap:Body>
-      <ns2:listPendingMessagesResponse xmlns:ns2="http://org.ecodex.backend/1_1/" xmlns:ns3="http://docs.oasis-open.org/ebxml-msg/ebms/v3.0/ns/core/200704/" xmlns:ns5="http://www.w3.org/2003/05/soap-envelope" xmlns:xmime="http://www.w3.org/2005/05/xmlmime">
+      <ns2:listPendingMessagesResponse xmlns:ns2="http://eu.domibus.wsplugin/" xmlns:ns3="http://docs.oasis-open.org/ebxml-msg/ebms/v3.0/ns/core/200704/" xmlns:ns5="http://www.w3.org/2003/05/soap-envelope" xmlns:xmime="http://www.w3.org/2005/05/xmlmime">
          <messageID>bd3ea132-6a0d-11ec-9789-0af9f1d3371a@edelivery.digital</messageID>
       </ns2:listPendingMessagesResponse>
    </soap:Body>
@@ -675,7 +677,7 @@ A successful response looks like this:
 <?xml version="1.0" encoding="UTF-8"?>
 <soap:Envelope xmlns:soap="http://www.w3.org/2003/05/soap-envelope">
    <soap:Header>
-      <ns5:Messaging xmlns:ns5="http://docs.oasis-open.org/ebxml-msg/ebms/v3.0/ns/core/200704/" xmlns:ns4="http://org.ecodex.backend/1_1/" xmlns:xmime="http://www.w3.org/2005/05/xmlmime" mustUnderstand="false">
+      <ns5:Messaging xmlns:ns5="http://docs.oasis-open.org/ebxml-msg/ebms/v3.0/ns/core/200704/" xmlns:ns4="http://eu.domibus.wsplugin/" xmlns:xmime="http://www.w3.org/2005/05/xmlmime" mustUnderstand="false">
          <ns5:UserMessage mpc="http://docs.oasis-open.org/ebxml-msg/ebms/v3.0/ns/core/200704/defaultMPC">
             <ns5:MessageInfo>
                <ns5:Timestamp>2021-12-31T07:58:07.003</ns5:Timestamp>
@@ -711,7 +713,7 @@ A successful response looks like this:
       </ns5:Messaging>
    </soap:Header>
    <soap:Body>
-      <ns2:retrieveMessageResponse xmlns:ns2="http://org.ecodex.backend/1_1/" xmlns:ns3="http://docs.oasis-open.org/ebxml-msg/ebms/v3.0/ns/core/200704/" xmlns:ns5="http://www.w3.org/2003/05/soap-envelope" xmlns:xmime="http://www.w3.org/2005/05/xmlmime">
+      <ns2:retrieveMessageResponse xmlns:ns2="http://eu.domibus.wsplugin/" xmlns:ns3="http://docs.oasis-open.org/ebxml-msg/ebms/v3.0/ns/core/200704/" xmlns:ns5="http://www.w3.org/2003/05/soap-envelope" xmlns:xmime="http://www.w3.org/2005/05/xmlmime">
          <payload payloadId="cid:message">
             <value>PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz4KPGhlbGxvPndvcmxkPC9oZWxsbz4=</value>
          </payload>

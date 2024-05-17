@@ -1,6 +1,6 @@
 # Harmony eDelivery Access - Access Point Installation Guide <!-- omit in toc -->
 
-Version: 1.11  
+Version: 1.14  
 Doc. ID: IG-AP
 
 ---
@@ -21,6 +21,9 @@ Doc. ID: IG-AP
  22.06.2023 | 1.9     | Add a note about the default password expiration policy                                                                                                     | Petteri Kivimäki
  17.08.2023 | 1.10    | Update system requirements                                                                                                                                  | Jarkko Hyöty
  29.09.2023 | 1.11    | Use PKCS12 keystores by default. Update certificate DN configuration.                                                                                       | Jarkko Hyöty
+ 15.01.2024 | 1.12    | Update links to external documents                                                                                                                          | Petteri Kivimäki
+ 28.02.2024 | 1.13    | Update WS Plugin interface path                                                                                                                             | Petteri Kivimäki
+ 01.03.2024 | 1.14    | Update supported operating systems                                                                                                                          | Diego Martin
 
 ## License <!-- omit in toc -->
 
@@ -66,7 +69,7 @@ See eDelivery documentation \[[TERMS](#Ref_TERMS)\].
 
 ### 1.3 References
 
-1. <a id="Ref_TERMS" class="anchor"></a>\[TERMS\] eDelivery Documentation, <https://ec.europa.eu/digital-building-blocks/wikis/display/DIGITAL/eDelivery>
+1. <a id="Ref_TERMS" class="anchor"></a>\[TERMS\] eDelivery Documentation, <https://ec.europa.eu/digital-building-blocks/sites/display/DIGITAL/eDelivery>
 2. <a id="Ref_DOMIBUS_ADMIN_GUIDE" class="anchor"></a>\[DOMIBUS_ADMIN_GUIDE\] Access Point Administration Guide - Domibus 5.1.1, <https://ec.europa.eu/digital-building-blocks/sites/download/attachments/693207754/%28eDelivery%29%28AP%29%28AG%29%28Domibus%205.1.1%29%2820.6%29.pdf>
 3. <a id="Ref_WS_PLUGIN" class="anchor"></a>\[WS_PLUGIN\] Access Point Interface Control Document - WS Plugin, <https://ec.europa.eu/digital-building-blocks/sites/download/attachments/693207754/%28eDelivery%29%28AP%29%28ICD%29%28WS%20plugin%29%28Domibus%205.1.1%29%283.7%29.pdf>
 4. <a id="Ref_PLUGIN_COOKBOOK" class="anchor"></a>\[PLUGIN_COOKBOOK\] Domibus Plugin Cookbook, <https://ec.europa.eu/digital-building-blocks/sites/download/attachments/693207754/%28eDelivery%29%28AP%29%28Plugin-CB%29%28Domibus.5.1.1%29%286.5%29.pdf>
@@ -79,10 +82,10 @@ See eDelivery documentation \[[TERMS](#Ref_TERMS)\].
 
 ### 2.1 Prerequisites to Installation
 
-The Access Point is officially supported on the following platforms:
+The Access Point is officially supported on the following operating systems (x86-64, arm64):
 
-* Ubuntu Server 20.04 Long-Term Support (LTS) operating system on a x86-64 platform.
-* Ubuntu Server 22.04 Long-Term Support (LTS) operating system on a x86-64 platform.
+* Ubuntu Server 20.04 Long-Term Support (LTS).
+* Ubuntu Server 22.04 Long-Term Support (LTS).
 
 The software can be installed both on physical and virtualized hardware.
 
@@ -105,7 +108,7 @@ Out | Access Point | Data Exchange Partner Access Point | 443, 8443, other | tcp
 Out | Access Point | SMP | 443, 8443, other | tcp | |
 Out | Access Point | Backend (push) | 80, 443, other | tcp | Target in the internal network |
 In  | Data Exchange Partner Access Point | Access Point | 8443\* | tcp | URL path: `/services/msh` |
-In  | Backend (submit, pull) | Access Point | 8443\* | tcp | Source in the internal network<br /><br />URL path: `/services/backend` |
+In  | Backend (submit, pull) | Access Point | 8443\* | tcp | Source in the internal network<br /><br />URL path: `/services/wsplugin` |
 In  | Admin | Access Point | 8443\* | tcp | Source in the internal network<br /><br />URL path: `/` |
 
 \* The port number for inbound connections is configurable and the value can be set during the Access Point installation process. Port `8443` is used by default.
@@ -117,7 +120,7 @@ In addition, it's strongly recommended to use URL path filtering for the Access 
 **Port** | **URL Path** | **Description** |
 ---------|----------|-----------------|
  8443    | `/` | Admin UI for managing the Access Point. |
- 8443    | `/services/backend` |  Webservice interface (submit requests, pull messages) between the Access Point and backend. |
+ 8443    | `/services/wsplugin` |  Webservice interface (submit requests, pull messages) between the Access Point and backend. |
  8443    | `/services/msh` | AS4 interface between Access Points. | 
 
 ### 2.3 Requirements for the Access Point
@@ -322,7 +325,7 @@ mysql_tzinfo_to_sql /usr/share/zoneinfo/posix | mysql -u root mysql
 
 ### 3.2 Upgrade
 
-The the `harmony-ap` service is automatically stopped for the upgrade and automatically restarted after the upgrade if the service has been enabled. Otherwise, the service must be manually restarted after the upgrade.
+The `harmony-ap` service is automatically stopped for the upgrade and automatically restarted after the upgrade if the service has been enabled. Otherwise, the service must be manually restarted after the upgrade.
 
 Update package repository metadata:
 ```bash

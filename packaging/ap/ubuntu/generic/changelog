@@ -1,6 +1,13 @@
+harmony-ap (2.3.0-0) stable; urgency=medium
+
+  * New upstream Domibus release 5.1.2
+  * Add support for all CPU architectures, moving beyond exclusive Intel-based compatibility
+
+ -- Nordic Institute for Interoperability Solutions (NIIS) <edelivery@niis.org>  Wed, 17 Apr 2024 13:05:16 +0300
+
 harmony-ap (2.2.2-0) stable; urgency=medium
 
-  * New upstream Domibus release 5.1.1 
+  * New upstream Domibus release 5.1.1
 
  -- Nordic Institute for Interoperability Solutions (NIIS) <edelivery@niis.org>  Thu, 23 Nov 2023 14:19:15 +0200
 

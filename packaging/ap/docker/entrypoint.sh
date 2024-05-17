@@ -25,10 +25,14 @@ if [[ $1 == "help" ]]; then
   USE_DYNAMIC_DISCOVERY            false
   SML_ZONE                         *empty*
 
+  # For clustered deployment, needs to be unique per node
+  NODE_ID                          $HOSTNAME
+
+  # Other config
   MAX_MEM                          512m
+  PRESERVE_BACKUP_FILE_DATE        false if config is on SMB filesystem, otherwise true
 
   # The following params can not be set once written to config:
-
   PARTY_NAME                       selfsigned
   SERVER_FQDN                      *output of 'hostname -f'*
   SERVER_DN                        CN=*SERVER_FQDN*
@@ -41,6 +45,18 @@ if [[ $1 == "help" ]]; then
   TLS_TRUSTSTORE_PASSWORD          *random*
   ADMIN_USER                       harmony
   ADMIN_PASSWORD                   *random*
+
+  # clustering setup
+  DEPLOYMENT_CLUSTERED             false
+  ACTIVEMQ_BROKER_HOST             *required if clustered*
+  ACTIVEMQ_BROKER_NAME             localhost
+  ACTIVEMQ_USERNAME                *required*
+  ACTIVEMQ_PASSWORD                *required*
+  ACTIVEMQ_TRANSPORT_PORT          61616
+  ACTIVEMQ_JMX_PORT                1199
+
+  # if true, offload TLS termination to an external LB. AP will use port 8080
+  EXTERNAL_LB                      false
 __EOF
   exit 1
 fi
@@ -59,16 +75,29 @@ error() { echo "$(date --utc -Iseconds) ERROR [entrypoint] $*" >&2; }
 set_prop() {
   local prop="$1"
   local value="${2:-}"
+  local dir="${3:-$HARMONY_BASE}"
+
   # escape \ -> \\ (required by java property file syntax)
   value="${value//\\/\\\\}"
   # escape Spring ${property} placeholders: $ -> ${:$}
   value="${value//\$\{/\$\{:\$\}\{}"
-  crudini --inplace --set ${HARMONY_BASE}/etc/domibus.properties "" "$prop" "$value"
+  crudini --inplace --set "$dir/domibus.properties" "" "$prop" "$value"
 }
 
-delete_prop() {
+set_prop_raw() {
+  local prop="$1"
+  local value="${2:-}"
+  local dir="${3:-$HARMONY_BASE}"
+
+  # escape \ -> \\ (required by java property file syntax)
+  value="${value//\\/\\\\}"
+  crudini --inplace --set "$dir/domibus.properties" "" "$prop" "$value"
+}
+
+del_prop() {
   local prop="$1";
-  crudini --inplace --get ${HARMONY_BASE}/etc/domibus.properties "" "$prop"
+  local dir="${2:-$HARMONY_BASE}"
+  crudini --inplace --del "$dir/domibus.properties" "" "$prop"
 }
 
 get_prop() {
@@ -85,9 +114,46 @@ get_prop() {
 get_tomcat_prop() {
   local default="${2:-}"
   local value
-  value=$(xmlstarlet sel -t -v "//Connector[@SSLEnabled=\"true\"]/@$1" ${HARMONY_BASE}/conf/server.xml 2>/dev/null)
+  value=$(xmlstarlet sel -t -v "//Connector/@$1" ${HARMONY_BASE}/conf/server.xml 2>/dev/null)
   echo "${value:-$default}";
 }
+
+add_prefix_suffix() {
+  local comma_separated_list="$1"
+  local prefix="$2"
+  local suffix="$3"
+  local result=""
+  local IFS=","
+
+  for item in $comma_separated_list
+  do
+    if [ -n "${item}" ]; then
+      trimmed_item=$(echo $item | tr -d ' ')
+      result+="${prefix}${trimmed_item}${suffix},"
+    fi
+  done
+
+  echo "${result%,}"
+}
+
+log "User UID: $(id -u)"
+log "User GID: $(id -g)"
+
+PERMISSIONS_OK=1
+
+if [ ! -r "$HARMONY_HOME" ]; then
+    log "HARMONY_HOME='$HARMONY_HOME' is not readable."
+    PERMISSIONS_OK=0
+fi
+
+if [ ! -w "$HARMONY_BASE" ]; then
+    log "HARMONY_BASE='$HARMONY_BASE' is not writable."
+    PERMISSIONS_OK=0
+fi
+
+if [ $PERMISSIONS_OK -eq 0 ]; then
+    log "You may have issues with file permissions, more information is available here: https://github.com/nordic-institute/harmony-common/blob/main/doc/harmony-ap_docker_installation_guide.md#3221-distributed-file-systems"
+fi
 
 if [[ -n ${HARMONY_PARAM_FILE:-} && -f $HARMONY_PARAM_FILE ]]; then
   log "Reading parameters from $HARMONY_PARAM_FILE..."
@@ -98,6 +164,11 @@ if [[ -n ${HARMONY_PARAM_FILE:-} && -f $HARMONY_PARAM_FILE ]]; then
     fi
   done < "${HARMONY_PARAM_FILE}"
 fi
+
+# for clustering support -- only one entrypoint should run simultaneously
+mkdir -p -m 0750 "${HARMONY_BASE}/etc"
+exec 9>${HARMONY_BASE}/etc/.init-lock
+flock -w 300 9 || exit 1
 
 CONF_VERSION=
 [[ -f $HARMONY_BASE/etc/HARMONY_VERSION ]] && read -r CONF_VERSION <$HARMONY_BASE/etc/HARMONY_VERSION
@@ -111,18 +182,31 @@ DB_USER="${DB_USER:-$(get_prop 'domibus.datasource.user' 'harmony_ap')}"
 DB_PASSWORD="${DB_PASSWORD:-$(get_prop 'domibus.datasource.password')}"
 USE_DYNAMIC_DISCOVERY="${USE_DYNAMIC_DISCOVERY:-$(get_prop domibus.dynamicdiscovery.useDynamicDiscovery false)}"
 SML_ZONE="${SML_ZONE:-$(get_prop domibus.smlzone)}"
+TLS_TRUSTSTORE_PASSWORD=$(get_tomcat_prop 'truststorePass' "${TLS_TRUSTSTORE_PASSWORD:-}")
 
-TLS_TRUSTSTORE_PASSWORD=$(get_tomcat_prop truststorePass "${TLS_TRUSTSTORE_PASSWORD:-}")
+DEPLOYMENT_CLUSTERED=$(get_prop 'domibus.deployment.clustered' "${DEPLOYMENT_CLUSTERED:-false}")
+EXTERNAL_LB=${EXTERNAL_LB:-false}
+NODE_ID=${NODE_ID:-$HOSTNAME}
+_SETUP=false
 
 if [[ -z $DB_HOST || -z $DB_PASSWORD ]]; then
   error "Database host (DB_HOST) and password (DB_PASSWORD) are required";
   exit 1
 fi
 
+# Workaround for Azure File SMB shares
+FSTYPE=$(stat -f "${HARMONY_BASE}/etc" --format "%T")
+if [[ $FSTYPE == smb* || $FSTYPE == "cifs" ]]; then
+  warn "${HARMONY_BASE/etc} is located on a $FSTYPE filesystem"
+  PRESERVE_BACKUP_FILE_DATE=${PRESERVE_BACKUP_FILE_DATE:-false}
+else
+  PRESERVE_BACKUP_FILE_DATE=${PRESERVE_BACKUP_FILE_DATE:-true}
+fi
+
 log "Waiting for database $DB_HOST:$DB_PORT to become available...."
 count=0
 wait_count=60;
-[[ $INIT = true ]] && wait_count=1
+[[ $INIT = true ]] && wait_count=2
 while ((count++ < wait_count)) && ! mysqladmin status -h "$DB_HOST" -P "$DB_PORT" -u "$DB_USER" -p"$DB_PASSWORD" &> /tmp/mysql-status; do
   sleep 5;
 done
@@ -136,18 +220,22 @@ else
   _DB_AVAILABLE=true
 fi
 
+# temporary dir for configuration updates
+# workaround for SMB shares, but also makes updates more atomic
+TEMPDIR=$(mktemp -d -p /tmp)
+set_prop_tmp() { set_prop "$1" "$2" "$TEMPDIR"; }
+
 if [[ $INIT = "true" || $HARMONY_VERSION != "$CONF_VERSION" || ! -f ${HARMONY_BASE}/etc/domibus.properties ]]; then
   # populate the home dir at first use to support volumes e.g. in k8s environments
+  _SETUP="true"
   log "Configuring access point..."
-
-  mkdir -p -m 0750 \
+  mkdir -p -m 0770 \
     "${HARMONY_BASE}/etc" \
-    "${HARMONY_BASE}/etc/plugins" \
+    "${HARMONY_BASE}/etc/plugins/config" \
     "${HARMONY_BASE}/etc/certs" \
     "${HARMONY_BASE}/conf" \
     "${HARMONY_BASE}/log" \
     "${HARMONY_BASE}/work"
-  chown -R harmony-ap:harmony-ap "${HARMONY_BASE}"/*
 
   if [[ $INIT = "true" && $_DB_AVAILABLE = "false" ]]; then
     warn "Initialization forced. Skipping database migrations due to DB not available."
@@ -163,7 +251,7 @@ if [[ $INIT = "true" || $HARMONY_VERSION != "$CONF_VERSION" || ! -f ${HARMONY_BA
 
     $LIQUIBASE_HOME/liquibase.sh --defaultsFile=<(echo "\
 searchPath:${HARMONY_HOME}/db
-classpath:${HARMONY_HOME}/lib/mysql-connector-j-8.0.33.jar
+classpath:${HARMONY_HOME}/lib/mysql-connector-j-8.2.0.jar
 driver:com.mysql.cj.jdbc.Driver
 url:$URL
 username:$DB_USER
@@ -227,82 +315,115 @@ changeLogFile:db.changelog.xml") \
         -storepass "$TLS_TRUSTSTORE_PASSWORD" 2>/dev/null
   fi
 
-  cp -n ${HARMONY_HOME}/setup/domibus.properties.template ${HARMONY_BASE}/etc/domibus.properties
-  chmod 640 ${HARMONY_BASE}/etc/domibus.properties
-
-  cp -n ${HARMONY_HOME}/setup/server.xml.template ${HARMONY_BASE}/conf/server.xml
-  chmod 640 ${HARMONY_BASE}/conf/server.xml
-  cp -n ${HARMONY_HOME}/conf/* ${HARMONY_BASE}/conf/
-  ln -sfn ${HARMONY_BASE}/conf ${HARMONY_BASE}/etc/tomcat-conf
-
-  cp -n ${HARMONY_HOME}/setup/clientauthentication.xml.template ${HARMONY_BASE}/etc/clientauthentication.xml
-  chmod 640 ${HARMONY_BASE}/etc/clientauthentication.xml
+  _copy() { [[ -f "$2" ]] || cat "$1" > "$2"; }
+  _copy ${HARMONY_HOME}/setup/domibus.properties.template ${HARMONY_BASE}/etc/domibus.properties
+  _copy ${HARMONY_HOME}/setup/server.xml.template ${HARMONY_BASE}/conf/server.xml
+  _copy ${HARMONY_HOME}/setup/clientauthentication.xml.template ${HARMONY_BASE}/etc/clientauthentication.xml
+  _copy ${HARMONY_HOME}/setup/logback.xml ${HARMONY_BASE}/etc/logback.xml
 
   cp -r -n ${HARMONY_HOME}/internal ${HARMONY_BASE}/etc/
   cp -r -n ${HARMONY_HOME}/policies ${HARMONY_BASE}/etc/
-  cp -n ${HARMONY_HOME}/setup/logback.xml ${HARMONY_BASE}/etc/
+  cp -n ${HARMONY_HOME}/conf/* ${HARMONY_BASE}/conf/
 
-  ln -sfn ${HARMONY_HOME}/plugins/lib ${HARMONY_BASE}/etc/plugins/
-  cp -r -n ${HARMONY_HOME}/plugins/config ${HARMONY_BASE}/etc/plugins/
-  chmod -R u+rwX ${HARMONY_BASE}/etc/plugins/config
+  if [[ $DEPLOYMENT_CLUSTERED = "true" || $EXTERNAL_LB = "true" ]]; then
+    _sslenabled=false
+    _port=8080
+  else
+    _sslenabled=true
+    _port=8443
+  fi
 
-  xmlstarlet edit --pf --inplace \
-    --update '//Connector[@SSLEnabled="true"]/@keystorePass' --value "$TLS_KEYSTORE_PASSWORD" \
-    --update '//Connector[@SSLEnabled="true"]/@keystoreFile' --value "$TLS_KEYSTORE_FILE" \
-    --update '//Connector[@SSLEnabled="true"]/@truststorePass' --value "$TLS_TRUSTSTORE_PASSWORD" \
-    ${HARMONY_BASE}/conf/server.xml
+  xmlstarlet edit --pf  \
+    --update '//Connector/@SSLEnabled'     --value "$_sslenabled" \
+    --update '//Connector/@port'           --value "$_port" \
+    --update '//Connector/@keystorePass'   --value "$TLS_KEYSTORE_PASSWORD" \
+    --update '//Connector/@keystoreFile'   --value "$TLS_KEYSTORE_FILE" \
+    --update '//Connector/@truststorePass' --value "$TLS_TRUSTSTORE_PASSWORD" \
+    ${HARMONY_BASE}/conf/server.xml >$TEMPDIR/server.xml
+  cp "$TEMPDIR/server.xml" "${HARMONY_BASE}/conf/server.xml"
 
-  xmlstarlet edit --pf --inplace \
+  xmlstarlet edit --pf  \
     -N s='http://cxf.apache.org/configuration/security' \
     --update '//s:trustManagers/s:keyStore/@password' --value "$TLS_TRUSTSTORE_PASSWORD" \
-    --update '//s:trustManagers/s:keyStore/@file' --value "/var/opt/harmony-ap/etc/tls-truststore.p12" \
-    --update '//s:keyManagers/s:keyStore/@password' --value "$TLS_KEYSTORE_PASSWORD" \
-    --update '//s:keyManagers/s:keyStore/@file' --value "$TLS_KEYSTORE_FILE" \
-    ${HARMONY_BASE}/etc/clientauthentication.xml
+    --update '//s:trustManagers/s:keyStore/@file'     --value "${HARMONY_BASE}/etc/tls-truststore.p12" \
+    --update '//s:keyManagers/s:keyStore/@password'   --value "$TLS_KEYSTORE_PASSWORD" \
+    --update '//s:keyManagers/s:keyStore/@file'       --value "$TLS_KEYSTORE_FILE" \
+    ${HARMONY_BASE}/etc/clientauthentication.xml >/$TEMPDIR/clientauthentication.xml
+  cp "$TEMPDIR/clientauthentication.xml" "${HARMONY_BASE}/etc/clientauthentication.xml"
 
-  set_prop domibus.database.serverName "$DB_HOST"
-  set_prop domibus.database.port       "$DB_PORT"
-  set_prop domibus.database.schema     "$DB_SCHEMA"
-  set_prop domibus.datasource.user     "$DB_USER"
-  set_prop domibus.datasource.password "$DB_PASSWORD"
+  cp "$HARMONY_BASE/etc/domibus.properties" "$TEMPDIR/"
 
-  set_prop domibus.security.keystore.password     "$SECURITY_KEYSTORE_PASSWORD"
-  set_prop domibus.security.key.private.alias     "$PARTY_NAME"
-  set_prop domibus.security.key.private.password  "$SECURITY_KEYSTORE_PASSWORD"
-  set_prop domibus.security.truststore.password   "$SECURITY_TRUSTSTORE_PASSWORD"
+  set_prop_tmp domibus.security.keystore.password     "$SECURITY_KEYSTORE_PASSWORD"
+  set_prop_tmp domibus.security.key.private.alias     "$PARTY_NAME"
+  set_prop_tmp domibus.security.key.private.password  "$SECURITY_KEYSTORE_PASSWORD"
+  set_prop_tmp domibus.security.truststore.password   "$SECURITY_TRUSTSTORE_PASSWORD"
 
-  set_prop domibus.dynamicdiscovery.useDynamicDiscovery "${USE_DYNAMIC_DISCOVERY:-false}"
-  set_prop domibus.smlzone "${SML_ZONE:-}"
+  if [[ $DEPLOYMENT_CLUSTERED = "true" ]]; then
+    log "Enabling clustered deployment"
 
-  [[ $_DB_AVAILABLE == "true" ]] && echo "$HARMONY_VERSION" >$HARMONY_BASE/etc/HARMONY_VERSION
-  log "Configuration done"
-else
-  # always update database properies to make it possible to rotate DB credentials
-  [[ -n $DB_HOST     ]] && set_prop 'domibus.database.serverName' "$DB_HOST"
-  [[ -n $DB_PORT     ]] && set_prop 'domibus.database.port'       "$DB_PORT"
-  [[ -n $DB_SCHEMA   ]] && set_prop 'domibus.database.schema'     "$DB_SCHEMA"
-  [[ -n $DB_USER     ]] && set_prop 'domibus.datasource.user'     "$DB_USER"
-  [[ -n $DB_PASSWORD ]] && set_prop 'domibus.datasource.password' "$DB_PASSWORD"
-  [[ -n $SML_ZONE    ]] && set_prop 'domibus.smlzone'             "$SML_ZONE"
-  [[ -n $USE_DYNAMIC_DISCOVERY ]] && set_prop 'domibus.dynamicdiscovery.useDynamicDiscovery' "$USE_DYNAMIC_DISCOVERY"
+    if [[ $ACTIVEMQ_BROKER_HOST == *,* ]]; then
+      log "Multiple ActiveMQ brokers found, overriding configuration properties"
+
+      TRANSPORT_PORT="${ACTIVEMQ_TRANSPORT_PORT:-61616}"
+      JMX_PORT="${ACTIVEMQ_JMX_PORT:-1199}"
+
+      set_prop_tmp "activeMQ.transportConnector.uri"   "failover:($(add_prefix_suffix "$ACTIVEMQ_BROKER_HOST" "tcp://" ":$TRANSPORT_PORT"))?randomize=false"
+      set_prop_tmp "activeMQ.JMXURL"                   "$(add_prefix_suffix "$ACTIVEMQ_BROKER_HOST" "service:jmx:rmi:///jndi/rmi://" ":$JMX_PORT/jmxrmi")"
+    else
+      log "Single ActiveMQ broker found, using default properties"
+    fi
+
+    set_prop_tmp "domibus.deployment.clustered"        "true"
+    set_prop_tmp "activeMQ.brokerName"                 "${ACTIVEMQ_BROKER_NAME:-localhost}"
+    set_prop_tmp "activeMQ.embedded.configurationFile" ""
+    set_prop_tmp "activeMQ.broker.host"                "${ACTIVEMQ_BROKER_HOST}"
+    set_prop_tmp "activeMQ.username"                   "${ACTIVEMQ_USERNAME}"
+    set_prop_tmp "activeMQ.password"                   "${ACTIVEMQ_PASSWORD}"
+  fi
 fi
+
+# always updated properies
+cp -n "$HARMONY_BASE/etc/domibus.properties" "$TEMPDIR/"
+
+set_prop_tmp 'domibus.database.serverName' "$DB_HOST"
+set_prop_tmp 'domibus.database.port'       "$DB_PORT"
+set_prop_tmp 'domibus.database.schema'     "$DB_SCHEMA"
+set_prop_tmp 'domibus.datasource.user'     "$DB_USER"
+set_prop_tmp 'domibus.datasource.password' "$DB_PASSWORD"
+set_prop_tmp 'domibus.smlzone'             "$SML_ZONE"
+set_prop_tmp 'domibus.dynamicdiscovery.useDynamicDiscovery' "$USE_DYNAMIC_DISCOVERY"
+
+cp "$TEMPDIR/domibus.properties" "$HARMONY_BASE/etc/"
+
+if [[ $_SETUP = "true" && $_DB_AVAILABLE = "true" ]]; then
+  echo "$HARMONY_VERSION" >$HARMONY_BASE/etc/HARMONY_VERSION
+  log "Configuration done"
+fi
+
+rm -rf "$TEMPDIR"
+# release lock
+exec 9>&-
 
 if [[ $INIT = "true" ]]; then
   log "Just init requested, exiting..."
   exit 0;
 fi
 
+if [[ $DEPLOYMENT_CLUSTERED = "true" ]]; then
+  _WORK_LOCATION="${HARMONY_BASE}/work/${NODE_ID}"
+else
+  _WORK_LOCATION="${HARMONY_BASE}/work"
+fi
 CATALINA_TMPDIR=/var/tmp/harmony-ap
 CATALINA_HOME=${HARMONY_HOME}
 CATALINA_BASE=${HARMONY_BASE}
-export JAVA_HOME=/usr/lib/jvm/java-11-openjdk-amd64
 
 # escape \ and " in the password
 _TLS_TRUSTSTORE_PASSWORD="${TLS_TRUSTSTORE_PASSWORD//\\/\\\\}"
 _TLS_TRUSTSTORE_PASSWORD="${_TLS_TRUSTSTORE_PASSWORD//\"/\\\"}"
 
 # @<(echo "...") is an on-the-fly generated Java command-line argument file
-exec tini -e 143 -- $JAVA_HOME/bin/java @<(echo "\
+exec tini -e 143 -- java @<(echo "\
 -Xms256m -Xmx${MAX_MEM:-512m}
 -XX:+UseParallelGC
 -XX:+ExitOnOutOfMemoryError
@@ -312,8 +433,15 @@ exec tini -e 143 -- $JAVA_HOME/bin/java @<(echo "\
 --add-opens=java.base/java.util=ALL-UNNAMED
 --add-opens=java.base/java.util.concurrent=ALL-UNNAMED
 --add-opens=java.rmi/sun.rmi.transport=ALL-UNNAMED
+--add-opens java.base/java.lang=ALL-UNNAMED
+--add-opens java.base/java.nio=ALL-UNNAMED
+--add-opens java.base/sun.nio.ch=ALL-UNNAMED
+--add-opens java.management/sun.management=ALL-UNNAMED
+--add-opens jdk.management/com.sun.management.internal=ALL-UNNAMED
+--add-exports java.base/jdk.internal.ref=ALL-UNNAMED
 -Djava.awt.headless=true
 -Djava.io.tmpdir=$CATALINA_TMPDIR
+-Djava.rmi.server.hostname=127.0.0.1
 -Djava.security.egd=file:/dev/urandom
 -Djava.util.logging.config.file=$CATALINA_BASE/conf/logging.properties
 -Djava.util.logging.manager=org.apache.juli.ClassLoaderLogManager
@@ -323,6 +451,9 @@ exec tini -e 143 -- $JAVA_HOME/bin/java @<(echo "\
 -Dcatalina.base=$CATALINA_BASE
 -Dcatalina.home=$CATALINA_HOME
 -Ddomibus.config.location=${HARMONY_BASE}/etc
--Ddomibus.work.location=${HARMONY_BASE}/work
+-Ddomibus.work.location=${_WORK_LOCATION}
+-Ddomibus.extensions.location=/opt/harmony-ap
+-Ddomibus.node.id=${NODE_ID}
+-Ddomibus.backup.preserveFileDate=${PRESERVE_BACKUP_FILE_DATE}
 -classpath $CATALINA_HOME/bin/bootstrap.jar:$CATALINA_HOME/bin/tomcat-juli.jar
 ") "$@" org.apache.catalina.startup.Bootstrap

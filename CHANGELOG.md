@@ -1,5 +1,11 @@
 # Changelog
 
+## Access Point 2.3.0 - 2024-04-17
+
+- NEDS-174: Merge Domibus 5.1.2 into Harmony Access Point
+- NEDS-109: Add support for clustered setups
+- NEDS-172: Add support for all CPU architectures, moving beyond exclusive Intel-based compatibility
+
 ## Access Point 2.2.2 - 2023-12-07
 
 - NEDS-156: Fix constraint in AP database migrations
@@ -50,7 +56,7 @@
 
 ## SMP - 1.4.0 - 2023-01-23
 
-- NEDS-101: Merge changes from SMP 4.2 into Harmony SMP. [More information](https://ec.europa.eu/digital-building-blocks/wikis/display/DIGITAL/SMP+-+v4.2).
+- NEDS-101: Merge changes from SMP 4.2 into Harmony SMP. [More information](https://ec.europa.eu/digital-building-blocks/sites/display/DIGITAL/SMP+-+v4.2).
 - NEDS-101: Update Harmony SMP properties. [More information](https://ec.europa.eu/digital-building-blocks/code/projects/EDELIVERY/repos/smp/browse/changelog.txt?at=refs%2Ftags%2F4.2).
 - NEDS-101: Divide Access Point and SMP debian build jobs.
 - NEDS-101: Implement database migrations using Liquibase for Harmony SMP.
