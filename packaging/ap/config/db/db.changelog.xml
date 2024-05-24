@@ -80,6 +80,9 @@
   <changeSet author="harmony" id="2.3.0-upgrade">
     <sqlFile dbms="mysql" relativeToChangelogFile="true" endDelimiter="//" path="migrations/mysql-5.1.1-to-5.1.2-upgrade.ddl"/>
   </changeSet>
+  <changeSet author="harmony" id="2.4.0-upgrade">
+    <sqlFile dbms="mysql" relativeToChangelogFile="true" endDelimiter="//" path="migrations/mysql-5.1.2-to-5.1.4-upgrade.ddl"/>
+  </changeSet>
 
   <!-- adds the initial admin user unless one already exists -->
   <changeSet author="harmony" id="default-admin-user" runOnChange="true" runOrder="last">
