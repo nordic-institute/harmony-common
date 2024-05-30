@@ -188,7 +188,7 @@ services:
       - './nginx.conf:/etc/nginx/nginx.conf'
 
   harmony-ap-main:
-    image: artifactory.niis.org/harmony-snapshot-docker/niis/harmony-ap:2.3.0
+    image: niis/harmony-ap:2.3.0
     depends_on:
       - harmony-db
       - harmony-jms-london
@@ -217,7 +217,7 @@ services:
       - harmony-ap-data:/var/opt/harmony-ap
 
   harmony-ap-replica:
-    image: artifactory.niis.org/harmony-snapshot-docker/niis/harmony-ap:2.3.0
+    image: niis/harmony-ap:2.3.0
     depends_on:
       - harmony-db
       - harmony-jms-london
