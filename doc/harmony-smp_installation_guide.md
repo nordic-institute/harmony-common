@@ -1,6 +1,6 @@
 # Harmony eDelivery Access - Service Metadata Publisher Installation Guide <!-- omit in toc -->
 
-Version: 1.15  
+Version: 1.16  
 Doc. ID: IG-SMP
 ---
 
@@ -24,6 +24,7 @@ Doc. ID: IG-SMP
  17.08.2023 | 1.13    | Update system requirements                                                                              | Jarkko Hyöty
  15.01.2024 | 1.14    | Update links to external documents                                                                      | Petteri Kivimäki
  21.02.2024 | 1.15    | Update supported operating systems                                                                      | Diego Martin
+ 01.06.2024 | 1.16    | Update links to external documents                                                                      | Petteri Kivimäki
 
 ## License <!-- omit in toc -->
 

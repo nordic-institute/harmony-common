@@ -86,7 +86,7 @@ See eDelivery documentation \[[TERMS](#Ref_TERMS)\].
 1. <a id="Ref_TERMS" class="anchor"></a>\[TERMS\] eDelivery Documentation, <https://ec.europa.eu/digital-building-blocks/sites/display/DIGITAL/eDelivery>
 2. <a id="Ref_IG-AP" class="anchor"></a>\[IG-AP\] Harmony eDelivery Access - Access Point Installation Guide. Document ID: [IG-AS](harmony-ap_installation_guide.md)
 3. <a id="Ref_IG-SMP" class="anchor"></a>\[IG-SMP\] Harmony eDelivery Access - Service Metadata Publisher Installation Guide. Document ID: [IG-SMP](harmony-smp_installation_guide.md)
-4. <a id="Ref_DOMIBUS_ADMIN_GUIDE" class="anchor"></a>\[DOMIBUS_ADMIN_GUIDE\] Access Point Administration Guide - Domibus 5.1.0, <https://ec.europa.eu/digital-building-blocks/sites/download/attachments/660440359/%28eDelivery%29%28AP%29%28AG%29%28Domibus%205.1%29%2819.6%29.pdf>
+4. <a id="Ref_DOMIBUS_ADMIN_GUIDE" class="anchor"></a>\[DOMIBUS_ADMIN_GUIDE\] Access Point Administration Guide - Domibus 5.1.4, <https://docs.edelivery.tech.ec.europa.eu/domibus/5.1.4/#adminguide>
 5. <a id="Ref_SMP_ADMIN_GUIDE" class="anchor"></a>\[SMP_ADMIN_GUIDE\] DomiSMP Administration Guide - DomiSMP 5.0, <https://ec.europa.eu/digital-building-blocks/sites/download/attachments/674510184/%28eDelivery%29%28SMP%29%28AG%29%28DomiSMP%205.0%29%283.7%29.pdf>
 6. <a id="Ref_UG-SDCG" class="anchor"></a>\[UG-SDCG\] Harmony eDelivery Access - Static Discovery Configuration Guide. Document ID: [UG-SDCG](static_discovery_configuration_guide.md)
 

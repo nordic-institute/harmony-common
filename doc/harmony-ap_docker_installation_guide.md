@@ -1,6 +1,6 @@
 # Harmony eDelivery Access - Access Point Docker Installation Guide <!-- omit in toc -->
 
-Version: 1.4  
+Version: 1.5  
 Doc. ID: IG-AP-D
 
 ---
@@ -14,6 +14,7 @@ Doc. ID: IG-AP-D
 | 05.03.2024 | 1.2     | Added documentation for clustered environments        | Diego Martin     |
 | 07.05.2024 | 1.3     | Added information about distributed file systems      | Diego Martin     |
 | 09.05.2024 | 1.4     | Added instructions to use external load balancers     | Diego Martin     |
+| 01.06.2024 | 1.5     | Update links to external documents                    | Petteri Kivimäki |
 
 ## License <!-- omit in toc -->
 
@@ -68,9 +69,9 @@ See introduction to eDelivery and Harmony eDelivery Access \[[INTRODUCTION](#Ref
 ### 1.3 References
 
 1. <a id="Ref_INTRODUCTION" class="anchor"></a>\[INTRODUCTION\] Report: Introduction to eDelivery and Harmony eDelivery Access, <https://www.niis.org/niis-publications/2021/12/19/report-introduction-to-edelivery-and-harmony-edelivery-access>
-2. <a id="Ref_DOMIBUS_ADMIN_GUIDE" class="anchor"></a>\[DOMIBUS_ADMIN_GUIDE\] Access Point Administration Guide - Domibus 5.1.0, <https://ec.europa.eu/digital-building-blocks/sites/download/attachments/660440359/%28eDelivery%29%28AP%29%28AG%29%28Domibus%205.1%29%2819.6%29.pdf>
-3. <a id="Ref_WS_PLUGIN" class="anchor"></a>\[WS_PLUGIN\] Access Point Interface Control Document - WS Plugin, <https://ec.europa.eu/digital-building-blocks/sites/download/attachments/660440359/%28eDelivery%29%28AP%29%28ICD%29%28WS%20plugin%29%28Domibus%205.1%29%283.4%29.pdf>
-4. <a id="Ref_PLUGIN_COOKBOOK" class="anchor"></a>\[PLUGIN_COOKBOOK\] Domibus Plugin Cookbook, <https://ec.europa.eu/digital-building-blocks/sites/download/attachments/660440359/%28eDelivery%29%28AP%29%28Plugin-CB%29%28Domibus.5.1%29%286.4%29.pdf>
+2. <a id="Ref_DOMIBUS_ADMIN_GUIDE" class="anchor"></a>\[DOMIBUS_ADMIN_GUIDE\] Access Point Administration Guide - Domibus 5.1.4, <https://docs.edelivery.tech.ec.europa.eu/domibus/5.1.4/#adminguide>
+3. <a id="Ref_WS_PLUGIN" class="anchor"></a>\[WS_PLUGIN\] Access Point Interface Control Document - WS Plugin, <https://docs.edelivery.tech.ec.europa.eu/domibus/5.1.4/#wsplugin_interface>
+4. <a id="Ref_PLUGIN_COOKBOOK" class="anchor"></a>\[PLUGIN_COOKBOOK\] Domibus Plugin Cookbook, <https://docs.edelivery.tech.ec.europa.eu/domibus/5.1.4/#plugin_cookbook>
 5. <a id="Ref_UG-DDCG" class="anchor"></a>\[UG-DDCG\] Harmony eDelivery Access - Dynamic Discovery Configuration Guide. Document ID: [UG-DDCG](dynamic_discovery_configuration_guide.md)
 6. <a id="Ref_UG-SDCG" class="anchor"></a>\[UG-SDCG\] Harmony eDelivery Access - Static Discovery Configuration Guide. Document ID: [UG-SDCG](static_discovery_configuration_guide.md)
 7. <a id="Ref_RFC5280" class="anchor"></a>\[RFC5280\] RFC 5280: Internet X.509 Public Key Infrastructure Certificate and Certificate Revocation List (CRL) Profile, <https://www.rfc-editor.org/rfc/rfc5280>
