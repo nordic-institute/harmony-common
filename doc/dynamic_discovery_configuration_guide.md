@@ -1,6 +1,6 @@
 # Harmony eDelivery Access - Dynamic Discovery Configuration Guide <!-- omit in toc -->
 
-Version: 1.9  
+Version: 1.10  
 Doc. ID: UG-DDCG
 
 ---
@@ -19,6 +19,7 @@ Doc. ID: UG-DDCG
  08.08.2023 | 1.7     | Updates for SMP version 2.0                                                 | Jarkko Hyöty
  14.09.2023 | 1.8     | Default to PKCS12 keystores                                                 | Jarkko Hyöty
  15.01.2024 | 1.9     | Update links to external documents                                          | Petteri Kivimäki
+ 01.06.2024 | 1.10    | Update links to external documents                                          | Petteri Kivimäki
 
 ## License <!-- omit in toc -->
 
