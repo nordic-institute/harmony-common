@@ -1,5 +1,10 @@
 # Changelog
 
+## Access Point 2.4.0 - 2024-06-01
+
+- NEDS-182: Merge Domibus 5.1.4 into Harmony Access Point
+- NEDS-185: Provide a direct link to Domibus help page in the Access Point UI
+
 ## Access Point 2.3.0 - 2024-04-17
 
 - NEDS-174: Merge Domibus 5.1.2 into Harmony Access Point
