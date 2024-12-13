@@ -1,6 +1,6 @@
 # Harmony eDelivery Access - Access Point Installation Guide <!-- omit in toc -->
 
-Version: 1.15  
+Version: 1.16  
 Doc. ID: IG-AP
 
 ---
@@ -25,6 +25,7 @@ Doc. ID: IG-AP
  28.02.2024 | 1.13    | Update WS Plugin interface path                                                                                                                             | Petteri Kivimäki
  01.03.2024 | 1.14    | Update supported operating systems                                                                                                                          | Diego Martin
  01.06.2024 | 1.15    | Update links to external documents                                                                                                                          | Petteri Kivimäki
+ 13.12.2024 | 1.16    | Add reference to the Logging Guide \[UG-AP-L\]                                                                                                              | Diego Martin
 
 ## License <!-- omit in toc -->
 
@@ -33,7 +34,6 @@ To view a copy of this license, visit <https://creativecommons.org/licenses/by-s
  
 ## Table of Contents <!-- omit in toc -->
 
-- [License](#license)
 - [1 Introduction](#1-introduction)
   - [1.1 Target Audience](#11-target-audience)
   - [1.2 Terms and abbreviations](#12-terms-and-abbreviations)
@@ -78,6 +78,7 @@ See eDelivery documentation \[[TERMS](#Ref_TERMS)\].
 6. <a id="Ref_UG-SDCG" class="anchor"></a>\[UG-SDCG\] Harmony eDelivery Access - Static Discovery Configuration Guide. Document ID: [UG-SDCG](static_discovery_configuration_guide.md)
 7. <a id="Ref_RFC5280" class="anchor"></a>\[RFC5280\] RFC 5280: Internet X.509 Public Key Infrastructure Certificate and Certificate Revocation List (CRL) Profile, <https://www.rfc-editor.org/rfc/rfc5280>
 8. <a id="Ref_PS" class="anchor"></a>\[PS\] PrintableString, <https://en.wikipedia.org/wiki/PrintableString>
+9. <a id="Ref_UG-AP-L" class="anchor"></a>\[UG-AP-L\] Harmony eDelivery Access - Access Point Logging Guide. Document ID: [UG-AP-L](harmony-ap_logging_user_guide.md)
 
 ## 2 Installation
 
@@ -237,7 +238,7 @@ The property `domibus.security.bc.provider.order` in `/etc/harmony-ap/domibus.pr
 
 By default (when the property is not defined), the provider is added to the last position. To match the behavior of the Domibus Access Point, the provider can be inserted at position `3`. However, that breaks standard PKCS12 keystores when using Java 11, and should only be used to resolve potential compatibility issues (no such issues are currently known). A restart of the harmony-ap is required after changing the property.
 
-### 2.6 Starting harmony-ap Service and Enabling Automatic Startup 
+### 2.6 Starting harmony-ap Service and Enabling Automatic Startup
 
 To start `harmony-ap` service issue the following command:
 ```bash
@@ -287,7 +288,7 @@ In addition to installing required dependencies, the installation process comple
   - sharing and importing certificates must be handled manually after the installation;
 - installs the `harmony-ap` systemd service but does not enable or start it.
 
-### 2.10 Location of Configuration and Generated Passwords 
+### 2.10 Location of Configuration and Generated Passwords
 
 All Access Point configuration files are located in the `/etc/harmony-ap` directory. See the Domibus Administration Guide \[[DOMIBUS_ADMIN_GUIDE](#Ref_DOMIBUS_ADMIN_GUIDE)\] for more details.
 
@@ -304,6 +305,8 @@ During the installation process, multiple random passwords are generated.
 ### 2.11 Log Files
 
 The Access Point application log files are located in the `/var/log/harmony-ap/` directory.
+
+For more detailed information, see the Access Point Logging Guide \[[UG-AP-L](#Ref_UG-AP-L)\].
 
 ## 3 Version Upgrade
 

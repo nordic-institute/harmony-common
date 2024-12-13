@@ -1,6 +1,6 @@
 # Harmony eDelivery Access - Access Point Docker Installation Guide <!-- omit in toc -->
 
-Version: 1.5  
+Version: 1.6  
 Doc. ID: IG-AP-D
 
 ---
@@ -15,6 +15,7 @@ Doc. ID: IG-AP-D
 | 07.05.2024 | 1.3     | Added information about distributed file systems      | Diego Martin     |
 | 09.05.2024 | 1.4     | Added instructions to use external load balancers     | Diego Martin     |
 | 01.06.2024 | 1.5     | Update links to external documents                    | Petteri Kivimäki |
+| 13.12.2024 | 1.6     | Add reference to the Logging Guide \[UG-AP-L\]        | Diego Martin     |
 
 ## License <!-- omit in toc -->
 
@@ -77,6 +78,7 @@ See introduction to eDelivery and Harmony eDelivery Access \[[INTRODUCTION](#Ref
 7. <a id="Ref_RFC5280" class="anchor"></a>\[RFC5280\] RFC 5280: Internet X.509 Public Key Infrastructure Certificate and Certificate Revocation List (CRL) Profile, <https://www.rfc-editor.org/rfc/rfc5280>
 8. <a id="Ref_PS" class="anchor"></a>\[PS\] PrintableString, <https://en.wikipedia.org/wiki/PrintableString>
 9. <a id="Ref_UG-AP-C" class="anchor"></a>\[UG-AP-C\] Harmony eDelivery Access - Access Point Clustering Guide. Document ID: [UG-AP-C](harmony_ap_clustering_user_guide.md)
+10. <a id="Ref_UG-AP-L" class="anchor"></a>\[UG-AP-L\] Harmony eDelivery Access - Access Point Logging Guide. Document ID: [UG-AP-L](harmony-ap_logging_user_guide.md)
 
 ## 2 Network Diagram
 
@@ -313,6 +315,8 @@ The Access Point application logs to the standard output.
 ```bash
 docker logs -f <container-name>
 ```
+
+For more detailed information, see the Access Point Logging Guide \[[UG-AP-L](#Ref_UG-AP-L)\].
 
 ## 5 Updating to a new version of the image
 
