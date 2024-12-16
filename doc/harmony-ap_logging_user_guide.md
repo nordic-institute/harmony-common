@@ -34,6 +34,8 @@ To view a copy of this license, visit <https://creativecommons.org/licenses/by-s
   * [3.2 Logback configuration in Harmony AP Docker image](#32-logback-configuration-in-harmony-ap-docker-image)
     * [3.2.1 Viewing logs](#321-viewing-logs)
     * [3.2.2 Modifying the Logback configuration](#322-modifying-the-logback-configuration)
+      * [3.2.2.1 Modify the Logback configuration before starting the container](#3221-modify-the-logback-configuration-before-starting-the-container)
+      * [3.2.2.2 Modify the Logback configuration by creating a custom Docker image](#3222-modify-the-logback-configuration-by-creating-a-custom-docker-image)
 * [4 Enable logging of full messages for debugging](#4-enable-logging-of-full-messages-for-debugging)
 * [5 Centralized logging](#5-centralized-logging)
   * [5.1 Sending logs from AP to Elasticsearch with Logstash](#51-sending-logs-from-ap-to-elasticsearch-with-logstash)
@@ -69,10 +71,11 @@ The main terms used in this document are:
 
 ### 1.3 References
 
-1. <a id="Ref_LOGBACK" class="anchor"></a>\[LOGBACK\] Logback Manual, <https://logback.qos.ch/manual/index.html>
-2. <a id="Ref_LOGSTASH" class="anchor"></a>\[LOGSTASH\] Logstash Reference, <https://www.elastic.co/guide/en/logstash/current/index.html>
-3. <a id="Ref_ELASTICSEARCH" class="anchor"></a>\[ELASTICSEARCH\] Elasticsearch Guide, <https://www.elastic.co/guide/en/elasticsearch/reference/current/index.html>
-4. <a id="Ref_KIBANA" class="anchor"></a>\[KIBANA\] Kibana Guide, <https://www.elastic.co/guide/en/kibana/current/index.html>
+1. <a id="Ref_IG-AP-D" class="anchor"></a>\[IG-AP-D\] Harmony eDelivery Access - Access Point Docker Installation Guide. Document ID: [IG-AP-D](harmony-ap_docker_installation_guide.md)
+2. <a id="Ref_LOGBACK" class="anchor"></a>\[LOGBACK\] Logback Manual, <https://logback.qos.ch/manual/index.html>
+3. <a id="Ref_LOGSTASH" class="anchor"></a>\[LOGSTASH\] Logstash Reference, <https://www.elastic.co/guide/en/logstash/current/index.html>
+4. <a id="Ref_ELASTICSEARCH" class="anchor"></a>\[ELASTICSEARCH\] Elasticsearch Guide, <https://www.elastic.co/guide/en/elasticsearch/reference/current/index.html>
+5. <a id="Ref_KIBANA" class="anchor"></a>\[KIBANA\] Kibana Guide, <https://www.elastic.co/guide/en/kibana/current/index.html>
 
 ## 2 How the logging system works
 
@@ -114,7 +117,7 @@ Logs are also saved in the following files located in the `/var/log/harmony-ap` 
 - `security.log`: This log file contains all the security related information. For example, you can find information about the clients who connect to the application.
 - `business.log`: This log file contains all the business-related information. For example, when a message is sent or received, etc.
 - `domibus.log`: This log file contains both the security and business logs plus miscellaneous logs like debug information, logs from one of the framework used by the application, etc.
-- `domibus-error.log`: This log file contains all the errors which occurred in Domibus including errors from third party libraries used by Domibus.
+- `domibus-error.log`: This log file contains all the errors which occurred in Harmony including errors from third party libraries used by Harmony.
 - `statistics.log`: This log file includes information on the occurrence of different events (receive message, submit message, etc.).
 
 #### 3.1.2 Modifying the Logback configuration
@@ -164,7 +167,17 @@ Since Docker handles log files, Logback does not save logs to the file system.
 
 #### 3.2.2 Modifying the Logback configuration
 
-Logback configuration in the Harmony AP Linux package is located at `/var/opt/harmony-ap/etc/logback.xml`. To modify the Logback configuration in the Harmony AP Docker image, create a custom image with the modified configuration:
+Logback configuration in the Harmony AP Docker package is located at `/var/opt/harmony-ap/etc/logback.xml`. To modify the Logback configuration in the Harmony AP Docker image, there are different approaches.
+
+##### 3.2.2.1 Modify the Logback configuration before starting the container
+
+It is possible to initialize the Harmony AP container without starting it, allowing the user to update the Logback configuration file inside the container before it starts running.
+
+For detailed instructions, refer to the *3.2.2 Advanced Configuration* section in the Access Point Docker Installation Guide [IG-AP-D](#Ref_IG-AP-D).
+
+##### 3.2.2.2 Modify the Logback configuration by creating a custom Docker image
+
+Customized Logback configuration can be added to a custom Docker image. Here’s an example:
 
 ```Dockerfile
 FROM niis/harmony-ap:2.3.0
@@ -172,7 +185,7 @@ FROM niis/harmony-ap:2.3.0
 COPY logback.xml /opt/harmony-ap/setup/logback.xml
 ```
 
-When the container starts, the file is moved from the `setup` directory to `/var/opt/harmony-ap/etc/logback.xml`.
+When the container starts, the file is automatically moved from the `setup` directory to its final destination at `/var/opt/harmony-ap/etc/logback.xml`.
 
 ## 4 Enable logging of full messages for debugging
 
@@ -187,6 +200,7 @@ The following steps describe how to enable logging of full messages in Harmony A
    <!-- In order to enable logging of request/responses please change the loglevel to INFO -->
    <logger name="org.apache.cxf" level="INFO"/>
    ```
+4. Restart the service if required by the *Modifying the Logback configuration* instructions for the deployment environment. 
 
 ## 5. Centralized logging
 
@@ -224,7 +238,7 @@ The input configuration specifies how Logstash should receive log messages. Logs
 
 For systems that log to files, Logstash's [file input plugin](https://www.elastic.co/guide/en/logstash/current/plugins-inputs-file.html) can read logs directly from the filesystem. This plugin tails log files and supports log rotation.
 
-This method is recommended for the Linux package of Harmony AP
+This method is recommended for the Linux package of Harmony AP.
 
 Example configuration for reading logs from a file:
 
@@ -234,7 +248,7 @@ input {
     path => "/var/log/harmony-ap/domibus.log"
     codec => json
     start_position => "beginning"
-    type => "domibus"
+    type => "harmony"
     sincedb_path => "/usr/share/logstash/sincedb"
   }
 }
@@ -242,9 +256,13 @@ input {
 
 Here, we specify the log file's path, the codec for parsing log messages, the starting position when reading a file for the first time, the type of log messages for further processing, and the `sincedb` file path for tracking the log file's position. 
 
+In more complex setups, integrating Filebeat into the system can be beneficial. Filebeat can read logs from files and either forward them to Logstash for advanced processing or send them directly to Elasticsearch when advanced log content processing is unnecessary. For more information, refer to the [Filebeat documentation](https://www.elastic.co/guide/en/beats/filebeat/current/index.html).
+
 ##### 5.1.1.2 Receive logs over the network
 
-The [gelf input plugin](https://www.elastic.co/guide/en/logstash/current/plugins-inputs-gelf.html) enables Logstash to receive logs in GELF (Graylog Extended Log Format) format over the network. This method is commonly used for Docker containers and is recommended for the Harmony the AP Docker image.
+The [gelf input plugin](https://www.elastic.co/guide/en/logstash/current/plugins-inputs-gelf.html) enables Logstash to receive logs in GELF (Graylog Extended Log Format) format over the network.
+
+This method is commonly used for Docker containers and is recommended for the Harmony AP Docker image.
 
 Example configuration for receiving GELF logs:
 
@@ -262,7 +280,7 @@ To send logs to Logstash in GELF format from Docker, configure the Docker contai
 
 ```yaml
  harmony-ap:
-   image: niis/harmony-ap:2.4.0
+   image: niis/harmony-ap:<image tag>
    environment:
      - DB_HOST=harmony-db
      - DB_SCHEMA=harmony_ap
@@ -352,6 +370,8 @@ To set up a Harmony AP instance with the ELK stack, you can use the provided set
   - `kibana`: A Kibana instance for visualizing the data stored in Elasticsearch.
 - `logstash.conf` file that defines the Logstash configuration for processing the log data coming from Harmony AP.
 
+This example setup is meant for testing purposes only. The official ELK stack documentation should be consulted for production environments.
+
 In order to execute the environment, you need a system with [Docker](https://docs.docker.com/engine/install/) installed.
 
 To run the environment, follow these steps:
@@ -361,7 +381,7 @@ To run the environment, follow these steps:
     ```bash
     docker compose -p ap-centralized-logging up -d
     ```
-3. After the environment is started, which can take some time, you can access Kibana by opening a web browser and navigating to `http://localhost:5601`. You can log in with following credentials:
+3. After the environment is started, you can access Kibana by opening a web browser and navigating to `http://localhost:5601`. You can log in with following credentials:
    - Username: `elastic`
    - Password `elasticchangeme`, unless you have changed it in the `.env` file.
 4. Logs will be available by accessing the `Observability` > `Logs` > `Explorer` section. This is the direct link: http://localhost:5601/app/observability-logs-explorer.

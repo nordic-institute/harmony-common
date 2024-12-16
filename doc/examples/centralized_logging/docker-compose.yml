@@ -3,50 +3,26 @@ services:
   elasticsearch-setup:
     image: elastic/elasticsearch:${ELK_VERSION}
     user: "0"
-    command: >
-      bash -c '
-        if [ ! -f config/certs/ca.zip ]; then
-          echo "Creating CA";
-          bin/elasticsearch-certutil ca --silent --pem -out config/certs/ca.zip;
-          unzip config/certs/ca.zip -d config/certs;
-        fi;
-        if [ ! -f config/certs/certs.zip ]; then
-          echo "Creating certs";
-          echo -ne \
-          "instances:\n"\
-          "  - name: elasticsearch-node\n"\
-          "    dns:\n"\
-          "      - elasticsearch-node\n"\
-          "      - localhost\n"\
-          "    ip:\n"\
-          "      - 127.0.0.1\n"\
-          > config/certs/instances.yml;
-          bin/elasticsearch-certutil cert --silent --pem -out config/certs/certs.zip --in config/certs/instances.yml --ca-cert config/certs/ca/ca.crt --ca-key config/certs/ca/ca.key;
-          unzip config/certs/certs.zip -d config/certs;
-        fi;
-        echo "Setting file permissions"
-        chown -R root:root config/certs;
-        find . -type d -exec chmod 755 \{\} \;;
-        find . -type f -exec chmod 644 \{\} \;;
-        echo "Waiting for Elasticsearch availability";
-        until curl -s --cacert config/certs/ca/ca.crt https://elasticsearch-node:9200 | grep -q "missing authentication credentials"; do sleep 30; done;
-        echo "Setting kibana_system password";
-        until curl -s -X POST --cacert config/certs/ca/ca.crt -u "elastic:${ELASTIC_PASSWORD}" -H "Content-Type: application/json" https://elasticsearch-node:9200/_security/user/kibana_system/_password -d "{\"password\":\"${KIBANA_SYSTEM_PASSWORD}\"}" | grep -q "^{}"; do sleep 10; done;
-        echo "Create logstash_writer role";
-        until curl -s -X POST --cacert config/certs/ca/ca.crt -u "elastic:${ELASTIC_PASSWORD}" -H "Content-Type: application/json" https://elasticsearch-node:9200/_security/role/logstash_writer -d "{\"cluster\":[\"manage_index_templates\",\"manage_ilm\",\"monitor\"],\"indices\":[{\"names\":[\"logs-*\",\".ds.*\",\"syslog-*\",\"unifi-*\"],\"privileges\":[\"write\",\"create\",\"create_index\",\"manage\",\"manage_ilm\"]}]}" | grep -q "^{\"role\":{\"created\":true}}"; do sleep 10; done;
-        echo "Create logstash_internal user";
-        until curl -s -X POST --cacert config/certs/ca/ca.crt -u "elastic:${ELASTIC_PASSWORD}" -H "Content-Type: application/json" https://elasticsearch-node:9200/_security/user/logstash_internal -d "{\"password\":\"${LOGSTASH_INTERNAL_PASSWORD}\",\"roles\":[\"logstash_writer\"]}" | grep -q "^{\"created\":true}"; do sleep 10; done;
-        echo "Create Agent Policy";
-        until curl -s -X POST -u "elastic:${ELASTIC_PASSWORD}" -H "Content-Type: application/json" -H "kbn-xsrf: true" kibana:5601/api/fleet/agent_policies?sys_monitoring=true -d "{\"name\":\"Agent policy 1\",\"namespace\":\"default\",\"monitoring_enabled\":[\"logs\",\"metrics\"]}" | grep -q "^{\"item\""; do sleep 10; done;
-        echo "Elasticsearch setup completed";
-      '
+    command: ["/bin/bash", "-c", "/usr/share/elasticsearch/config/elasticsearch-setup.sh"]
     volumes:
+      - ./elasticsearch-setup.sh:/usr/share/elasticsearch/config/elasticsearch-setup.sh:ro
       - certs:/usr/share/elasticsearch/config/certs
+    environment:
+      - ELASTIC_PASSWORD=${ELASTIC_PASSWORD}
+      - KIBANA_SYSTEM_PASSWORD=${KIBANA_SYSTEM_PASSWORD}
+      - LOGSTASH_INTERNAL_USERNAME=${LOGSTASH_INTERNAL_USERNAME}
+      - LOGSTASH_INTERNAL_PASSWORD=${LOGSTASH_INTERNAL_PASSWORD}
+    healthcheck:
+      test: ["CMD-SHELL", "[ -f config/certs/elasticsearch-node/elasticsearch-node.crt ]"]
+      interval: 1s
+      timeout: 5s
+      retries: 120
 
   elasticsearch-node:
     image: elastic/elasticsearch:${ELK_VERSION}
     depends_on:
-      - elasticsearch-setup
+      elasticsearch-setup:
+        condition: service_healthy
     ports:
       - "9200:9200" # Used for REST API
     environment:
@@ -68,11 +44,17 @@ services:
     volumes:
       - certs:/usr/share/elasticsearch/config/certs
       - elasticsearch-data:/usr/share/elasticsearch/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -s --cacert config/certs/ca/ca.crt https://localhost:9200 | grep -q 'missing authentication credentials'"]
+      interval: 10s
+      timeout: 10s
+      retries: 120
 
   kibana:
     image: elastic/kibana:${ELK_VERSION}
     depends_on:
-      - elasticsearch-node
+      elasticsearch-node:
+        condition: service_healthy
     ports:
       - "5601:5601" # Used for web interface
     environment:
@@ -85,21 +67,33 @@ services:
     volumes:
       - certs:/usr/share/kibana/config/certs
       - kibana-data:/usr/share/kibana/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -s -I http://localhost:5601 | grep -q 'HTTP/1.1 302 Found'"]
+      interval: 10s
+      timeout: 10s
+      retries: 120
 
   logstash:
     image: elastic/logstash:${ELK_VERSION}
     depends_on:
-      - elasticsearch-node
+      kibana:
+        condition: service_healthy
     ports:
+      - "9600:9600" # Used for monitoring
       - "12201:12201/udp" # Used for gelf
-    command: logstash -f /usr/share/logstash/pipeline/logstash.conf
     environment:
       - xpack.monitoring.enabled=false
-      - ELASTICSEARCH_USERNAME=${LOGSTASH_INTERNAL_USERNAME}
-      - ELASTICSEARCH_PASSWORD=${LOGSTASH_INTERNAL_PASSWORD}
+      - ELASTIC_HOSTS=https://elasticsearch-node:9200
+      - ELASTIC_USER=${LOGSTASH_INTERNAL_USERNAME}
+      - ELASTIC_PASSWORD=${LOGSTASH_INTERNAL_PASSWORD}
     volumes:
-      - certs:/usr/share/logstash/config/certs:ro
+      - certs:/usr/share/logstash/certs:ro
       - ./logstash.conf:/usr/share/logstash/pipeline/logstash.conf:ro
+    healthcheck:
+      test: ["CMD-SHELL", "curl -s http://localhost:9600 >/dev/null || exit 1"]
+      interval: 10s
+      timeout: 10s
+      retries: 120
 
   harmony-db:
     image: mysql:8
@@ -115,11 +109,19 @@ services:
       - db-data:/var/lib/mysql
     restart: on-failure
     mem_limit: 512m
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -u harmony_ap -pdbpassword | grep 'mysqld is alive'"]
+      interval: 10s
+      timeout: 10s
+      retries: 120
 
   harmony-ap:
     image: niis/harmony-ap:2.4.0
     depends_on:
-      - harmony-db
+      harmony-db:
+        condition: service_healthy
+      logstash:
+        condition: service_healthy
     ports:
       - "8443:8443"
     environment:
