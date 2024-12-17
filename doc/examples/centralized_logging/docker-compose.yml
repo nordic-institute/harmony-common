@@ -1,0 +1,150 @@
+services:
+
+  elasticsearch-setup:
+    image: elastic/elasticsearch:${ELK_VERSION}
+    user: "0"
+    command: ["/bin/bash", "-c", "/usr/share/elasticsearch/config/elasticsearch-setup.sh"]
+    volumes:
+      - ./elasticsearch-setup.sh:/usr/share/elasticsearch/config/elasticsearch-setup.sh:ro
+      - certs:/usr/share/elasticsearch/config/certs
+    environment:
+      - ELASTIC_PASSWORD=${ELASTIC_PASSWORD}
+      - KIBANA_SYSTEM_PASSWORD=${KIBANA_SYSTEM_PASSWORD}
+      - LOGSTASH_INTERNAL_USERNAME=${LOGSTASH_INTERNAL_USERNAME}
+      - LOGSTASH_INTERNAL_PASSWORD=${LOGSTASH_INTERNAL_PASSWORD}
+    healthcheck:
+      test: ["CMD-SHELL", "[ -f config/certs/elasticsearch-node/elasticsearch-node.crt ]"]
+      interval: 1s
+      timeout: 5s
+      retries: 120
+
+  elasticsearch-node:
+    image: elastic/elasticsearch:${ELK_VERSION}
+    depends_on:
+      elasticsearch-setup:
+        condition: service_healthy
+    ports:
+      - "9200:9200" # Used for REST API
+    environment:
+      - node.name=elasticsearch-node
+      - ELASTIC_PASSWORD=${ELASTIC_PASSWORD}
+      - discovery.type=single-node
+      - xpack.security.enabled=true
+      - xpack.security.http.ssl.enabled=true
+      - xpack.security.http.ssl.key=certs/elasticsearch-node/elasticsearch-node.key
+      - xpack.security.http.ssl.certificate=certs/elasticsearch-node/elasticsearch-node.crt
+      - xpack.security.http.ssl.certificate_authorities=certs/ca/ca.crt
+      - xpack.security.http.ssl.verification_mode=certificate
+      - xpack.security.transport.ssl.enabled=true
+      - xpack.security.transport.ssl.key=certs/elasticsearch-node/elasticsearch-node.key
+      - xpack.security.transport.ssl.certificate=certs/elasticsearch-node/elasticsearch-node.crt
+      - xpack.security.transport.ssl.certificate_authorities=certs/ca/ca.crt
+      - xpack.security.transport.ssl.verification_mode=certificate
+      - xpack.license.self_generated.type=basic
+    volumes:
+      - certs:/usr/share/elasticsearch/config/certs
+      - elasticsearch-data:/usr/share/elasticsearch/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -s --cacert config/certs/ca/ca.crt https://localhost:9200 | grep -q 'missing authentication credentials'"]
+      interval: 10s
+      timeout: 10s
+      retries: 120
+
+  kibana:
+    image: elastic/kibana:${ELK_VERSION}
+    depends_on:
+      elasticsearch-node:
+        condition: service_healthy
+    ports:
+      - "5601:5601" # Used for web interface
+    environment:
+      - xpack.monitoring.collection.enabled=true
+      - SERVERNAME=kibana
+      - ELASTICSEARCH_HOSTS=https://elasticsearch-node:9200
+      - ELASTICSEARCH_USERNAME=kibana_system
+      - ELASTICSEARCH_PASSWORD=${KIBANA_SYSTEM_PASSWORD}
+      - ELASTICSEARCH_SSL_CERTIFICATEAUTHORITIES=config/certs/ca/ca.crt
+    volumes:
+      - certs:/usr/share/kibana/config/certs
+      - kibana-data:/usr/share/kibana/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -s -I http://localhost:5601 | grep -q 'HTTP/1.1 302 Found'"]
+      interval: 10s
+      timeout: 10s
+      retries: 120
+
+  logstash:
+    image: elastic/logstash:${ELK_VERSION}
+    depends_on:
+      kibana:
+        condition: service_healthy
+    ports:
+      - "9600:9600" # Used for monitoring
+      - "12201:12201/udp" # Used for gelf
+    environment:
+      - xpack.monitoring.enabled=false
+      - ELASTIC_HOSTS=https://elasticsearch-node:9200
+      - ELASTIC_USER=${LOGSTASH_INTERNAL_USERNAME}
+      - ELASTIC_PASSWORD=${LOGSTASH_INTERNAL_PASSWORD}
+    volumes:
+      - certs:/usr/share/logstash/certs:ro
+      - ./logstash.conf:/usr/share/logstash/pipeline/logstash.conf:ro
+    healthcheck:
+      test: ["CMD-SHELL", "curl -s http://localhost:9600 >/dev/null || exit 1"]
+      interval: 10s
+      timeout: 10s
+      retries: 120
+
+  harmony-db:
+    image: mysql:8
+    environment:
+      - MYSQL_ROOT_PASSWORD=root_password
+      - MYSQL_DATABASE=harmony_ap
+      - MYSQL_USER=harmony_ap
+      - MYSQL_PASSWORD=dbpassword
+    command:
+      - "--character-set-server=utf8mb4"
+      - "--collation-server=utf8mb4_bin"
+    volumes:
+      - db-data:/var/lib/mysql
+    restart: on-failure
+    mem_limit: 512m
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -u harmony_ap -pdbpassword | grep 'mysqld is alive'"]
+      interval: 10s
+      timeout: 10s
+      retries: 120
+
+  harmony-ap:
+    image: niis/harmony-ap:2.4.0
+    depends_on:
+      harmony-db:
+        condition: service_healthy
+      logstash:
+        condition: service_healthy
+    ports:
+      - "8443:8443"
+    environment:
+      - DB_HOST=harmony-db
+      - DB_SCHEMA=harmony_ap
+      - DB_PASSWORD=dbpassword
+      - ADMIN_PASSWORD=Secret
+      - USE_DYNAMIC_DISCOVERY=false
+      - PARTY_NAME=org1_gw
+      - SERVER_FQDN=harmony-ap
+    volumes:
+      - ap-data:/var/opt/harmony-ap
+    restart: on-failure
+    mem_limit: 1500m
+    logging:
+      driver: gelf
+      options:
+        gelf-address: "udp://127.0.0.1:12201"
+        tag: "harmony-ap"
+
+volumes:
+  certs:
+  elasticsearch-data:
+  kibana-data:
+  ap-data:
+  db-data:
