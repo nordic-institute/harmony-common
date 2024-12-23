@@ -198,9 +198,9 @@ The following steps describe how to enable logging of full messages in Harmony A
 3. Change the log level from `WARN` to `INFO`:
    ```xml
    <!-- In order to enable logging of request/responses please change the loglevel to INFO -->
-    <logger name="org.apache.cxf" level="INFO">
-        <appender-ref ref="stdout"/>
-    </logger>
+   <logger name="org.apache.cxf" level="INFO">
+     <appender-ref ref="stdout"/>
+   </logger>
    ```
 4. Restart the service if required by the *Modifying the Logback configuration* instructions for the deployment environment. 
 
