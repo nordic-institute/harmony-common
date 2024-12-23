@@ -79,6 +79,7 @@ services:
       kibana:
         condition: service_healthy
     ports:
+      - "4560:4560" # Used for tcp input
       - "9600:9600" # Used for monitoring
       - "12201:12201/udp" # Used for gelf
     environment:
@@ -116,7 +117,7 @@ services:
       retries: 120
 
   harmony-ap:
-    image: niis/harmony-ap:2.4.0
+    image: niis/harmony-ap:2.5.0
     depends_on:
       harmony-db:
         condition: service_healthy
