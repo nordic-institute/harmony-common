@@ -349,7 +349,7 @@ Depending on the log message structure, use the appropriate filter plugins to pa
 For example, given a Logback encoder pattern like the following, which is used in the AP Docker image:
 
 ```
-"%d{yyyy-MM-dd HH:mm:ss.SX} %5p [%X{d_user}] [%X{d_domain}] [%X{d_messageId}] [%thread] %c{1}:%domibusLine - %m%n"
+%d{ISO8601} [%X{d_user}] [%X{d_domain}] [%X{d_messageId}] [%X{d_messageEntityId}] [%thread] %5p %c{1}:%domibusLine - %m%n
 ```
 
 Using the [Grok filter plugin](https://www.elastic.co/guide/en/logstash/current/plugins-filters-grok.html), this Grok pattern could parse those log messages:
@@ -358,7 +358,7 @@ Using the [Grok filter plugin](https://www.elastic.co/guide/en/logstash/current/
 filter {
   grok {
     match => {
-      "message" => "^%{TIMESTAMP_ISO8601:timestamp} %{LOGLEVEL:log_level} \[%{DATA:d_user}\] \[%{DATA:d_domain}\] \[%{DATA:d_messageId}\] \[%{DATA:thread}\] %{DATA:logger_class}:%{NUMBER:line_number} - %{GREEDYDATA:log_message}$"
+      "message" => "^%{TIMESTAMP_ISO8601:timestamp} \[%{DATA:d_user}\] \[%{DATA:d_domain}\] \[%{DATA:d_messageId}\] \[%{DATA:d_messageEntityId}\] \[%{DATA:thread}\]%{SPACE}%{LOGLEVEL:log_level} %{DATA:logger_class}:%{NUMBER:line_number} - %{GREEDYDATA:log_message}$"
     }
   }
 }
