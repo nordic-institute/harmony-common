@@ -1,15 +1,16 @@
 # Harmony eDelivery Access - Access Point Logging Guide <!-- omit in toc -->
 
-Version: 1.0
+Version: 1.1
 Doc. ID: UG-AP-L
 
 ---
 
 ## Version history <!-- omit in toc -->
 
-| Date       | Version | Description                        | Author           |
-|------------|---------|------------------------------------|------------------|
-| 13.12.2024 | 1.0     | Initial version                    | Diego Martin     |
+| Date       | Version | Description                                                       | Author           |
+|------------|---------|-------------------------------------------------------------------|------------------|
+| 13.12.2024 | 1.0     | Initial version                                                   | Diego Martin     |
+| 13.01.2025 | 1.1     | Update `org.apache.cxf` logger definition to match latest version | Diego Martin     |
 
 ## License <!-- omit in toc -->
 
