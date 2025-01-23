@@ -1,15 +1,16 @@
 # Harmony eDelivery Access - Access Point Logging Guide <!-- omit in toc -->
 
-Version: 1.0
+Version: 1.1
 Doc. ID: UG-AP-L
 
 ---
 
 ## Version history <!-- omit in toc -->
 
-| Date       | Version | Description                        | Author           |
-|------------|---------|------------------------------------|------------------|
-| 13.12.2024 | 1.0     | Initial version                    | Diego Martin     |
+| Date       | Version | Description                                                       | Author           |
+|------------|---------|-------------------------------------------------------------------|------------------|
+| 13.12.2024 | 1.0     | Initial version                                                   | Diego Martin     |
+| 13.01.2025 | 1.1     | Update `org.apache.cxf` logger definition to match latest version | Diego Martin     |
 
 ## License <!-- omit in toc -->
 
@@ -198,7 +199,9 @@ The following steps describe how to enable logging of full messages in Harmony A
 3. Change the log level from `WARN` to `INFO`:
    ```xml
    <!-- In order to enable logging of request/responses please change the loglevel to INFO -->
-   <logger name="org.apache.cxf" level="INFO"/>
+   <logger name="org.apache.cxf" level="INFO">
+     <appender-ref ref="stdout"/>
+   </logger>
    ```
 4. Restart the service if required by the *Modifying the Logback configuration* instructions for the deployment environment. 
 
@@ -279,21 +282,21 @@ This configuration listens for GELF messages on port `12201`, which is the defau
 To send logs to Logstash in GELF format from Docker, configure the Docker container's logging driver. For example:
 
 ```yaml
- harmony-ap:
-   image: niis/harmony-ap:<image tag>
-   environment:
-     - DB_HOST=harmony-db
-     - DB_SCHEMA=harmony_ap
-     - DB_PASSWORD=dbpassword
-     - ADMIN_PASSWORD=Secret
-     - USE_DYNAMIC_DISCOVERY=false
-     - PARTY_NAME=org1_gw
-     - SERVER_FQDN=harmony-ap
-   logging:
-     driver: gelf
-     options:
-       gelf-address: "udp://127.0.0.1:12201"
-       tag: "harmony-ap"
+harmony-ap:
+  image: niis/harmony-ap:<image tag>
+  environment:
+    - DB_HOST=harmony-db
+    - DB_SCHEMA=harmony_ap
+    - DB_PASSWORD=dbpassword
+    - ADMIN_PASSWORD=Secret
+    - USE_DYNAMIC_DISCOVERY=false
+    - PARTY_NAME=org1_gw
+    - SERVER_FQDN=harmony-ap
+  logging:
+    driver: gelf
+    options:
+      gelf-address: "udp://127.0.0.1:12201"
+      tag: "harmony-ap"
 ```
 
 #### 5.1.2 Filter configuration

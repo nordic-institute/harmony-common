@@ -1,24 +1,25 @@
 # Harmony eDelivery Access - Static Discovery Configuration Guide <!-- omit in toc -->
 
-Version: 1.9  
+Version: 1.10  
 Doc. ID: UG-SDCG
 
 ---
 
 ## Version history <!-- omit in toc -->
 
- Date       | Version | Description                                                                                                                         | Author
- ---------- |---------|-------------------------------------------------------------------------------------------------------------------------------------| --------------------
- 30.12.2021 | 1.0     | Initial version                                                                                                                     | Petteri Kivimäki
- 08.01.2022 | 1.1     | Remove sections about creating TLS truststore manually, update One-Way SSL configuration instructions, update example configuration | Petteri Kivimäki
- 16.02.2022 | 1.2     | Minor updates on SSL configuration details                                                                                          | Petteri Kivimäki
- 22.05.2023 | 1.3     | Updates on importing TLS certificates, changing the sign key alias and references                                                   | Petteri Kivimäki
- 30.05.2023 | 1.4     | Update WS Plugin interface path                                                                                                     | Petteri Kivimäki
- 14.09.2023 | 1.5     | Notes about using the containerized version                                                                                         | Jarkko Hyöty
- 14.09.2023 | 1.6     | Default to PKCS12 keystores                                                                                                         | Jarkko Hyöty
- 15.01.2024 | 1.7     | Update links to external documents                                                                                                  | Petteri Kivimäki
- 28.02.2024 | 1.8     | Update namespaces in example responses                                                                                              | Petteri Kivimäki
- 01.06.2024 | 1.9     | Update links to external documents                                                                                                  | Petteri Kivimäki
+| Date       | Version | Description                                                                                                                         | Author           |
+|------------|---------|-------------------------------------------------------------------------------------------------------------------------------------|------------------|
+| 30.12.2021 | 1.0     | Initial version                                                                                                                     | Petteri Kivimäki |
+| 08.01.2022 | 1.1     | Remove sections about creating TLS truststore manually, update One-Way SSL configuration instructions, update example configuration | Petteri Kivimäki |
+| 16.02.2022 | 1.2     | Minor updates on SSL configuration details                                                                                          | Petteri Kivimäki |
+| 22.05.2023 | 1.3     | Updates on importing TLS certificates, changing the sign key alias and references                                                   | Petteri Kivimäki |
+| 30.05.2023 | 1.4     | Update WS Plugin interface path                                                                                                     | Petteri Kivimäki |
+| 14.09.2023 | 1.5     | Notes about using the containerized version                                                                                         | Jarkko Hyöty     |
+| 14.09.2023 | 1.6     | Default to PKCS12 keystores                                                                                                         | Jarkko Hyöty     |
+| 15.01.2024 | 1.7     | Update links to external documents                                                                                                  | Petteri Kivimäki |
+| 28.02.2024 | 1.8     | Update namespaces in example responses                                                                                              | Petteri Kivimäki |
+| 01.06.2024 | 1.9     | Update links to external documents                                                                                                  | Petteri Kivimäki |
+| 13.01.2025 | 1.10    | Update links to external documents                                                                                                  | Diego Martin     |
 
 ## License <!-- omit in toc -->
 
@@ -91,8 +92,8 @@ See eDelivery documentation \[[TERMS](#Ref_TERMS)\].
 
 1. <a id="Ref_TERMS" class="anchor"></a>\[TERMS\] eDelivery Documentation, <https://ec.europa.eu/digital-building-blocks/sites/display/DIGITAL/eDelivery>
 2. <a id="Ref_IG-AP" class="anchor"></a>\[IG-AP\] Harmony eDelivery Access - Access Point Installation Guide. Document ID: [IG-AS](harmony-ap_installation_guide.md)
-3. <a id="Ref_DOMIBUS_ADMIN_GUIDE" class="anchor"></a>\[DOMIBUS_ADMIN_GUIDE\] Access Point Administration Guide - Domibus 5.1.4, <https://docs.edelivery.tech.ec.europa.eu/domibus/5.1.4/#adminguide>
-4. <a id="Ref_WS_PLUGIN" class="anchor"></a>\[WS_PLUGIN\] Access Point Interface Control Document - WS Plugin, <https://docs.edelivery.tech.ec.europa.eu/domibus/5.1.4/#wsplugin_interface>
+3. <a id="Ref_DOMIBUS_ADMIN_GUIDE" class="anchor"></a>\[DOMIBUS_ADMIN_GUIDE\] Access Point Administration Guide - Domibus 5.1.6, <https://docs.edelivery.tech.ec.europa.eu/domibus/5.1.6/#adminguide>
+4. <a id="Ref_WS_PLUGIN" class="anchor"></a>\[WS_PLUGIN\] Access Point Interface Control Document - WS Plugin, <https://docs.edelivery.tech.ec.europa.eu/domibus/5.1.6/#wsplugin_interface>
 
 ## 2. Configure Static Discovery
 
