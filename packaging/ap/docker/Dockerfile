@@ -1,4 +1,4 @@
-FROM ubuntu:22.04 AS tmp
+FROM ubuntu:24.04 AS tmp
 
 COPY packaging/commonbin/mysql-connector-j-8.2.0.jar /opt/harmony-ap/lib/
 COPY packaging/commonbin/harmony-ap /opt/harmony-ap/webapps/ROOT/
@@ -29,7 +29,7 @@ RUN mkdir -p /opt/harmony-ap/plugins/config \
  && chmod -R ugo=rX /opt/harmony-ap/ \
  && chmod a+rx /opt/harmony-ap/bin/*.sh
 
-FROM ubuntu:22.04
+FROM ubuntu:24.04
 
 ARG AP_UID="999"
 ARG AP_GID="999"
