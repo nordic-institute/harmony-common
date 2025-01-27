@@ -1,31 +1,32 @@
 # Harmony eDelivery Access - Access Point Installation Guide <!-- omit in toc -->
 
-Version: 1.16  
+Version: 1.17  
 Doc. ID: IG-AP
 
 ---
 
 ## Version history <!-- omit in toc -->
 
- Date       | Version | Description                                                                                                                                                 | Author
- ---------- |---------|-------------------------------------------------------------------------------------------------------------------------------------------------------------| --------------------
- 15.11.2021 | 1.0     | Initial version                                                                                                                                             |
- 07.01.2022 | 1.1     | Add reference to the Static Discovery Configuration Guide \[UG-SDCG\]                                                                                       | Petteri Kivimäki
- 08.01.2022 | 1.2     | Add party name to section [2.5](#25-access-point-installation) and TLS truststore to section [2.10](#210-location-of-configuration-and-generated-passwords) | Petteri Kivimäki
- 04.02.2022 | 1.3     | Add upgrade instructions. Add section about log files                                                                                                       | Petteri Kivimäki
- 23.04.2022 | 1.4     | Add port number to the Access Point Installation section. Update package repository URL                                                                     | Petteri Kivimäki
- 28.04.2022 | 1.5     | Minor changes                                                                                                                                               | Petteri Kivimäki
- 22.05.2023 | 1.6     | Update references                                                                                                                                           | Petteri Kivimäki
- 29.05.2023 | 1.7     | Update installation and version upgrade instructions                                                                                                        | Jarkko Hyöty
- 01.06.2023 | 1.8     | Add more information about allowed characters in certificates                                                                                               | Petteri Kivimäki
- 22.06.2023 | 1.9     | Add a note about the default password expiration policy                                                                                                     | Petteri Kivimäki
- 17.08.2023 | 1.10    | Update system requirements                                                                                                                                  | Jarkko Hyöty
- 29.09.2023 | 1.11    | Use PKCS12 keystores by default. Update certificate DN configuration.                                                                                       | Jarkko Hyöty
- 15.01.2024 | 1.12    | Update links to external documents                                                                                                                          | Petteri Kivimäki
- 28.02.2024 | 1.13    | Update WS Plugin interface path                                                                                                                             | Petteri Kivimäki
- 01.03.2024 | 1.14    | Update supported operating systems                                                                                                                          | Diego Martin
- 01.06.2024 | 1.15    | Update links to external documents                                                                                                                          | Petteri Kivimäki
- 13.12.2024 | 1.16    | Add reference to the Logging Guide \[UG-AP-L\]                                                                                                              | Diego Martin
+| Date       | Version | Description                                                                                                                       | Author           |
+|------------|---------|-----------------------------------------------------------------------------------------------------------------------------------|------------------|
+| 15.11.2021 | 1.0     | Initial version                                                                                                                   |                  |
+| 07.01.2022 | 1.1     | Add reference to the Static Discovery Configuration Guide \[UG-SDCG\]                                                             | Petteri Kivimäki |
+| 08.01.2022 | 1.2     | Add party name to section [2.5](#25-access-point-installation) and TLS truststore to section [2.10](#210-location-of-configuration-and-generated-passwords) | Petteri Kivimäki |
+| 04.02.2022 | 1.3     | Add upgrade instructions. Add section about log files                                                                             | Petteri Kivimäki |
+| 23.04.2022 | 1.4     | Add port number to the Access Point Installation section. Update package repository URL                                           | Petteri Kivimäki |
+| 28.04.2022 | 1.5     | Minor changes                                                                                                                     | Petteri Kivimäki |
+| 22.05.2023 | 1.6     | Update references                                                                                                                 | Petteri Kivimäki |
+| 29.05.2023 | 1.7     | Update installation and version upgrade instructions                                                                              | Jarkko Hyöty     |
+| 01.06.2023 | 1.8     | Add more information about allowed characters in certificates                                                                     | Petteri Kivimäki |
+| 22.06.2023 | 1.9     | Add a note about the default password expiration policy                                                                           | Petteri Kivimäki |
+| 17.08.2023 | 1.10    | Update system requirements                                                                                                        | Jarkko Hyöty     |
+| 29.09.2023 | 1.11    | Use PKCS12 keystores by default. Update certificate DN configuration.                                                             | Jarkko Hyöty     |
+| 15.01.2024 | 1.12    | Update links to external documents                                                                                                | Petteri Kivimäki |
+| 28.02.2024 | 1.13    | Update WS Plugin interface path                                                                                                   | Petteri Kivimäki |
+| 01.03.2024 | 1.14    | Update supported operating systems                                                                                                | Diego Martin     |
+| 01.06.2024 | 1.15    | Update links to external documents                                                                                                | Petteri Kivimäki |
+| 13.12.2024 | 1.16    | Add reference to the Logging Guide \[UG-AP-L\]                                                                                    | Diego Martin     |
+| 13.01.2025 | 1.17    | Update links to external documents                                                                                                | Diego Martin     |
 
 ## License <!-- omit in toc -->
 
@@ -71,9 +72,9 @@ See eDelivery documentation \[[TERMS](#Ref_TERMS)\].
 ### 1.3 References
 
 1. <a id="Ref_TERMS" class="anchor"></a>\[TERMS\] eDelivery Documentation, <https://ec.europa.eu/digital-building-blocks/sites/display/DIGITAL/eDelivery>
-2. <a id="Ref_DOMIBUS_ADMIN_GUIDE" class="anchor"></a>\[DOMIBUS_ADMIN_GUIDE\] Access Point Administration Guide - Domibus 5.1.4, <https://docs.edelivery.tech.ec.europa.eu/domibus/5.1.4/#adminguide>
-3. <a id="Ref_WS_PLUGIN" class="anchor"></a>\[WS_PLUGIN\] Access Point Interface Control Document - WS Plugin, <https://docs.edelivery.tech.ec.europa.eu/domibus/5.1.4/#wsplugin_interface>
-4. <a id="Ref_PLUGIN_COOKBOOK" class="anchor"></a>\[PLUGIN_COOKBOOK\] Domibus Plugin Cookbook, <https://docs.edelivery.tech.ec.europa.eu/domibus/5.1.4/#plugin_cookbook>
+2. <a id="Ref_DOMIBUS_ADMIN_GUIDE" class="anchor"></a>\[DOMIBUS_ADMIN_GUIDE\] Access Point Administration Guide - Domibus 5.1.6, <https://docs.edelivery.tech.ec.europa.eu/domibus/5.1.6/#adminguide>
+3. <a id="Ref_WS_PLUGIN" class="anchor"></a>\[WS_PLUGIN\] Access Point Interface Control Document - WS Plugin, <https://docs.edelivery.tech.ec.europa.eu/domibus/5.1.6/#wsplugin_interface>
+4. <a id="Ref_PLUGIN_COOKBOOK" class="anchor"></a>\[PLUGIN_COOKBOOK\] Domibus Plugin Cookbook, <https://docs.edelivery.tech.ec.europa.eu/domibus/5.1.6/#plugin_cookbook>
 5. <a id="Ref_UG-DDCG" class="anchor"></a>\[UG-DDCG\] Harmony eDelivery Access - Dynamic Discovery Configuration Guide. Document ID: [UG-DDCG](dynamic_discovery_configuration_guide.md)
 6. <a id="Ref_UG-SDCG" class="anchor"></a>\[UG-SDCG\] Harmony eDelivery Access - Static Discovery Configuration Guide. Document ID: [UG-SDCG](static_discovery_configuration_guide.md)
 7. <a id="Ref_RFC5280" class="anchor"></a>\[RFC5280\] RFC 5280: Internet X.509 Public Key Infrastructure Certificate and Certificate Revocation List (CRL) Profile, <https://www.rfc-editor.org/rfc/rfc5280>

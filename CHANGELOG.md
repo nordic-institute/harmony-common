@@ -3,6 +3,7 @@
 ## Access Point 2.5.0 - 2024-12-18
 
 - NEDS-188: Merge Domibus 5.1.6 into Harmony Access Point
+- NEDS-188: Update dependencies with known vulnerabilities
 
 ## Access Point 2.4.0 - 2024-06-01
 
