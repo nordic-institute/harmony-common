@@ -48,11 +48,10 @@ form may be interpreted in the plural and vice versa.
    product or service so long as such use is not likely to cause unnecessary consumer or public confusion (e.g.,
    untruthful advertising, false/misleading promotional materials, etc.).
 3. The following are two common types of fair use:
-    1. When you are specifically referring to NIIS products, for example, Harmony eDelivery Access® Access Point
-       software is used in company XYZ for data exchange. Harmony eDelivery Access® is a registered trademark of NIIS.
+    1. When you are specifically referring to NIIS products, for example, Harmony eDelivery Access® software is used in
+       company XYZ for data exchange. Harmony eDelivery Access® is a registered trademark of NIIS.
     2. When you indicate that a NIIS product is compatible with another product, for example, XYZ product is compatible
-       with Harmony eDelivery Access® Access Point software. Harmony eDelivery Access® is a registered trademark of
-       NIIS.
+       with Harmony eDelivery Access® software. Harmony eDelivery Access® is a registered trademark of NIIS.
     3. You should emphasize your product name so that it is perceived as an application, developed with, compatible
        with, or running on a NIIS solution.
     4. You should use the trademarks in a form that distinguishes them from the text around them, such as by
