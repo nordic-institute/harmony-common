@@ -35,6 +35,8 @@ form may be interpreted in the plural and vice versa.
    under certain conditions. Nevertheless, the EUPL-1.2 License does not include an implied right or license to use a
    trademark related to the licensed software or other materials. The trademarks and logos need to be used consistent
    with trademark law.
+6. The Harmony eDelivery Access documentation is licensed under the
+   [Creative Commons Attribution-ShareAlike 4.0 International License](https://creativecommons.org/licenses/by-sa/4.0/).
 
 ## 2 Fair Use of Trademarks and Logos
 
@@ -47,11 +49,10 @@ form may be interpreted in the plural and vice versa.
    untruthful advertising, false/misleading promotional materials, etc.).
 3. The following are two common types of fair use:
     1. When you are specifically referring to NIIS products, for example, Harmony eDelivery Access® Access Point
-       software is used in company XYZ for data exchange. Harmony eDelivery Access® is a registered trademark of the
-       Estonian Information System Authority.
+       software is used in company XYZ for data exchange. Harmony eDelivery Access® is a registered trademark of NIIS.
     2. When you indicate that a NIIS product is compatible with another product, for example, XYZ product is compatible
-       with Harmony eDelivery Access® Access Point software. Harmony eDelivery Access® is a registered trademark of the
-       Estonian Information System Authority.
+       with Harmony eDelivery Access® Access Point software. Harmony eDelivery Access® is a registered trademark of
+       NIIS.
     3. You should emphasize your product name so that it is perceived as an application, developed with, compatible
        with, or running on a NIIS solution.
     4. You should use the trademarks in a form that distinguishes them from the text around them, such as by
@@ -112,11 +113,13 @@ report concerns regarding the use or misuse of the trademarks of NIIS, contact u
 
 ## 5 Updates of Guidelines
 
-The NIIS® and Harmony eDelivery Access® Trademark Usage Guidelines may be modified from time to time by NIIS
-at our sole discretion and release new versions without notice. The current version is 2025 v1, published in
-January 2025.
+The NIIS® and Harmony eDelivery Access® Trademark Usage Guidelines may be modified from time to time by NIIS at our sole
+discretion and release new versions without notice. The current version is 2025 v1, published in January 2025.
 
 ## 6 Q&A
 
-1. **Question**: Does this also mean that if I, for example, compile Harmony eDelivery Access® Access Point (without changing any actual code) and create my metapackages to distribute in a country, for instance, I should always modify the frontend code and remove the Harmony eDelivery Access logos?
-    1. **Answer**: In this case, you don’t need to remove the Harmony eDelivery Access logos from the frontend because you’re still using the original Harmony eDelivery Access software. However, the national data exchange service that’s built using Harmony eDelivery Access should be called something else.
+1. **Question**: Does this also mean that if I, for example, compile Harmony eDelivery Access® Access Point including my
+own changes to the source code and publish a modified version of the software for distribution, for instance, I should
+modify the frontend code and remove the Harmony eDelivery Access logos?
+    1. **Answer**: In this case, you need to remove the Harmony eDelivery Access logos from the frontend because you're
+    not using the original Harmony eDelivery Access software anymore.
