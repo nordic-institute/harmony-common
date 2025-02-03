@@ -4,7 +4,7 @@ set -e
 # Version of Harmony Access Point
 APVERSION=2.5.0
 # Version of Harmony SMP
-SMPVERSION=2.1.1
+SMPVERSION=2.2.0
 
 TOMCAT_VERSION=9.0.91
 MYSQLJ_VERSION=8.2.0
