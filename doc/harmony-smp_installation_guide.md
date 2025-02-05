@@ -1,6 +1,6 @@
 # Harmony eDelivery Access - Service Metadata Publisher Installation Guide <!-- omit in toc -->
 
-Version: 1.16  
+Version: 1.17  
 Doc. ID: IG-SMP
 ---
 
@@ -24,7 +24,8 @@ Doc. ID: IG-SMP
 | 17.08.2023 | 1.13    | Update system requirements                                                                              | Jarkko Hyöty     |
 | 15.01.2024 | 1.14    | Update links to external documents                                                                      | Petteri Kivimäki |
 | 21.02.2024 | 1.15    | Update supported operating systems                                                                      | Diego Martin     |
-| 27.01.2025 | 1.16    | Support for Ubuntu 24.04                                                                                | Diego Martin     |
+| 05.02.2025 | 1.16    | Update links to external documents                                                                      | Diego Martin     |
+| 06.02.2025 | 1.17    | Support for Ubuntu 24.04                                                                                | Diego Martin     |
 
 ## License <!-- omit in toc -->
 
@@ -77,7 +78,7 @@ See eDelivery documentation \[[TERMS](#Ref_TERMS)\].
 ### 1.3 References
 
 1. <a id="Ref_TERMS" class="anchor"></a>\[TERMS\] eDelivery Documentation, <https://ec.europa.eu/digital-building-blocks/sites/display/DIGITAL/eDelivery>
-2. <a id="Ref_SMP_ADMIN_GUIDE" class="anchor"></a>\[SMP_ADMIN_GUIDE\] DomiSMP Administration Guide - DomiSMP 5.0, <https://ec.europa.eu/digital-building-blocks/sites/download/attachments/674510184/%28eDelivery%29%28SMP%29%28AG%29%28DomiSMP%205.0%29%283.7%29.pdf>
+2. <a id="Ref_SMP_ADMIN_GUIDE" class="anchor"></a>\[SMP_ADMIN_GUIDE\] DomiSMP Administration Guide - DomiSMP 5.1, <https://docs.edelivery.tech.ec.europa.eu/domismp/prod/5.1/>
 3. <a id="Ref_UG-DDCG" class="anchor"></a>\[UG-DDCG\] Harmony eDelivery Access - Dynamic Discovery Configuration Guide. Document ID: [UG-DDCG](dynamic_discovery_configuration_guide.md)
 4. <a id="Ref_RFC5280" class="anchor"></a>\[RFC5280\] RFC 5280: Internet X.509 Public Key Infrastructure Certificate and Certificate Revocation List (CRL) Profile, <https://www.rfc-editor.org/rfc/rfc5280>
 5. <a id="Ref_PS" class="anchor"></a>\[PS\] PrintableString, <https://en.wikipedia.org/wiki/PrintableString>
@@ -234,7 +235,7 @@ Upon the first installation of the SMP, the system asks for the following inform
 
 See the Dynamic Discovery Configuration Guide \[[UG-DDCG](dynamic_discovery_configuration_guide.md)\] for more information about how to configure dynamic discovery.
 
-### 2.7 Starting harmony-smp Service and Enabling Automatic Startup 
+### 2.7 Starting harmony-smp Service and Enabling Automatic Startup
 
 To start `harmony-smp` service issue the following command:
 ```bash
@@ -269,7 +270,7 @@ In addition to installing required dependencies, the installation process comple
 - generates self-signed certificates for content encryption and for transport encryption;
 - installs `systemd` service `harmony-smp` but does not enable or start it.
 
-### 2.10 Location of Configuration and Generated Passwords 
+### 2.10 Location of Configuration and Generated Passwords
 
 All SMP configuration files are located in the `/etc/harmony-smp` directory. See the SMP Administration Guide \[[SMP_ADMIN_GUIDE](#Ref_SMP_ADMIN_GUIDE])\] for more details.
 
