@@ -1,5 +1,9 @@
 # Changelog
 
+## SMP - 2.2.0 - 2025-02-03
+
+- NEDS-194: Merge DomiSMP 5.1.0 into Harmony SMP code base
+
 ## Access Point 2.5.0 - 2024-12-18
 
 - NEDS-188: Merge Domibus 5.1.6 into Harmony Access Point
