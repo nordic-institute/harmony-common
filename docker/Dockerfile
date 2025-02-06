@@ -7,6 +7,7 @@ RUN apt-get -qq update \
   && apt-get -qq upgrade \
   && apt-get -qq install --no-install-recommends \
     build-essential \
+    curl \
     debhelper \
     devscripts \
     fakeroot \
