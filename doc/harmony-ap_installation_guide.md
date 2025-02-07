@@ -187,7 +187,7 @@ grant all on harmony_ap.* to harmony_ap@'%';
 It is also necessary to [populate MySQL time zone information tables](https://dev.mysql.com/doc/refman/8.0/en/time-zone-support.html#time-zone-installation), e.g. using the following command as root on the external database host:
 
 ```bash
-mysql_tzinfo_to_sql /usr/share/zoneinfo/posix | mysql -u root mysql
+mysql_tzinfo_to_sql /usr/share/zoneinfo | mysql -u root mysql
 ```
 
 When using a _local database_, the installer handles these additional steps.
@@ -327,7 +327,7 @@ grant SYSTEM_VARIABLES_ADMIN on *.* to harmony_ap'@'%'
 When using an external database, it is also necessary to [manually populate MySQL time zone information tables](https://dev.mysql.com/doc/refman/8.0/en/time-zone-support.html#time-zone-installation), e.g. using the following command as root on the external database host:
 
 ```bash
-mysql_tzinfo_to_sql /usr/share/zoneinfo/posix | mysql -u root mysql
+mysql_tzinfo_to_sql /usr/share/zoneinfo | mysql -u root mysql
 ```
 
 ### 3.2 Upgrade
