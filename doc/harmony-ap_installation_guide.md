@@ -139,7 +139,7 @@ Minimum recommended hardware parameters:
 
 Requirements to software and settings:
 
-* an installed and configured Ubuntu 20.04, 22.04, or 24.04 LTS x86-64 operating system;
+* an installed and configured Ubuntu 20.04, 22.04, or 24.04 LTS x86-64 or arm64 operating system;
 * if the Access Point is separated from other networks by a firewall and/or NAT, the necessary connections to and from the Access Point are allowed;
 * if the Access Point has a private IP address, a corresponding NAT record must be created in the firewall;
 * enabling auxiliary services which are necessary for the functioning and management of the operating system (such as DNS, NTP, and SSH) stay outside the scope of this guide.
