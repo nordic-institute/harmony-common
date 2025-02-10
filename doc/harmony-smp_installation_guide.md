@@ -1,6 +1,6 @@
 # Harmony eDelivery Access - Service Metadata Publisher Installation Guide <!-- omit in toc -->
 
-Version: 1.16  
+Version: 1.17  
 Doc. ID: IG-SMP
 ---
 
@@ -25,6 +25,7 @@ Doc. ID: IG-SMP
 | 15.01.2024 | 1.14    | Update links to external documents                                                                      | Petteri Kivimäki |
 | 21.02.2024 | 1.15    | Update supported operating systems                                                                      | Diego Martin     |
 | 05.02.2025 | 1.16    | Update links to external documents                                                                      | Diego Martin     |
+| 06.02.2025 | 1.17    | Support for Ubuntu 24.04                                                                                | Diego Martin     |
 
 ## License <!-- omit in toc -->
 
@@ -39,7 +40,7 @@ To view a copy of this license, visit <https://creativecommons.org/licenses/by-s
   * [1.1 Target Audience](#11-target-audience)
   * [1.2 Terms and abbreviations](#12-terms-and-abbreviations)
   * [1.3 References](#13-references)
-* [2. Installation](#2-installation)
+* [2 Installation](#2-installation)
   * [2.1 Prerequisites to Installation](#21-prerequisites-to-installation)
   * [2.2 Network Diagram](#22-network-diagram)
   * [2.3 Requirements for the SMP](#23-requirements-for-the-smp)
@@ -90,6 +91,7 @@ The SMP is officially supported on the following operating systems (x86-64, arm6
 
 * Ubuntu Server 20.04 Long-Term Support (LTS).
 * Ubuntu Server 22.04 Long-Term Support (LTS).
+* Ubuntu Server 24.04 Long-Term Support (LTS).
 
 The software can be installed both on physical and virtualized hardware.
 
@@ -136,7 +138,7 @@ Minimum recommended hardware parameters:
 
 Requirements to software and settings:
 
-* an installed and configured Ubuntu 20.04 or 22.04 LTS x86-64 operating system;
+* an installed and configured Ubuntu 20.04, 22.04, or 24.04 LTS x86-64 or arm64 operating system;
 * if the SMP is separated from other networks by a firewall and/or NAT, the necessary connections to and from the SMP are allowed;
 * if the SMP has a private IP address, a corresponding NAT record must be created in the firewall;
 * enabling auxiliary services which are necessary for the functioning and management of the operating system (such as DNS, NTP, and SSH) stay outside the scope of this guide.

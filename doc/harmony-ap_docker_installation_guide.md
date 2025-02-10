@@ -119,7 +119,7 @@ The Access Point container requires an external database.
 Note. It is necessary to [populate MySQL time zone information tables](https://dev.mysql.com/doc/refman/8.0/en/time-zone-support.html#time-zone-installation), e.g. using the following command as root on the external database host:
 
 ```bash
-mysql_tzinfo_to_sql /usr/share/zoneinfo/posix | mysql -u root mysql
+mysql_tzinfo_to_sql /usr/share/zoneinfo | mysql -u root mysql
 ```
 
 The Harmony schema and user can be created using the following SQL DDL statements (adjust user and schema name as needed; the default _harmony_ap_ is used in the example):

@@ -162,7 +162,7 @@ case "$1" in
   if [[ "$DB_HOST" = "localhost" ]]; then
 
     if [[ ! -f /etc/harmony-ap/.mysql_tzinfo ]]; then
-      mysql_tzinfo_to_sql /usr/share/zoneinfo/posix | mysql -u root mysql >&2
+      mysql_tzinfo_to_sql /usr/share/zoneinfo | mysql -u root mysql >&2
       systemctl restart mysql
       mysqladmin -w -s -u root ping &>/dev/null
       touch /etc/harmony-ap/.mysql_tzinfo
