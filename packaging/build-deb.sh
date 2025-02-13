@@ -48,3 +48,7 @@ builddeb build/harmony/smp/ubuntu focal ubuntu20.04
 prepare ubuntu22.04
 builddeb build/harmony/ap/ubuntu jammy ubuntu22.04
 builddeb build/harmony/smp/ubuntu jammy ubuntu22.04
+
+prepare ubuntu24.04
+builddeb build/harmony/ap/ubuntu noble ubuntu24.04
+builddeb build/harmony/smp/ubuntu noble ubuntu24.04

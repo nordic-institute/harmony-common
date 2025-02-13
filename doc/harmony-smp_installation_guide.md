@@ -1,29 +1,31 @@
 # Harmony eDelivery Access - Service Metadata Publisher Installation Guide <!-- omit in toc -->
 
-Version: 1.15  
+Version: 1.17  
 Doc. ID: IG-SMP
 ---
 
 ## Version history <!-- omit in toc -->
 
- Date       | Version | Description                                                                                             | Author
- ---------- |---------|---------------------------------------------------------------------------------------------------------| --------------------
- 15.11.2021 | 1.0     | Initial version                                                                                         |
- 20.12.2021 | 1.1     | Add section [2.4 Preparing OS](#24-preparing-os)                                                        | Petteri Kivimäki
- 21.12.2021 | 1.2     | Add section [2.11 Securing SMP user interface](#211-securing-smp-user-interface)                        | Andres Allkivi
- 07.01.2021 | 1.3     | Add language types to code blocks                                                                       | Petteri Kivimäki
- 22.01.2021 | 1.4     | Add more information about keystores and trustores. Add information about properties stored in database | Petteri Kivimäki
- 06.02.2021 | 1.5     | Add upgrade instructions. Add section about log files                                                   | Petteri Kivimäki
- 23.04.2022 | 1.6     | Add port number to the SMP Installation section. Update package repository URL                          | Petteri Kivimäki
- 28.04.2022 | 1.7     | Minor changes                                                                                           | Petteri Kivimäki
- 22.01.2023 | 1.8     | Update SMP Admin Guide link                                                                             | Petteri Kivimäki
- 01.06.2023 | 1.9     | Add more information about allowed characters in certificates                                           | Petteri Kivimäki
- 31.07.2023 | 1.10    | Updates for SMP version 2.0                                                                             | Jarkko Hyöty
- 04.08.2023 | 1.11    | Update DomiSMP Admin Guide link                                                                         | Petteri Kivimäki
- 09.08.2023 | 1.12    | Update section 2.10                                                                                     | Jarkko Hyöty
- 17.08.2023 | 1.13    | Update system requirements                                                                              | Jarkko Hyöty
- 15.01.2024 | 1.14    | Update links to external documents                                                                      | Petteri Kivimäki
- 21.02.2024 | 1.15    | Update supported operating systems                                                                      | Diego Martin
+| Date       | Version | Description                                                                                             | Author           |
+|------------|---------|---------------------------------------------------------------------------------------------------------|------------------|
+| 15.11.2021 | 1.0     | Initial version                                                                                         |                  |
+| 20.12.2021 | 1.1     | Add section [2.4 Preparing OS](#24-preparing-os)                                                        | Petteri Kivimäki |
+| 21.12.2021 | 1.2     | Add section [2.11 Securing SMP user interface](#211-securing-smp-user-interface)                        | Andres Allkivi   |
+| 07.01.2021 | 1.3     | Add language types to code blocks                                                                       | Petteri Kivimäki |
+| 22.01.2021 | 1.4     | Add more information about keystores and trustores. Add information about properties stored in database | Petteri Kivimäki |
+| 06.02.2021 | 1.5     | Add upgrade instructions. Add section about log files                                                   | Petteri Kivimäki |
+| 23.04.2022 | 1.6     | Add port number to the SMP Installation section. Update package repository URL                          | Petteri Kivimäki |
+| 28.04.2022 | 1.7     | Minor changes                                                                                           | Petteri Kivimäki |
+| 22.01.2023 | 1.8     | Update SMP Admin Guide link                                                                             | Petteri Kivimäki |
+| 01.06.2023 | 1.9     | Add more information about allowed characters in certificates                                           | Petteri Kivimäki |
+| 31.07.2023 | 1.10    | Updates for SMP version 2.0                                                                             | Jarkko Hyöty     |
+| 04.08.2023 | 1.11    | Update DomiSMP Admin Guide link                                                                         | Petteri Kivimäki |
+| 09.08.2023 | 1.12    | Update section 2.10                                                                                     | Jarkko Hyöty     |
+| 17.08.2023 | 1.13    | Update system requirements                                                                              | Jarkko Hyöty     |
+| 15.01.2024 | 1.14    | Update links to external documents                                                                      | Petteri Kivimäki |
+| 21.02.2024 | 1.15    | Update supported operating systems                                                                      | Diego Martin     |
+| 05.02.2025 | 1.16    | Update links to external documents                                                                      | Diego Martin     |
+| 06.02.2025 | 1.17    | Support for Ubuntu 24.04                                                                                | Diego Martin     |
 
 ## License <!-- omit in toc -->
 
@@ -38,7 +40,7 @@ To view a copy of this license, visit <https://creativecommons.org/licenses/by-s
   * [1.1 Target Audience](#11-target-audience)
   * [1.2 Terms and abbreviations](#12-terms-and-abbreviations)
   * [1.3 References](#13-references)
-* [2. Installation](#2-installation)
+* [2 Installation](#2-installation)
   * [2.1 Prerequisites to Installation](#21-prerequisites-to-installation)
   * [2.2 Network Diagram](#22-network-diagram)
   * [2.3 Requirements for the SMP](#23-requirements-for-the-smp)
@@ -76,7 +78,7 @@ See eDelivery documentation \[[TERMS](#Ref_TERMS)\].
 ### 1.3 References
 
 1. <a id="Ref_TERMS" class="anchor"></a>\[TERMS\] eDelivery Documentation, <https://ec.europa.eu/digital-building-blocks/sites/display/DIGITAL/eDelivery>
-2. <a id="Ref_SMP_ADMIN_GUIDE" class="anchor"></a>\[SMP_ADMIN_GUIDE\] DomiSMP Administration Guide - DomiSMP 5.0, <https://ec.europa.eu/digital-building-blocks/sites/download/attachments/674510184/%28eDelivery%29%28SMP%29%28AG%29%28DomiSMP%205.0%29%283.7%29.pdf>
+2. <a id="Ref_SMP_ADMIN_GUIDE" class="anchor"></a>\[SMP_ADMIN_GUIDE\] DomiSMP Administration Guide - DomiSMP 5.1, <https://docs.edelivery.tech.ec.europa.eu/domismp/prod/5.1/>
 3. <a id="Ref_UG-DDCG" class="anchor"></a>\[UG-DDCG\] Harmony eDelivery Access - Dynamic Discovery Configuration Guide. Document ID: [UG-DDCG](dynamic_discovery_configuration_guide.md)
 4. <a id="Ref_RFC5280" class="anchor"></a>\[RFC5280\] RFC 5280: Internet X.509 Public Key Infrastructure Certificate and Certificate Revocation List (CRL) Profile, <https://www.rfc-editor.org/rfc/rfc5280>
 5. <a id="Ref_PS" class="anchor"></a>\[PS\] PrintableString, <https://en.wikipedia.org/wiki/PrintableString>
@@ -89,6 +91,7 @@ The SMP is officially supported on the following operating systems (x86-64, arm6
 
 * Ubuntu Server 20.04 Long-Term Support (LTS).
 * Ubuntu Server 22.04 Long-Term Support (LTS).
+* Ubuntu Server 24.04 Long-Term Support (LTS).
 
 The software can be installed both on physical and virtualized hardware.
 
@@ -105,11 +108,11 @@ The network diagram below provides an example of an SMP setup when dynamic disco
 
 The table below lists the required connections between different components.
 
-**Connection Type** | **Source** | **Target** | **Target Ports** | **Protocol** | **Note** |
------------|------------|-----------|-----------|-----------|-----------|
-Out | SMP | SML | 443, 8443, other | tcp | |
-In  | Data Exchange Partner Access Point | SMP | 8443\* | tcp | URL paths: `/{participantIdentifier}` and `/{participantIdentifier}/services/{documentIdentifier}` |
-In | Admin | SMP | 8443\* | tcp | Source in the internal network<br /><br />URL paths: `/` and `/ui` |
+| **Connection Type** | **Source**                         | **Target** | **Target Ports** | **Protocol** | **Note**                                                                                           |
+|---------------------|------------------------------------|------------|------------------|--------------|----------------------------------------------------------------------------------------------------|
+| Out                 | SMP                                | SML        | 443, 8443, other | tcp          |                                                                                                    |
+| In                  | Data Exchange Partner Access Point | SMP        | 8443\*           | tcp          | URL paths: `/{participantIdentifier}` and `/{participantIdentifier}/services/{documentIdentifier}` |
+| In                  | Admin                              | SMP        | 8443\*           | tcp          | Source in the internal network<br /><br />URL paths: `/` and `/ui`                                 |
 
 \* The port number for inbound connections is configurable and the value can be set during the SMP installation process. Port `8443` is used by default.
 
@@ -117,12 +120,12 @@ It is strongly recommended to protect the SMP from unwanted access using a firew
 
 In addition, it's strongly recommended to use URL path filtering for the SMP since the admin UI and metadata query interface run on the same port. By default, the port number is `8443`, but it is configurable.
 
-**Port** | **URL Path** | **Description** |
----------|----------|-----------------|
- 8443    | `/` | Landing page. |
- 8443    | `/ui` | Admin UI for managing the SMP. |
- 8443    | `/{participantIdentifier}` |  Service group query interface. |
- 8443    | `/{participantIdentifier}/services/{documentIdentifier}` |  Metadata query interface. |
+| **Port** | **URL Path**                                             | **Description**                |
+|----------|----------------------------------------------------------|--------------------------------|
+| 8443     | `/`                                                      | Landing page.                  |
+| 8443     | `/ui`                                                    | Admin UI for managing the SMP. |
+| 8443     | `/{participantIdentifier}`                               | Service group query interface. |
+| 8443     | `/{participantIdentifier}/services/{documentIdentifier}` | Metadata query interface.      |
 
 ### 2.3 Requirements for the SMP
 
@@ -135,7 +138,7 @@ Minimum recommended hardware parameters:
 
 Requirements to software and settings:
 
-* an installed and configured Ubuntu 20.04 or 22.04 LTS x86-64 operating system;
+* an installed and configured Ubuntu 20.04, 22.04, or 24.04 LTS x86-64 or arm64 operating system;
 * if the SMP is separated from other networks by a firewall and/or NAT, the necessary connections to and from the SMP are allowed;
 * if the SMP has a private IP address, a corresponding NAT record must be created in the firewall;
 * enabling auxiliary services which are necessary for the functioning and management of the operating system (such as DNS, NTP, and SSH) stay outside the scope of this guide.
@@ -232,7 +235,7 @@ Upon the first installation of the SMP, the system asks for the following inform
 
 See the Dynamic Discovery Configuration Guide \[[UG-DDCG](dynamic_discovery_configuration_guide.md)\] for more information about how to configure dynamic discovery.
 
-### 2.7 Starting harmony-smp Service and Enabling Automatic Startup 
+### 2.7 Starting harmony-smp Service and Enabling Automatic Startup
 
 To start `harmony-smp` service issue the following command:
 ```bash
@@ -267,29 +270,29 @@ In addition to installing required dependencies, the installation process comple
 - generates self-signed certificates for content encryption and for transport encryption;
 - installs `systemd` service `harmony-smp` but does not enable or start it.
 
-### 2.10 Location of Configuration and Generated Passwords 
+### 2.10 Location of Configuration and Generated Passwords
 
 All SMP configuration files are located in the `/etc/harmony-smp` directory. See the SMP Administration Guide \[[SMP_ADMIN_GUIDE](#Ref_SMP_ADMIN_GUIDE])\] for more details.
 
 During the installation process, multiple random passwords are generated.
 
-| **Password purpose** | **Password location** |
-|---|---|
-| Password for `harmony-smp` MySQL user  | Configuration file: `/etc/harmony-smp/tomcat-conf/context.xml` |
-| Content encryption keystore (`/etc/harmony-smp/smp-keystore.p12`) password | File /etc/harmony-smp/smp.init.properties, property `smp.keystore.password`. The format is `{DEC}{$PASSWORD}` where `$PASSWORD` is the keystore password. Content of this keystore can be changed using UI.|
-| Content encryption truststore (`/etc/harmony-smp/smp-truststore.p12`) password | File /etc/harmony-smp/smp.init.properties, property `smp.truststore.password`. The format is `{DEC}{$PASSWORD}` where `$PASSWORD` is the truststore password. |
-| TLS keystore (`/etc/harmony-smp/tls-keystore.p12`) password | Configuration file: `/etc/harmony-smp/tomcat-conf/server.xml`<br /><br />Property: `keystorePass` |
-| TLS truststore (`/etc/harmony-smp/tls-truststore.p12`) password | Configuration file: `/etc/harmony-smp/tomcat-conf/server.xml`<br /><br />Property: `truststorePass`<br /><br />Also, the password is stored in: `/opt/harmony-smp/bin/setenv.sh` |
+| **Password purpose**                                                           | **Password location**                                                                                                                                                                                       |
+|--------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Password for `harmony-smp` MySQL user                                          | Configuration file: `/etc/harmony-smp/tomcat-conf/context.xml`                                                                                                                                              |
+| Content encryption keystore (`/etc/harmony-smp/smp-keystore.p12`) password     | File /etc/harmony-smp/smp.init.properties, property `smp.keystore.password`. The format is `{DEC}{$PASSWORD}` where `$PASSWORD` is the keystore password. Content of this keystore can be changed using UI. |
+| Content encryption truststore (`/etc/harmony-smp/smp-truststore.p12`) password | File /etc/harmony-smp/smp.init.properties, property `smp.truststore.password`. The format is `{DEC}{$PASSWORD}` where `$PASSWORD` is the truststore password.                                               |
+| TLS keystore (`/etc/harmony-smp/tls-keystore.p12`) password                    | Configuration file: `/etc/harmony-smp/tomcat-conf/server.xml`<br /><br />Property: `keystorePass`                                                                                                           |
+| TLS truststore (`/etc/harmony-smp/tls-truststore.p12`) password                | Configuration file: `/etc/harmony-smp/tomcat-conf/server.xml`<br /><br />Property: `truststorePass`<br /><br />Also, the password is stored in: `/opt/harmony-smp/bin/setenv.sh`                            |
 
 Part of the SMP configuration is stored in MySQL database. The following properties are stored in the `SMP_CONFIGURATION` 
 table. The values are configured when the SMP is installed for the first time.
 
-| **Property** | **Default** | **Description** |
-|---|---|---|
-| `bdmsl.integration.enabled` | `false` | Does the SMP installation publish information to some Service Metadata Locator (SML). |
-| `bdmsl.integration.url` | ` ` | Full URL of the SML server, including protocol and port. |
-| `bdmsl.integration.logical.address` | ` ` | Full URL of this SMP server as seen from public Internet, including protocol and port. |
-| `bdmsl.integration.physical.address` | ` ` | Public IP address of this SMP server (reachable from public Internet). |
+| **Property**                         | **Default** | **Description**                                                                        |
+|--------------------------------------|-------------|----------------------------------------------------------------------------------------|
+| `bdmsl.integration.enabled`          | `false`     | Does the SMP installation publish information to some Service Metadata Locator (SML).  |
+| `bdmsl.integration.url`              | ` `         | Full URL of the SML server, including protocol and port.                               |
+| `bdmsl.integration.logical.address`  | ` `         | Full URL of this SMP server as seen from public Internet, including protocol and port. |
+| `bdmsl.integration.physical.address` | ` `         | Public IP address of this SMP server (reachable from public Internet).                 |
 
 The current values of the properties can be fetched using the following command:
 

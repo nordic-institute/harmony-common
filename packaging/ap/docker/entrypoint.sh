@@ -32,7 +32,8 @@ if [[ $1 == "help" ]]; then
   MAX_MEM                          512m
   PRESERVE_BACKUP_FILE_DATE        false if config is on SMB filesystem, otherwise true
 
-  # The following params can not be set once written to config:
+  # The following params can not be set once written to config.
+  # They are used for initial setup, they won't be updated on subsequent runs:
   PARTY_NAME                       selfsigned
   SERVER_FQDN                      *output of 'hostname -f'*
   SERVER_DN                        CN=*SERVER_FQDN*

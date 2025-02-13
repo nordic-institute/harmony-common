@@ -1,6 +1,6 @@
 # Harmony eDelivery Access - Access Point Clustering Guide <!-- omit in toc -->
 
-Version: 1.1  
+Version: 1.2  
 Doc. ID: UG-AP-C
 
 ---
@@ -11,6 +11,7 @@ Doc. ID: UG-AP-C
 |------------|---------|------------------------------------|------------------|
 | 22.03.2024 | 1.0     | Initial version                    | Diego Martin     |
 | 01.06.2024 | 1.1     | Update links to external documents | Petteri Kivimäki |
+| 13.01.2025 | 1.2     | Update links to external documents | Diego Martin     |
 
 ## License <!-- omit in toc -->
 
@@ -71,7 +72,7 @@ See eDelivery documentation \[[TERMS](#Ref_TERMS)\].
 ### 1.3 References
 
 1. <a id="Ref_TERMS" class="anchor"></a>\[TERMS\] eDelivery Documentation, <https://ec.europa.eu/digital-building-blocks/sites/display/DIGITAL/eDelivery>
-2. <a id="Ref_DOMIBUS_ADMIN_GUIDE" class="anchor"></a>\[DOMIBUS_ADMIN_GUIDE\] Access Point Administration Guide - Domibus 5.1.4, <https://docs.edelivery.tech.ec.europa.eu/domibus/5.1.4/#adminguide>
+2. <a id="Ref_DOMIBUS_ADMIN_GUIDE" class="anchor"></a>\[DOMIBUS_ADMIN_GUIDE\] Access Point Administration Guide - Domibus 5.1.6, <https://docs.edelivery.tech.ec.europa.eu/domibus/5.1.6/#adminguide>
 3. <a id="Ref_AMQ-CLUSTERING" class="anchor"></a>\[AMQ-CLUSTERING\] ActiveMQ Classic Clustering Documentation <https://activemq.apache.org/components/classic/documentation/clustering>
 4. <a id="Ref_AMQ-SHAREDFILE-MASTERSLAVE" class="anchor"></a>\[AMQ-SHAREDFILE-MASTERSLAVE\] ActiveMQ Classic Shared File System Master Slave <https://activemq.apache.org/components/classic/documentation/shared-file-system-master-slave>
 

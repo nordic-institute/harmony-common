@@ -1,30 +1,33 @@
 # Harmony eDelivery Access - Access Point Installation Guide <!-- omit in toc -->
 
-Version: 1.15  
+Version: 1.18  
 Doc. ID: IG-AP
 
 ---
 
 ## Version history <!-- omit in toc -->
 
- Date       | Version | Description                                                                                                                                                 | Author
- ---------- |---------|-------------------------------------------------------------------------------------------------------------------------------------------------------------| --------------------
- 15.11.2021 | 1.0     | Initial version                                                                                                                                             |
- 07.01.2022 | 1.1     | Add reference to the Static Discovery Configuration Guide \[UG-SDCG\]                                                                                       | Petteri Kivimäki
- 08.01.2022 | 1.2     | Add party name to section [2.5](#25-access-point-installation) and TLS truststore to section [2.10](#210-location-of-configuration-and-generated-passwords) | Petteri Kivimäki
- 04.02.2022 | 1.3     | Add upgrade instructions. Add section about log files                                                                                                       | Petteri Kivimäki
- 23.04.2022 | 1.4     | Add port number to the Access Point Installation section. Update package repository URL                                                                     | Petteri Kivimäki
- 28.04.2022 | 1.5     | Minor changes                                                                                                                                               | Petteri Kivimäki
- 22.05.2023 | 1.6     | Update references                                                                                                                                           | Petteri Kivimäki
- 29.05.2023 | 1.7     | Update installation and version upgrade instructions                                                                                                        | Jarkko Hyöty
- 01.06.2023 | 1.8     | Add more information about allowed characters in certificates                                                                                               | Petteri Kivimäki
- 22.06.2023 | 1.9     | Add a note about the default password expiration policy                                                                                                     | Petteri Kivimäki
- 17.08.2023 | 1.10    | Update system requirements                                                                                                                                  | Jarkko Hyöty
- 29.09.2023 | 1.11    | Use PKCS12 keystores by default. Update certificate DN configuration.                                                                                       | Jarkko Hyöty
- 15.01.2024 | 1.12    | Update links to external documents                                                                                                                          | Petteri Kivimäki
- 28.02.2024 | 1.13    | Update WS Plugin interface path                                                                                                                             | Petteri Kivimäki
- 01.03.2024 | 1.14    | Update supported operating systems                                                                                                                          | Diego Martin
- 01.06.2024 | 1.15    | Update links to external documents                                                                                                                          | Petteri Kivimäki
+| Date       | Version | Description                                                                                                                                                 | Author           |
+|------------|---------|-------------------------------------------------------------------------------------------------------------------------------------------------------------|------------------|
+| 15.11.2021 | 1.0     | Initial version                                                                                                                                             |                  |
+| 07.01.2022 | 1.1     | Add reference to the Static Discovery Configuration Guide \[UG-SDCG\]                                                                                       | Petteri Kivimäki |
+| 08.01.2022 | 1.2     | Add party name to section [2.5](#25-access-point-installation) and TLS truststore to section [2.10](#210-location-of-configuration-and-generated-passwords) | Petteri Kivimäki |
+| 04.02.2022 | 1.3     | Add upgrade instructions. Add section about log files                                                                                                       | Petteri Kivimäki |
+| 23.04.2022 | 1.4     | Add port number to the Access Point Installation section. Update package repository URL                                                                     | Petteri Kivimäki |
+| 28.04.2022 | 1.5     | Minor changes                                                                                                                                               | Petteri Kivimäki |
+| 22.05.2023 | 1.6     | Update references                                                                                                                                           | Petteri Kivimäki |
+| 29.05.2023 | 1.7     | Update installation and version upgrade instructions                                                                                                        | Jarkko Hyöty     |
+| 01.06.2023 | 1.8     | Add more information about allowed characters in certificates                                                                                               | Petteri Kivimäki |
+| 22.06.2023 | 1.9     | Add a note about the default password expiration policy                                                                                                     | Petteri Kivimäki |
+| 17.08.2023 | 1.10    | Update system requirements                                                                                                                                  | Jarkko Hyöty     |
+| 29.09.2023 | 1.11    | Use PKCS12 keystores by default. Update certificate DN configuration.                                                                                       | Jarkko Hyöty     |
+| 15.01.2024 | 1.12    | Update links to external documents                                                                                                                          | Petteri Kivimäki |
+| 28.02.2024 | 1.13    | Update WS Plugin interface path                                                                                                                             | Petteri Kivimäki |
+| 01.03.2024 | 1.14    | Update supported operating systems                                                                                                                          | Diego Martin     |
+| 01.06.2024 | 1.15    | Update links to external documents                                                                                                                          | Petteri Kivimäki |
+| 13.12.2024 | 1.16    | Add reference to the Logging Guide \[UG-AP-L\]                                                                                                              | Diego Martin     |
+| 13.01.2025 | 1.17    | Update links to external documents                                                                                                                          | Diego Martin     |
+| 17.01.2025 | 1.18    | Support for Ubuntu 24.04                                                                                                                                    | Diego Martin     |
 
 ## License <!-- omit in toc -->
 
@@ -33,7 +36,6 @@ To view a copy of this license, visit <https://creativecommons.org/licenses/by-s
  
 ## Table of Contents <!-- omit in toc -->
 
-- [License](#license)
 - [1 Introduction](#1-introduction)
   - [1.1 Target Audience](#11-target-audience)
   - [1.2 Terms and abbreviations](#12-terms-and-abbreviations)
@@ -71,13 +73,14 @@ See eDelivery documentation \[[TERMS](#Ref_TERMS)\].
 ### 1.3 References
 
 1. <a id="Ref_TERMS" class="anchor"></a>\[TERMS\] eDelivery Documentation, <https://ec.europa.eu/digital-building-blocks/sites/display/DIGITAL/eDelivery>
-2. <a id="Ref_DOMIBUS_ADMIN_GUIDE" class="anchor"></a>\[DOMIBUS_ADMIN_GUIDE\] Access Point Administration Guide - Domibus 5.1.4, <https://docs.edelivery.tech.ec.europa.eu/domibus/5.1.4/#adminguide>
-3. <a id="Ref_WS_PLUGIN" class="anchor"></a>\[WS_PLUGIN\] Access Point Interface Control Document - WS Plugin, <https://docs.edelivery.tech.ec.europa.eu/domibus/5.1.4/#wsplugin_interface>
-4. <a id="Ref_PLUGIN_COOKBOOK" class="anchor"></a>\[PLUGIN_COOKBOOK\] Domibus Plugin Cookbook, <https://docs.edelivery.tech.ec.europa.eu/domibus/5.1.4/#plugin_cookbook>
+2. <a id="Ref_DOMIBUS_ADMIN_GUIDE" class="anchor"></a>\[DOMIBUS_ADMIN_GUIDE\] Access Point Administration Guide - Domibus 5.1.6, <https://docs.edelivery.tech.ec.europa.eu/domibus/5.1.6/#adminguide>
+3. <a id="Ref_WS_PLUGIN" class="anchor"></a>\[WS_PLUGIN\] Access Point Interface Control Document - WS Plugin, <https://docs.edelivery.tech.ec.europa.eu/domibus/5.1.6/#wsplugin_interface>
+4. <a id="Ref_PLUGIN_COOKBOOK" class="anchor"></a>\[PLUGIN_COOKBOOK\] Domibus Plugin Cookbook, <https://docs.edelivery.tech.ec.europa.eu/domibus/5.1.6/#plugin_cookbook>
 5. <a id="Ref_UG-DDCG" class="anchor"></a>\[UG-DDCG\] Harmony eDelivery Access - Dynamic Discovery Configuration Guide. Document ID: [UG-DDCG](dynamic_discovery_configuration_guide.md)
 6. <a id="Ref_UG-SDCG" class="anchor"></a>\[UG-SDCG\] Harmony eDelivery Access - Static Discovery Configuration Guide. Document ID: [UG-SDCG](static_discovery_configuration_guide.md)
 7. <a id="Ref_RFC5280" class="anchor"></a>\[RFC5280\] RFC 5280: Internet X.509 Public Key Infrastructure Certificate and Certificate Revocation List (CRL) Profile, <https://www.rfc-editor.org/rfc/rfc5280>
 8. <a id="Ref_PS" class="anchor"></a>\[PS\] PrintableString, <https://en.wikipedia.org/wiki/PrintableString>
+9. <a id="Ref_UG-AP-L" class="anchor"></a>\[UG-AP-L\] Harmony eDelivery Access - Access Point Logging Guide. Document ID: [UG-AP-L](harmony-ap_logging_user_guide.md)
 
 ## 2 Installation
 
@@ -87,6 +90,7 @@ The Access Point is officially supported on the following operating systems (x86
 
 * Ubuntu Server 20.04 Long-Term Support (LTS).
 * Ubuntu Server 22.04 Long-Term Support (LTS).
+* Ubuntu Server 24.04 Long-Term Support (LTS).
 
 The software can be installed both on physical and virtualized hardware.
 
@@ -103,14 +107,14 @@ The network diagram below provides an example of an Access Point setup when dyna
 
 The table below lists the required connections between different components.
 
-**Connection Type** | **Source** | **Target** | **Target Ports** | **Protocol** | **Note** |
------------|------------|-----------|-----------|-----------|-----------|
-Out | Access Point | Data Exchange Partner Access Point | 443, 8443, other | tcp | |
-Out | Access Point | SMP | 443, 8443, other | tcp | |
-Out | Access Point | Backend (push) | 80, 443, other | tcp | Target in the internal network |
-In  | Data Exchange Partner Access Point | Access Point | 8443\* | tcp | URL path: `/services/msh` |
-In  | Backend (submit, pull) | Access Point | 8443\* | tcp | Source in the internal network<br /><br />URL path: `/services/wsplugin` |
-In  | Admin | Access Point | 8443\* | tcp | Source in the internal network<br /><br />URL path: `/` |
+| **Connection Type** | **Source**                         | **Target**                         | **Target Ports** | **Protocol** | **Note**                                                                 |
+|---------------------|------------------------------------|------------------------------------|------------------|--------------|--------------------------------------------------------------------------|
+| Out                 | Access Point                       | Data Exchange Partner Access Point | 443, 8443, other | tcp          |                                                                          |
+| Out                 | Access Point                       | SMP                                | 443, 8443, other | tcp          |                                                                          |
+| Out                 | Access Point                       | Backend (push)                     | 80, 443, other   | tcp          | Target in the internal network                                           |
+| In                  | Data Exchange Partner Access Point | Access Point                       | 8443\*           | tcp          | URL path: `/services/msh`                                                |
+| In                  | Backend (submit, pull)             | Access Point                       | 8443\*           | tcp          | Source in the internal network<br /><br />URL path: `/services/wsplugin` |
+| In                  | Admin                              | Access Point                       | 8443\*           | tcp          | Source in the internal network<br /><br />URL path: `/`                  |
 
 \* The port number for inbound connections is configurable and the value can be set during the Access Point installation process. Port `8443` is used by default.
 
@@ -118,11 +122,11 @@ It is strongly recommended to protect the Access Point from unwanted access usin
 
 In addition, it's strongly recommended to use URL path filtering for the Access Point since the admin UI, backend interface and AS4 interface all run on the same port. By default, the port number is `8443`, but it is configurable.
 
-**Port** | **URL Path** | **Description** |
----------|----------|-----------------|
- 8443    | `/` | Admin UI for managing the Access Point. |
- 8443    | `/services/wsplugin` |  Webservice interface (submit requests, pull messages) between the Access Point and backend. |
- 8443    | `/services/msh` | AS4 interface between Access Points. | 
+| **Port** | **URL Path**         | **Description**                                                                             |
+|----------|----------------------|---------------------------------------------------------------------------------------------|
+| 8443     | `/`                  | Admin UI for managing the Access Point.                                                     |
+| 8443     | `/services/wsplugin` | Webservice interface (submit requests, pull messages) between the Access Point and backend. |
+| 8443     | `/services/msh`      | AS4 interface between Access Points.                                                        | 
 
 ### 2.3 Requirements for the Access Point
 
@@ -135,7 +139,7 @@ Minimum recommended hardware parameters:
 
 Requirements to software and settings:
 
-* an installed and configured Ubuntu 20.04 or 22.04 LTS x86-64 operating system;
+* an installed and configured Ubuntu 20.04, 22.04, or 24.04 LTS x86-64 or arm64 operating system;
 * if the Access Point is separated from other networks by a firewall and/or NAT, the necessary connections to and from the Access Point are allowed;
 * if the Access Point has a private IP address, a corresponding NAT record must be created in the firewall;
 * enabling auxiliary services which are necessary for the functioning and management of the operating system (such as DNS, NTP, and SSH) stay outside the scope of this guide.
@@ -183,7 +187,7 @@ grant all on harmony_ap.* to harmony_ap@'%';
 It is also necessary to [populate MySQL time zone information tables](https://dev.mysql.com/doc/refman/8.0/en/time-zone-support.html#time-zone-installation), e.g. using the following command as root on the external database host:
 
 ```bash
-mysql_tzinfo_to_sql /usr/share/zoneinfo/posix | mysql -u root mysql
+mysql_tzinfo_to_sql /usr/share/zoneinfo | mysql -u root mysql
 ```
 
 When using a _local database_, the installer handles these additional steps.
@@ -203,7 +207,7 @@ Upon the first installation of the Access Point, the system asks for the followi
   - The value can be edited later by changing the `domibus.smlzone` property in the `/etc/harmony-ap/domibus.properties` configuration file.
 - Username of the administrative user - username to use to log in to administrative UI.
 - Initial password for the administrative user.
-  - *Note:* the default password expiration policy is 90 days and it applies to the administrative user too.
+  - *Note:* the default password expiration policy is 90 days, and it applies to the administrative user too.
 - Party name of the Access Point owner organisation.
   - If you don't know the party name of the owner, use the default value (`selfsigned`).
 - *Distinguished Name* for generated self-signed content (security) certificate (see **Note1** and **Note2**).
@@ -223,7 +227,7 @@ Upon the first installation of the Access Point, the system asks for the followi
   - Database host. The default is `localhost`.
   - Database port.  The default is `3306`.
   - Database schema name. The default is `harmony_ap`.
-  - Database user name. The default is `harmony_ap`.
+  - Database username. The default is `harmony_ap`.
   - Database password. There is no default. Leave blank to generate a random password when installing a local database.
 
 **Note1:** The *Distinguished Name* (`DN`) uniquely identifies an entity in an X.509 certificate \[[RFC5280](#Ref_RFC5280)\]. The following attribute types are commonly found in the `DN`: `CN = Common name, O = Organization name, C = Country code`. It's recommended to use PrintableString characters \[[PS](#Ref_PS)\] in the attribute type values.<br />
@@ -237,7 +241,7 @@ The property `domibus.security.bc.provider.order` in `/etc/harmony-ap/domibus.pr
 
 By default (when the property is not defined), the provider is added to the last position. To match the behavior of the Domibus Access Point, the provider can be inserted at position `3`. However, that breaks standard PKCS12 keystores when using Java 11, and should only be used to resolve potential compatibility issues (no such issues are currently known). A restart of the harmony-ap is required after changing the property.
 
-### 2.6 Starting harmony-ap Service and Enabling Automatic Startup 
+### 2.6 Starting harmony-ap Service and Enabling Automatic Startup
 
 To start `harmony-ap` service issue the following command:
 ```bash
@@ -287,23 +291,25 @@ In addition to installing required dependencies, the installation process comple
   - sharing and importing certificates must be handled manually after the installation;
 - installs the `harmony-ap` systemd service but does not enable or start it.
 
-### 2.10 Location of Configuration and Generated Passwords 
+### 2.10 Location of Configuration and Generated Passwords
 
 All Access Point configuration files are located in the `/etc/harmony-ap` directory. See the Domibus Administration Guide \[[DOMIBUS_ADMIN_GUIDE](#Ref_DOMIBUS_ADMIN_GUIDE)\] for more details.
 
 During the installation process, multiple random passwords are generated.
 
-| **Password purpose** | **Password location** |
-|---|---|
-| Password for `harmony-ap` MySQL user | Configuration file: `/etc/harmony-ap/domibus.properties`<br /><br />Properties: `domibus.datasource.xa.property.password` and `domibus.datasource.password`. |
-| Content encryption keystore (`/etc/harmony-ap/ap-keystore.p12`) password | Configuration file: `/etc/harmony-ap/domibus.properties`<br /><br />Properties: `domibus.security.keystore.password` and `domibus.security.key.private.password`. Content of this keystore can be changed using the administrative UI. |
-| Content encryption truststore (`/etc/harmony-ap/ap-truststore.p12`) password | Configuration file: `/etc/harmony-ap/domibus.properties`<br /><br />Properties: `domibus.security.truststore.password`. Content of this keystore can be changed using the administrative UI. |
-| TLS keystore (`/etc/harmony-ap/tls-keystore.p12`) password | Configuration file: `/etc/harmony-ap/conf/server.xml`<br /><br />Property: `keystorePass` |
-| TLS truststore (`/etc/harmony-ap/tls-truststore.p12`) password | Configuration file: `/etc/harmony-ap/conf/server.xml`<br /><br />Property: `truststorePass` |
+| **Password purpose**                                                         | **Password location**                                                                                                                                                                                                                  |
+|------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Password for `harmony-ap` MySQL user                                         | Configuration file: `/etc/harmony-ap/domibus.properties`<br /><br />Properties: `domibus.datasource.xa.property.password` and `domibus.datasource.password`.                                                                           |
+| Content encryption keystore (`/etc/harmony-ap/ap-keystore.p12`) password     | Configuration file: `/etc/harmony-ap/domibus.properties`<br /><br />Properties: `domibus.security.keystore.password` and `domibus.security.key.private.password`. Content of this keystore can be changed using the administrative UI. |
+| Content encryption truststore (`/etc/harmony-ap/ap-truststore.p12`) password | Configuration file: `/etc/harmony-ap/domibus.properties`<br /><br />Properties: `domibus.security.truststore.password`. Content of this keystore can be changed using the administrative UI.                                           |
+| TLS keystore (`/etc/harmony-ap/tls-keystore.p12`) password                   | Configuration file: `/etc/harmony-ap/conf/server.xml`<br /><br />Property: `keystorePass`                                                                                                                                              |
+| TLS truststore (`/etc/harmony-ap/tls-truststore.p12`) password               | Configuration file: `/etc/harmony-ap/conf/server.xml`<br /><br />Property: `truststorePass`                                                                                                                                            |
 
 ### 2.11 Log Files
 
 The Access Point application log files are located in the `/var/log/harmony-ap/` directory.
+
+For more detailed information, see the Access Point Logging Guide \[[UG-AP-L](#Ref_UG-AP-L)\].
 
 ## 3 Version Upgrade
 
@@ -321,7 +327,7 @@ grant SYSTEM_VARIABLES_ADMIN on *.* to harmony_ap'@'%'
 When using an external database, it is also necessary to [manually populate MySQL time zone information tables](https://dev.mysql.com/doc/refman/8.0/en/time-zone-support.html#time-zone-installation), e.g. using the following command as root on the external database host:
 
 ```bash
-mysql_tzinfo_to_sql /usr/share/zoneinfo/posix | mysql -u root mysql
+mysql_tzinfo_to_sql /usr/share/zoneinfo | mysql -u root mysql
 ```
 
 ### 3.2 Upgrade

@@ -1,25 +1,27 @@
 # Harmony eDelivery Access - Dynamic Discovery Configuration Guide <!-- omit in toc -->
 
-Version: 1.10  
+Version: 1.12  
 Doc. ID: UG-DDCG
 
 ---
 
 ## Version history <!-- omit in toc -->
 
- Date       | Version | Description                                                                 | Author
- ---------- |---------|-----------------------------------------------------------------------------| --------------------
- 03.12.2021 | 1.0     | Initial version                                                             |
- 22.01.2022 | 1.1     | Add information about keys and certficates. Add more configuration examples | Petteri Kivimäki
- 06.01.2022 | 1.2     | Minor updates                                                               | Petteri Kivimäki
- 16.02.2022 | 1.3     | Minor updates                                                               | Petteri Kivimäki
- 22.01.2023 | 1.4     | Update SMP Admin Guide link                                                 | Petteri Kivimäki
- 22.05.2023 | 1.5     | Update references                                                           | Petteri Kivimäki
- 04.08.2023 | 1.6     | Update DomiSMP Admin Guide link                                             | Petteri Kivimäki
- 08.08.2023 | 1.7     | Updates for SMP version 2.0                                                 | Jarkko Hyöty
- 14.09.2023 | 1.8     | Default to PKCS12 keystores                                                 | Jarkko Hyöty
- 15.01.2024 | 1.9     | Update links to external documents                                          | Petteri Kivimäki
- 01.06.2024 | 1.10    | Update links to external documents                                          | Petteri Kivimäki
+| Date       | Version | Description                                                                  | Author           |
+|------------|---------|------------------------------------------------------------------------------|------------------|
+| 03.12.2021 | 1.0     | Initial version                                                              |                  |
+| 22.01.2022 | 1.1     | Add information about keys and certificates. Add more configuration examples | Petteri Kivimäki |
+| 06.01.2022 | 1.2     | Minor updates                                                                | Petteri Kivimäki |
+| 16.02.2022 | 1.3     | Minor updates                                                                | Petteri Kivimäki |
+| 22.01.2023 | 1.4     | Update SMP Admin Guide link                                                  | Petteri Kivimäki |
+| 22.05.2023 | 1.5     | Update references                                                            | Petteri Kivimäki |
+| 04.08.2023 | 1.6     | Update DomiSMP Admin Guide link                                              | Petteri Kivimäki |
+| 08.08.2023 | 1.7     | Updates for SMP version 2.0                                                  | Jarkko Hyöty     |
+| 14.09.2023 | 1.8     | Default to PKCS12 keystores                                                  | Jarkko Hyöty     |
+| 15.01.2024 | 1.9     | Update links to external documents                                           | Petteri Kivimäki |
+| 01.06.2024 | 1.10    | Update links to external documents                                           | Petteri Kivimäki |
+| 13.01.2025 | 1.11    | Update links to external documents                                           | Diego Martin     |
+| 05.02.2025 | 1.12    | Update links to external documents                                           | Diego Martin     |
 
 ## License <!-- omit in toc -->
 
@@ -87,8 +89,8 @@ See eDelivery documentation \[[TERMS](#Ref_TERMS)\].
 1. <a id="Ref_TERMS" class="anchor"></a>\[TERMS\] eDelivery Documentation, <https://ec.europa.eu/digital-building-blocks/sites/display/DIGITAL/eDelivery>
 2. <a id="Ref_IG-AP" class="anchor"></a>\[IG-AP\] Harmony eDelivery Access - Access Point Installation Guide. Document ID: [IG-AS](harmony-ap_installation_guide.md)
 3. <a id="Ref_IG-SMP" class="anchor"></a>\[IG-SMP\] Harmony eDelivery Access - Service Metadata Publisher Installation Guide. Document ID: [IG-SMP](harmony-smp_installation_guide.md)
-4. <a id="Ref_DOMIBUS_ADMIN_GUIDE" class="anchor"></a>\[DOMIBUS_ADMIN_GUIDE\] Access Point Administration Guide - Domibus 5.1.4, <https://docs.edelivery.tech.ec.europa.eu/domibus/5.1.4/#adminguide>
-5. <a id="Ref_SMP_ADMIN_GUIDE" class="anchor"></a>\[SMP_ADMIN_GUIDE\] DomiSMP Administration Guide - DomiSMP 5.0, <https://ec.europa.eu/digital-building-blocks/sites/download/attachments/674510184/%28eDelivery%29%28SMP%29%28AG%29%28DomiSMP%205.0%29%283.7%29.pdf>
+4. <a id="Ref_DOMIBUS_ADMIN_GUIDE" class="anchor"></a>\[DOMIBUS_ADMIN_GUIDE\] Access Point Administration Guide - Domibus 5.1.6, <https://docs.edelivery.tech.ec.europa.eu/domibus/5.1.6/#adminguide>
+5. <a id="Ref_SMP_ADMIN_GUIDE" class="anchor"></a>\[SMP_ADMIN_GUIDE\] DomiSMP Administration Guide - DomiSMP 5.1, <https://docs.edelivery.tech.ec.europa.eu/domismp/prod/5.1/>
 6. <a id="Ref_UG-SDCG" class="anchor"></a>\[UG-SDCG\] Harmony eDelivery Access - Static Discovery Configuration Guide. Document ID: [UG-SDCG](static_discovery_configuration_guide.md)
 
 ## 2. Dynamic Discovery for Sending Parties
@@ -165,7 +167,7 @@ using a property named `originalSender`.
         <ns:Property name="finalRecipient" type="urn:oasis:names:tc:ebcore:partyid-type:unregistered">C4</ns:Property>
     </ns:MessageProperties>
 ...
-<ns:UserMessage>
+</ns:UserMessage>
 ```
 
 **Note:** Also, the following elements in the PMode and AS4 message must match with the values defined by the receiving
@@ -218,7 +220,7 @@ during the installation process. They're available in the TLS keystore (`/etc/ha
 
 Certificates used by the SMP must be trusted by the SML and Access Points using the SMP (=Access Points in a sending role). 
 The SMP sign keystore can be managed in the SMP admin UI by clicking the "Edit keystore" button under the "Domain" section. 
-In case the sign keystore and/or sign trustore need to be accessed on command line, their passwords can be queried from 
+In case the sign keystore and/or sign truststore need to be accessed on command line, their passwords can be queried from 
 the configuration database using the following command:
 
 ```bash
@@ -333,7 +335,7 @@ A service is registered in SMP by completing the steps below:
   - Subresource (Document) identifier.
   - Click "Save".
 - Select the created subresource, click "Edit".
-- Click the "Document wizard" button and an "Service Metada Wizard" diaglog appears.
+- Click the "Document wizard" button and a "Service Metada Wizard" dialog appears.
 - Provide the following information:
   - Process identifier.
   - Process scheme.
@@ -435,7 +437,7 @@ value, separated by `:`.
 In AS4 messages the final recipient (and also original sender) can be represented in two ways:
 
 - as a single identifier value, like in Access Point plugin user configuration;
-- as a identifier value and corresponding type attribute.
+- as an identifier value and corresponding type attribute.
 
 Both these excerpts are valid and equal representations of the final recipient:
 

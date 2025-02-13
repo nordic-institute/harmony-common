@@ -48,6 +48,13 @@
     <sqlFile dbms="mysql" relativeToChangelogFile="true" path="migrations/mysql5innodb.ddl"/>
   </changeSet>
 
+  <changeSet author="harmony" id="2.2.0-upgrade">
+    <sqlFile dbms="mysql" relativeToChangelogFile="true" path="migrations/mysql5innoDb-5.0_to_5.1.sql"/>
+    <rollback>
+      <sqlFile dbms="mysql" relativeToChangelogFile="true" path="migrations/mysql5innoDb-5.0_to_5.1-rollback.sql" />
+    </rollback>
+  </changeSet>
+
   <!-- adds the initial admin user unless one already exists -->
   <changeSet author="harmony" id="default-admin-user" runOnChange="true" runOrder="last">
     <preConditions onFail="CONTINUE">

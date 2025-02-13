@@ -1,6 +1,6 @@
 # Harmony eDelivery Access - Access Point Docker Installation Guide <!-- omit in toc -->
 
-Version: 1.5  
+Version: 1.7  
 Doc. ID: IG-AP-D
 
 ---
@@ -15,6 +15,8 @@ Doc. ID: IG-AP-D
 | 07.05.2024 | 1.3     | Added information about distributed file systems      | Diego Martin     |
 | 09.05.2024 | 1.4     | Added instructions to use external load balancers     | Diego Martin     |
 | 01.06.2024 | 1.5     | Update links to external documents                    | Petteri Kivimäki |
+| 13.12.2024 | 1.6     | Add reference to the Logging Guide \[UG-AP-L\]        | Diego Martin     |
+| 13.01.2025 | 1.7     | Update links to external documents                    | Diego Martin     |
 
 ## License <!-- omit in toc -->
 
@@ -69,14 +71,15 @@ See introduction to eDelivery and Harmony eDelivery Access \[[INTRODUCTION](#Ref
 ### 1.3 References
 
 1. <a id="Ref_INTRODUCTION" class="anchor"></a>\[INTRODUCTION\] Report: Introduction to eDelivery and Harmony eDelivery Access, <https://www.niis.org/niis-publications/2021/12/19/report-introduction-to-edelivery-and-harmony-edelivery-access>
-2. <a id="Ref_DOMIBUS_ADMIN_GUIDE" class="anchor"></a>\[DOMIBUS_ADMIN_GUIDE\] Access Point Administration Guide - Domibus 5.1.4, <https://docs.edelivery.tech.ec.europa.eu/domibus/5.1.4/#adminguide>
-3. <a id="Ref_WS_PLUGIN" class="anchor"></a>\[WS_PLUGIN\] Access Point Interface Control Document - WS Plugin, <https://docs.edelivery.tech.ec.europa.eu/domibus/5.1.4/#wsplugin_interface>
-4. <a id="Ref_PLUGIN_COOKBOOK" class="anchor"></a>\[PLUGIN_COOKBOOK\] Domibus Plugin Cookbook, <https://docs.edelivery.tech.ec.europa.eu/domibus/5.1.4/#plugin_cookbook>
+2. <a id="Ref_DOMIBUS_ADMIN_GUIDE" class="anchor"></a>\[DOMIBUS_ADMIN_GUIDE\] Access Point Administration Guide - Domibus 5.1.6, <https://docs.edelivery.tech.ec.europa.eu/domibus/5.1.6/#adminguide>
+3. <a id="Ref_WS_PLUGIN" class="anchor"></a>\[WS_PLUGIN\] Access Point Interface Control Document - WS Plugin, <https://docs.edelivery.tech.ec.europa.eu/domibus/5.1.6/#wsplugin_interface>
+4. <a id="Ref_PLUGIN_COOKBOOK" class="anchor"></a>\[PLUGIN_COOKBOOK\] Domibus Plugin Cookbook, <https://docs.edelivery.tech.ec.europa.eu/domibus/5.1.6/#plugin_cookbook>
 5. <a id="Ref_UG-DDCG" class="anchor"></a>\[UG-DDCG\] Harmony eDelivery Access - Dynamic Discovery Configuration Guide. Document ID: [UG-DDCG](dynamic_discovery_configuration_guide.md)
 6. <a id="Ref_UG-SDCG" class="anchor"></a>\[UG-SDCG\] Harmony eDelivery Access - Static Discovery Configuration Guide. Document ID: [UG-SDCG](static_discovery_configuration_guide.md)
 7. <a id="Ref_RFC5280" class="anchor"></a>\[RFC5280\] RFC 5280: Internet X.509 Public Key Infrastructure Certificate and Certificate Revocation List (CRL) Profile, <https://www.rfc-editor.org/rfc/rfc5280>
 8. <a id="Ref_PS" class="anchor"></a>\[PS\] PrintableString, <https://en.wikipedia.org/wiki/PrintableString>
 9. <a id="Ref_UG-AP-C" class="anchor"></a>\[UG-AP-C\] Harmony eDelivery Access - Access Point Clustering Guide. Document ID: [UG-AP-C](harmony_ap_clustering_user_guide.md)
+10. <a id="Ref_UG-AP-L" class="anchor"></a>\[UG-AP-L\] Harmony eDelivery Access - Access Point Logging Guide. Document ID: [UG-AP-L](harmony-ap_logging_user_guide.md)
 
 ## 2 Network Diagram
 
@@ -116,7 +119,7 @@ The Access Point container requires an external database.
 Note. It is necessary to [populate MySQL time zone information tables](https://dev.mysql.com/doc/refman/8.0/en/time-zone-support.html#time-zone-installation), e.g. using the following command as root on the external database host:
 
 ```bash
-mysql_tzinfo_to_sql /usr/share/zoneinfo/posix | mysql -u root mysql
+mysql_tzinfo_to_sql /usr/share/zoneinfo | mysql -u root mysql
 ```
 
 The Harmony schema and user can be created using the following SQL DDL statements (adjust user and schema name as needed; the default _harmony_ap_ is used in the example):
@@ -313,6 +316,8 @@ The Access Point application logs to the standard output.
 ```bash
 docker logs -f <container-name>
 ```
+
+For more detailed information, see the Access Point Logging Guide \[[UG-AP-L](#Ref_UG-AP-L)\].
 
 ## 5 Updating to a new version of the image
 
