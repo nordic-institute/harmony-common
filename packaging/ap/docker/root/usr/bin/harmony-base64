@@ -1,0 +1,88 @@
+#!/bin/bash
+set -euo pipefail
+
+log() {
+  local level="$1"
+  local message="$2"
+  local log_component="${STAGE:+$STAGE-}base64"
+
+  harmony-log "$level" "$log_component" "$message" >&2
+}
+
+parse_cli_args() {
+  FORCE="false"
+
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      --stage|-s)   STAGE="$2";         shift 2 ;;
+      --input|-i)   BASE64_INPUT="$2";  shift 2 ;;
+      --output|-o)  OUTPUT_PATH="$2";   shift 2 ;;
+      --force|-f)   FORCE="true";       shift ;;
+      *) log "ERROR" "Unknown option: $1"; exit 1 ;;
+    esac
+  done
+}
+
+validate_cli_args() {
+  local missing=()
+
+  if [[ -z "${BASE64_INPUT:-}" ]]; then missing+=(--input); fi
+  if [[ -z "${OUTPUT_PATH:-}" ]]; then missing+=(--output); fi
+
+  if (( ${#missing[@]} > 0 )); then
+    local missing_list
+    printf -v missing_list "%s, " "${missing[@]}"
+    missing_list="${missing_list%, }"
+    log "ERROR" "Missing required arguments: $missing_list"
+    exit 1
+  fi
+
+  local output_dir
+  output_dir="$(dirname "$OUTPUT_PATH")"
+
+  if [[ ! -d "$output_dir" ]]; then
+    log "ERROR" "Destination directory does not exist: $output_dir"
+    exit 1
+  fi
+
+  if [[ ! -w "$output_dir" ]]; then
+    log "ERROR" "Destination directory is not writable: $output_dir"
+    exit 1
+  fi
+
+  if [[ -e "$OUTPUT_PATH" && "${FORCE:-false}" != "true" ]]; then
+    log "ERROR" "Destination file already exists: $OUTPUT_PATH"
+    exit 1
+  fi
+}
+
+decode_and_write() {
+  if [[ -e "$OUTPUT_PATH" && "$FORCE" == "true" ]]; then
+    log "WARN" "Overwriting existing file: $OUTPUT_PATH"
+  fi
+
+  tmp_file="$(mktemp)"
+  if ! base64 -d <<< "$BASE64_INPUT" > "$tmp_file"; then
+    log "ERROR" "Could not decode base64 content."
+    rm -f "$tmp_file"
+    exit 1
+  fi
+
+  if ! mv "$tmp_file" "$OUTPUT_PATH"; then
+    log "ERROR" "Could not move temporary file to destination: $OUTPUT_PATH"
+    rm -f "$tmp_file"
+    exit 1
+  fi
+}
+
+main() {
+  parse_cli_args "$@"
+  validate_cli_args
+  decode_and_write
+  log "DEBUG" "File created successfully at: $OUTPUT_PATH"
+  exit 0
+}
+
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+  main "$@"
+fi

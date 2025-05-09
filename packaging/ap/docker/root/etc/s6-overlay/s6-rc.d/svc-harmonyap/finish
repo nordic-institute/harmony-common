@@ -1,0 +1,10 @@
+#!/command/execlineb -S0
+with-contenv
+
+importas -D "5" SHUTDOWN_WAIT_TIME SHUTDOWN_WAIT_TIME
+
+foreground { harmony-log "INFO" "shutdown" "Starting graceful shutdown of Harmony Access Point, waiting ${SHUTDOWN_WAIT_TIME} seconds..." }
+foreground { sleep ${SHUTDOWN_WAIT_TIME} }
+foreground { harmony-log "INFO" "shutdown" "Completed graceful shutdown of Harmony Access Point" }
+
+0

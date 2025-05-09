@@ -1,0 +1,147 @@
+#!/command/with-contenv bash
+set -euo pipefail
+
+readonly STAGE="init-domibus"
+
+: "${CERT_DIR:=${HARMONY_BASE}/etc/certs}"
+: "${SECURITY_KEYSTORE_PATH:=${HARMONY_BASE}/etc/ap-keystore.p12}"
+: "${SECURITY_TRUSTSTORE_PATH:=${HARMONY_BASE}/etc/ap-truststore.p12}"
+: "${WORK_LOCATION:=${HARMONY_BASE}/work}"
+: "${DYNAMIC_DISCOVERY_FALLBACK:=false}"
+
+log() {
+  local level="$1"
+  local message="$2"
+  harmony-log "$level" "$STAGE" "$message" >&2
+}
+
+property_helper() {
+  harmony-property --stage "$STAGE" --action "$1" --config-path "$TEMP_CONFIG_PATH" --property "$2" ${3:+--value "$3"}
+}
+
+get_property() { property_helper GET "$@"; }
+set_property() { property_helper SET "$@"; }
+
+detect_network_filesystem() {
+  local fs_type
+  fs_type=$(stat -f "${HARMONY_BASE}/etc" --format "%T")
+  case "$fs_type" in
+    cifs*|smb*|nfs*)
+      log "WARN" "${HARMONY_BASE}/etc is on a network filesystem ($fs_type)"
+      return 1
+      ;;
+    *)
+      return 0
+      ;;
+  esac
+}
+
+setup_environment() {
+  log "DEBUG" "Setting environment"
+
+  NODE_ID="${NODE_ID:-$HOSTNAME}"
+  printf "%s" "$NODE_ID" > /var/run/s6/container_environment/NODE_ID
+
+  PRESERVE_BACKUP_FILE_DATE=$(detect_network_filesystem && echo true || echo false)
+  printf "%s" "$PRESERVE_BACKUP_FILE_DATE" > /var/run/s6/container_environment/PRESERVE_BACKUP_FILE_DATE
+
+  SML_ZONE="${SML_ZONE:-$(get_property domibus.smlzone)}"
+  set_property 'domibus.smlzone' "$SML_ZONE"
+
+  USE_DYNAMIC_DISCOVERY="${USE_DYNAMIC_DISCOVERY:-$(get_property 'domibus.dynamicdiscovery.useDynamicDiscovery' "$DYNAMIC_DISCOVERY_FALLBACK")}"
+  set_property 'domibus.dynamicdiscovery.useDynamicDiscovery' "$USE_DYNAMIC_DISCOVERY"
+}
+
+configure_cluster_settings() {
+  log "DEBUG" "Configuring cluster if needed"
+
+  set_property "domibus.deployment.clustered" "$DEPLOYMENT_CLUSTERED"
+
+  WORK_LOCATION="${WORK_LOCATION%/}"
+  if [[ "$DEPLOYMENT_CLUSTERED" == "true" ]]; then
+    WORK_LOCATION="$WORK_LOCATION/${NODE_ID}"
+  fi
+  printf "%s" "$WORK_LOCATION" > /var/run/s6/container_environment/WORK_LOCATION
+}
+
+obtain_security_keystore_password() {
+  log "DEBUG" "Determining security keystore password"
+
+  local keystore_pass
+  keystore_pass=$(
+    harmony-password \
+      --stage "$STAGE" \
+      --mode determine \
+      --password-value "${SECURITY_KEYSTORE_PASSWORD:-}" \
+      --current-password "$(get_property 'domibus.security.keystore.password')"
+  )
+
+  set_property 'domibus.security.keystore.password' "$keystore_pass"
+  set_property 'domibus.security.key.private.password' "$keystore_pass"
+
+  echo "$keystore_pass"
+}
+
+obtain_security_truststore_password() {
+  log "DEBUG" "Determining security truststore password"
+
+  local truststore_pass
+  truststore_pass=$(
+    harmony-password \
+      --stage "$STAGE" \
+      --mode determine \
+      --password-value "${SECURITY_TRUSTSTORE_PASSWORD:-}" \
+      --current-password "$(get_property 'domibus.security.truststore.password')"
+  )
+
+  set_property 'domibus.security.truststore.password' "$truststore_pass"
+
+  echo "$truststore_pass"
+}
+
+manage_security_stores() {
+  local security_keystore_password="$1"
+  local security_truststore_password="$2"
+
+  log "DEBUG" "Handling security certificates"
+
+  local alias
+  alias="$(get_property domibus.security.key.private.alias "${PARTY_NAME:-selfsigned}")"
+  SECURITY_KEYSTORE_BASE64="${SECURITY_KEYSTORE_BASE64:-}"
+  SECURITY_TRUSTSTORE_BASE64="${SECURITY_TRUSTSTORE_BASE64:-}"
+
+  harmony-store \
+    --stage "$STAGE" \
+    --cert-dir "$CERT_DIR" \
+    --keystore-path "$SECURITY_KEYSTORE_PATH" \
+    --keystore-password "$security_keystore_password" \
+    --keystore-base64 "$SECURITY_KEYSTORE_BASE64" \
+    --truststore-path "$SECURITY_TRUSTSTORE_PATH" \
+    --truststore-password "$security_truststore_password" \
+    --truststore-base64 "$SECURITY_TRUSTSTORE_BASE64" \
+    --should-add-certificate-to-truststore "false" \
+    --alias "$alias" \
+    --public-cert-name "security" \
+    --dname "$SECURITY_DN"
+
+  set_property 'domibus.security.key.private.alias' "$alias"
+}
+
+init_domibus() {
+  log "DEBUG" "Started"
+
+  setup_environment
+  configure_cluster_settings
+
+  local security_keystore_password
+  security_keystore_password=$(obtain_security_keystore_password)
+
+  local security_truststore_password
+  security_truststore_password=$(obtain_security_truststore_password)
+
+  manage_security_stores "$security_keystore_password" "$security_truststore_password"
+
+  log "DEBUG" "Done"
+}
+
+init_domibus

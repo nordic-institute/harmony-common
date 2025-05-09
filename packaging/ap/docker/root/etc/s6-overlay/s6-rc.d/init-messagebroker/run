@@ -1,0 +1,123 @@
+#!/command/with-contenv bash
+set -euo pipefail
+
+readonly STAGE="init-messagebroker"
+
+: "${ACTIVEMQ_EMBEDDED_CONFIG:=file:///${HARMONY_BASE}/etc/internal/activemq.xml}"
+: "${ACTIVEMQ_JMX_PORT:=1199}"
+: "${ACTIVEMQ_TRANSPORT_PORT:=61616}"
+
+readonly DEFAULT_BROKER_HOST="localhost"
+readonly DEFAULT_BROKER_NAME="localhost"
+
+log() {
+  local level="$1"
+  local message="$2"
+  harmony-log "$level" "$STAGE" "$message" >&2
+}
+
+property_helper() {
+  harmony-property --stage "$STAGE" --action "$1" --config-path "$TEMP_CONFIG_PATH" --property "$2" ${3:+--value "$3"}
+}
+
+get_property()    { property_helper GET     "$@"; }
+set_property()    { property_helper SET     "$@"; }
+remove_property() { property_helper REMOVE  "$@"; }
+
+add_prefix_suffix() {
+  local list="$1"
+  local prefix="$2"
+  local suffix="${3:-}"
+  local result=""
+  IFS=',' read -r -a items <<< "${list}"
+
+  if [[ -z "${list}" ]]; then
+    log "WARN" "No hosts provided"
+    return
+  fi
+
+  for item in "${items[@]}"; do
+    item="${item//[[:space:]]/}"
+    if [[ -n "${item}" ]]; then
+      result+="${prefix}${item}${suffix},"
+    fi
+  done
+
+  echo "${result%,}"
+}
+
+construct_jmx_url() {
+  local host="$1"
+  local port="$2"
+
+  echo "service:jmx:rmi:///jndi/rmi://${host}:${port}/jmxrmi"
+}
+
+configure_embedded_broker() {
+  local broker_host="$1"
+
+  set_property "activeMQ.embedded.configurationFile" "${ACTIVEMQ_EMBEDDED_CONFIG}"
+  remove_property "activeMQ.username"
+  remove_property "activeMQ.password"
+
+  echo "vm://${broker_host}"
+}
+
+configure_external_broker() {
+  local broker_host="$1"
+  log "INFO" "External broker detected"
+
+  local user="${ACTIVEMQ_USERNAME:-$(get_property "activeMQ.username")}"
+  local pass="${ACTIVEMQ_PASSWORD:-$(get_property "activeMQ.password")}"
+
+  remove_property "activeMQ.embedded.configurationFile"
+  set_property "activeMQ.username" "${user}"
+  set_property "activeMQ.password" "${pass}"
+
+  local hosts
+  hosts="$(add_prefix_suffix "${broker_host}" "tcp://" ":${ACTIVEMQ_TRANSPORT_PORT}")"
+
+  echo "failover:(${hosts})?randomize=false"
+}
+
+determine_transport_connector() {
+  local broker_host="$1"
+  log "DEBUG" "Configuring message broker"
+  local transport_connector_uri
+
+  if [[ "${broker_host}" == "localhost" ]]; then
+    transport_connector_uri="$(configure_embedded_broker "${broker_host}")"
+  else
+    transport_connector_uri="$(configure_external_broker "${broker_host}")"
+  fi
+
+  echo "$transport_connector_uri"
+}
+
+persist_configuration() {
+  local broker_name="$1"
+  local transport_connector_uri="$2"
+  local jmx_url="$3"
+
+  log "DEBUG" "Storing message broker connection details in config file"
+
+  set_property "activeMQ.brokerName"              "${broker_name}"
+  set_property "activeMQ.transportConnector.uri"  "${transport_connector_uri}"
+  set_property "activeMQ.JMXURL"                  "${jmx_url}"
+}
+
+init_messagebroker() {
+  log "DEBUG" "Started"
+
+  local broker_host="${ACTIVEMQ_BROKER_HOST:-$(get_property "activeMQ.broker.host" "${DEFAULT_BROKER_HOST}")}"
+  local broker_name="${ACTIVEMQ_BROKER_NAME:-$(get_property "activeMQ.brokerName" "${DEFAULT_BROKER_NAME}")}"
+  local jmx_url transport_connector_uri
+
+  jmx_url="$(construct_jmx_url "$broker_host" "$ACTIVEMQ_JMX_PORT")"
+  transport_connector_uri="$(determine_transport_connector "$broker_host")"
+  persist_configuration "$broker_name" "$transport_connector_uri" "$jmx_url"
+
+  log "DEBUG" "Done"
+}
+
+init_messagebroker

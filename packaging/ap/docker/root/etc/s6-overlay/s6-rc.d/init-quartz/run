@@ -1,0 +1,71 @@
+#!/command/with-contenv bash
+set -euo pipefail
+
+readonly STAGE="init-quartz"
+
+log() {
+  local level="$1"
+  local message="$2"
+  harmony-log "$level" "$STAGE" "$message"
+}
+
+property_helper() {
+  harmony-property --stage "$STAGE" --action "$1" --config-path "$TEMP_CONFIG_PATH" --property "$2" ${3:+--value "$3"}
+}
+
+get_property()    { property_helper GET     "$@"; }
+set_property()    { property_helper SET     "$@"; }
+remove_property() { property_helper REMOVE  "$@"; }
+
+get_connection_details() {
+  QUARTZ_USER="${QUARTZ_USER:-$(get_property 'domibus.quartz.datasource.user' "$DB_USER")}"
+  QUARTZ_PASSWORD="${QUARTZ_PASSWORD:-$(get_property 'domibus.quartz.datasource.password' "$DB_PASSWORD")}"
+
+  read -r QUARTZ_URL QUARTZ_DRIVER_CLASS QUARTZ_HOST QUARTZ_PORT QUARTZ_SCHEMA < <(
+    harmony-database \
+      --mode get-connection-details \
+      --stage "$STAGE" \
+      --config-path "$TEMP_CONFIG_PATH" \
+      --property-prefix "domibus.quartz.datasource" \
+      --db-url "${QUARTZ_URL:-}" \
+      --db-driver-class "${QUARTZ_DRIVER_CLASS:-}" \
+      --db-host "${QUARTZ_HOST:-}" \
+      --db-port "${QUARTZ_PORT:-}" \
+      --db-schema "${QUARTZ_SCHEMA:-}"
+  )
+}
+
+init_quartz() {
+  log "DEBUG" "Started"
+
+  get_connection_details
+
+  if [ "${QUARTZ_URL}" = "${DB_URL}" ] ; then
+    log "INFO" "Using shared database for Quartz and main application"
+
+    remove_property "domibus.quartz.datasource.driverClassName"
+    remove_property "domibus.quartz.datasource.url"
+    remove_property "domibus.quartz.datasource.user"
+    remove_property "domibus.quartz.datasource.password"
+  else
+    log "INFO" "Using separate database for Quartz"
+
+    # Wait for the database to become available to verify the connection
+    harmony-database \
+      --mode wait-for-db \
+      --stage "$STAGE" \
+      --db-host "$QUARTZ_HOST" \
+      --db-port "$QUARTZ_PORT" \
+      --db-user "$QUARTZ_USER" \
+      --db-password "$QUARTZ_PASSWORD"
+
+    set_property "domibus.quartz.datasource.driverClassName" "${QUARTZ_DRIVER_CLASS}"
+    set_property "domibus.quartz.datasource.url" "${QUARTZ_URL}"
+    set_property "domibus.quartz.datasource.user" "${QUARTZ_USER}"
+    set_property "domibus.quartz.datasource.password" "${QUARTZ_PASSWORD}"
+  fi
+
+  log "DEBUG" "Done"
+}
+
+init_quartz

@@ -1,0 +1,144 @@
+#!/command/with-contenv bash
+set -euo pipefail
+
+readonly STAGE="init-database"
+
+readonly DEFAULT_DB_USER="harmony_ap"
+
+log() {
+  local level="$1"
+  local message="$2"
+  harmony-log "$level" "$STAGE" "$message"
+}
+
+property_helper() {
+  harmony-property --stage "$STAGE" --action "$1" --config-path "$TEMP_CONFIG_PATH" --property "$2" ${3:+--value "$3"}
+}
+
+get_property() { property_helper GET "$@"; }
+set_property() { property_helper SET "$@"; }
+
+get_connection_details() {
+  DB_USER="${DB_USER:-$(get_property 'domibus.datasource.user' "$DEFAULT_DB_USER")}"
+  DB_PASSWORD="${DB_PASSWORD:-$(get_property 'domibus.datasource.password')}"
+
+  read -r DB_URL DB_DRIVER_CLASS DB_HOST DB_PORT DB_SCHEMA < <(
+    harmony-database \
+      --mode get-connection-details \
+      --stage "$STAGE" \
+      --config-path "$TEMP_CONFIG_PATH" \
+      --property-prefix "domibus.datasource" \
+      --db-url "${DB_URL:-}" \
+      --db-driver-class "${DB_DRIVER_CLASS:-}" \
+      --db-host "${DB_HOST:-}" \
+      --db-port "${DB_PORT:-}" \
+      --db-schema "${DB_SCHEMA:-}"
+  )
+}
+
+validate_parameters() {
+  if [[ -z "$DB_HOST" || -z "$DB_PASSWORD" ]]; then
+    log "ERROR" "Database host (DB_HOST) and password (DB_PASSWORD) are required. Exiting."
+    exit 1
+  fi
+}
+
+define_liquibase_parameters() {
+  liquibase_home="${HARMONY_HOME}/liquibase"
+  mysql_jar="${HARMONY_HOME}/lib/mysql-connector-j-${MYSQLJ_VERSION}.jar"
+  search_path="${HARMONY_HOME}/db"
+  classpath="$liquibase_home:$mysql_jar"
+  changelog_file="db.changelog.xml"
+  db_url="jdbc:mysql://${DB_HOST}:${DB_PORT}/${DB_SCHEMA}"
+  escaped_db_password=${DB_PASSWORD//\\/\\\\}
+
+  liquibase_common_args=(
+    --driver=com.mysql.cj.jdbc.Driver
+    --classpath="$classpath"
+    --search-path="$search_path"
+    --changelog-file="$changelog_file"
+    --url="$db_url"
+    --username="$DB_USER"
+    --password="$escaped_db_password"
+    --show-banner=false
+    --analytics-enabled=false
+  )
+}
+
+run_migrations() {
+  local admin_user admin_password hashed_password
+
+  if "$liquibase_home/liquibase" "${liquibase_common_args[@]}" history 2>&1 | grep -q "No changesets deployed"; then
+    log "INFO" "Database not initialized. Running migrations for the first time"
+
+    log "DEBUG" "Defining admin user credentials"
+    admin_user="${ADMIN_USER:-harmony}"
+
+    if [[ -n "${ADMIN_PASSWORD:-}" ]]; then
+      admin_password="$ADMIN_PASSWORD"
+    else
+      admin_password=$(harmony-password --stage "$STAGE" --mode generate)
+    fi
+
+    if [[ -z "${ADMIN_USER:-}" || -z "${ADMIN_PASSWORD:-}" ]]; then
+      log "INFO" "Harmony AP admin credentials:"
+      log "INFO" "    Username: $admin_user"
+      log "INFO" "    Password: $admin_password"
+    fi
+
+    log "DEBUG" "Hashing admin password"
+    hashed_password=$(java -cp "${HARMONY_HOME}/webapps/ROOT/WEB-INF/lib/*" \
+      eu.domibus.api.util.BCryptPasswordHash "$admin_password")
+
+    log "DEBUG" "Applying database migrations"
+    "$liquibase_home/liquibase" "${liquibase_common_args[@]}" update \
+      -DadminUser="$admin_user" \
+      -DadminPassword="$hashed_password" \
+      2>&1 | sed 's/^/    /'
+  else
+    log "INFO" "Database already initialized. Applying pending database migrations"
+    "$liquibase_home/liquibase" "${liquibase_common_args[@]}" update \
+      2>&1 | sed 's/^/    /'
+  fi
+
+  printf "%s" "${ADMIN_USER:-harmony}" > /var/run/s6/container_environment/ADMIN_USER
+  printf "%s" "$ADMIN_PASSWORD" > /var/run/s6/container_environment/ADMIN_PASSWORD
+
+  log "INFO" "Database migrations applied"
+}
+
+store_db_connection_details() {
+  printf "%s" "$DB_URL" > /var/run/s6/container_environment/DB_URL
+  printf "%s" "$DB_USER" > /var/run/s6/container_environment/DB_USER
+  printf "%s" "$DB_PASSWORD" > /var/run/s6/container_environment/DB_PASSWORD
+
+  set_property 'domibus.datasource.url' "$DB_URL"
+  set_property "domibus.datasource.driverClassName" "$DB_DRIVER_CLASS"
+  set_property 'domibus.database.schema' "$DB_SCHEMA"
+  set_property 'domibus.database.serverName' "$DB_HOST"
+  set_property 'domibus.database.port' "$DB_PORT"
+  set_property 'domibus.datasource.user' "$DB_USER"
+  set_property 'domibus.datasource.password' "$DB_PASSWORD"
+}
+
+init-database() {
+  log "DEBUG" "Started"
+  get_connection_details
+  validate_parameters
+
+  # Wait for the database to become available
+  harmony-database \
+    --mode wait-for-db \
+    --stage "$STAGE" \
+    --db-host "$DB_HOST" \
+    --db-port "$DB_PORT" \
+    --db-user "$DB_USER" \
+    --db-password "$DB_PASSWORD"
+
+  define_liquibase_parameters
+  run_migrations
+  store_db_connection_details
+  log "DEBUG" "Done"
+}
+
+init-database

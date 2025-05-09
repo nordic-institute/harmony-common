@@ -1,0 +1,83 @@
+#!/command/with-contenv bash
+set -euo pipefail
+
+readonly STAGE="init-structure"
+
+log() {
+  local level="$1"
+  local message="$2"
+  harmony-log "$level" "$STAGE" "$message"
+}
+
+verify_permissions() {
+  local HAS_PERMISSION_ISSUE=0
+
+  [[ -r "$HARMONY_HOME" ]] || {
+    log "WARN" "HARMONY_HOME='$HARMONY_HOME' is not readable"
+    HAS_PERMISSION_ISSUE=1
+  }
+
+  [[ -w "$HARMONY_BASE" ]] || {
+    log "WARN" "HARMONY_BASE='$HARMONY_BASE' is not writable"
+    HAS_PERMISSION_ISSUE=1
+  }
+
+  if (( HAS_PERMISSION_ISSUE )); then
+    log "WARN" "Potential file permission issues detected. See documentation:"
+    log "WARN" "    https://github.com/nordic-institute/harmony-common/blob/main/doc/harmony-ap_docker_installation_guide.md#3211-distributed-file-systems"
+  fi
+}
+
+log "INFO" "Configuring access point"
+
+create_required_directories() {
+  local DIRECTORIES=(
+    "$HARMONY_BASE/conf"
+    "$HARMONY_BASE/etc"
+    "$HARMONY_BASE/etc/certs"
+    "$HARMONY_BASE/etc/plugins"
+    "$HARMONY_BASE/etc/plugins/config"
+    "$HARMONY_BASE/log"
+    "$HARMONY_BASE/work"
+    "$TEMP_DIR"
+  )
+
+  for dir in "${DIRECTORIES[@]}"; do
+    mkdir -p "$dir"
+    chmod 0770 "$dir"
+  done
+}
+
+copy_configuration_files() {
+  cp -r --update=none "$HARMONY_HOME/conf/."    "$HARMONY_BASE/conf/"
+  cp -r --update=none "$HARMONY_HOME/internal"  "$HARMONY_BASE/etc/"
+  cp -r --update=none "$HARMONY_HOME/policies"  "$HARMONY_BASE/etc/"
+
+  cp --update=none "$HARMONY_HOME/setup/domibus.properties.template"  "$CONFIG_PATH"
+}
+
+adjust_permissions() {
+  chmod 600 "$CONFIG_PATH"
+}
+
+# Copy the configuration file to a temporary location before applying modifications.
+# This ensures that on network file systems (e.g., NFS), intermediate edits happen on a local copy
+# and the final file is moved atomically to its destination, preventing partial updates,
+# stale data, and file locking issues on distributed mounts.
+copy_temp_config() {
+  cp "$CONFIG_PATH" "$TEMP_CONFIG_PATH"
+}
+
+init_structure() {
+  log "DEBUG" "Started"
+
+  verify_permissions
+  create_required_directories
+  copy_configuration_files
+  adjust_permissions
+  copy_temp_config
+
+  log "DEBUG" "Done"
+}
+
+init_structure

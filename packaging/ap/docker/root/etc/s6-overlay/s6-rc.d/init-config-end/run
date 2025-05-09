@@ -1,0 +1,21 @@
+#!/command/with-contenv bash
+set -euo pipefail
+
+readonly STAGE="init-config-end"
+
+log() {
+  local level="$1"
+  local message="$2"
+  harmony-log "$level" "$STAGE" "$message"
+}
+
+log "DEBUG" "Started"
+
+if mv -f "$TEMP_CONFIG_PATH" "$CONFIG_PATH"; then
+    log "INFO" "Configuration moved from '$TEMP_CONFIG_PATH' to '$CONFIG_PATH'"
+else
+    log "ERROR" "Failed to move '$TEMP_CONFIG_PATH' to '$CONFIG_PATH'"
+    exit 1
+fi
+
+log "DEBUG" "Done"

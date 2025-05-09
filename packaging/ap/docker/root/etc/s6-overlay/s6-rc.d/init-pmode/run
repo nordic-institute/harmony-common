@@ -1,0 +1,203 @@
+#!/command/with-contenv bash
+set -euo pipefail
+
+readonly STAGE="init-pmode"
+
+: "${PMODE_MAX_RETRIES:=60}"
+: "${PMODE_RETRY_INTERVAL:=5}"
+: "${PMODE_ADMIN_USER:=pmode_admin}"
+: "${PMODE_ADMIN_PASSWORD:=$(harmony-password --stage "$STAGE" --mode generate)}"
+: "${PMODE_DEFAULT_CONF_PATH:=$HARMONY_BASE/etc/pmode.xml}"
+
+log() {
+  local level="$1"
+  local message="$2"
+  harmony-log "$level" "$STAGE" "$message" >&2
+}
+
+decode_from_base64() {
+  log "DEBUG" "Decoding pMode configuration from Base64 using harmony-base64..."
+  harmony-base64 --stage "$STAGE" --input "$PMODE_FILE_B64" --output "$PMODE_DEFAULT_CONF_PATH" --force
+}
+
+get_pmode_file() {
+  if [ -n "${PMODE_FILE_B64:-}" ]; then
+    decode_from_base64
+    log "INFO" "Using PMode from base64 input"
+    echo "$PMODE_DEFAULT_CONF_PATH"
+  elif [ -n "${PMODE_CUSTOM_CONF_PATH:-}" ] && [ -f "$PMODE_CUSTOM_CONF_PATH" ]; then
+    log "INFO" "Using custom PMode from $PMODE_CUSTOM_CONF_PATH"
+    echo "$PMODE_CUSTOM_CONF_PATH"
+  elif [ -f "$PMODE_DEFAULT_CONF_PATH" ]; then
+    log "INFO" "Using default PMode from $PMODE_DEFAULT_CONF_PATH"
+    echo "$PMODE_DEFAULT_CONF_PATH"
+  fi
+}
+
+get_base_url() {
+  local protocol="http"
+  if [[ "$SSL_ENABLED" == "true" ]]; then
+    protocol="https"
+  fi
+
+  echo "${protocol}://localhost:${PORT}"
+}
+
+get_auth_token() {
+  local base_url="$1"
+
+  log "INFO" "Waiting for Harmony Access Point to be available..."
+
+  local attempt=0
+  while (( attempt < PMODE_MAX_RETRIES )); do
+    attempt=$((attempt + 1))
+
+    log "DEBUG" "Waiting for Harmony Access Point to start (attempt $attempt/$PMODE_MAX_RETRIES)..."
+
+    local http_code
+    http_code=$(curl -s -k -c "$COOKIE_FILE" \
+      -H "Content-Type: application/json" \
+      -d '{"username":"'"$ADMIN_USER"'","password":"'"$ADMIN_PASSWORD"'"}' \
+      -o /dev/null -w "%{http_code}" \
+      -X POST "$base_url/rest/security/authentication")
+
+    if [ "$http_code" == "200" ]; then
+      log "INFO" "Authenticated as admin user"
+
+      local xsrf_token
+      xsrf_token=$(grep XSRF-TOKEN "$COOKIE_FILE" | cut -f 7)
+
+      if [ -z "$xsrf_token" ]; then
+        log "ERROR" "Failed to get XSRF token"
+        exit 1
+      fi
+
+      echo "$xsrf_token"
+      return 0
+    fi
+
+    sleep "$PMODE_RETRY_INTERVAL"
+  done
+
+  log "ERROR" "AP failed to start within the timeout period"
+  exit 1
+}
+
+check_pmode_api_user_exists() {
+  local base_url="$1"
+  local xsrf_token="$2"
+
+  log "DEBUG" "Checking if PMode API user exists"
+
+  local http_code response
+  response=$(curl -s -k -b "$COOKIE_FILE" \
+    -H "Content-Type: application/json" \
+    -H "X-XSRF-TOKEN: $xsrf_token" \
+    -w "%{http_code}" \
+    -X GET "$base_url/rest/plugin/users?userName=$PMODE_ADMIN_USER")
+  http_code="${response: -3}"
+  response="${response::-3}"
+
+  if [ "$http_code" != "200" ]; then
+    log "ERROR" "Failed to check if PMode API user exists"
+    exit 1
+  fi
+
+  local count
+  count=$(echo "$response" | sed -n 's/.*"count":[[:space:]]*\([0-9]*\).*/\1/p')
+
+  if [ "$count" -gt 0 ]; then
+    log "DEBUG" "PMode API user already exists"
+    return 0
+  else
+    log "DEBUG" "PMode API user does not exist"
+    return 1
+  fi
+}
+
+create_pmode_api_user() {
+  local base_url="$1"
+  local xsrf_token="$2"
+
+  log "DEBUG" "Creating API users"
+
+  local users_json='[
+    {"status":"NEW","userName":"'"${PMODE_ADMIN_USER}"'","active":true,"suspended":false,"authenticationType":"BASIC","authRoles":"ROLE_ADMIN","password":"'"${PMODE_ADMIN_PASSWORD}"'"}
+  ]'
+
+  local http_code
+  http_code=$(curl -s -k -b "$COOKIE_FILE" \
+    -H "Content-Type: application/json" \
+    -H "X-XSRF-TOKEN: $xsrf_token" \
+    -d "$users_json" \
+    -o /dev/null -w "%{http_code}" \
+    -X PUT "$base_url/rest/plugin/users")
+
+  if [ "$http_code" != "204" ]; then
+    log "ERROR" "Failed to create API users"
+    exit 1
+  fi
+
+  log "INFO" "PModde API user created successfully"
+}
+
+upload_pmode() {
+  local base_url="$1"
+  local pmode_file="$2"
+
+  log "DEBUG" "Uploading PMode configuration"
+
+  local http_code
+  http_code=$(curl -s -k \
+    -u "$PMODE_ADMIN_USER:$PMODE_ADMIN_PASSWORD" \
+    -F "file=@$pmode_file" \
+    -o /dev/null -w "%{http_code}" \
+    -X POST "$base_url/ext/pmode?description=pmode")
+
+  if [ "$http_code" != "200" ]; then
+    log "ERROR" "Failed to upload pMode file"
+    exit 1
+  fi
+
+  log "INFO" "PMode configuration uploaded successfully"
+}
+
+cleanup_cookie() {
+  if [[ -n "$COOKIE_FILE" && -f "$COOKIE_FILE" ]]; then
+    rm -f "$COOKIE_FILE"
+    log "DEBUG" "Temporary cookie file '$COOKIE_FILE' removed"
+  fi
+}
+
+init_pmode() {
+  log "DEBUG" "Started"
+
+  local pmode_file
+  pmode_file=$(get_pmode_file)
+
+  if [ -n "$pmode_file" ]; then
+    COOKIE_FILE=$(mktemp)
+
+    local base_url
+    base_url=$(get_base_url)
+
+    local xsrf_token
+    xsrf_token=$(get_auth_token "$base_url")
+
+    if ! check_pmode_api_user_exists "$base_url" "$xsrf_token"; then
+      create_pmode_api_user "$base_url" "$xsrf_token"
+    else
+      log "DEBUG" "Skipping API user creation as it already exists"
+    fi
+
+    upload_pmode "$base_url" "$pmode_file"
+
+    cleanup_cookie
+  else
+    log "INFO" "No PMode configuration provided or found; skipping upload"
+  fi
+
+  log "DEBUG" "Done"
+}
+
+init_pmode
