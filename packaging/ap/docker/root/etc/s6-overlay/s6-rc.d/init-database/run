@@ -4,6 +4,7 @@ set -euo pipefail
 readonly STAGE="init-database"
 
 readonly DEFAULT_DB_USER="harmony_ap"
+readonly DEFAULT_ADMIN_USER="harmony"
 
 log() {
   local level="$1"
@@ -45,19 +46,24 @@ validate_parameters() {
 
 define_liquibase_parameters() {
   liquibase_home="${HARMONY_HOME}/liquibase"
-  mysql_jar="${HARMONY_HOME}/lib/mysql-connector-j-${MYSQLJ_VERSION}.jar"
   search_path="${HARMONY_HOME}/db"
-  classpath="$liquibase_home:$mysql_jar"
   changelog_file="db.changelog.xml"
-  db_url="jdbc:mysql://${DB_HOST}:${DB_PORT}/${DB_SCHEMA}"
-  escaped_db_password=${DB_PASSWORD//\\/\\\\}
+  escaped_db_password="${DB_PASSWORD//\\/\\\\}"
+  escaped_db_password="${escaped_db_password//\"/\\\"}"
+
+  classpath="$liquibase_home"
+  for driver_jar in "${HARMONY_HOME}/lib"/mysql-connector-j-*.jar "${HARMONY_HOME}/lib"/mariadb-connector-j-*.jar; do
+    if [[ -f "$driver_jar" ]]; then
+      classpath="$classpath:$driver_jar"
+    fi
+  done
 
   liquibase_common_args=(
-    --driver=com.mysql.cj.jdbc.Driver
+    --driver="$DB_DRIVER_CLASS"
     --classpath="$classpath"
     --search-path="$search_path"
     --changelog-file="$changelog_file"
-    --url="$db_url"
+    --url="$DB_URL"
     --username="$DB_USER"
     --password="$escaped_db_password"
     --show-banner=false
@@ -66,17 +72,17 @@ define_liquibase_parameters() {
 }
 
 run_migrations() {
-  local admin_user admin_password hashed_password
+  local admin_user admin_password admin_password_hash
+
+  admin_user="${ADMIN_USER:-$DEFAULT_ADMIN_USER}"
+  admin_password="${ADMIN_PASSWORD:-}"
 
   if "$liquibase_home/liquibase" "${liquibase_common_args[@]}" history 2>&1 | grep -q "No changesets deployed"; then
     log "INFO" "Database not initialized. Running migrations for the first time"
 
     log "DEBUG" "Defining admin user credentials"
-    admin_user="${ADMIN_USER:-harmony}"
 
-    if [[ -n "${ADMIN_PASSWORD:-}" ]]; then
-      admin_password="$ADMIN_PASSWORD"
-    else
+    if [[ -z "$admin_password" ]]; then
       admin_password=$(harmony-password --stage "$STAGE" --mode generate)
     fi
 
@@ -87,13 +93,13 @@ run_migrations() {
     fi
 
     log "DEBUG" "Hashing admin password"
-    hashed_password=$(java -cp "${HARMONY_HOME}/webapps/ROOT/WEB-INF/lib/*" \
+    admin_password_hash=$(java -cp "${HARMONY_HOME}/webapps/ROOT/WEB-INF/lib/*" \
       eu.domibus.api.util.BCryptPasswordHash "$admin_password")
 
     log "DEBUG" "Applying database migrations"
     "$liquibase_home/liquibase" "${liquibase_common_args[@]}" update \
-      -DadminUser="$admin_user" \
-      -DadminPassword="$hashed_password" \
+      -DADMIN_USERNAME="$admin_user" \
+      -DADMIN_PASSWORD_HASH="$admin_password_hash" \
       2>&1 | sed 's/^/    /'
   else
     log "INFO" "Database already initialized. Applying pending database migrations"
@@ -101,8 +107,13 @@ run_migrations() {
       2>&1 | sed 's/^/    /'
   fi
 
-  printf "%s" "${ADMIN_USER:-harmony}" > /var/run/s6/container_environment/ADMIN_USER
-  printf "%s" "$ADMIN_PASSWORD" > /var/run/s6/container_environment/ADMIN_PASSWORD
+  printf "%s" "$admin_user" > /var/run/s6/container_environment/ADMIN_USER
+
+  if [[ -n "$admin_password" ]]; then
+    printf "%s" "$admin_password" > /var/run/s6/container_environment/ADMIN_PASSWORD
+  else
+    log "DEBUG" "Admin credentials were set in a previous run and are unknown in the current context; nothing will be exported"
+  fi
 
   log "INFO" "Database migrations applied"
 }

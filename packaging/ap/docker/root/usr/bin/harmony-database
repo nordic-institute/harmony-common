@@ -106,9 +106,23 @@ resolve_db_connection_details() {
     log "DEBUG" "Constructed database URL from configuration properties: $DB_URL"
   fi
 
+  if [[ -n "${DB_URL:-}" && -z "${DB_DRIVER_CLASS:-}" ]]; then
+    case "$DB_URL" in
+      jdbc:mariadb:*) DB_DRIVER_CLASS="org.mariadb.jdbc.Driver" ;;
+      jdbc:mysql:*)   DB_DRIVER_CLASS="com.mysql.cj.jdbc.Driver" ;;
+    esac
+  fi
+
   DB_SCHEMA="${DB_SCHEMA:-$DEFAULT_DB_SCHEMA}"
   DB_PORT="${DB_PORT:-$DEFAULT_DB_PORT}"
   DB_DRIVER_CLASS="${DB_DRIVER_CLASS:-$DEFAULT_DB_DRIVER_CLASS}"
+}
+
+validate_db_connection_details() {
+  if [[ -z "${DB_URL:-}" || -z "${DB_HOST:-}" || -z "${DB_PORT:-}" ]]; then
+    log "ERROR" "Database parameter validation failed: DB_URL, DB_HOST, and DB_PORT must not be empty"
+    exit 1
+  fi
 }
 
 print_connection_info() {
@@ -146,6 +160,7 @@ main() {
   case "$MODE" in
     get-connection-details)
       resolve_db_connection_details
+      validate_db_connection_details
       print_connection_info
       ;;
     wait-for-db)

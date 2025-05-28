@@ -3,7 +3,6 @@ FROM ubuntu:24.04 AS builder
 ARG S6_OVERLAY_VERSION=3.2.0.2
 #ARG S6_OVERLAY_ARCH="x86_64"
 ARG S6_OVERLAY_ARCH="aarch64"
-ARG MYSQLJ_VERSION
 
 # Documentation
 COPY packaging/ap/config/LICENSE.txt            /usr/share/doc/harmony-ap/
@@ -13,14 +12,14 @@ COPY CHANGELOG.md                               /usr/share/doc/harmony-ap/
 WORKDIR /opt/harmony-ap
 
 # Copy files
-COPY packaging/commonbin/mysql-connector-j-${MYSQLJ_VERSION}.jar    lib/
+COPY packaging/commonbin/jdbc-drivers/*.jar             lib/
 COPY packaging/commonbin/harmony-ap                     webapps/ROOT/
 COPY packaging/commonbin/ws-plugin.jar                  plugins/lib/
-COPY packaging/commonbin/tomcat9/bin/*.sh               bin/
-COPY packaging/commonbin/tomcat9/bin/*.jar              bin/
-COPY packaging/commonbin/tomcat9/lib                    lib/
-COPY packaging/commonbin/tomcat9/conf/web.xml           conf/
-COPY packaging/commonbin/tomcat9/conf/catalina.properties   conf/
+COPY packaging/commonbin/tomcat/bin/*.sh                bin/
+COPY packaging/commonbin/tomcat/bin/*.jar               bin/
+COPY packaging/commonbin/tomcat/lib                     lib/
+COPY packaging/commonbin/tomcat/conf/web.xml            conf/
+COPY packaging/commonbin/tomcat/conf/catalina.properties   conf/
 COPY packaging/ap/config/activemq.xml                   internal/
 COPY packaging/ap/config/*Policy*.xml                   policies/
 COPY packaging/ap/config/signOnly.xml                   policies/
@@ -51,14 +50,12 @@ FROM ubuntu:24.04
 
 ARG VERSION
 ARG BUILD_ID
-ARG MYSQLJ_VERSION
 ARG AP_UID="999"
 ARG AP_GID="999"
 
 ENV PS1="$(whoami)@$(hostname):$(pwd)\\$ " \
     DEBIAN_FRONTEND=noninteractive \
     HARMONY_VERSION=$VERSION \
-    MYSQLJ_VERSION=$MYSQLJ_VERSION \
     S6_VERBOSITY=1
 
 LABEL org.opencontainers.image.vendor="Nordic Institute for Interoperability Solutions (NIIS)" \
