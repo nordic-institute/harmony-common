@@ -7,7 +7,7 @@ importas -u CATALINA_TEMP_DIR CATALINA_TEMP_DIR
 importas -u HARMONY_BASE HARMONY_BASE
 importas -u HARMONY_HOME HARMONY_HOME
 importas -u TLS_TRUSTSTORE_PATH TLS_TRUSTSTORE_PATH
-importas -u ESCAPED_TLS_TRUSTSTORE_PASSWORD ESCAPED_TLS_TRUSTSTORE_PASSWORD
+importas -u TLS_TRUSTSTORE_PASSWORD TLS_TRUSTSTORE_PASSWORD
 importas -u LOGBACK_CONFIG_FILE LOGBACK_CONFIG_FILE
 importas -u NODE_ID NODE_ID
 importas -u PRESERVE_BACKUP_FILE_DATE PRESERVE_BACKUP_FILE_DATE
@@ -34,7 +34,7 @@ exec java \
   -Djava.util.logging.config.file="${HARMONY_BASE}/conf/logging.properties" \
   -Djava.util.logging.manager=org.apache.juli.ClassLoaderLogManager \
   -Djavax.net.ssl.trustStore="${TLS_TRUSTSTORE_PATH}" \
-  -Djavax.net.ssl.trustStorePassword="${ESCAPED_TLS_TRUSTSTORE_PASSWORD}" \
+  -Djavax.net.ssl.trustStorePassword="${TLS_TRUSTSTORE_PASSWORD}" \
   -Dlogback.configurationFile="${LOGBACK_CONFIG_FILE}" \
   -Dcatalina.base="${HARMONY_BASE}" \
   -Dcatalina.home="${HARMONY_HOME}" \

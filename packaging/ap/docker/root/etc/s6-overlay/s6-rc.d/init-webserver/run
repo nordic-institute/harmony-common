@@ -57,12 +57,7 @@ obtain_tls_truststore_password() {
       --current-password "$(get_server_prop 'truststorePass')"
   )
 
-  log "DEBUG" "Escape special characters in TLS truststore password"
-
-  local escaped_tls_truststore_password="${truststore_pass//\\/\\\\}"
-  escaped_tls_truststore_password="${escaped_tls_truststore_password//\"/\\\"}"
-
-  printf "%s" "$escaped_tls_truststore_password" > /var/run/s6/container_environment/ESCAPED_TLS_TRUSTSTORE_PASSWORD
+  printf "%s" "$truststore_pass" > /var/run/s6/container_environment/TLS_TRUSTSTORE_PASSWORD
 
   echo "$truststore_pass"
 }

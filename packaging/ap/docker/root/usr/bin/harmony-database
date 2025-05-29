@@ -144,7 +144,10 @@ wait_for_db() {
 
   log "INFO" "Waiting for database ${DB_HOST}:${DB_PORT} to become available..."
 
-  if ! timeout 60 bash -c "until mysqladmin ping -h '$DB_HOST' -P '$DB_PORT' -u '$DB_USER' -p'$DB_PASSWORD' >/dev/null 2>&1; do sleep 5; done"; then
+  escaped_password=$(printf '%s' "$DB_PASSWORD" | jq -R -r @sh)
+  escaped_password=${escaped_password:1:-1}
+
+  if ! timeout 60 bash -c "until mysqladmin ping -h '$DB_HOST' -P '$DB_PORT' -u '$DB_USER' -p'$escaped_password' >/dev/null 2>&1; do sleep 5; done"; then
     log "ERROR" "Unable to connect to the database at ${DB_HOST}:${DB_PORT}. Exiting."
     exit 1
   fi

@@ -54,8 +54,6 @@ define_liquibase_parameters() {
   liquibase_home="${HARMONY_HOME}/liquibase"
   search_path="${HARMONY_HOME}/db"
   changelog_file="db.changelog.xml"
-  escaped_db_password="${DB_PASSWORD//\\/\\\\}"
-  escaped_db_password="${escaped_db_password//\"/\\\"}"
 
   classpath="$liquibase_home"
   for driver_jar in "${HARMONY_HOME}/lib"/mysql-connector-j-*.jar "${HARMONY_HOME}/lib"/mariadb-connector-j-*.jar; do
@@ -71,7 +69,7 @@ define_liquibase_parameters() {
     --changelog-file="$changelog_file"
     --url="$DB_URL"
     --username="$DB_USER"
-    --password="$escaped_db_password"
+    --password="$DB_PASSWORD"
     --show-banner=false
     --analytics-enabled=false
   )
