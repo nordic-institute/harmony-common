@@ -36,15 +36,14 @@ COPY packaging/ap/docker/server.xml.template            setup/
 ADD https://github.com/just-containers/s6-overlay/releases/download/v${S6_OVERLAY_VERSION}/s6-overlay-noarch.tar.xz /tmp
 ADD https://github.com/just-containers/s6-overlay/releases/download/v${S6_OVERLAY_VERSION}/s6-overlay-${S6_OVERLAY_ARCH}.tar.xz /tmp
 
-RUN \
-   command -v xz || apt-get update && apt-get install -y xz-utils && \
-   mkdir -p \
-    plugins/config \
-    extensions/lib \
-    /root-out && \
-   chmod -R ugo=rX /opt/harmony-ap/ && \
-   chmod a+rx /opt/harmony-ap/bin/*.sh && \
-   for file in /tmp/s6-overlay-*.tar.xz ; do tar -C /root-out -Jxpf "$file" && rm -f "$file" ; done
+RUN command -v xz || apt-get update && apt-get install -qqy --no-install-recommends xz-utils && \
+    mkdir -p \
+      plugins/config \
+      extensions/lib \
+      /root-out && \
+    chmod -R ugo=rX /opt/harmony-ap/ && \
+    chmod a+rx /opt/harmony-ap/bin/*.sh && \
+    for file in /tmp/s6-overlay-*.tar.xz; do tar -C /root-out -Jxpf "$file" && rm -f "$file"; done
 
 FROM ubuntu:24.04
 
@@ -65,38 +64,34 @@ LABEL org.opencontainers.image.vendor="Nordic Institute for Interoperability Sol
       org.opencontainers.image.source="https://github.com/nordic-institute/harmony-access-point" \
       org.niis.harmony.build-id="$BUILD_ID"
 
-RUN \
-   echo "**** Install packages ****" && \
-   apt-get update -qq && \
-   apt-get upgrade -qqy && \
-   apt-get install -qqy --no-install-recommends \
-     crudini \
-     curl \
-     grep \
-     mysql-client \
-     openjdk-11-jre-headless \
-     sed \
-     tzdata \
-     xmlstarlet && \
-   echo "**** Create harmony-ap user and make harmony-ap folders ****" && \
-   groupadd --gid "$AP_GID" harmony-ap && \
-   useradd --system --uid "$AP_UID" --gid "$AP_GID" harmony-ap && \
-   mkdir -p -m 750 \
-    /var/opt/harmony-ap \
-    /var/tmp/harmony-ap && \
-   chown -R harmony-ap:harmony-ap \
-    /var/opt/harmony-ap \
-    /var/tmp/harmony-ap && \
-   ln -sf /var/opt/harmony-ap/etc /etc/harmony-ap && \
-   echo "**** Cleanup ****" && \
-   userdel ubuntu && \
-   apt-get autoremove -qqy && \
-   apt-get clean -qqy && \
-   rm -rf \
-     /tmp/* \
-     /var/lib/apt/lists/* \
-     /var/log/* \
-     /var/tmp/*
+RUN apt-get update -qq && \
+    apt-get upgrade -qqy && \
+    apt-get install -qqy --no-install-recommends \
+      crudini \
+      curl \
+      grep \
+      jq \
+      mysql-client \
+      openjdk-11-jre-headless \
+      sed \
+      tzdata \
+      xmlstarlet && \
+    groupadd --gid "$AP_GID" harmony-ap && \
+    useradd --system --uid "$AP_UID" --gid "$AP_GID" harmony-ap && \
+    mkdir -p -m 750 \
+      /var/opt/harmony-ap \
+      /var/tmp/harmony-ap && \
+    chown -R harmony-ap:harmony-ap \
+      /var/opt/harmony-ap \
+      /var/tmp/harmony-ap && \
+    ln -sf /var/opt/harmony-ap/etc /etc/harmony-ap && \
+    apt-get autoremove -qqy && \
+    apt-get clean -qqy && \
+    rm -rf \
+      /tmp/* \
+      /var/lib/apt/lists/* \
+      /var/log/* \
+      /var/tmp/*
 
 COPY --from=builder /root-out/ /
 COPY packaging/ap/docker/root/ /

@@ -12,7 +12,11 @@
   <property name="admin.pass.hash"  value="${ADMIN_PASSWORD_HASH}"/>
 
   <changeSet author="harmony" id="2.0.0-pre-migration-fix" failOnError="false">
-    <!-- fix unique constraint names that differ from Domibus 4.2.5 (created during Harmony 1.4 clean install) -->
+    <!--
+      Updates unique constraint names to match the naming conventions used in Domibus 4.2.5.
+      These constraints may have been created with different names during a clean install of Harmony 1.4.
+      This changeSet ensures consistency for environments being upgraded.
+    -->
     <preConditions onFail="MARK_RAN" onError="HALT">
       <changeSetExecuted id="0001:001" author="root" changeLogFile="/opt/harmony-ap/db/migrations/0001-init.sql"/>
       <indexExists tableName="TB_USER_ROLE" indexName="ROLE_NAME"/>
@@ -120,9 +124,18 @@
   </changeSet>
 
 
-  <!-- adds the initial admin user unless one already exists -->
+  <!--
+    Creates the initial admin user only if one does not already exist.
+    This changeSet is executed during the first-time setup.
+  -->
   <changeSet author="harmony" id="default-admin-user" runOrder="last">
-    <validCheckSum>8:05f11c39d4f28272e98e19ff48563e35</validCheckSum>
+    <!--
+      Accepts any checksum because the admin password is dynamically generated at runtime
+      using a salted hash. This results in a different value on each container startup.
+      The changeSet is executed only once and is guarded by preconditions to prevent duplicate
+      creation if an admin user already exists.
+    -->
+    <validCheckSum>ANY</validCheckSum>
     <preConditions onFail="MARK_RAN" onError="MARK_RAN">
       <tableExists tableName="TB_USER"/>
       <tableExists tableName="TB_USER_ROLES"/>
