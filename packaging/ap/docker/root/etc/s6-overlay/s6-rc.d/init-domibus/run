@@ -16,7 +16,13 @@ log() {
 }
 
 property_helper() {
-  harmony-property --stage "$STAGE" --action "$1" --config-path "$TEMP_CONFIG_PATH" --property "$2" ${3:+--value "$3"}
+  local quiet_flag=""
+  if [[ "${!#}" == "--quiet" ]]; then
+    quiet_flag="--quiet"
+    set -- "${@:1:$(($#-1))}"
+  fi
+
+  harmony-property --stage "$STAGE" --action "$1" --config-path "$TEMP_CONFIG_PATH" --property "$2" $quiet_flag ${3:+--value "$3"}
 }
 
 get_property() { property_helper GET "$@"; }
@@ -76,8 +82,8 @@ obtain_security_keystore_password() {
       --current-password "$(get_property 'domibus.security.keystore.password')"
   )
 
-  set_property 'domibus.security.keystore.password' "$keystore_pass"
-  set_property 'domibus.security.key.private.password' "$keystore_pass"
+  set_property 'domibus.security.keystore.password' "$keystore_pass" --quiet
+  set_property 'domibus.security.key.private.password' "$keystore_pass" --quiet
 
   echo "$keystore_pass"
 }
@@ -94,7 +100,7 @@ obtain_security_truststore_password() {
       --current-password "$(get_property 'domibus.security.truststore.password')"
   )
 
-  set_property 'domibus.security.truststore.password' "$truststore_pass"
+  set_property 'domibus.security.truststore.password' "$truststore_pass" --quiet
 
   echo "$truststore_pass"
 }

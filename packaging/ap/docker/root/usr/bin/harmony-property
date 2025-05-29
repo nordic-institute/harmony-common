@@ -133,11 +133,14 @@ set_prop() {
       fi
       log "DEBUG" "Property '$property' $state"
     else
+      local shown_value
       if [[ "$HIDE_VALUE" == true ]]; then
-        log "DEBUG" "Property '$property' set"
+        shown_value="[HIDDEN]"
       else
-        log "DEBUG" "Property '$property' set to '$value'"
+        shown_value="$value"
       fi
+
+      log "DEBUG" "Property '$property' set to '$shown_value'"
     fi
   else
     log "ERROR" "Failed to set property '$property' in '$CONFIG_PATH'"

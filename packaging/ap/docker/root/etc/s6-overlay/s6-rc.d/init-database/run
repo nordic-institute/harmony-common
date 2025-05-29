@@ -13,7 +13,13 @@ log() {
 }
 
 property_helper() {
-  harmony-property --stage "$STAGE" --action "$1" --config-path "$TEMP_CONFIG_PATH" --property "$2" ${3:+--value "$3"}
+  local quiet_flag=""
+  if [[ "${!#}" == "--quiet" ]]; then
+    quiet_flag="--quiet"
+    set -- "${@:1:$(($#-1))}"
+  fi
+
+  harmony-property --stage "$STAGE" --action "$1" --config-path "$TEMP_CONFIG_PATH" --property "$2" $quiet_flag ${3:+--value "$3"}
 }
 
 get_property() { property_helper GET "$@"; }
@@ -129,7 +135,7 @@ store_db_connection_details() {
   set_property 'domibus.database.serverName' "$DB_HOST"
   set_property 'domibus.database.port' "$DB_PORT"
   set_property 'domibus.datasource.user' "$DB_USER"
-  set_property 'domibus.datasource.password' "$DB_PASSWORD"
+  set_property 'domibus.datasource.password' "$DB_PASSWORD" --quiet
 }
 
 init-database() {

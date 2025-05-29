@@ -10,7 +10,13 @@ log() {
 }
 
 property_helper() {
-  harmony-property --stage "$STAGE" --action "$1" --config-path "$TEMP_CONFIG_PATH" --property "$2" ${3:+--value "$3"}
+  local quiet_flag=""
+  if [[ "${!#}" == "--quiet" ]]; then
+    quiet_flag="--quiet"
+    set -- "${@:1:$(($#-1))}"
+  fi
+
+  harmony-property --stage "$STAGE" --action "$1" --config-path "$TEMP_CONFIG_PATH" --property "$2" $quiet_flag ${3:+--value "$3"}
 }
 
 get_property()    { property_helper GET     "$@"; }
@@ -62,7 +68,7 @@ init_quartz() {
     set_property "domibus.quartz.datasource.driverClassName" "${QUARTZ_DRIVER_CLASS}"
     set_property "domibus.quartz.datasource.url" "${QUARTZ_URL}"
     set_property "domibus.quartz.datasource.user" "${QUARTZ_USER}"
-    set_property "domibus.quartz.datasource.password" "${QUARTZ_PASSWORD}"
+    set_property "domibus.quartz.datasource.password" "${QUARTZ_PASSWORD}" --quiet
   fi
 
   log "DEBUG" "Done"
