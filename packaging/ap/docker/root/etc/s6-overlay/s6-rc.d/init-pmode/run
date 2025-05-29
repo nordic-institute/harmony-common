@@ -6,7 +6,7 @@ readonly STAGE="init-pmode"
 : "${PMODE_MAX_RETRIES:=60}"
 : "${PMODE_RETRY_INTERVAL:=5}"
 : "${PMODE_ADMIN_USER:=pmode_uploader}"
-: "${PMODE_ADMIN_PASSWORD:=$(harmony-password --stage "$STAGE" --mode generate)}"
+: "${PMODE_ADMIN_PASSWORD:=}"
 : "${PMODE_DEFAULT_CONF_PATH:=$HARMONY_BASE/etc/pmode.xml}"
 
 log() {
@@ -88,10 +88,16 @@ get_auth_token() {
     return 1
   fi
 
+  local auth_payload
+  auth_payload=$(jq -n \
+    --arg user "$ADMIN_USER" \
+    --arg pass "$ADMIN_PASSWORD" \
+    '{username:$user,password:$pass}')
+
   local http_code
   http_code=$(curl -s -k -c "$COOKIE_FILE" \
     -H "Content-Type: application/json" \
-    -d '{"username":"'"$ADMIN_USER"'","password":"'"${ADMIN_PASSWORD:-}"'"}' \
+    -d "$auth_payload" \
     -o /dev/null -w "%{http_code}" \
     -X POST "$base_url/rest/security/authentication")
 
@@ -152,9 +158,11 @@ create_pmode_api_user() {
 
   log "DEBUG" "Creating API users"
 
-  local users_json='[
-    {"status":"NEW","userName":"'"${PMODE_ADMIN_USER}"'","active":true,"suspended":false,"authenticationType":"BASIC","authRoles":"ROLE_ADMIN","password":"'"${PMODE_ADMIN_PASSWORD}"'"}
-  ]'
+  local users_json
+  users_json=$(jq -n \
+    --arg user "$PMODE_ADMIN_USER" \
+    --arg pass "$PMODE_ADMIN_PASSWORD" \
+    '[{status:"NEW",userName:$user,active:true,suspended:false,authenticationType:"BASIC",authRoles:"ROLE_ADMIN",password:$pass}]')
 
   local http_code
   http_code=$(curl -s -k -b "$COOKIE_FILE" \
@@ -202,9 +210,10 @@ delete_pmode_api_user() {
     exit 1
   fi
 
-  local users_json='[
-    {"status":"REMOVED","entityId":"'"${entityId}"'"}
-  ]'
+  local users_json
+  users_json=$(jq -n \
+    --arg id "$entityId" \
+    '[{status:"REMOVED",entityId:$id}]')
 
   # Send deletion request
   local http_code
@@ -335,6 +344,11 @@ init_pmode() {
 
     local xsrf_token
     if xsrf_token=$(get_auth_token "$base_url"); then
+      if [ -z "${PMODE_ADMIN_PASSWORD:-}" ]; then
+        PMODE_ADMIN_PASSWORD=$(harmony-password --stage "$STAGE" --mode generate)
+        log "INFO" "Generated PMode admin password"
+      fi
+
       with_temp_api_user "$base_url" "$xsrf_token" \
         compare_and_upload_pmode "$pmode_file"
     else
