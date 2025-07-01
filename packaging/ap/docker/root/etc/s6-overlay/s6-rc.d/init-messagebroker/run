@@ -1,28 +1,17 @@
 #!/command/with-contenv bash
 set -euo pipefail
 
+# shellcheck disable=SC2034 # Used in sourced scripts
 readonly STAGE="init-messagebroker"
 
-: "${ACTIVEMQ_EMBEDDED_CONFIG:=file:///${HARMONY_BASE}/etc/internal/activemq.xml}"
+source /usr/lib/harmony-common
+
+: "${ACTIVEMQ_EMBEDDED_CONFIG_PATH:=file:///${HARMONY_BASE}/etc/internal/activemq.xml}"
 : "${ACTIVEMQ_JMX_PORT:=1199}"
 : "${ACTIVEMQ_TRANSPORT_PORT:=61616}"
 
 readonly DEFAULT_BROKER_HOST="localhost"
 readonly DEFAULT_BROKER_NAME="localhost"
-
-log() {
-  local level="$1"
-  local message="$2"
-  harmony-log "$level" "$STAGE" "$message" >&2
-}
-
-property_helper() {
-  harmony-property --stage "$STAGE" --action "$1" --config-path "$TEMP_CONFIG_PATH" --property "$2" ${3:+--value "$3"}
-}
-
-get_property()    { property_helper GET     "$@"; }
-set_property()    { property_helper SET     "$@"; }
-remove_property() { property_helper REMOVE  "$@"; }
 
 add_prefix_suffix() {
   local list="$1"
@@ -56,7 +45,7 @@ construct_jmx_url() {
 configure_embedded_broker() {
   local broker_host="$1"
 
-  set_property "activeMQ.embedded.configurationFile" "${ACTIVEMQ_EMBEDDED_CONFIG}"
+  set_property "activeMQ.embedded.configurationFile" "${ACTIVEMQ_EMBEDDED_CONFIG_PATH}"
   remove_property "activeMQ.username"
   remove_property "activeMQ.password"
 

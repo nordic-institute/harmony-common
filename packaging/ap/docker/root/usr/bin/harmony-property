@@ -1,26 +1,22 @@
 #!/bin/bash
 set -euo pipefail
 
-log() {
-  local level="$1"
-  local message="$2"
-  local log_component="${STAGE:+$STAGE-}property"
-
-  harmony-log "$level" "$log_component" "$message" >&2
-}
+source /usr/lib/harmony-common
 
 parse_cli_args() {
   ALLOW_MISSING_PATHS=false
   HIDE_VALUE=false
 
+  # shellcheck disable=SC2034 # Used in sourced scripts
   while [[ $# -gt 0 ]]; do
     case "$1" in
-      --stage|-s)             STAGE="$2";               shift 2 ;;
-      --action|-a)            ACTION="$2";              shift 2 ;;
-      --config-path|-c)       CONFIG_PATH="$2";         shift 2 ;;
-      --property|-p)          PROPERTY="$2";            shift 2 ;;
-      --value|-v)             VALUE="$2";               shift 2 ;;
-      --quiet|-q)             HIDE_VALUE=true;          shift ;;
+      --stage|-s)             STAGE="${2:+$2-}pptcli";  shift 2 ;;
+      --node-id|-n)           NODE_ID="$2";     shift 2 ;;
+      --action|-a)            ACTION="$2";      shift 2 ;;
+      --config-path|-c)       CONFIG_PATH="$2"; shift 2 ;;
+      --property|-p)          PROPERTY="$2";    shift 2 ;;
+      --value|-v)             VALUE="$2";       shift 2 ;;
+      --quiet|-q)             HIDE_VALUE=true;  shift ;;
       --allow-missing-paths)  ALLOW_MISSING_PATHS=true;  shift ;;
       *) log "ERROR" "Unknown option: $1"; exit 1 ;;
     esac
@@ -111,6 +107,16 @@ remove_prop() {
   fi
 }
 
+hide_value_if_needed() {
+  local value="$1"
+
+  if [[ "$HIDE_VALUE" == true ]]; then
+    echo "[HIDDEN]"
+  else
+    echo "$value"
+  fi
+}
+
 set_prop() {
   local property="$1"
   local value="${2:-}"
@@ -134,11 +140,7 @@ set_prop() {
       log "DEBUG" "Property '$property' $state"
     else
       local shown_value
-      if [[ "$HIDE_VALUE" == true ]]; then
-        shown_value="[HIDDEN]"
-      else
-        shown_value="$value"
-      fi
+      shown_value="$(hide_value_if_needed "$value")"
 
       log "DEBUG" "Property '$property' set to '$shown_value'"
     fi
@@ -155,7 +157,10 @@ safe_set_prop() {
 
   current_value=$(get_prop "$property")
   if [[ "$current_value" == "$new_value" ]]; then
-    log "DEBUG" "Property '$property' already set to '$current_value'; skipping"
+    local shown_value
+    shown_value="$(hide_value_if_needed "$current_value")"
+
+    log "DEBUG" "Property '$property' already set to '$shown_value'; skipping"
   else
     set_prop "$property" "$new_value"
   fi

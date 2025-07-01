@@ -3,25 +3,7 @@ set -euo pipefail
 
 readonly STAGE="init-quartz"
 
-log() {
-  local level="$1"
-  local message="$2"
-  harmony-log "$level" "$STAGE" "$message"
-}
-
-property_helper() {
-  local quiet_flag=""
-  if [[ "${!#}" == "--quiet" ]]; then
-    quiet_flag="--quiet"
-    set -- "${@:1:$(($#-1))}"
-  fi
-
-  harmony-property --stage "$STAGE" --action "$1" --config-path "$TEMP_CONFIG_PATH" --property "$2" $quiet_flag ${3:+--value "$3"}
-}
-
-get_property()    { property_helper GET     "$@"; }
-set_property()    { property_helper SET     "$@"; }
-remove_property() { property_helper REMOVE  "$@"; }
+source /usr/lib/harmony-common
 
 get_connection_details() {
   QUARTZ_USER="${QUARTZ_USER:-$(get_property 'domibus.quartz.datasource.user' "$DB_USER")}"
@@ -33,11 +15,11 @@ get_connection_details() {
       --stage "$STAGE" \
       --config-path "$TEMP_CONFIG_PATH" \
       --property-prefix "domibus.quartz.datasource" \
-      --db-url "${QUARTZ_URL:-}" \
-      --db-driver-class "${QUARTZ_DRIVER_CLASS:-}" \
-      --db-host "${QUARTZ_HOST:-}" \
-      --db-port "${QUARTZ_PORT:-}" \
-      --db-schema "${QUARTZ_SCHEMA:-}"
+      --db-url "${QUARTZ_URL:-$DB_URL}" \
+      --db-driver-class "${QUARTZ_DRIVER_CLASS:-$DB_DRIVER_CLASS}" \
+      --db-host "${QUARTZ_HOST:-$DB_HOST}" \
+      --db-port "${QUARTZ_PORT:-$DB_PORT}" \
+      --db-schema "${QUARTZ_SCHEMA:-$DB_SCHEMA}"
   )
 }
 

@@ -1,21 +1,16 @@
 #!/command/with-contenv bash
 set -euo pipefail
 
-readonly STAGE="init-environment"
+readonly STAGE="config-environment"
 
-log() {
-  local level="$1"
-  local message="$2"
-
-  harmony-log "$level" "$STAGE" "$message"
-}
+source /usr/lib/harmony-common
 
 get_property() {
   local cfg_path="$1"
   local property="$2"
   local default_value="$3"
 
-  harmony-property -s "$STAGE" -a GET -c "$cfg_path" -p "$property" -v "$default_value" --allow-missing-paths
+  harmony-property -s "$STAGE" -n "$node_id" -a GET -c "$cfg_path" -p "$property" -v "$default_value" --allow-missing-paths
 }
 
 log "DEBUG" "Started"
@@ -62,12 +57,29 @@ printf "%s" "$config_path" > /var/run/s6/container_environment/CONFIG_PATH
 printf "%s" "$temp_config_path" > /var/run/s6/container_environment/TEMP_CONFIG_PATH
 
 # -------------------------------
-# Set common Harmony AP properties
+# Set clustering options
+# -------------------------------
+node_id="${NODE_ID:-$HOSTNAME}"
+deployment_clustered_raw="${DEPLOYMENT_CLUSTERED:-$(get_property "$config_path" 'domibus.deployment.clustered' 'false')}"
+deployment_clustered="$(ensure_boolean "$deployment_clustered_raw" "false")"
+cluster_backend="${CLUSTER_BACKEND:-database}"
+cluster_secret_backup_raw="${CLUSTER_SECRET_BACKUP:-true}"
+cluster_secret_backup="$(ensure_boolean "$cluster_secret_backup_raw" "true")"
+
+printf "%s" "$node_id" > /var/run/s6/container_environment/NODE_ID
+printf "%s" "$deployment_clustered" > /var/run/s6/container_environment/DEPLOYMENT_CLUSTERED
+printf "%s" "$cluster_backend" > /var/run/s6/container_environment/CLUSTER_BACKEND
+printf "%s" "$cluster_secret_backup" > /var/run/s6/container_environment/CLUSTER_SECRET_BACKUP
+
+# -------------------------------
+# Set common cert options
 # -------------------------------
 party_name="${PARTY_NAME:-$(get_property "$config_path" 'domibus.security.key.private.alias' 'selfsigned')}"
-deployment_clustered="${DEPLOYMENT_CLUSTERED:-$(get_property "$config_path" 'domibus.deployment.clustered' 'false')}"
+cert_alias="${CERT_ALIAS:-$party_name}"
+cert_dir="${CERT_DIR:=${harmony_base}/etc/certs}"
 
 printf "%s" "$party_name" > /var/run/s6/container_environment/PARTY_NAME
-printf "%s" "$deployment_clustered" > /var/run/s6/container_environment/DEPLOYMENT_CLUSTERED
+printf "%s" "$cert_alias" > /var/run/s6/container_environment/CERT_ALIAS
+printf "%s" "$cert_dir" > /var/run/s6/container_environment/CERT_DIR
 
 log "DEBUG" "Done"

@@ -1,6 +1,8 @@
 #!/bin/bash
 set -euo pipefail
 
+source /usr/lib/harmony-common
+
 readonly DEFAULT_DB_DRIVER_CLASS="com.mysql.cj.jdbc.Driver"
 readonly DEFAULT_DB_URL_PREFIX="jdbc:mysql://"
 readonly DEFAULT_DB_URL_PARAMS="?sslMode=preferred&allowPublicKeyRetrieval=true&useLegacyDatetimeCode=false&serverTimezone=UTC"
@@ -8,25 +10,13 @@ readonly DEFAULT_DB_SCHEMA="harmony_ap"
 readonly DEFAULT_DB_PORT="3306"
 readonly DEFAULT_PROPERTY_PREFIX="domibus.datasource"
 
-log() {
-  local level="$1"
-  local message="$2"
-  local log_component="${STAGE:+$STAGE-}database"
-
-  harmony-log "$level" "$log_component" "$message" >&2
-}
-
-get_property() {
-  local property="$1"
-
-  harmony-property -s "$STAGE" -a GET -c "$CONFIG_PATH" -p "$property"
-}
-
 parse_cli_args() {
+  # shellcheck disable=SC2034 # Used in sourced scripts
   while [[ $# -gt 0 ]]; do
     case "$1" in
       --mode)         MODE="$2";        shift 2 ;;
-      --stage)        STAGE="$2";       shift 2 ;;
+      --stage)        STAGE="${2:+$2-}dbcli";  shift 2 ;;
+      --node-id)      NODE_ID="$2";     shift 2 ;;
       --config-path)  CONFIG_PATH="$2"; shift 2 ;;
       --property-prefix) PROPERTY_PREFIX="$2";  shift 2 ;;
       --db-url)       DB_URL="$2";      shift 2 ;;
@@ -144,10 +134,7 @@ wait_for_db() {
 
   log "INFO" "Waiting for database ${DB_HOST}:${DB_PORT} to become available..."
 
-  escaped_password=$(printf '%s' "$DB_PASSWORD" | jq -R -r @sh)
-  escaped_password=${escaped_password:1:-1}
-
-  if ! timeout 60 bash -c "until mysqladmin ping -h '$DB_HOST' -P '$DB_PORT' -u '$DB_USER' -p'$escaped_password' >/dev/null 2>&1; do sleep 5; done"; then
+  if ! timeout 60 bash -c "until MYSQL_PWD='$DB_PASSWORD' mysqladmin ping -h '$DB_HOST' -P '$DB_PORT' -u '$DB_USER' >/dev/null 2>&1; do sleep 5; done"; then
     log "ERROR" "Unable to connect to the database at ${DB_HOST}:${DB_PORT}. Exiting."
     exit 1
   fi

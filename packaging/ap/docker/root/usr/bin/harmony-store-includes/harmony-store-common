@@ -1,12 +1,7 @@
 #!/bin/bash
 set -euo pipefail
 
-log() {
-  local level="$1"
-  local message="$2"
-  local log_component="${stage:+$stage-}certificate"
-  harmony-log "$level" "$log_component" "$message"
-}
+source /usr/lib/harmony-common
 
 require_commands() {
   for cmd in "$@"; do
@@ -123,7 +118,7 @@ validate_store_password() {
   fi
 
   if echo "$output" | grep -q "keystore password was incorrect"; then
-    log "ERROR" "Keystore password was rejected. [store=$store_path]"
+    log "ERROR" "Keystore or truststore password was rejected. [store=$store_path]"
     log "ERROR" "Possible causes:"
     log "ERROR" "- The password provided is incorrect."
     log "ERROR" "- OR the keystore format is incompatible with Java 11+ PKCS12 implementation."
@@ -138,12 +133,12 @@ validate_store_password() {
 validate_certificate_in_store() {
   local -n certificate_in_store_config="$1"
 
-  validate_required_keys certificate_in_store_config store_path store_password alias cert_path store_type
+  validate_required_keys certificate_in_store_config store_path store_password alias public_cert_path store_type
 
   local store_path="${certificate_in_store_config[store_path]}"
   local store_password="${certificate_in_store_config[store_password]}"
   local alias="${certificate_in_store_config[alias]}"
-  local cert_path="${certificate_in_store_config[cert_path]}"
+  local public_cert_path="${certificate_in_store_config[public_cert_path]}"
   local store_type="${certificate_in_store_config[store_type]}"
 
   local store_fingerprint cert_fingerprint
@@ -153,7 +148,7 @@ validate_certificate_in_store() {
     | cut -d'=' -f2 \
     | tr -d ':')
 
-  cert_fingerprint=$(openssl x509 -in "$cert_path" -fingerprint -noout -sha256 \
+  cert_fingerprint=$(openssl x509 -in "$public_cert_path" -fingerprint -noout -sha256 \
     | cut -d'=' -f2 \
     | tr -d ':')
 

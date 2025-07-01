@@ -1,0 +1,86 @@
+#!/command/with-contenv bash
+set -euo pipefail
+
+readonly STAGE="config-database"
+
+source /usr/lib/harmony-common
+
+get_property() {
+  local cfg_path="$1"
+  local property="$2"
+  local default_value="$3"
+
+  harmony-property -s "$STAGE" -n "$NODE_ID" -a GET -c "$cfg_path" -p "$property" -v "$default_value" --allow-missing-paths
+}
+
+readonly DEFAULT_DB_USER="harmony_ap"
+
+get_database_connection_details() {
+  local user password
+
+  user="${DB_USER:-$(get_property "$CONFIG_PATH" 'domibus.datasource.user' "$DEFAULT_DB_USER")}"
+  password="${DB_PASSWORD:-$(get_property "$CONFIG_PATH" 'domibus.datasource.password')}"
+
+  local url driver host port schema
+  read -r url driver host port schema < <(
+    harmony-database \
+      --mode get-connection-details \
+      --stage "$STAGE" \
+      --config-path "$TEMP_CONFIG_PATH" \
+      --property-prefix "domibus.datasource" \
+      --db-url "${DB_URL:-}" \
+      --db-driver-class "${DB_DRIVER_CLASS:-}" \
+      --db-host "${DB_HOST:-}" \
+      --db-port "${DB_PORT:-}" \
+      --db-schema "${DB_SCHEMA:-}"
+  )
+
+  printf '%s %s %s %s %s %s %s\n' \
+    "$user" "$password" "$url" "$driver" "$host" "$port" "$schema"
+}
+
+validate_database_parameters() {
+  local host="$1" password="$2"
+
+  if [[ -z "$host" || -z "$password" ]]; then
+    log "ERROR" "Database host (DB_HOST) and password (DB_PASSWORD) are required. Exiting."
+    exit 1
+  fi
+}
+
+wait_for_database() {
+  local host="$1" port="$2" user="$3" pass="$4"
+
+  log INFO "Waiting for database at $DB_HOST:$DB_PORT/$DB_SCHEMA"
+
+  harmony-database \
+    --mode wait-for-db \
+    --stage "$STAGE" \
+    --db-host "$host" \
+    --db-port "$port" \
+    --db-user "$user" \
+    --db-password "$pass"
+}
+
+save_database_connection_environment() {
+  local url="$1" driver="$2" schema="$3" host="$4" port="$5" user="$6" pass="$7"
+
+  printf "%s" "$url" > /var/run/s6/container_environment/DB_URL
+  printf "%s" "$driver" > /var/run/s6/container_environment/DB_DRIVER_CLASS
+  printf "%s" "$schema" > /var/run/s6/container_environment/DB_SCHEMA
+  printf "%s" "$host" > /var/run/s6/container_environment/DB_HOST
+  printf "%s" "$port" > /var/run/s6/container_environment/DB_PORT
+  printf "%s" "$user" > /var/run/s6/container_environment/DB_USER
+  printf "%s" "$pass" > /var/run/s6/container_environment/DB_PASSWORD
+}
+
+config_database() {
+  read -r DB_USER DB_PASSWORD DB_URL DB_DRIVER_CLASS DB_HOST DB_PORT DB_SCHEMA \
+    < <(get_database_connection_details)
+
+  validate_database_parameters "$DB_HOST" "$DB_PASSWORD"
+  wait_for_database "$DB_HOST" "$DB_PORT" "$DB_USER" "$DB_PASSWORD"
+  save_database_connection_environment "$DB_URL" "$DB_DRIVER_CLASS" "$DB_SCHEMA" "$DB_HOST" "$DB_PORT" "$DB_USER" "$DB_PASSWORD"
+}
+
+config_database

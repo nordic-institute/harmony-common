@@ -1,20 +1,15 @@
 #!/bin/bash
 set -euo pipefail
 
-log() {
-  local level="$1"
-  local message="$2"
-  local log_component="${STAGE:+$STAGE-}base64"
-
-  harmony-log "$level" "$log_component" "$message" >&2
-}
+source /usr/lib/harmony-common
 
 parse_cli_args() {
   FORCE="false"
 
+  # shellcheck disable=SC2034 # Used in sourced scripts
   while [[ $# -gt 0 ]]; do
     case "$1" in
-      --stage|-s)   STAGE="$2";         shift 2 ;;
+      --stage|-s)   STAGE="${2:+$2-}b64cli";  shift 2 ;;
       --input|-i)   BASE64_INPUT="$2";  shift 2 ;;
       --output|-o)  OUTPUT_PATH="$2";   shift 2 ;;
       --force|-f)   FORCE="true";       shift ;;

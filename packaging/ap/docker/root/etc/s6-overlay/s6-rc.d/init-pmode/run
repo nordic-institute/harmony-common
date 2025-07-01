@@ -3,17 +3,14 @@ set -euo pipefail
 
 readonly STAGE="init-pmode"
 
+source /usr/lib/harmony-common
+source /usr/lib/harmony-cluster
+
 : "${PMODE_MAX_RETRIES:=60}"
 : "${PMODE_RETRY_INTERVAL:=5}"
 : "${PMODE_ADMIN_USER:=pmode_uploader}"
 : "${PMODE_ADMIN_PASSWORD:=}"
 : "${PMODE_DEFAULT_CONF_PATH:=$HARMONY_BASE/etc/pmode.xml}"
-
-log() {
-  local level="$1"
-  local message="$2"
-  harmony-log "$level" "$STAGE" "$message" >&2
-}
 
 decode_from_base64() {
   log "DEBUG" "Decoding PMode configuration from Base64 using harmony-base64..."
@@ -322,6 +319,31 @@ with_temp_api_user() {
   fi
 }
 
+process_pmode() {
+  local pmode_file="$1"
+
+  local base_url
+  base_url=$(get_base_url)
+
+  ensure_service_ready "$base_url"
+
+  COOKIE_FILE=$(mktemp)
+  trap 'cleanup_cookie' EXIT
+
+  local xsrf_token
+  if xsrf_token=$(get_auth_token "$base_url"); then
+    if [ -z "${PMODE_ADMIN_PASSWORD:-}" ]; then
+      PMODE_ADMIN_PASSWORD=$(harmony-password --stage "$STAGE" --mode generate)
+      log "INFO" "Generated PMode admin password"
+    fi
+
+    with_temp_api_user "$base_url" "$xsrf_token" \
+      compare_and_upload_pmode "$pmode_file"
+  else
+    log "WARN" "Authentication failed; skipping PMode upload"
+  fi
+}
+
 cleanup_cookie() {
   if [[ -n "$COOKIE_FILE" && -f "$COOKIE_FILE" ]]; then
     rm -f "$COOKIE_FILE"
@@ -332,30 +354,15 @@ cleanup_cookie() {
 init_pmode() {
   log "DEBUG" "Started"
 
-  local pmode_file
-  if pmode_file=$(discover_pmode_file); then
-    local base_url
-    base_url=$(get_base_url)
-
-    ensure_service_ready "$base_url"
-
-    COOKIE_FILE=$(mktemp)
-    trap 'cleanup_cookie' EXIT
-
-    local xsrf_token
-    if xsrf_token=$(get_auth_token "$base_url"); then
-      if [ -z "${PMODE_ADMIN_PASSWORD:-}" ]; then
-        PMODE_ADMIN_PASSWORD=$(harmony-password --stage "$STAGE" --mode generate)
-        log "INFO" "Generated PMode admin password"
-      fi
-
-      with_temp_api_user "$base_url" "$xsrf_token" \
-        compare_and_upload_pmode "$pmode_file"
+  if is_primary; then
+    local pmode_file
+    if pmode_file=$(discover_pmode_file); then
+      process_pmode "$pmode_file"
     else
-      log "WARN" "Authentication failed; skipping PMode upload"
+      log "INFO" "No PMode configuration provided or found; skipping upload"
     fi
   else
-    log "INFO" "No PMode configuration provided or found; skipping upload"
+    log DEBUG "Not a primary node; skipping PMode initialization"
   fi
 
   log "DEBUG" "Done"

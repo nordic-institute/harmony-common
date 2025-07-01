@@ -1,0 +1,20 @@
+#!/command/with-contenv bash
+set -euo pipefail
+
+# shellcheck disable=SC2034 # Used in sourced scripts
+readonly STAGE="config-cluster"
+
+source /usr/lib/harmony-common
+source /usr/lib/harmony-cluster
+
+log INFO "Starting cluster sequence ($CLUSTER_BACKEND)..."
+
+init_backend
+
+if acquire_primary; then
+  log INFO "Assigned role: primary"
+else
+  log INFO "Assigned role: replica"
+
+  wait_for_ready
+fi

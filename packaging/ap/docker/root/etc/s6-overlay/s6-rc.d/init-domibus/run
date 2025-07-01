@@ -3,30 +3,15 @@ set -euo pipefail
 
 readonly STAGE="init-domibus"
 
-: "${CERT_DIR:=${HARMONY_BASE}/etc/certs}"
-: "${SECURITY_KEYSTORE_PATH:=${HARMONY_BASE}/etc/ap-keystore.p12}"
-: "${SECURITY_TRUSTSTORE_PATH:=${HARMONY_BASE}/etc/ap-truststore.p12}"
+source /usr/lib/harmony-common
+source /usr/lib/harmony-cluster
+
 : "${WORK_LOCATION:=${HARMONY_BASE}/work}"
 : "${DYNAMIC_DISCOVERY_FALLBACK:=false}"
-
-log() {
-  local level="$1"
-  local message="$2"
-  harmony-log "$level" "$STAGE" "$message" >&2
-}
-
-property_helper() {
-  local quiet_flag=""
-  if [[ "${!#}" == "--quiet" ]]; then
-    quiet_flag="--quiet"
-    set -- "${@:1:$(($#-1))}"
-  fi
-
-  harmony-property --stage "$STAGE" --action "$1" --config-path "$TEMP_CONFIG_PATH" --property "$2" $quiet_flag ${3:+--value "$3"}
-}
-
-get_property() { property_helper GET "$@"; }
-set_property() { property_helper SET "$@"; }
+: "${SECURITY_PUBLIC_CERT_NAME:=security}"
+: "${SECURITY_PUBLIC_CERT_PATH:=${CERT_DIR%/}/$SECURITY_PUBLIC_CERT_NAME-$CERT_ALIAS.cer}"
+: "${SECURITY_KEYSTORE_PATH:=${HARMONY_BASE}/etc/ap-keystore.p12}"
+: "${SECURITY_TRUSTSTORE_PATH:=${HARMONY_BASE}/etc/ap-truststore.p12}"
 
 detect_network_filesystem() {
   local fs_type
@@ -45,23 +30,12 @@ detect_network_filesystem() {
 setup_environment() {
   log "DEBUG" "Setting environment"
 
-  NODE_ID="${NODE_ID:-$HOSTNAME}"
-  printf "%s" "$NODE_ID" > /var/run/s6/container_environment/NODE_ID
-
   PRESERVE_BACKUP_FILE_DATE=$(detect_network_filesystem && echo true || echo false)
   printf "%s" "$PRESERVE_BACKUP_FILE_DATE" > /var/run/s6/container_environment/PRESERVE_BACKUP_FILE_DATE
-
-  SML_ZONE="${SML_ZONE:-$(get_property domibus.smlzone)}"
-  set_property 'domibus.smlzone' "$SML_ZONE"
-
-  USE_DYNAMIC_DISCOVERY="${USE_DYNAMIC_DISCOVERY:-$(get_property 'domibus.dynamicdiscovery.useDynamicDiscovery' "$DYNAMIC_DISCOVERY_FALLBACK")}"
-  set_property 'domibus.dynamicdiscovery.useDynamicDiscovery' "$USE_DYNAMIC_DISCOVERY"
 }
 
 configure_cluster_settings() {
   log "DEBUG" "Configuring cluster if needed"
-
-  set_property "domibus.deployment.clustered" "$DEPLOYMENT_CLUSTERED"
 
   WORK_LOCATION="${WORK_LOCATION%/}"
   if [[ "$DEPLOYMENT_CLUSTERED" == "true" ]]; then
@@ -70,67 +44,77 @@ configure_cluster_settings() {
   printf "%s" "$WORK_LOCATION" > /var/run/s6/container_environment/WORK_LOCATION
 }
 
-obtain_security_keystore_password() {
-  log "DEBUG" "Determining security keystore password"
+obtain_security_store_password() {
+  local store_type="$1"
+  local password="$2"
+  local secret_name="$3"
 
-  local keystore_pass
-  keystore_pass=$(
+  log "DEBUG" "Determining security $store_type password"
+
+  local store_pass
+  store_pass=$(
     harmony-password \
       --stage "$STAGE" \
       --mode determine \
-      --password-value "${SECURITY_KEYSTORE_PASSWORD:-}" \
-      --current-password "$(get_property 'domibus.security.keystore.password')"
+      --password-value "$password" \
+      --current-password "$(read_secret "$secret_name")"
   )
 
-  set_property 'domibus.security.keystore.password' "$keystore_pass" --quiet
-  set_property 'domibus.security.key.private.password' "$keystore_pass" --quiet
-
-  echo "$keystore_pass"
-}
-
-obtain_security_truststore_password() {
-  log "DEBUG" "Determining security truststore password"
-
-  local truststore_pass
-  truststore_pass=$(
-    harmony-password \
-      --stage "$STAGE" \
-      --mode determine \
-      --password-value "${SECURITY_TRUSTSTORE_PASSWORD:-}" \
-      --current-password "$(get_property 'domibus.security.truststore.password')"
-  )
-
-  set_property 'domibus.security.truststore.password' "$truststore_pass" --quiet
-
-  echo "$truststore_pass"
+  echo "$store_pass"
 }
 
 manage_security_stores() {
-  local security_keystore_password="$1"
-  local security_truststore_password="$2"
-
   log "DEBUG" "Handling security certificates"
 
-  local alias
-  alias="$(get_property domibus.security.key.private.alias "${PARTY_NAME:-selfsigned}")"
   SECURITY_KEYSTORE_BASE64="${SECURITY_KEYSTORE_BASE64:-}"
   SECURITY_TRUSTSTORE_BASE64="${SECURITY_TRUSTSTORE_BASE64:-}"
 
+  SECURITY_DN="${SECURITY_DN:-CN=$PARTY_NAME}"
+
   harmony-store \
     --stage "$STAGE" \
-    --cert-dir "$CERT_DIR" \
     --keystore-path "$SECURITY_KEYSTORE_PATH" \
-    --keystore-password "$security_keystore_password" \
+    --keystore-password "$SECURITY_KEYSTORE_PASSWORD" \
     --keystore-base64 "$SECURITY_KEYSTORE_BASE64" \
     --truststore-path "$SECURITY_TRUSTSTORE_PATH" \
-    --truststore-password "$security_truststore_password" \
+    --truststore-password "$SECURITY_TRUSTSTORE_PASSWORD" \
     --truststore-base64 "$SECURITY_TRUSTSTORE_BASE64" \
     --should-add-certificate-to-truststore "false" \
-    --alias "$alias" \
-    --public-cert-name "security" \
+    --alias "$CERT_ALIAS" \
+    --public-cert-path "$SECURITY_PUBLIC_CERT_PATH" \
     --dname "$SECURITY_DN"
+}
 
-  set_property 'domibus.security.key.private.alias' "$alias"
+store_security_details() {
+  set_property "domibus.deployment.clustered" "$DEPLOYMENT_CLUSTERED"
+  set_property 'domibus.security.key.private.alias' "$CERT_ALIAS"
+
+  SML_ZONE="${SML_ZONE:-$(get_property domibus.smlzone)}"
+  set_property 'domibus.smlzone' "$SML_ZONE"
+
+  USE_DYNAMIC_DISCOVERY="${USE_DYNAMIC_DISCOVERY:-$(get_property 'domibus.dynamicdiscovery.useDynamicDiscovery' "$DYNAMIC_DISCOVERY_FALLBACK")}"
+  set_property 'domibus.dynamicdiscovery.useDynamicDiscovery' "$USE_DYNAMIC_DISCOVERY"
+}
+
+synchronize_secrets() {
+  if is_primary; then
+    log "DEBUG" "Primary node: storing secrets"
+
+    store_secret "SECURITY-KEYSTORE-PASSWORD"    "$SECURITY_KEYSTORE_PASSWORD"
+    store_secret "SECURITY-TRUSTSTORE-PASSWORD"  "$SECURITY_TRUSTSTORE_PASSWORD"
+    store_secret "SECURITY-KEYSTORE-FILE"        "$SECURITY_KEYSTORE_PATH"
+    store_secret "SECURITY-TRUSTSTORE-FILE"      "$SECURITY_TRUSTSTORE_PATH"
+    store_secret "SECURITY-PUBLIC-CERT-FILE"     "$SECURITY_PUBLIC_CERT_PATH"
+  else
+    log "DEBUG" "Replica node: reading secret"
+
+    SECURITY_KEYSTORE_PASSWORD=$(read_secret "SECURITY-KEYSTORE-PASSWORD")
+    SECURITY_TRUSTSTORE_PASSWORD=$(read_secret "SECURITY-TRUSTSTORE-PASSWORD")
+
+    read_secret "SECURITY-KEYSTORE-FILE"     "$SECURITY_KEYSTORE_PATH"
+    read_secret "SECURITY-TRUSTSTORE-FILE"   "$SECURITY_TRUSTSTORE_PATH"
+    read_secret "SECURITY-PUBLIC-CERT-FILE"  "$SECURITY_PUBLIC_CERT_PATH"
+  fi
 }
 
 init_domibus() {
@@ -139,13 +123,21 @@ init_domibus() {
   setup_environment
   configure_cluster_settings
 
-  local security_keystore_password
-  security_keystore_password=$(obtain_security_keystore_password)
+  if is_primary; then
+    log "DEBUG" "Primary node: processing TLS certificates"
 
-  local security_truststore_password
-  security_truststore_password=$(obtain_security_truststore_password)
+    SECURITY_KEYSTORE_PASSWORD=$(obtain_security_store_password "keystore" "${SECURITY_KEYSTORE_PASSWORD:-}" "SECURITY-KEYSTORE-PASSWORD")
+    SECURITY_TRUSTSTORE_PASSWORD=$(obtain_security_store_password "truststore" "${SECURITY_TRUSTSTORE_PASSWORD:-}" "SECURITY-TRUSTSTORE-PASSWORD")
+    manage_security_stores
+  fi
 
-  manage_security_stores "$security_keystore_password" "$security_truststore_password"
+  store_security_details
+
+  synchronize_secrets
+
+  set_property 'domibus.security.keystore.password' "$SECURITY_KEYSTORE_PASSWORD" --quiet
+  set_property 'domibus.security.key.private.password' "$SECURITY_KEYSTORE_PASSWORD" --quiet
+  set_property 'domibus.security.truststore.password' "$SECURITY_TRUSTSTORE_PASSWORD" --quiet
 
   log "DEBUG" "Done"
 }

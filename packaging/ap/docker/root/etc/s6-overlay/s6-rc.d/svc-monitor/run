@@ -1,0 +1,25 @@
+#!/command/with-contenv bash
+set -euo pipefail
+
+# shellcheck disable=SC2034 # Used in sourced scripts
+readonly STAGE="svc-monitor"
+
+source /usr/lib/harmony-common
+source /usr/lib/harmony-cluster
+
+while true; do
+  if is_primary; then
+    renew_lease
+  else
+    if acquire_primary; then
+      log INFO "Node promoted to primary (failover successful)"
+
+      if [[ "${REPLICA_STATE:-}" == "ready" ]]; then
+        set_ready_flag
+      fi
+    else
+      log DEBUG "Waiting for primary to release lock..."
+    fi
+  fi
+  sleep $(( RANDOM % 11 + 30 )) # Sleep for a random duration between 30 and 40 seconds
+done

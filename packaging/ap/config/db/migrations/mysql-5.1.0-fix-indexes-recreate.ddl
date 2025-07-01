@@ -2,7 +2,7 @@
 --  File: migrations/mysql-5.1.0-fix-indexes-recreate.ddl
 --  Description: Liquibase SQL script to add generated TYPE_INDEX columns
 --               and recreate corrected unique indexes.
---  ChangeSet: 2.6.0-fix-indexes-recreate (db.changelog.xml)
+--  ChangeSet: 2.0.0-fix-indexes-recreate (db.changelog.xml)
 --  Author: harmony
 --  Date: 2025-05-27
 --  Liquibase version: 4.32.0

@@ -8,10 +8,10 @@ fi
 
 import_certificate_to_truststore() {
   local -n import_certificate_config="$1"
-  validate_required_keys import_certificate_config alias cert_path store_path store_password store_type
+  validate_required_keys import_certificate_config alias public_cert_path store_path store_password store_type
 
   local alias="${import_certificate_config[alias]}"
-  local cert_path="${import_certificate_config[cert_path]}"
+  local public_cert_path="${import_certificate_config[public_cert_path]}"
   local store_path="${import_certificate_config[store_path]}"
   local store_password="${import_certificate_config[store_password]}"
   local store_type="${import_certificate_config[store_type]}"
@@ -24,7 +24,7 @@ import_certificate_to_truststore() {
     -alias "$alias" \
     -keystore "$store_path" \
     -storepass "$store_password" \
-    -file "$cert_path" \
+    -file "$public_cert_path" \
     2>&1)
   local exit_code=$?
 
@@ -66,11 +66,11 @@ delete_certificate_from_truststore() {
 
 create_new_truststore() {
   local -n new_truststore_config="$1"
-  validate_required_keys new_truststore_config alias store_path cert_path should_add_certificate_to_truststore
+  validate_required_keys new_truststore_config alias store_path public_cert_path should_add_certificate_to_truststore
 
   local alias="${new_truststore_config[alias]}"
   local store_path="${new_truststore_config[store_path]}"
-  local cert_path="${new_truststore_config[cert_path]}"
+  local public_cert_path="${new_truststore_config[public_cert_path]}"
   local should_add_certificate_to_truststore="${new_truststore_config[should_add_certificate_to_truststore]}"
 
   temp_cert=""
@@ -93,7 +93,7 @@ create_new_truststore() {
       -out "$temp_cert" -days 1 -subj "/CN=$dummy_alias" >/dev/null 2>&1; then
 
       new_truststore_config[alias]="$dummy_alias"
-      new_truststore_config[cert_path]="$temp_cert"
+      new_truststore_config[public_cert_path]="$temp_cert"
 
       import_certificate_to_truststore new_truststore_config
 
@@ -118,7 +118,7 @@ import_public_certificate_if_needed() {
   if [[ "$should_add_certificate_to_truststore" == "true" ]]; then
     if alias_exists_in_store import_certificate_if_needed_config; then
       if validate_certificate_in_store import_certificate_if_needed_config; then
-        log "INFO" "Certificate for alias '$alias' already exists and is valid. Import skipped. [store=$store_path]"
+        log "DEBUG" "Certificate for alias '$alias' already exists and is valid. Import skipped. [store=$store_path]"
       else
         log "WARN" "Certificate for alias '$alias' is invalid or mismatched. It will be reimported. [store=$store_path]"
         delete_certificate_from_truststore import_certificate_if_needed_config

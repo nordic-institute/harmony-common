@@ -1,0 +1,22 @@
+#!/bin/bash
+set -euo pipefail
+
+[[ -n "${__HARMONY_CLUSTER_INCLUDED:-}" ]] && return
+readonly __HARMONY_CLUSTER_INCLUDED=1
+
+if [[ "${CLUSTER_BACKEND:-}" != "none" ]]; then
+  script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)"
+  provider_file="${script_dir}/harmony-cluster-providers/harmony-provider-${CLUSTER_BACKEND}"
+  [[ -r $provider_file ]] || die "Cluster backend '$CLUSTER_BACKEND' not available"
+fi
+
+init_backend()    { die "init_backend not implemented for cluster backend '$CLUSTER_BACKEND'"; }
+acquire_primary() { die "acquire_primary not implemented for cluster backend '$CLUSTER_BACKEND'"; }
+is_primary()      { die "is_primary not implemented for cluster backend '$CLUSTER_BACKEND'"; }
+wait_for_ready()  { die "wait_for_ready not implemented for cluster backend '$CLUSTER_BACKEND'"; }
+store_secret()    { die "store_secret not implemented for cluster backend '$CLUSTER_BACKEND'"; }
+read_secret()     { die "read_secret not implemented for cluster backend '$CLUSTER_BACKEND'"; }
+release_primary() { die "release_primary not implemented for cluster backend '$CLUSTER_BACKEND'"; }
+
+# shellcheck source=./harmony-cluster-providers/harmony-provider-${CLUSTER_BACKEND}
+source "$provider_file"

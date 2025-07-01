@@ -1,17 +1,20 @@
 #!/bin/bash
 set -euo pipefail
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-source "$SCRIPT_DIR/harmony-store-common"
-source "$SCRIPT_DIR/harmony-store-keystore"
-source "$SCRIPT_DIR/harmony-store-truststore"
+basedir="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)"
+includedir="$basedir/harmony-store-includes"
+
+source "$includedir/harmony-store-common"
+source "$includedir/harmony-store-keystore"
+source "$includedir/harmony-store-truststore"
 
 parse_cli_args() {
+  # shellcheck disable=SC2034 # Used in sourced scripts
   while [[ $# -gt 0 ]]; do
     key="$1"
     case $key in
-      --stage) stage="$2"; shift 2 ;;
-      --cert-dir) cert_dir="$2"; shift 2 ;;
+      --stage) STAGE="${2:+$2-}crtcli"; shift 2 ;;
+      --node-id) NODE_ID="$2"; shift 2 ;;
       --store_type) store_type="$2"; shift 2 ;;
       --keystore-path) keystore_path="$2"; shift 2 ;;
       --keystore-password) keystore_password="$2"; shift 2 ;;
@@ -21,7 +24,7 @@ parse_cli_args() {
       --truststore-base64) truststore_base64="$2"; shift 2 ;;
       --should-add-certificate-to-truststore) should_add_certificate_to_truststore="$2"; shift 2 ;;
       --alias) alias="$2"; shift 2 ;;
-      --public-cert-name) public_cert_name="$2"; shift 2 ;;
+      --public-cert-path) public_cert_path="$2"; shift 2 ;;
       --san) san="$2"; shift 2 ;;
       --dname) dname="$2"; shift 2 ;;
       *) log "ERROR" "Unknown option: $1"; exit 1 ;;
@@ -32,44 +35,39 @@ parse_cli_args() {
 validate_and_prepare() {
   require_commands keytool openssl harmony-log harmony-base64
   validate_mandatory_parameters \
-    stage \
-    cert_dir \
     keystore_path \
     truststore_path \
+    public_cert_path \
     should_add_certificate_to_truststore \
     alias \
-    public_cert_name \
     dname
   normalize_optional_parameters
   validate_parameters
 }
 
 process_stores() {
+  # shellcheck disable=SC2034 # Used indirectly by passing the array name to a function
   declare -A input_keystore_config=(
-    [stage]="$stage"
-    [public_cert_name]="$public_cert_name"
+    [public_cert_path]="$public_cert_path"
     [store_path]="$keystore_path"
     [store_password]="$keystore_password"
     [store_base64]="$keystore_base64"
-    [cert_dir]="$cert_dir"
     [alias]="$alias"
     [dname]="$dname"
     [san]="${san:-}"
     [store_type]="$store_type"
   )
 
-  cert_path=""
-  process_keystore input_keystore_config cert_path
+  process_keystore input_keystore_config
 
+  # shellcheck disable=SC2034 # Used indirectly by passing the array name to a function
   declare -A input_truststore_config=(
-    [stage]="$stage"
-    [public_cert_name]="$public_cert_name"
+    [public_cert_path]="$public_cert_path"
     [alias]="$alias"
     [store_path]="$truststore_path"
     [store_password]="$truststore_password"
     [store_base64]="$truststore_base64"
     [should_add_certificate_to_truststore]="$should_add_certificate_to_truststore"
-    [cert_path]="$cert_path"
     [store_type]="$store_type"
   )
 

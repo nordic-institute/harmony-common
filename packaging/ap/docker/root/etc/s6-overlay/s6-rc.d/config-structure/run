@@ -1,13 +1,10 @@
 #!/command/with-contenv bash
 set -euo pipefail
 
-readonly STAGE="init-structure"
+# shellcheck disable=SC2034 # Used in sourced scripts
+readonly STAGE="config-structure"
 
-log() {
-  local level="$1"
-  local message="$2"
-  harmony-log "$level" "$STAGE" "$message"
-}
+source /usr/lib/harmony-common
 
 verify_permissions() {
   local HAS_PERMISSION_ISSUE=0

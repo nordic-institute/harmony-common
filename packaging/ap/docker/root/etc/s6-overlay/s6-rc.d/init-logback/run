@@ -1,15 +1,11 @@
 #!/command/with-contenv bash
 set -euo pipefail
 
-: "${LOGBACK_DEFAULT_CONF_PATH:=$HARMONY_BASE/etc/logback.xml}"
-
 readonly STAGE="init-logback"
 
-log() {
-  local level="$1"
-  local message="$2"
-  harmony-log "$level" "$STAGE" "$message" >&2
-}
+source /usr/lib/harmony-common
+
+readonly LOGBACK_DEFAULT_CONF_PATH="$HARMONY_BASE/etc/logback.xml"
 
 setup_default_conf() {
   cp --update=none "$HARMONY_HOME/setup/logback.xml" "$LOGBACK_DEFAULT_CONF_PATH"
