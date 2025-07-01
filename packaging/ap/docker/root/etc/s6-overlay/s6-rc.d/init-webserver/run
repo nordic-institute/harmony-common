@@ -33,7 +33,7 @@ obtain_tls_store_password() {
   local password="$2"
   local secret_name="$3"
 
-  log "DEBUG" "Determining tls $store_type password"
+  log DEBUG "Determining tls $store_type password"
 
   local store_pass
   store_pass=$(
@@ -48,7 +48,7 @@ obtain_tls_store_password() {
 }
 
 manage_tls_certificates() {
-  log "DEBUG" "Handling tls certificates"
+  log DEBUG "Handling tls certificates"
 
   TLS_KEYSTORE_BASE64="${TLS_KEYSTORE_BASE64:-}"
   TLS_TRUSTSTORE_BASE64="${TLS_TRUSTSTORE_BASE64:-}"
@@ -73,7 +73,7 @@ manage_tls_certificates() {
 }
 
 determine_ssl_configuration() {
-  log "DEBUG" "Determining SSL configuration"
+  log DEBUG "Determining SSL configuration"
   local ssl_enabled=true
   local port=8443
 
@@ -83,9 +83,9 @@ determine_ssl_configuration() {
     port=8080
   fi
 
-  log "INFO" "Server configuration:"
-  log "INFO" "    SSL enabled: $ssl_enabled"
-  log "INFO" "    Port: $port"
+  log INFO "Server configuration:"
+  log INFO "    SSL enabled: $ssl_enabled"
+  log INFO "    Port: $port"
 
   printf "%s" "$ssl_enabled" > /var/run/s6/container_environment/SSL_ENABLED
   printf "%s" "$port" > /var/run/s6/container_environment/PORT
@@ -97,7 +97,7 @@ update_server_configuration() {
   local ssl_enabled="$1"
   local port="$2"
 
-  log "DEBUG" "Updating server configuration"
+  log DEBUG "Updating server configuration"
 
   xmlstarlet edit --pf \
     --update '//Connector/@SSLEnabled'      --value "$ssl_enabled" \
@@ -112,7 +112,7 @@ update_server_configuration() {
 }
 
 update_server_security_configuration() {
-  log "DEBUG" "Updating server security configuration"
+  log DEBUG "Updating server security configuration"
 
   xmlstarlet edit --pf \
     -N s='http://cxf.apache.org/configuration/security' \
@@ -126,7 +126,7 @@ update_server_security_configuration() {
 
 synchronize_secrets() {
   if is_primary; then
-    log "DEBUG" "Primary node: storing secrets"
+    log DEBUG "Primary node: storing secrets"
 
     store_secret "TLS-KEYSTORE-PASSWORD"    "$TLS_KEYSTORE_PASSWORD"
     store_secret "TLS-TRUSTSTORE-PASSWORD"  "$TLS_TRUSTSTORE_PASSWORD"
@@ -134,7 +134,7 @@ synchronize_secrets() {
     store_secret "TLS-TRUSTSTORE-FILE"      "$TLS_TRUSTSTORE_PATH"
     store_secret "TLS-PUBLIC-CERT-FILE"     "$TLS_PUBLIC_CERT_PATH"
   else
-    log "DEBUG" "Replica node: reading secret"
+    log DEBUG "Replica node: reading secret"
 
     TLS_KEYSTORE_PASSWORD=$(read_secret "TLS-KEYSTORE-PASSWORD")
     TLS_TRUSTSTORE_PASSWORD=$(read_secret "TLS-TRUSTSTORE-PASSWORD")
@@ -146,11 +146,11 @@ synchronize_secrets() {
 }
 
 init_webserver() {
-  log "DEBUG" "Started"
+  log DEBUG "Started"
   setup_default_conf
 
   if is_primary; then
-    log "DEBUG" "Primary node: processing TLS certificates"
+    log DEBUG "Primary node: processing TLS certificates"
 
     TLS_KEYSTORE_PASSWORD=$(obtain_tls_store_password "keystore" "${TLS_KEYSTORE_PASSWORD:-}" "TLS-KEYSTORE-PASSWORD")
     TLS_TRUSTSTORE_PASSWORD=$(obtain_tls_store_password "truststore" "${TLS_TRUSTSTORE_PASSWORD:-}" "TLS-TRUSTSTORE-PASSWORD")
@@ -166,7 +166,7 @@ init_webserver() {
   update_server_configuration "$ssl_enabled" "$port"
   update_server_security_configuration
 
-  log "DEBUG" "Done"
+  log DEBUG "Done"
 }
 
 init_webserver

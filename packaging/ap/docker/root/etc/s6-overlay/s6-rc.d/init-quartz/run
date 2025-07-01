@@ -24,19 +24,19 @@ get_connection_details() {
 }
 
 init_quartz() {
-  log "DEBUG" "Started"
+  log DEBUG "Started"
 
   get_connection_details
 
   if [ "${QUARTZ_URL}" = "${DB_URL}" ] ; then
-    log "INFO" "Using shared database for Quartz and main application"
+    log INFO "Using shared database for Quartz and main application"
 
     remove_property "domibus.quartz.datasource.driverClassName"
     remove_property "domibus.quartz.datasource.url"
     remove_property "domibus.quartz.datasource.user"
     remove_property "domibus.quartz.datasource.password"
   else
-    log "INFO" "Using separate database for Quartz"
+    log INFO "Using separate database for Quartz"
 
     # Wait for the database to become available to verify the connection
     harmony-database \
@@ -53,7 +53,7 @@ init_quartz() {
     set_property "domibus.quartz.datasource.password" "${QUARTZ_PASSWORD}" --quiet
   fi
 
-  log "DEBUG" "Done"
+  log DEBUG "Done"
 }
 
 init_quartz

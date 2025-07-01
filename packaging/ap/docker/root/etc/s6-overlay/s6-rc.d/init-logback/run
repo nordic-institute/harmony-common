@@ -12,21 +12,21 @@ setup_default_conf() {
 }
 
 decode_from_base64() {
-  log "DEBUG" "Decoding Logback configuration from Base64 using harmony-base64..."
+  log DEBUG "Decoding Logback configuration from Base64 using harmony-base64..."
   harmony-base64 --stage "$STAGE" --input "$LOGBACK_FILE_B64" --output "$LOGBACK_DEFAULT_CONF_PATH" --force
 }
 
 use_file_path() {
-  log "DEBUG" "Using custom Logback configuration at $LOGBACK_CUSTOM_CONF_PATH"
+  log DEBUG "Using custom Logback configuration at $LOGBACK_CUSTOM_CONF_PATH"
   TARGET_LOGBACK_CONF="$LOGBACK_CUSTOM_CONF_PATH"
 }
 
 use_default_conf() {
-  log "DEBUG" "Using default Logback configuration at $LOGBACK_DEFAULT_CONF_PATH"
+  log DEBUG "Using default Logback configuration at $LOGBACK_DEFAULT_CONF_PATH"
 }
 
 init-logback() {
-  log "DEBUG" "Started"
+  log DEBUG "Started"
 
   setup_default_conf
 
@@ -38,7 +38,7 @@ init-logback() {
     if [ -f "$LOGBACK_CUSTOM_CONF_PATH" ]; then
       use_file_path
     else
-      log "WARN" "$LOGBACK_CUSTOM_CONF_PATH not found, using default configuration."
+      log WARN "$LOGBACK_CUSTOM_CONF_PATH not found, using default configuration."
       use_default_conf
     fi
   else
@@ -47,8 +47,8 @@ init-logback() {
 
   printf "%s" "$TARGET_LOGBACK_CONF" > /var/run/s6/container_environment/LOGBACK_CONFIG_FILE
 
-  log "INFO" "Logback configured at: $TARGET_LOGBACK_CONF"
-  log "DEBUG" "Done"
+  log INFO "Logback configured at: $TARGET_LOGBACK_CONF"
+  log DEBUG "Done"
 }
 
 init-logback

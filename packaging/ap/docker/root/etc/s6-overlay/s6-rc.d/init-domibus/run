@@ -18,7 +18,7 @@ detect_network_filesystem() {
   fs_type=$(stat -f "${HARMONY_BASE}/etc" --format "%T")
   case "$fs_type" in
     cifs*|smb*|nfs*)
-      log "WARN" "${HARMONY_BASE}/etc is on a network filesystem ($fs_type)"
+      log WARN "${HARMONY_BASE}/etc is on a network filesystem ($fs_type)"
       return 1
       ;;
     *)
@@ -28,14 +28,14 @@ detect_network_filesystem() {
 }
 
 setup_environment() {
-  log "DEBUG" "Setting environment"
+  log DEBUG "Setting environment"
 
   PRESERVE_BACKUP_FILE_DATE=$(detect_network_filesystem && echo true || echo false)
   printf "%s" "$PRESERVE_BACKUP_FILE_DATE" > /var/run/s6/container_environment/PRESERVE_BACKUP_FILE_DATE
 }
 
 configure_cluster_settings() {
-  log "DEBUG" "Configuring cluster if needed"
+  log DEBUG "Configuring cluster if needed"
 
   WORK_LOCATION="${WORK_LOCATION%/}"
   if [[ "$DEPLOYMENT_CLUSTERED" == "true" ]]; then
@@ -49,7 +49,7 @@ obtain_security_store_password() {
   local password="$2"
   local secret_name="$3"
 
-  log "DEBUG" "Determining security $store_type password"
+  log DEBUG "Determining security $store_type password"
 
   local store_pass
   store_pass=$(
@@ -64,7 +64,7 @@ obtain_security_store_password() {
 }
 
 manage_security_stores() {
-  log "DEBUG" "Handling security certificates"
+  log DEBUG "Handling security certificates"
 
   SECURITY_KEYSTORE_BASE64="${SECURITY_KEYSTORE_BASE64:-}"
   SECURITY_TRUSTSTORE_BASE64="${SECURITY_TRUSTSTORE_BASE64:-}"
@@ -98,7 +98,7 @@ store_security_details() {
 
 synchronize_secrets() {
   if is_primary; then
-    log "DEBUG" "Primary node: storing secrets"
+    log DEBUG "Primary node: storing secrets"
 
     store_secret "SECURITY-KEYSTORE-PASSWORD"    "$SECURITY_KEYSTORE_PASSWORD"
     store_secret "SECURITY-TRUSTSTORE-PASSWORD"  "$SECURITY_TRUSTSTORE_PASSWORD"
@@ -106,7 +106,7 @@ synchronize_secrets() {
     store_secret "SECURITY-TRUSTSTORE-FILE"      "$SECURITY_TRUSTSTORE_PATH"
     store_secret "SECURITY-PUBLIC-CERT-FILE"     "$SECURITY_PUBLIC_CERT_PATH"
   else
-    log "DEBUG" "Replica node: reading secret"
+    log DEBUG "Replica node: reading secret"
 
     SECURITY_KEYSTORE_PASSWORD=$(read_secret "SECURITY-KEYSTORE-PASSWORD")
     SECURITY_TRUSTSTORE_PASSWORD=$(read_secret "SECURITY-TRUSTSTORE-PASSWORD")
@@ -118,13 +118,13 @@ synchronize_secrets() {
 }
 
 init_domibus() {
-  log "DEBUG" "Started"
+  log DEBUG "Started"
 
   setup_environment
   configure_cluster_settings
 
   if is_primary; then
-    log "DEBUG" "Primary node: processing TLS certificates"
+    log DEBUG "Primary node: processing TLS certificates"
 
     SECURITY_KEYSTORE_PASSWORD=$(obtain_security_store_password "keystore" "${SECURITY_KEYSTORE_PASSWORD:-}" "SECURITY-KEYSTORE-PASSWORD")
     SECURITY_TRUSTSTORE_PASSWORD=$(obtain_security_store_password "truststore" "${SECURITY_TRUSTSTORE_PASSWORD:-}" "SECURITY-TRUSTSTORE-PASSWORD")
@@ -139,7 +139,7 @@ init_domibus() {
   set_property 'domibus.security.key.private.password' "$SECURITY_KEYSTORE_PASSWORD" --quiet
   set_property 'domibus.security.truststore.password' "$SECURITY_TRUSTSTORE_PASSWORD" --quiet
 
-  log "DEBUG" "Done"
+  log DEBUG "Done"
 }
 
 init_domibus

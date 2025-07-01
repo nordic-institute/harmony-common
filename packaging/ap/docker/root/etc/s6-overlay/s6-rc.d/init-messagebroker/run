@@ -21,7 +21,7 @@ add_prefix_suffix() {
   IFS=',' read -r -a items <<< "${list}"
 
   if [[ -z "${list}" ]]; then
-    log "WARN" "No hosts provided"
+    log WARN "No hosts provided"
     return
   fi
 
@@ -54,7 +54,7 @@ configure_embedded_broker() {
 
 configure_external_broker() {
   local broker_host="$1"
-  log "INFO" "External broker detected"
+  log INFO "External broker detected"
 
   local user="${ACTIVEMQ_USERNAME:-$(get_property "activeMQ.username")}"
   local pass="${ACTIVEMQ_PASSWORD:-$(get_property "activeMQ.password")}"
@@ -71,7 +71,7 @@ configure_external_broker() {
 
 determine_transport_connector() {
   local broker_host="$1"
-  log "DEBUG" "Configuring message broker"
+  log DEBUG "Configuring message broker"
   local transport_connector_uri
 
   if [[ "${broker_host}" == "localhost" ]]; then
@@ -88,7 +88,7 @@ persist_configuration() {
   local transport_connector_uri="$2"
   local jmx_url="$3"
 
-  log "DEBUG" "Storing message broker connection details in config file"
+  log DEBUG "Storing message broker connection details in config file"
 
   set_property "activeMQ.brokerName"              "${broker_name}"
   set_property "activeMQ.transportConnector.uri"  "${transport_connector_uri}"
@@ -96,7 +96,7 @@ persist_configuration() {
 }
 
 init_messagebroker() {
-  log "DEBUG" "Started"
+  log DEBUG "Started"
 
   local broker_host="${ACTIVEMQ_BROKER_HOST:-$(get_property "activeMQ.broker.host" "${DEFAULT_BROKER_HOST}")}"
   local broker_name="${ACTIVEMQ_BROKER_NAME:-$(get_property "activeMQ.brokerName" "${DEFAULT_BROKER_NAME}")}"
@@ -106,7 +106,7 @@ init_messagebroker() {
   transport_connector_uri="$(determine_transport_connector "$broker_host")"
   persist_configuration "$broker_name" "$transport_connector_uri" "$jmx_url"
 
-  log "DEBUG" "Done"
+  log DEBUG "Done"
 }
 
 init_messagebroker

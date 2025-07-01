@@ -7,7 +7,7 @@ readonly STAGE="init-end"
 source /usr/lib/harmony-common
 source /usr/lib/harmony-cluster
 
-log "DEBUG" "Started"
+log DEBUG "Started"
 
 if is_primary; then
   set_ready_flag
@@ -16,9 +16,9 @@ else
 fi
 
 if mv -f "$TEMP_CONFIG_PATH" "$CONFIG_PATH"; then
-  log "INFO" "Configuration moved from '$TEMP_CONFIG_PATH' to '$CONFIG_PATH'"
+  log INFO "Configuration moved from '$TEMP_CONFIG_PATH' to '$CONFIG_PATH'"
 else
   die "Failed to move '$TEMP_CONFIG_PATH' to '$CONFIG_PATH'"
 fi
 
-log "DEBUG" "Done"
+log DEBUG "Done"

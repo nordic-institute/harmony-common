@@ -21,7 +21,7 @@ validate_mandatory_parameters() {
 
   if (( ${#missing[@]} > 0 )); then
     for var in "${missing[@]}"; do
-      log "ERROR" "Missing required parameter: '$var'."
+      log ERROR "Missing required parameter: '$var'."
     done
     exit 1
   fi
@@ -39,7 +39,7 @@ validate_required_keys() {
 
   if (( ${#missing[@]} > 0 )); then
     for key in "${missing[@]}"; do
-      log "ERROR" "Missing required config key: '$key'."
+      log ERROR "Missing required config key: '$key'."
     done
     exit 1
   fi
@@ -76,7 +76,7 @@ load_store_from_base64() {
 
   harmony-base64 --stage "$stage" --input "$store_base64" --output "$store_path"
 
-  log "INFO" "Store loaded from base64. [store=$store_path]"
+  log INFO "Store loaded from base64. [store=$store_path]"
 }
 
 validate_store_file_and_password() {
@@ -87,12 +87,12 @@ validate_store_file_and_password() {
   local store_type="${store_config[store_type]}"
 
   if [[ ! -f "$store_path" ]]; then
-    log "ERROR" "Keystore or truststore file does not exist. [store=$store_path]"
+    log ERROR "Keystore or truststore file does not exist. [store=$store_path]"
     return 1
   fi
 
   if [[ ! -r "$store_path" ]]; then
-    log "ERROR" "Keystore or truststore file is not readable. [store=$store_path]"
+    log ERROR "Keystore or truststore file is not readable. [store=$store_path]"
     return 1
   fi
 
@@ -111,18 +111,18 @@ validate_store_password() {
   local exit_code=$?
 
   if [[ $exit_code -eq 0 ]]; then
-    log "DEBUG" "Keystore or truststore validated successfully. [store=$store_path]"
+    log DEBUG "Keystore or truststore validated successfully. [store=$store_path]"
     return 0
   fi
 
   if echo "$output" | grep -q "keystore password was incorrect"; then
-    log "ERROR" "Keystore or truststore password was rejected. [store=$store_path]"
-    log "ERROR" "Possible causes:"
-    log "ERROR" "- The password provided is incorrect."
-    log "ERROR" "- OR the keystore format is incompatible with Java 11+ PKCS12 implementation."
-    log "ERROR" "If you are sure the password is correct, consider recreating the keystore using '-J-Dkeystore.pkcs12.legacy'."
+    log ERROR "Keystore or truststore password was rejected. [store=$store_path]"
+    log ERROR "Possible causes:"
+    log ERROR "- The password provided is incorrect."
+    log ERROR "- OR the keystore format is incompatible with Java 11+ PKCS12 implementation."
+    log ERROR "If you are sure the password is correct, consider recreating the keystore using '-J-Dkeystore.pkcs12.legacy'."
   else
-    log "ERROR" "Failed to read the store at '$store_path': $output"
+    log ERROR "Failed to read the store at '$store_path': $output"
   fi
 
   return $exit_code
@@ -177,10 +177,10 @@ alias_exists_in_store() {
   local exit_code=$?
 
   if echo "$output" | grep -q "does not exist"; then
-    log "DEBUG" "Alias '$alias' not found in keystore. [store=$store_path]"
+    log DEBUG "Alias '$alias' not found in keystore. [store=$store_path]"
     return 1
   elif [[ $exit_code -ne 0 ]]; then
-    log "ERROR" "Failed to list alias '$alias' in keystore '$store_path': $output"
+    log ERROR "Failed to list alias '$alias' in keystore '$store_path': $output"
     return $exit_code
   else
     return 0

@@ -76,22 +76,22 @@ build_db_url() {
 resolve_db_connection_details() {
   if [[ -n "${DB_URL:-}" ]]; then
     parse_db_url "$DB_URL"
-    log "DEBUG" "Using provided database URL: $DB_URL"
+    log DEBUG "Using provided database URL: $DB_URL"
   elif [[ -n "${DB_HOST:-}" && -n "${DB_SCHEMA:-}" ]]; then
     build_db_url
-    log "DEBUG" "Constructed database URL from host, port and schema: $DB_URL"
+    log DEBUG "Constructed database URL from host, port and schema: $DB_URL"
   elif prop_url=$(get_property "${PROPERTY_PREFIX}.url") && [[ -n "$prop_url" && "$prop_url" != *\$\{*\}* ]]; then
     DB_URL="$prop_url"
 
     parse_db_url "$DB_URL"
-    log "DEBUG" "Using database URL from configuration: $DB_URL"
+    log DEBUG "Using database URL from configuration: $DB_URL"
   else
     DB_HOST=$(get_property "domibus.database.serverName")
     DB_PORT=$(get_property "domibus.database.port")
     DB_SCHEMA=$(get_property "domibus.database.schema")
 
     build_db_url
-    log "DEBUG" "Constructed database URL from configuration properties: $DB_URL"
+    log DEBUG "Constructed database URL from configuration properties: $DB_URL"
   fi
 
   if [[ -n "${DB_URL:-}" && -z "${DB_DRIVER_CLASS:-}" ]]; then
@@ -113,12 +113,12 @@ validate_db_connection_details() {
 }
 
 print_connection_info() {
-  log "DEBUG" "Database connection information:"
-  log "DEBUG" "  URL: $DB_URL"
-  log "DEBUG" "  Driver class: $DB_DRIVER_CLASS"
-  log "DEBUG" "  Host: $DB_HOST"
-  log "DEBUG" "  Port: $DB_PORT"
-  log "DEBUG" "  Schema: $DB_SCHEMA"
+  log DEBUG "Database connection information:"
+  log DEBUG "  URL: $DB_URL"
+  log DEBUG "  Driver class: $DB_DRIVER_CLASS"
+  log DEBUG "  Host: $DB_HOST"
+  log DEBUG "  Port: $DB_PORT"
+  log DEBUG "  Schema: $DB_SCHEMA"
 
   printf '%s %s %s %s %s\n' "$DB_URL" "$DB_DRIVER_CLASS" "$DB_HOST" "$DB_PORT" "$DB_SCHEMA"
 }
@@ -128,13 +128,13 @@ wait_for_db() {
     die "Database user and password must be set"
   fi
 
-  log "INFO" "Waiting for database ${DB_HOST}:${DB_PORT} to become available..."
+  log INFO "Waiting for database ${DB_HOST}:${DB_PORT} to become available..."
 
   if ! timeout 60 bash -c "until MYSQL_PWD='$DB_PASSWORD' mysqladmin ping -h '$DB_HOST' -P '$DB_PORT' -u '$DB_USER' >/dev/null 2>&1; do sleep 5; done"; then
     die "Unable to connect to the database at ${DB_HOST}:${DB_PORT}. Exiting."
   fi
 
-  log "INFO" "Database is available"
+  log INFO "Database is available"
 }
 
 main() {

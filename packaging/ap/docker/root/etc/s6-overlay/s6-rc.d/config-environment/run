@@ -13,19 +13,19 @@ get_property() {
   harmony-property -s "$STAGE" -n "$node_id" -a GET -c "$cfg_path" -p "$property" -v "$default_value" --allow-missing-paths
 }
 
-log "DEBUG" "Started"
+log DEBUG "Started"
 
 HARMONY_VERSION="${HARMONY_VERSION:-UNDEFINED}"
 
-log "INFO" "Starting Harmony Access Point version $HARMONY_VERSION"
-log "INFO" "    User UID: $(id -u)"
-log "INFO" "    User GID: $(id -g)"
+log INFO "Starting Harmony Access Point version $HARMONY_VERSION"
+log INFO "    User UID: $(id -u)"
+log INFO "    User GID: $(id -g)"
 
 # -------------------------------
 # Load parameters from file (if defined)
 # -------------------------------
 if [[ -n "${HARMONY_PARAM_FILE:-}" && -f "$HARMONY_PARAM_FILE" ]]; then
-  log "INFO" "Reading parameters from $HARMONY_PARAM_FILE..."
+  log INFO "Reading parameters from $HARMONY_PARAM_FILE..."
   while IFS='=' read -r key value; do
     # Ignore comments, empty keys, already defined variables, or empty values
     [[ "$key" =~ ^#.*$ || -z "$key" || -n "${!key:-}" || -z "$value" ]] && continue
@@ -82,4 +82,4 @@ printf "%s" "$party_name" > /var/run/s6/container_environment/PARTY_NAME
 printf "%s" "$cert_alias" > /var/run/s6/container_environment/CERT_ALIAS
 printf "%s" "$cert_dir" > /var/run/s6/container_environment/CERT_DIR
 
-log "DEBUG" "Done"
+log DEBUG "Done"

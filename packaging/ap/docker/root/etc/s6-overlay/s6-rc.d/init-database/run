@@ -40,31 +40,31 @@ run_migrations() {
   _admin_password="${ADMIN_PASSWORD:-}"
 
   if "$liquibase_home/liquibase" "${liquibase_common_args[@]}" history 2>&1 | grep -q "No changesets deployed"; then
-    log "INFO" "Database not initialized. Running migrations for the first time"
+    log INFO "Database not initialized. Running migrations for the first time"
 
-    log "DEBUG" "Defining admin user credentials"
+    log DEBUG "Defining admin user credentials"
 
     if [[ -z "$_admin_password" ]]; then
       _admin_password=$(harmony-password --stage "$STAGE" --mode generate)
     fi
 
     if [[ -z "${ADMIN_USER:-}" || -z "${ADMIN_PASSWORD:-}" ]]; then
-      log "INFO" "Harmony AP admin credentials:"
-      log "INFO" "    Username: $_admin_user"
-      log "INFO" "    Password: $_admin_password"
+      log INFO "Harmony AP admin credentials:"
+      log INFO "    Username: $_admin_user"
+      log INFO "    Password: $_admin_password"
     fi
 
-    log "DEBUG" "Hashing admin password"
+    log DEBUG "Hashing admin password"
     _admin_password_hash=$(java -cp "${HARMONY_HOME}/webapps/ROOT/WEB-INF/lib/*" \
       eu.domibus.api.util.BCryptPasswordHash "$_admin_password")
 
-    log "DEBUG" "Applying database migrations"
+    log DEBUG "Applying database migrations"
     "$liquibase_home/liquibase" "${liquibase_common_args[@]}" update \
       -DADMIN_USERNAME="$_admin_user" \
       -DADMIN_PASSWORD_HASH="$_admin_password_hash" \
       2>&1 | sed 's/^/    /'
   else
-    log "INFO" "Database already initialized. Applying pending database migrations"
+    log INFO "Database already initialized. Applying pending database migrations"
     "$liquibase_home/liquibase" "${liquibase_common_args[@]}" update \
       2>&1 | sed 's/^/    /'
   fi
@@ -72,7 +72,7 @@ run_migrations() {
   ADMIN_USER="$_admin_user"
   ADMIN_PASSWORD="$_admin_password"
 
-  log "INFO" "Database migrations applied"
+  log INFO "Database migrations applied"
 }
 
 store_db_connection_details() {
@@ -87,19 +87,19 @@ store_db_connection_details() {
 
 synchronize_secrets() {
   if is_primary; then
-    log "DEBUG" "Primary node: storing secrets"
+    log DEBUG "Primary node: storing secrets"
 
     store_secret "ADMIN-USER" "$ADMIN_USER"
 
     if [[ -n "${ADMIN_PASSWORD:-}" ]]; then
-      log "DEBUG" "Admin password is set; storing as secret"
+      log DEBUG "Admin password is set; storing as secret"
       store_secret "ADMIN-PASSWORD" "$ADMIN_PASSWORD"
     else
-      log "DEBUG" "ADMIN_PASSWORD is empty; reading from existing secret"
+      log DEBUG "ADMIN_PASSWORD is empty; reading from existing secret"
       ADMIN_PASSWORD=$(read_secret "ADMIN-PASSWORD")
     fi
   else
-    log "DEBUG" "Replica node: reading secret"
+    log DEBUG "Replica node: reading secret"
 
     ADMIN_USER=$(read_secret "ADMIN-USER")
     ADMIN_PASSWORD=$(read_secret "ADMIN-PASSWORD")
@@ -107,7 +107,7 @@ synchronize_secrets() {
 }
 
 init-database() {
-  log "DEBUG" "Started"
+  log DEBUG "Started"
 
   if is_primary; then
     define_liquibase_parameters
@@ -123,7 +123,7 @@ init-database() {
   printf "%s" "$ADMIN_USER" > /var/run/s6/container_environment/ADMIN_USER
   printf "%s" "$ADMIN_PASSWORD" > /var/run/s6/container_environment/ADMIN_PASSWORD
 
-  log "DEBUG" "Done"
+  log DEBUG "Done"
 }
 
 init-database

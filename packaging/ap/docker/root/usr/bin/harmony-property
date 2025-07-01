@@ -52,7 +52,7 @@ validate_cli_args() {
       die "Configuration file does not exist: $CONFIG_PATH"
     fi
   else
-    log "DEBUG" "Path validation skipped due to --allow-missing-paths."
+    log DEBUG "Path validation skipped due to --allow-missing-paths."
   fi
 }
 
@@ -93,12 +93,12 @@ remove_prop() {
 
   if crudini --get "$CONFIG_PATH" "" "$property" &>/dev/null; then
     if crudini --inplace --del "$CONFIG_PATH" "" "$property"; then
-      log "DEBUG" "Property '$property' removed from '$CONFIG_PATH'"
+      log DEBUG "Property '$property' removed from '$CONFIG_PATH'"
     else
       die "Failed to remove property '$property' from '$CONFIG_PATH'"
     fi
   else
-    log "DEBUG" "Property '$property' not found in '$CONFIG_PATH', nothing to remove"
+    log DEBUG "Property '$property' not found in '$CONFIG_PATH', nothing to remove"
   fi
 }
 
@@ -117,7 +117,7 @@ set_prop() {
   local value="${2:-}"
 
   if [[ -z "$value" ]]; then
-    log "DEBUG" "No value provided for property '$property'. The property will be removed."
+    log DEBUG "No value provided for property '$property'. The property will be removed."
     remove_prop "$property"
     return
   fi
@@ -132,12 +132,12 @@ set_prop() {
       else
         state="disabled"
       fi
-      log "DEBUG" "Property '$property' $state"
+      log DEBUG "Property '$property' $state"
     else
       local shown_value
       shown_value="$(hide_value_if_needed "$value")"
 
-      log "DEBUG" "Property '$property' set to '$shown_value'"
+      log DEBUG "Property '$property' set to '$shown_value'"
     fi
   else
     die "Failed to set property '$property' in '$CONFIG_PATH'"
@@ -154,7 +154,7 @@ safe_set_prop() {
     local shown_value
     shown_value="$(hide_value_if_needed "$current_value")"
 
-    log "DEBUG" "Property '$property' already set to '$shown_value'; skipping"
+    log DEBUG "Property '$property' already set to '$shown_value'; skipping"
   else
     set_prop "$property" "$new_value"
   fi

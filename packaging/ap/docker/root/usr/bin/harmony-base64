@@ -49,7 +49,7 @@ validate_cli_args() {
 
 decode_and_write() {
   if [[ -e "$OUTPUT_PATH" && "$FORCE" == "true" ]]; then
-    log "WARN" "Overwriting existing file: $OUTPUT_PATH"
+    log WARN "Overwriting existing file: $OUTPUT_PATH"
   fi
 
   tmp_file="$(mktemp)"
@@ -68,7 +68,7 @@ main() {
   parse_cli_args "$@"
   validate_cli_args
   decode_and_write
-  log "DEBUG" "File created successfully at: $OUTPUT_PATH"
+  log DEBUG "File created successfully at: $OUTPUT_PATH"
   exit 0
 }
 
