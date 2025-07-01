@@ -13,6 +13,17 @@ source /usr/lib/harmony-cluster
 : "${SECURITY_KEYSTORE_PATH:=${HARMONY_BASE}/etc/ap-keystore.p12}"
 : "${SECURITY_TRUSTSTORE_PATH:=${HARMONY_BASE}/etc/ap-truststore.p12}"
 
+process_domibus_env_vars() {
+  env | while IFS='=' read -r name value; do
+    if [[ "$name" =~ ^DOMIBUS_ ]]; then
+      prop=${name,,}
+      prop=${prop//_/.}
+
+      set_property "$prop" "$value"
+    fi
+  done
+}
+
 detect_network_filesystem() {
   local fs_type
   fs_type=$(stat -f "${HARMONY_BASE}/etc" --format "%T")
@@ -85,7 +96,7 @@ manage_security_stores() {
     --dname "$SECURITY_DN"
 }
 
-store_security_details() {
+store_domibus_details() {
   set_property "domibus.deployment.clustered" "$DEPLOYMENT_CLUSTERED"
   set_property 'domibus.security.key.private.alias' "$CERT_ALIAS"
 
@@ -94,6 +105,10 @@ store_security_details() {
 
   USE_DYNAMIC_DISCOVERY="${USE_DYNAMIC_DISCOVERY:-$(get_property 'domibus.dynamicdiscovery.useDynamicDiscovery' "$DYNAMIC_DISCOVERY_FALLBACK")}"
   set_property 'domibus.dynamicdiscovery.useDynamicDiscovery' "$USE_DYNAMIC_DISCOVERY"
+
+  set_property 'domibus.security.keystore.password' "$SECURITY_KEYSTORE_PASSWORD" --quiet
+  set_property 'domibus.security.key.private.password' "$SECURITY_KEYSTORE_PASSWORD" --quiet
+  set_property 'domibus.security.truststore.password' "$SECURITY_TRUSTSTORE_PASSWORD" --quiet
 }
 
 synchronize_secrets() {
@@ -121,6 +136,8 @@ init_domibus() {
   log DEBUG "Started"
 
   setup_environment
+
+  process_domibus_env_vars
   configure_cluster_settings
 
   if is_primary; then
@@ -131,13 +148,8 @@ init_domibus() {
     manage_security_stores
   fi
 
-  store_security_details
-
   synchronize_secrets
-
-  set_property 'domibus.security.keystore.password' "$SECURITY_KEYSTORE_PASSWORD" --quiet
-  set_property 'domibus.security.key.private.password' "$SECURITY_KEYSTORE_PASSWORD" --quiet
-  set_property 'domibus.security.truststore.password' "$SECURITY_TRUSTSTORE_PASSWORD" --quiet
+  store_domibus_details
 
   log DEBUG "Done"
 }
