@@ -6,8 +6,7 @@ source /usr/lib/harmony-common
 require_commands() {
   for cmd in "$@"; do
     if ! command -v "$cmd" >/dev/null 2>&1; then
-      log "ERROR" "Required command '$cmd' not found in PATH."
-      exit 1
+      die "Required command '$cmd' not found in PATH."
     fi
   done
 }
@@ -61,8 +60,7 @@ validate_parameters() {
     PKCS12|JKS|JCEKS)
       ;;
     *)
-      log "ERROR" "Unsupported store type: '$store_type'."
-      exit 1
+      die "Unsupported store type: '$store_type'."
       ;;
   esac
 }

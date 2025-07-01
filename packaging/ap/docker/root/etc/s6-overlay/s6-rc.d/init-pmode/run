@@ -70,8 +70,7 @@ ensure_service_ready() {
   local base_url="$1"
 
   if ! wait_for_service "$base_url"; then
-    log "ERROR" "REST facade unavailable; aborting PMode initialization"
-    exit 1
+    die "REST facade unavailable; aborting PMode initialization"
   fi
 }
 
@@ -133,8 +132,7 @@ check_pmode_api_user_exists() {
   response="${response::-3}"
 
   if [ "$http_code" != "200" ]; then
-    log "ERROR" "Failed to check if PMode API user exists"
-    exit 1
+    die "Failed to check if PMode API user exists"
   fi
 
   local count
@@ -170,8 +168,7 @@ create_pmode_api_user() {
     -X PUT "$base_url/rest/plugin/users")
 
   if [ "$http_code" != "204" ]; then
-    log "ERROR" "Failed to create API users"
-    exit 1
+    die "Failed to create API user"
   fi
 
   log "INFO" "PMode API user created successfully"
@@ -196,15 +193,13 @@ delete_pmode_api_user() {
   local count
   count=$(echo "$response" | jq -r '.count')
   if [[ "$count" -eq 0 ]]; then
-    log "ERROR" "No PMode API user found to delete"
-    exit 1
+    die "No PMode API user found to delete"
   fi
 
   local entityId
   entityId=$(echo "$response" | jq -r --arg user "$PMODE_ADMIN_USER" '.entries[] | select(.userName==$user) | .entityId')
   if [[ -z "$entityId" ]]; then
-    log "ERROR" "Could not extract entityId for user $PMODE_ADMIN_USER"
-    exit 1
+    die "Could not extract entityId for user $PMODE_ADMIN_USER"
   fi
 
   local users_json
@@ -222,8 +217,7 @@ delete_pmode_api_user() {
     -X PUT "$base_url/rest/plugin/users")
 
   if [[ "$http_code" != "204" ]]; then
-    log "ERROR" "Failed to delete API user"
-    exit 1
+    die "Failed to delete API user"
   fi
 
   log "INFO" "PMode API user deleted successfully"

@@ -101,8 +101,7 @@ create_new_truststore() {
 
       log "INFO" "Empty truststore created. [store=$store_path]"
     else
-      log "ERROR" "Failed to create empty truststore. [store=$store_path]"
-      exit 1
+      die "Failed to create empty truststore. [store=$store_path]"
     fi
   fi
 }

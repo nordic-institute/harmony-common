@@ -66,8 +66,7 @@ init_backend() {
   log INFO "Initializing database backend for cluster"
 
   if [[ -z "${CLUSTER_SECRET_KEY:-}" ]]; then
-    log ERROR "The environment variable CLUSTER_SECRET_KEY must be defined for the database cluster backend."
-    exit 1
+    die "The environment variable CLUSTER_SECRET_KEY must be defined for the database cluster backend."
   fi
 
   database_exec "

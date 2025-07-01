@@ -27,7 +27,7 @@ parse_cli_args() {
       --public-cert-path) public_cert_path="$2"; shift 2 ;;
       --san) san="$2"; shift 2 ;;
       --dname) dname="$2"; shift 2 ;;
-      *) log "ERROR" "Unknown option: $1"; exit 1 ;;
+      *) die "Unknown option: $1" ;;
     esac
   done
 }

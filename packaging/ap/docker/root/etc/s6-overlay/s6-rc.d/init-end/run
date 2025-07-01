@@ -18,8 +18,7 @@ fi
 if mv -f "$TEMP_CONFIG_PATH" "$CONFIG_PATH"; then
   log "INFO" "Configuration moved from '$TEMP_CONFIG_PATH' to '$CONFIG_PATH'"
 else
-  log "ERROR" "Failed to move '$TEMP_CONFIG_PATH' to '$CONFIG_PATH'"
-  exit 1
+  die "Failed to move '$TEMP_CONFIG_PATH' to '$CONFIG_PATH'"
 fi
 
 log "DEBUG" "Done"

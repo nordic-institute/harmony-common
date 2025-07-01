@@ -43,8 +43,7 @@ validate_database_parameters() {
   local host="$1" password="$2"
 
   if [[ -z "$host" || -z "$password" ]]; then
-    log "ERROR" "Database host (DB_HOST) and password (DB_PASSWORD) are required. Exiting."
-    exit 1
+    die "Database host (DB_HOST) and password (DB_PASSWORD) are required. Exiting."
   fi
 }
 

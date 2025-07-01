@@ -26,7 +26,7 @@ parse_cli_args() {
       --db-schema)    DB_SCHEMA="$2";   shift 2 ;;
       --db-user)      DB_USER="$2";     shift 2 ;;
       --db-password)  DB_PASSWORD="$2"; shift 2 ;;
-      *) log "ERROR" "Unknown option: $1"; exit 1 ;;
+      *) die "Unknown option: $1" ;;
     esac
   done
 }
@@ -41,8 +41,7 @@ parse_db_url() {
     hostport="${no_params%%/*}"                     # split at first "/" for host:port
     path="${no_params#*/}"                          # remainder is schema/path
   else
-    log "ERROR" "DB_URL parsing error: schema is required in URL"
-    exit 1
+    die "DB_URL parsing error: schema is required in URL"
   fi
 
   ipv6_pattern='^\[[0-9A-Fa-f:]+\](:[0-9]+)?$'      # IPv6 literal with optional port
@@ -65,8 +64,7 @@ parse_db_url() {
 
 build_db_url() {
   if [ -z "${DB_HOST:-}" ]; then
-    log "ERROR" "Missing required database host (DB_HOST); cannot construct database URL"
-    exit 1
+    die "Missing required database host (DB_HOST); cannot construct database URL"
   fi
 
   DB_PORT="${DB_PORT:-$DEFAULT_DB_PORT}"
@@ -110,8 +108,7 @@ resolve_db_connection_details() {
 
 validate_db_connection_details() {
   if [[ -z "${DB_URL:-}" || -z "${DB_HOST:-}" || -z "${DB_PORT:-}" ]]; then
-    log "ERROR" "Database parameter validation failed: DB_URL, DB_HOST, and DB_PORT must not be empty"
-    exit 1
+    die "Database parameter validation failed: DB_URL, DB_HOST, and DB_PORT must not be empty"
   fi
 }
 
@@ -128,15 +125,13 @@ print_connection_info() {
 
 wait_for_db() {
   if [[ -z "${DB_USER:-}" || -z "${DB_PASSWORD:-}" ]]; then
-    log "ERROR" "Database user and password must be set"
-    exit 1
+    die "Database user and password must be set"
   fi
 
   log "INFO" "Waiting for database ${DB_HOST}:${DB_PORT} to become available..."
 
   if ! timeout 60 bash -c "until MYSQL_PWD='$DB_PASSWORD' mysqladmin ping -h '$DB_HOST' -P '$DB_PORT' -u '$DB_USER' >/dev/null 2>&1; do sleep 5; done"; then
-    log "ERROR" "Unable to connect to the database at ${DB_HOST}:${DB_PORT}. Exiting."
-    exit 1
+    die "Unable to connect to the database at ${DB_HOST}:${DB_PORT}. Exiting."
   fi
 
   log "INFO" "Database is available"
@@ -157,8 +152,7 @@ main() {
       wait_for_db
       ;;
     *)
-      log "ERROR" "Unsupported mode: $MODE. Available modes: resolve-db-url, wait-for-db."
-      exit 1
+      die "Unsupported mode: $MODE. Available modes: resolve-db-url, wait-for-db."
       ;;
   esac
 }
