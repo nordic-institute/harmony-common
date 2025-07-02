@@ -1,8 +1,7 @@
 FROM ubuntu:24.04 AS builder
 
-ARG S6_OVERLAY_VERSION=3.2.1.0
-#ARG S6_OVERLAY_ARCH="x86_64"
-ARG S6_OVERLAY_ARCH="aarch64"
+ARG S6_OVERLAY_VERSION
+ARG S6_OVERLAY_ARCH
 
 # Documentation
 COPY packaging/ap/config/LICENSE.txt            /usr/share/doc/harmony-ap/
@@ -43,7 +42,13 @@ RUN command -v xz || apt-get update && apt-get install -qqy --no-install-recomme
       /root-out && \
     chmod -R ugo=rX /opt/harmony-ap/ && \
     chmod a+rx /opt/harmony-ap/bin/*.sh && \
-    for file in /tmp/s6-overlay-*.tar.xz; do tar -C /root-out -Jxpf "$file" && rm -f "$file"; done
+    for file in /tmp/s6-overlay-*.tar.xz; do tar -C /root-out -Jxpf "$file"; done && \
+    apt-get clean -qqy && \
+    rm -rf \
+      /tmp/* \
+      /var/lib/apt/lists/* \
+      /var/log/* \
+      /var/tmp/*
 
 FROM ubuntu:24.04
 
