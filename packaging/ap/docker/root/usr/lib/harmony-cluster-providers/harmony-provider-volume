@@ -20,7 +20,7 @@ compute_hash() {
 }
 
 init_backend() {
-  log INFO "Initializing volume backend for cluster"
+  log DEBUG "Initializing volume backend for cluster"
 
   local DIRECTORIES=(
     "$CLUSTER_SHARED"
@@ -31,6 +31,8 @@ init_backend() {
     mkdir -p "$dir"
     chmod 0770 "$dir"
   done
+
+  log INFO "Cluster directories initialized"
 }
 
 acquire_primary() {

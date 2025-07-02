@@ -35,7 +35,7 @@ if [[ -n "${HARMONY_PARAM_FILE:-}" && -f "$HARMONY_PARAM_FILE" ]]; then
 fi
 
 # -------------------------------
-# Set default directories
+# Default directories
 # -------------------------------
 harmony_base="${HARMONY_BASE:-/var/opt/harmony-ap}" # Runtime state
 harmony_home="${HARMONY_HOME:-/opt/harmony-ap}"     # Static and read-only
@@ -48,7 +48,7 @@ printf "%s" "$temp_dir" > /var/run/s6/container_environment/TEMP_DIR
 printf "%s" "$catalina_temp_dir" > /var/run/s6/container_environment/CATALINA_TEMP_DIR
 
 # -------------------------------
-# Set config file paths
+# Config file paths
 # -------------------------------
 config_path="${CONFIG_PATH:-${harmony_base}/etc/domibus.properties}"
 temp_config_path="${temp_dir}/domibus.properties"
@@ -57,7 +57,7 @@ printf "%s" "$config_path" > /var/run/s6/container_environment/CONFIG_PATH
 printf "%s" "$temp_config_path" > /var/run/s6/container_environment/TEMP_CONFIG_PATH
 
 # -------------------------------
-# Set clustering options
+# Clustering options
 # -------------------------------
 node_id="${NODE_ID:-$HOSTNAME}"
 deployment_clustered_raw="${DEPLOYMENT_CLUSTERED:-$(get_property "$config_path" 'domibus.deployment.clustered' 'false')}"
@@ -72,7 +72,7 @@ printf "%s" "$cluster_backend" > /var/run/s6/container_environment/CLUSTER_BACKE
 printf "%s" "$cluster_secret_backup" > /var/run/s6/container_environment/CLUSTER_SECRET_BACKUP
 
 # -------------------------------
-# Set common cert options
+# Common cert options
 # -------------------------------
 party_name="${PARTY_NAME:-$(get_property "$config_path" 'domibus.security.key.private.alias' 'selfsigned')}"
 cert_alias="${CERT_ALIAS:-$party_name}"

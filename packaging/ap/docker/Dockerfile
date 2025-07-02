@@ -1,6 +1,6 @@
 FROM ubuntu:24.04 AS builder
 
-ARG S6_OVERLAY_VERSION=3.2.0.2
+ARG S6_OVERLAY_VERSION=3.2.1.0
 #ARG S6_OVERLAY_ARCH="x86_64"
 ARG S6_OVERLAY_ARCH="aarch64"
 
@@ -32,9 +32,9 @@ COPY packaging/ap/docker/logback.xml                    setup/
 COPY packaging/ap/docker/logging.properties             conf/
 COPY packaging/ap/docker/server.xml.template            setup/
 
-# Download s6-overlay
-ADD https://github.com/just-containers/s6-overlay/releases/download/v${S6_OVERLAY_VERSION}/s6-overlay-noarch.tar.xz /tmp
-ADD https://github.com/just-containers/s6-overlay/releases/download/v${S6_OVERLAY_VERSION}/s6-overlay-${S6_OVERLAY_ARCH}.tar.xz /tmp
+# Add s6-overlay files
+COPY packaging/ap/docker/dependencies/s6-overlay/v${S6_OVERLAY_VERSION}/s6-overlay-noarch.tar.xz /tmp
+COPY packaging/ap/docker/dependencies/s6-overlay/v${S6_OVERLAY_VERSION}/s6-overlay-${S6_OVERLAY_ARCH}.tar.xz /tmp
 
 RUN command -v xz || apt-get update && apt-get install -qqy --no-install-recommends xz-utils && \
     mkdir -p \

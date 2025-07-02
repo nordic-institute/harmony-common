@@ -4,8 +4,8 @@ with-contenv
 importas -D "3" SHUTDOWN_WAIT_TIME SHUTDOWN_WAIT_TIME
 importas -u NODE_ID NODE_ID
 
-foreground { harmony-log DEBUG ${NODE_ID} "svc-harmonyap" "Starting graceful shutdown of Harmony Access Point, waiting ${SHUTDOWN_WAIT_TIME} seconds..." }
+foreground { harmony-log DEBUG ${NODE_ID} "svc-harmonyap" "Delaying shutdown of Harmony Access Point for ${SHUTDOWN_WAIT_TIME} seconds" }
 foreground { sleep ${SHUTDOWN_WAIT_TIME} }
-foreground { harmony-log INFO ${NODE_ID} "svc-harmonyap" "Completed graceful shutdown of Harmony Access Point" }
+foreground { harmony-log INFO ${NODE_ID} "svc-harmonyap" "Harmony Access Point shutdown completed" }
 
 exit 0
