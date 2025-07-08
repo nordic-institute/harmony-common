@@ -10,22 +10,23 @@ readonly STAGE="init-webserver"
 : "${TLS_PUBLIC_CERT_PATH:=${CERT_DIR%/}/$TLS_PUBLIC_CERT_NAME-$CERT_ALIAS.cer}"
 : "${TLS_KEYSTORE_PATH:=${HARMONY_BASE}/etc/tls-keystore.p12}"
 : "${TLS_TRUSTSTORE_PATH:=${HARMONY_BASE}/etc/tls-truststore.p12}"
+: "${CATALINA_TEMP_DIR:=/var/tmp/harmony-ap}"
 
-get_server_prop() {
-  local property_name="$1"
-  local default="${2:-}"
-  local value
+setup_environment() {
+  log DEBUG "Setting up default configuration files"
 
-  value=$(xmlstarlet sel -t -v "//Connector/@$property_name" "$HARMONY_BASE/conf/server.xml" 2>/dev/null || true)
-  echo "${value:-$default}";
-}
-
-setup_default_conf() {
-  cp --update=none "$HARMONY_HOME/setup/server.xml.template"               "$HARMONY_BASE/conf/server.xml"
+  cp --update=none "$HARMONY_HOME/setup/server.xml.template" "$HARMONY_BASE/conf/server.xml"
   cp --update=none "$HARMONY_HOME/setup/clientauthentication.xml.template" "$HARMONY_BASE/etc/clientauthentication.xml"
 
-  chmod 600 "$HARMONY_BASE/conf/server.xml"
-  chmod 600 "$HARMONY_BASE/etc/clientauthentication.xml"
+  chmod 600 "$HARMONY_BASE/conf/server.xml" "$HARMONY_BASE/etc/clientauthentication.xml"
+}
+
+load_tls_secrets() {
+  log DEBUG "Loading TLS secrets"
+
+  read_secret "TLS-KEYSTORE-FILE"    "$TLS_KEYSTORE_PATH"     || true
+  read_secret "TLS-TRUSTSTORE-FILE"  "$TLS_TRUSTSTORE_PATH"   || true
+  read_secret "TLS-PUBLIC-CERT-FILE" "$TLS_PUBLIC_CERT_PATH"  || true
 }
 
 obtain_tls_store_password() {
@@ -48,14 +49,17 @@ obtain_tls_store_password() {
 }
 
 manage_tls_certificates() {
-  log DEBUG "Handling tls certificates"
+  log DEBUG "Processing TLS certificates"
 
   TLS_KEYSTORE_BASE64="${TLS_KEYSTORE_BASE64:-}"
   TLS_TRUSTSTORE_BASE64="${TLS_TRUSTSTORE_BASE64:-}"
 
-  SERVER_FQDN="${SERVER_FQDN:-$(hostname -f)}"
-  SERVER_DN="${SERVER_DN:-CN=$SERVER_FQDN}"
-  SERVER_SAN="${SERVER_SAN:-DNS:$SERVER_FQDN}"
+  TLS_KEYSTORE_PASSWORD=$(obtain_tls_store_password "keystore" "${TLS_KEYSTORE_PASSWORD:-}" "TLS-KEYSTORE-PASSWORD")
+  TLS_TRUSTSTORE_PASSWORD=$(obtain_tls_store_password "truststore" "${TLS_TRUSTSTORE_PASSWORD:-}" "TLS-TRUSTSTORE-PASSWORD")
+
+  TLS_FQDN="${TLS_FQDN:-$(hostname -f)}"
+  TLS_DNAME="${TLS_DNAME:-CN=$TLS_FQDN}"
+  TLS_SAN="${TLS_SAN:-DNS:$TLS_FQDN}"
 
   harmony-store \
     --stage "$STAGE" \
@@ -68,12 +72,33 @@ manage_tls_certificates() {
     --should-add-certificate-to-truststore "true" \
     --alias "$CERT_ALIAS" \
     --public-cert-path "$TLS_PUBLIC_CERT_PATH" \
-    --dname "$SERVER_DN" \
-    --san "$SERVER_SAN"
+    --dname "$TLS_DNAME" \
+    --san "$TLS_SAN"
 }
 
-determine_ssl_configuration() {
-  log DEBUG "Determining SSL configuration"
+sync_tls_secrets() {
+  if is_primary; then
+    log DEBUG "Primary node: storing TLS secrets"
+
+    store_secret "TLS-KEYSTORE-PASSWORD"   "$TLS_KEYSTORE_PASSWORD"
+    store_secret "TLS-TRUSTSTORE-PASSWORD" "$TLS_TRUSTSTORE_PASSWORD"
+    store_secret "TLS-KEYSTORE-FILE"       "$TLS_KEYSTORE_PATH"
+    store_secret "TLS-TRUSTSTORE-FILE"     "$TLS_TRUSTSTORE_PATH"
+    store_secret "TLS-PUBLIC-CERT-FILE"    "$TLS_PUBLIC_CERT_PATH"
+  else
+    log DEBUG "Replica node: retrieving TLS secrets"
+
+    TLS_KEYSTORE_PASSWORD="$(read_secret "TLS-KEYSTORE-PASSWORD")"
+    TLS_TRUSTSTORE_PASSWORD="$(read_secret "TLS-TRUSTSTORE-PASSWORD")"
+    read_secret "TLS-KEYSTORE-FILE"    "$TLS_KEYSTORE_PATH"
+    read_secret "TLS-TRUSTSTORE-FILE"  "$TLS_TRUSTSTORE_PATH"
+    read_secret "TLS-PUBLIC-CERT-FILE" "$TLS_PUBLIC_CERT_PATH"
+  fi
+}
+
+configure_server() {
+  log DEBUG "Configuring server SSL and ports"
+
   local ssl_enabled=true
   local port=8443
 
@@ -83,21 +108,12 @@ determine_ssl_configuration() {
     port=8080
   fi
 
-  log INFO "Server configuration:"
-  log INFO "    SSL enabled: $ssl_enabled"
-  log INFO "    Port: $port"
-
   printf "%s" "$ssl_enabled" > /var/run/s6/container_environment/SSL_ENABLED
   printf "%s" "$port" > /var/run/s6/container_environment/PORT
 
-  echo "$ssl_enabled $port"
-}
-
-update_server_configuration() {
-  local ssl_enabled="$1"
-  local port="$2"
-
-  log DEBUG "Updating server configuration"
+  log INFO "Server configuration:"
+  log INFO "    SSL enabled: $ssl_enabled"
+  log INFO "    Port: $port"
 
   xmlstarlet edit --pf \
     --update '//Connector/@SSLEnabled'      --value "$ssl_enabled" \
@@ -109,10 +125,6 @@ update_server_configuration() {
     --insert '//Connector[not(@keyAlias)]'  --type attr -n keyAlias -v "$CERT_ALIAS" \
     "$HARMONY_BASE/conf/server.xml" > "$TEMP_DIR/server.xml"
   cp "$TEMP_DIR/server.xml" "$HARMONY_BASE/conf/server.xml"
-}
-
-update_server_security_configuration() {
-  log DEBUG "Updating server security configuration"
 
   xmlstarlet edit --pf \
     -N s='http://cxf.apache.org/configuration/security' \
@@ -124,49 +136,29 @@ update_server_security_configuration() {
   cp "$TEMP_DIR/clientauthentication.xml" "$HARMONY_BASE/etc/clientauthentication.xml"
 }
 
-synchronize_secrets() {
-  if is_primary; then
-    log DEBUG "Primary node: storing secrets"
-
-    store_secret "TLS-KEYSTORE-PASSWORD"    "$TLS_KEYSTORE_PASSWORD"
-    store_secret "TLS-TRUSTSTORE-PASSWORD"  "$TLS_TRUSTSTORE_PASSWORD"
-    store_secret "TLS-KEYSTORE-FILE"        "$TLS_KEYSTORE_PATH"
-    store_secret "TLS-TRUSTSTORE-FILE"      "$TLS_TRUSTSTORE_PATH"
-    store_secret "TLS-PUBLIC-CERT-FILE"     "$TLS_PUBLIC_CERT_PATH"
-  else
-    log DEBUG "Replica node: reading secret"
-
-    TLS_KEYSTORE_PASSWORD=$(read_secret "TLS-KEYSTORE-PASSWORD")
-    TLS_TRUSTSTORE_PASSWORD=$(read_secret "TLS-TRUSTSTORE-PASSWORD")
-
-    read_secret "TLS-KEYSTORE-FILE"     "$TLS_KEYSTORE_PATH"
-    read_secret "TLS-TRUSTSTORE-FILE"   "$TLS_TRUSTSTORE_PATH"
-    read_secret "TLS-PUBLIC-CERT-FILE"  "$TLS_PUBLIC_CERT_PATH"
-  fi
+publish_environment_variables() {
+  printf "%s" "$TLS_TRUSTSTORE_PASSWORD" > /var/run/s6/container_environment/TLS_TRUSTSTORE_PASSWORD
+  printf "%s" "$TLS_TRUSTSTORE_PATH"     > /var/run/s6/container_environment/TLS_TRUSTSTORE_PATH
+  printf "%s" "$CATALINA_TEMP_DIR"       > /var/run/s6/container_environment/CATALINA_TEMP_DIR
 }
 
 init_webserver() {
   log DEBUG "Started"
-  setup_default_conf
+
+  setup_environment
 
   if is_primary; then
-    log DEBUG "Primary node: processing TLS certificates"
-
-    TLS_KEYSTORE_PASSWORD=$(obtain_tls_store_password "keystore" "${TLS_KEYSTORE_PASSWORD:-}" "TLS-KEYSTORE-PASSWORD")
-    TLS_TRUSTSTORE_PASSWORD=$(obtain_tls_store_password "truststore" "${TLS_TRUSTSTORE_PASSWORD:-}" "TLS-TRUSTSTORE-PASSWORD")
+    load_tls_secrets
     manage_tls_certificates
+  else
+    log DEBUG "Not a primary node; skipping TLS certificates initialization"
   fi
 
-  synchronize_secrets
-
-  printf "%s" "$TLS_TRUSTSTORE_PASSWORD" > /var/run/s6/container_environment/TLS_TRUSTSTORE_PASSWORD
-  printf "%s" "$TLS_TRUSTSTORE_PATH"    > /var/run/s6/container_environment/TLS_TRUSTSTORE_PATH
-
-  read -r ssl_enabled port <<< "$(determine_ssl_configuration)"
-  update_server_configuration "$ssl_enabled" "$port"
-  update_server_security_configuration
+  sync_tls_secrets
+  configure_server
+  publish_environment_variables
 
   log DEBUG "Done"
 }
 
-init_webserver
+init_webserver "$@"

@@ -6,53 +6,19 @@ readonly STAGE="init-domibus"
 source /usr/lib/harmony-common
 source /usr/lib/harmony-cluster
 
-: "${WORK_LOCATION:=${HARMONY_BASE}/work}"
-: "${DYNAMIC_DISCOVERY_FALLBACK:=false}"
 : "${SECURITY_PUBLIC_CERT_NAME:=security}"
 : "${SECURITY_PUBLIC_CERT_PATH:=${CERT_DIR%/}/$SECURITY_PUBLIC_CERT_NAME-$CERT_ALIAS.cer}"
 : "${SECURITY_KEYSTORE_PATH:=${HARMONY_BASE}/etc/ap-keystore.p12}"
 : "${SECURITY_TRUSTSTORE_PATH:=${HARMONY_BASE}/etc/ap-truststore.p12}"
 
-process_domibus_env_vars() {
-  env | while IFS='=' read -r name value; do
-    if [[ "$name" =~ ^DOMIBUS_ ]]; then
-      prop=${name,,}
-      prop=${prop//_/.}
+readonly DEFAULT_DYNAMIC_DISCOVERY="false"
 
-      set_property "$prop" "$value"
-    fi
-  done
-}
+load_security_secrets() {
+  log DEBUG "Loading TLS secrets"
 
-detect_network_filesystem() {
-  local fs_type
-  fs_type=$(stat -f "${HARMONY_BASE}/etc" --format "%T")
-  case "$fs_type" in
-    cifs*|smb*|nfs*)
-      log WARN "${HARMONY_BASE}/etc is on a network filesystem ($fs_type)"
-      return 1
-      ;;
-    *)
-      return 0
-      ;;
-  esac
-}
-
-setup_environment() {
-  log DEBUG "Setting environment"
-
-  PRESERVE_BACKUP_FILE_DATE=$(detect_network_filesystem && echo true || echo false)
-  printf "%s" "$PRESERVE_BACKUP_FILE_DATE" > /var/run/s6/container_environment/PRESERVE_BACKUP_FILE_DATE
-}
-
-configure_cluster_settings() {
-  log DEBUG "Configuring cluster if needed"
-
-  WORK_LOCATION="${WORK_LOCATION%/}"
-  if [[ "$DEPLOYMENT_CLUSTERED" == "true" ]]; then
-    WORK_LOCATION="$WORK_LOCATION/${NODE_ID}"
-  fi
-  printf "%s" "$WORK_LOCATION" > /var/run/s6/container_environment/WORK_LOCATION
+  read_secret "SECURITY-KEYSTORE-FILE"     "$SECURITY_KEYSTORE_PATH"    || true
+  read_secret "SECURITY-TRUSTSTORE-FILE"   "$SECURITY_TRUSTSTORE_PATH"  || true
+  read_secret "SECURITY-PUBLIC-CERT-FILE"  "$SECURITY_PUBLIC_CERT_PATH" || true
 }
 
 obtain_security_store_password() {
@@ -74,13 +40,16 @@ obtain_security_store_password() {
   echo "$store_pass"
 }
 
-manage_security_stores() {
-  log DEBUG "Handling security certificates"
+manage_security_certificates() {
+  log DEBUG "Processing security certificates"
 
   SECURITY_KEYSTORE_BASE64="${SECURITY_KEYSTORE_BASE64:-}"
   SECURITY_TRUSTSTORE_BASE64="${SECURITY_TRUSTSTORE_BASE64:-}"
 
-  SECURITY_DN="${SECURITY_DN:-CN=$PARTY_NAME}"
+  SECURITY_KEYSTORE_PASSWORD=$(obtain_security_store_password "keystore" "${SECURITY_KEYSTORE_PASSWORD:-}" "SECURITY-KEYSTORE-PASSWORD")
+  SECURITY_TRUSTSTORE_PASSWORD=$(obtain_security_store_password "truststore" "${SECURITY_TRUSTSTORE_PASSWORD:-}" "SECURITY-TRUSTSTORE-PASSWORD")
+
+  SECURITY_DNAME="${SECURITY_DNAME:-CN=$PARTY_NAME}"
 
   harmony-store \
     --stage "$STAGE" \
@@ -93,25 +62,10 @@ manage_security_stores() {
     --should-add-certificate-to-truststore "false" \
     --alias "$CERT_ALIAS" \
     --public-cert-path "$SECURITY_PUBLIC_CERT_PATH" \
-    --dname "$SECURITY_DN"
+    --dname "$SECURITY_DNAME"
 }
 
-store_domibus_details() {
-  set_property "domibus.deployment.clustered" "$DEPLOYMENT_CLUSTERED"
-  set_property 'domibus.security.key.private.alias' "$CERT_ALIAS"
-
-  SML_ZONE="${SML_ZONE:-$(get_property domibus.smlzone)}"
-  set_property 'domibus.smlzone' "$SML_ZONE"
-
-  USE_DYNAMIC_DISCOVERY="${USE_DYNAMIC_DISCOVERY:-$(get_property 'domibus.dynamicdiscovery.useDynamicDiscovery' "$DYNAMIC_DISCOVERY_FALLBACK")}"
-  set_property 'domibus.dynamicdiscovery.useDynamicDiscovery' "$USE_DYNAMIC_DISCOVERY"
-
-  set_property 'domibus.security.keystore.password' "$SECURITY_KEYSTORE_PASSWORD" --quiet
-  set_property 'domibus.security.key.private.password' "$SECURITY_KEYSTORE_PASSWORD" --quiet
-  set_property 'domibus.security.truststore.password' "$SECURITY_TRUSTSTORE_PASSWORD" --quiet
-}
-
-synchronize_secrets() {
+sync_security_secrets() {
   if is_primary; then
     log DEBUG "Primary node: storing secrets"
 
@@ -121,7 +75,7 @@ synchronize_secrets() {
     store_secret "SECURITY-TRUSTSTORE-FILE"      "$SECURITY_TRUSTSTORE_PATH"
     store_secret "SECURITY-PUBLIC-CERT-FILE"     "$SECURITY_PUBLIC_CERT_PATH"
   else
-    log DEBUG "Replica node: reading secret"
+    log DEBUG "Replica node: reading secrets"
 
     SECURITY_KEYSTORE_PASSWORD=$(read_secret "SECURITY-KEYSTORE-PASSWORD")
     SECURITY_TRUSTSTORE_PASSWORD=$(read_secret "SECURITY-TRUSTSTORE-PASSWORD")
@@ -132,24 +86,70 @@ synchronize_secrets() {
   fi
 }
 
+persist_domibus_configuration() {
+  set_property "domibus.deployment.clustered" "$DEPLOYMENT_CLUSTERED"
+  set_property 'domibus.security.key.private.alias' "$CERT_ALIAS"
+
+  SML_ZONE="${SML_ZONE:-$(get_property domibus.smlzone)}"
+  set_property 'domibus.smlzone' "$SML_ZONE"
+
+  USE_DYNAMIC_DISCOVERY="${USE_DYNAMIC_DISCOVERY:-$(get_property 'domibus.dynamicdiscovery.useDynamicDiscovery' "$DEFAULT_DYNAMIC_DISCOVERY")}"
+  set_property 'domibus.dynamicdiscovery.useDynamicDiscovery' "$USE_DYNAMIC_DISCOVERY"
+
+  set_property 'domibus.security.keystore.password' "$SECURITY_KEYSTORE_PASSWORD" --quiet
+  set_property 'domibus.security.key.private.password' "$SECURITY_KEYSTORE_PASSWORD" --quiet
+  set_property 'domibus.security.truststore.password' "$SECURITY_TRUSTSTORE_PASSWORD" --quiet
+}
+
+process_domibus_environment_variables() {
+  env | while IFS='=' read -r name value; do
+    if [[ "$name" =~ ^domibus_ ]]; then
+      log DEBUG "Processing environment variable: $name"
+      prop=${name//_/.}
+
+      set_property "$prop" "$value"
+    fi
+  done
+}
+
+detect_network_filesystem() {
+  local fs_type
+  fs_type=$(stat -f "${HARMONY_BASE}/etc" --format "%T")
+  case "$fs_type" in
+    cifs*|smb*|nfs*)
+      log WARN "${HARMONY_BASE}/etc is on a network filesystem ($fs_type)"
+      return 1
+      ;;
+    *)
+      return 0
+      ;;
+  esac
+}
+
+publish_environment_variables() {
+  log DEBUG "Setting environment"
+
+  if [ -z "${PRESERVE_BACKUP_FILE_DATE:-}" ]; then
+    PRESERVE_BACKUP_FILE_DATE=$(detect_network_filesystem && echo true || echo false)
+  fi
+
+  printf "%s" "$PRESERVE_BACKUP_FILE_DATE" > /var/run/s6/container_environment/PRESERVE_BACKUP_FILE_DATE
+}
+
 init_domibus() {
   log DEBUG "Started"
 
-  setup_environment
-
-  process_domibus_env_vars
-  configure_cluster_settings
-
   if is_primary; then
-    log DEBUG "Primary node: processing TLS certificates"
-
-    SECURITY_KEYSTORE_PASSWORD=$(obtain_security_store_password "keystore" "${SECURITY_KEYSTORE_PASSWORD:-}" "SECURITY-KEYSTORE-PASSWORD")
-    SECURITY_TRUSTSTORE_PASSWORD=$(obtain_security_store_password "truststore" "${SECURITY_TRUSTSTORE_PASSWORD:-}" "SECURITY-TRUSTSTORE-PASSWORD")
-    manage_security_stores
+    load_security_secrets
+    manage_security_certificates
+  else
+    log DEBUG "Not a primary node; skipping security certificates initialization"
   fi
 
-  synchronize_secrets
-  store_domibus_details
+  sync_security_secrets
+  persist_domibus_configuration
+  process_domibus_environment_variables
+  publish_environment_variables
 
   log DEBUG "Done"
 }

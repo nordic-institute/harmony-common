@@ -1,13 +1,13 @@
 #!/usr/bin/with-contenv bash
 set -euo pipefail
 
-CLUSTER_SHARED="${CLUSTER_SHARED:-${HARMONY_BASE}/shared}"
-CLUSTER_SHARED="${CLUSTER_SHARED%/}"
-CLUSTER_SECRETS="${CLUSTER_SECRETS:-${CLUSTER_SHARED}/secrets}"
-CLUSTER_SECRETS="${CLUSTER_SECRETS%/}"
-LOCK_FILE="$CLUSTER_SHARED/cluster.lock"
-READY_FILE="$CLUSTER_SHARED/cluster.ready"
-LEASE_FILE="$CLUSTER_SHARED/cluster.lease"
+CLUSTER_VOLUME_SHARED="${CLUSTER_VOLUME_SHARED:-${HARMONY_BASE}/shared}"
+CLUSTER_VOLUME_SHARED="${CLUSTER_VOLUME_SHARED%/}"
+CLUSTER_VOLUME_SECRETS="${CLUSTER_VOLUME_SECRETS:-${CLUSTER_VOLUME_SHARED}/secrets}"
+CLUSTER_VOLUME_SECRETS="${CLUSTER_VOLUME_SECRETS%/}"
+LOCK_FILE="$CLUSTER_VOLUME_SHARED/cluster.lock"
+READY_FILE="$CLUSTER_VOLUME_SHARED/cluster.ready"
+LEASE_FILE="$CLUSTER_VOLUME_SHARED/cluster.lease"
 
 compute_hash() {
   local src="$1"
@@ -23,8 +23,8 @@ init_backend() {
   log DEBUG "Initializing volume backend for cluster"
 
   local DIRECTORIES=(
-    "$CLUSTER_SHARED"
-    "$CLUSTER_SECRETS"
+    "$CLUSTER_VOLUME_SHARED"
+    "$CLUSTER_VOLUME_SECRETS"
   )
 
   for dir in "${DIRECTORIES[@]}"; do
@@ -132,7 +132,7 @@ wait_for_ready() {
 store_secret() {
   local key="$1"
   local src="$2"
-  local file="$CLUSTER_SECRETS/$key"
+  local file="$CLUSTER_VOLUME_SECRETS/$key"
 
   local new_hash
   new_hash=$(compute_hash "$src")
@@ -173,7 +173,7 @@ read_secret() {
   local key="$1"
   local dest="${2:-}"
 
-  local file="$CLUSTER_SECRETS/$key"
+  local file="$CLUSTER_VOLUME_SECRETS/$key"
 
   if [[ ! -r "$file" ]]; then
     log DEBUG "Secret file not found or unreadable at '$file'; returning empty value. [secret=$key]"

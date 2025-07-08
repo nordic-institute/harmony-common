@@ -5,6 +5,8 @@ cd "$DIR"
 source ./_build_common.sh
 
 TAG=$APVERSION
+S6VERSION=3.2.1.0
+
 while getopts "t:" opt; do
   case "$opt" in
     t)
@@ -22,6 +24,8 @@ prepare_commonbin
 docker build \
   --build-arg VERSION="${APVERSION}" \
   --build-arg BUILD_ID="${BUILD_ID:-local}" \
+  --build-arg S6_OVERLAY_VERSION="${S6VERSION}" \
+  --build-arg S6_OVERLAY_ARCH="aarch64" \
   -t niis/harmony-ap:"$TAG" \
   -t artifactory.niis.org/harmony-snapshot-docker/niis/harmony-ap:"$TAG" \
   -f ./ap/docker/Dockerfile ..

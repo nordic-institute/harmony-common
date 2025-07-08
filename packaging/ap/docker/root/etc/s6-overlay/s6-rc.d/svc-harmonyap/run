@@ -2,7 +2,7 @@
 with-contenv
 
 importas -D 512m MAX_MEM MAX_MEM
-importas -u WORK_LOCATION WORK_LOCATION
+importas -u ACTIVEMQ_WORK_LOCATION ACTIVEMQ_WORK_LOCATION
 importas -u CATALINA_TEMP_DIR CATALINA_TEMP_DIR
 importas -u HARMONY_BASE HARMONY_BASE
 importas -u HARMONY_HOME HARMONY_HOME
@@ -39,7 +39,7 @@ exec java \
   -Dcatalina.base="${HARMONY_BASE}" \
   -Dcatalina.home="${HARMONY_HOME}" \
   -Ddomibus.config.location="${HARMONY_BASE}/etc" \
-  -Ddomibus.work.location="${WORK_LOCATION}" \
+  -Ddomibus.work.location="${ACTIVEMQ_WORK_LOCATION}" \
   -Ddomibus.extensions.location="${HARMONY_HOME}" \
   -Ddomibus.node.id="${NODE_ID}" \
   -Ddomibus.backup.preserveFileDate="${PRESERVE_BACKUP_FILE_DATE}" \

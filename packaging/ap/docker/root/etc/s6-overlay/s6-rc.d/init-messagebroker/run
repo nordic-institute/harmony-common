@@ -6,7 +6,8 @@ readonly STAGE="init-messagebroker"
 
 source /usr/lib/harmony-common
 
-: "${ACTIVEMQ_EMBEDDED_CONFIG_PATH:=file:///${HARMONY_BASE}/etc/internal/activemq.xml}"
+: "${ACTIVEMQ_WORK_LOCATION:=${HARMONY_BASE}/work}"
+: "${ACTIVEMQ_EMBEDDED_CONFIG_PATH:=${HARMONY_BASE}/etc/internal/activemq.xml}"
 : "${ACTIVEMQ_JMX_PORT:=1199}"
 : "${ACTIVEMQ_TRANSPORT_PORT:=61616}"
 
@@ -45,7 +46,7 @@ construct_jmx_url() {
 configure_embedded_broker() {
   local broker_host="$1"
 
-  set_property "activeMQ.embedded.configurationFile" "${ACTIVEMQ_EMBEDDED_CONFIG_PATH}"
+  set_property "activeMQ.embedded.configurationFile" "file:///${ACTIVEMQ_EMBEDDED_CONFIG_PATH}"
   remove_property "activeMQ.username"
   remove_property "activeMQ.password"
 
@@ -83,6 +84,16 @@ determine_transport_connector() {
   echo "$transport_connector_uri"
 }
 
+configure_work_location() {
+  log DEBUG "Configuring ActiveMQ work location"
+
+  ACTIVEMQ_WORK_LOCATION="${ACTIVEMQ_WORK_LOCATION%/}"
+  if [[ "$DEPLOYMENT_CLUSTERED" == "true" ]]; then
+    ACTIVEMQ_WORK_LOCATION="$ACTIVEMQ_WORK_LOCATION/${NODE_ID}"
+  fi
+  printf "%s" "$ACTIVEMQ_WORK_LOCATION" > /var/run/s6/container_environment/ACTIVEMQ_WORK_LOCATION
+}
+
 persist_configuration() {
   local broker_name="$1"
   local transport_connector_uri="$2"
@@ -100,11 +111,13 @@ init_messagebroker() {
 
   local broker_host="${ACTIVEMQ_BROKER_HOST:-$(get_property "activeMQ.broker.host" "${DEFAULT_BROKER_HOST}")}"
   local broker_name="${ACTIVEMQ_BROKER_NAME:-$(get_property "activeMQ.brokerName" "${DEFAULT_BROKER_NAME}")}"
-  local jmx_url transport_connector_uri
 
+  local jmx_url transport_connector_uri
   jmx_url="$(construct_jmx_url "$broker_host" "$ACTIVEMQ_JMX_PORT")"
   transport_connector_uri="$(determine_transport_connector "$broker_host")"
+
   persist_configuration "$broker_name" "$transport_connector_uri" "$jmx_url"
+  configure_work_location
 
   log DEBUG "Done"
 }

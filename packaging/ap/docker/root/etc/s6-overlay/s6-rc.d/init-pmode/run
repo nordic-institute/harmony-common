@@ -10,26 +10,22 @@ source /usr/lib/harmony-cluster
 : "${PMODE_RETRY_INTERVAL:=5}"
 : "${PMODE_ADMIN_USER:=pmode_uploader}"
 : "${PMODE_ADMIN_PASSWORD:=}"
-: "${PMODE_DEFAULT_CONF_PATH:=$HARMONY_BASE/etc/pmode.xml}"
+: "${PMODE_CONFIG_PATH:=$HARMONY_BASE/etc/pmode.xml}"
 
 decode_from_base64() {
   log DEBUG "Decoding PMode configuration from Base64 using harmony-base64..."
-  harmony-base64 --stage "$STAGE" --input "$PMODE_FILE_B64" --output "$PMODE_DEFAULT_CONF_PATH" --force
+  harmony-base64 --stage "$STAGE" --input "$PMODE_CONFIG_B64" --output "$PMODE_CONFIG_PATH" --force
 }
 
 discover_pmode_file() {
-  if [ -n "${PMODE_FILE_B64:-}" ]; then
+  if [ -n "${PMODE_CONFIG_B64:-}" ]; then
     decode_from_base64
     log INFO "Using PMode from base64 input"
-    echo "$PMODE_DEFAULT_CONF_PATH"
+    echo "$PMODE_CONFIG_PATH"
     return 0
-  elif [ -n "${PMODE_CUSTOM_CONF_PATH:-}" ] && [ -f "$PMODE_CUSTOM_CONF_PATH" ]; then
-    log INFO "Using custom PMode from $PMODE_CUSTOM_CONF_PATH"
-    echo "$PMODE_CUSTOM_CONF_PATH"
-    return 0
-  elif [ -f "$PMODE_DEFAULT_CONF_PATH" ]; then
-    log INFO "Using default PMode from $PMODE_DEFAULT_CONF_PATH"
-    echo "$PMODE_DEFAULT_CONF_PATH"
+  elif [ -f "$PMODE_CONFIG_PATH" ]; then
+    log INFO "Using default PMode from $PMODE_CONFIG_PATH"
+    echo "$PMODE_CONFIG_PATH"
     return 0
   fi
 

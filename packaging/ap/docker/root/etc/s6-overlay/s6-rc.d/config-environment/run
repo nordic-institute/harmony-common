@@ -40,12 +40,10 @@ fi
 harmony_base="${HARMONY_BASE:-/var/opt/harmony-ap}" # Runtime state
 harmony_home="${HARMONY_HOME:-/opt/harmony-ap}"     # Static and read-only
 temp_dir="${TEMP_DIR:-/tmp/harmony-ap}"
-catalina_temp_dir="${CATALINA_TEMP_DIR:-/var/tmp/harmony-ap}"
 
 printf "%s" "$harmony_base" > /var/run/s6/container_environment/HARMONY_BASE
 printf "%s" "$harmony_home" > /var/run/s6/container_environment/HARMONY_HOME
 printf "%s" "$temp_dir" > /var/run/s6/container_environment/TEMP_DIR
-printf "%s" "$catalina_temp_dir" > /var/run/s6/container_environment/CATALINA_TEMP_DIR
 
 # -------------------------------
 # Config file paths

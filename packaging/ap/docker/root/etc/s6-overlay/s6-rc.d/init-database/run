@@ -75,7 +75,7 @@ run_migrations() {
   log INFO "Database migrations applied"
 }
 
-store_db_connection_details() {
+persist_database_connection_details() {
   set_property 'domibus.datasource.url' "$DB_URL"
   set_property "domibus.datasource.driverClassName" "$DB_DRIVER_CLASS"
   set_property 'domibus.database.schema' "$DB_SCHEMA"
@@ -85,7 +85,7 @@ store_db_connection_details() {
   set_property 'domibus.datasource.password' "$DB_PASSWORD" --quiet
 }
 
-synchronize_secrets() {
+sync_database_secrets() {
   if is_primary; then
     log DEBUG "Primary node: storing secrets"
 
@@ -106,6 +106,11 @@ synchronize_secrets() {
   fi
 }
 
+publish_environment_variables() {
+  printf "%s" "$ADMIN_USER" > /var/run/s6/container_environment/ADMIN_USER
+  printf "%s" "$ADMIN_PASSWORD" > /var/run/s6/container_environment/ADMIN_PASSWORD
+}
+
 init-database() {
   log DEBUG "Started"
 
@@ -116,12 +121,9 @@ init-database() {
     log DEBUG "Not a primary node; skipping database initialization"
   fi
 
-  store_db_connection_details
-
-  synchronize_secrets
-
-  printf "%s" "$ADMIN_USER" > /var/run/s6/container_environment/ADMIN_USER
-  printf "%s" "$ADMIN_PASSWORD" > /var/run/s6/container_environment/ADMIN_PASSWORD
+  sync_database_secrets
+  persist_database_connection_details
+  publish_environment_variables
 
   log DEBUG "Done"
 }
