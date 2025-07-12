@@ -70,9 +70,7 @@ LABEL org.opencontainers.image.vendor="Nordic Institute for Interoperability Sol
       org.opencontainers.image.source="https://github.com/nordic-institute/harmony-access-point" \
       org.niis.harmony.build-id="$BUILD_ID"
 
-RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
-    --mount=type=cache,target=/var/lib/apt,sharing=locked \
-    apt-get update -qq && \
+RUN apt-get update -qq && \
     apt-get upgrade -qqy && \
     apt-get install -qqy --no-install-recommends \
       crudini \

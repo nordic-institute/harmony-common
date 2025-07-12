@@ -19,6 +19,37 @@ compute_hash() {
   fi
 }
 
+encrypt_value() {
+  local src="$1"
+
+  local cipher
+  if [[ -f "$src" ]]; then
+    cipher=$(openssl enc -aes-256-cbc -pbkdf2 -salt -base64 -A -pass pass:"$CLUSTER_SECRET_KEY" -in "$src")
+  else
+    cipher=$(printf '%s' "$src" | openssl enc -aes-256-cbc -pbkdf2 -salt -base64 -A -pass pass:"$CLUSTER_SECRET_KEY")
+  fi || {
+    log ERROR "OpenSSL encryption failed"
+    return 1
+  }
+
+  printf '%s' "$cipher"
+}
+
+decrypt_value() {
+  local cipher="$1"
+  local dest="${2:-}"
+
+  if [[ -n "$dest" ]]; then
+    printf '%s' "$cipher" \
+      | openssl enc -aes-256-cbc -d -pbkdf2 -salt -base64 -A -pass pass:"$CLUSTER_SECRET_KEY" -out "$dest" 2>/dev/null \
+      || { log ERROR "OpenSSL decryption failed"; return 1; }
+  else
+    printf '%s' "$cipher" \
+      | openssl enc -aes-256-cbc -d -pbkdf2 -salt -base64 -A -pass pass:"$CLUSTER_SECRET_KEY" 2>/dev/null \
+      || { log ERROR "OpenSSL decryption failed"; return 1; }
+  fi
+}
+
 init_backend() {
   log DEBUG "Initializing volume backend for cluster"
 
@@ -29,7 +60,9 @@ init_backend() {
 
   for dir in "${DIRECTORIES[@]}"; do
     mkdir -p "$dir"
-    chmod 0770 "$dir"
+    if ! chmod 0770 "$dir"; then
+      log WARN "Unable to change permissions of '$dir', skipping."
+    fi
   done
 
   log INFO "Cluster directories initialized"
@@ -67,7 +100,9 @@ acquire_primary() {
 
     if [[ "${CLUSTER_ROLE:-}" != "primary" ]]; then
       log DEBUG "Assigning PRIMARY role to node '${NODE_ID}', previous role was: '${CLUSTER_ROLE:-}'"
-      printf "%s" "primary" > /var/run/s6/container_environment/CLUSTER_ROLE
+      CLUSTER_ROLE="primary"
+      export CLUSTER_ROLE
+      printf "%s" "$CLUSTER_ROLE" > /var/run/s6/container_environment/CLUSTER_ROLE
       renew_lease
     fi
 
@@ -78,7 +113,9 @@ acquire_primary() {
 
     if [[ "${CLUSTER_ROLE:-}" != "replica" ]]; then
       log DEBUG "Assigning REPLICA role to node '${NODE_ID}', previous role was: '${CLUSTER_ROLE:-}'"
-      printf "%s" "replica" > /var/run/s6/container_environment/CLUSTER_ROLE
+      CLUSTER_ROLE="replica"
+      export CLUSTER_ROLE
+      printf "%s" "$CLUSTER_ROLE" > /var/run/s6/container_environment/CLUSTER_ROLE
     fi
 
     return 1
@@ -134,21 +171,30 @@ store_secret() {
   local src="$2"
   local file="$CLUSTER_VOLUME_SECRETS/$key"
 
+  # If source is an existing file, do nothing (we assume it already lives on the shared volume)
+  if [[ -f "$src" ]]; then
+    log DEBUG "Detected file-based secret storage; skipping. [secret=$key]"
+    return 0
+  fi
+
   local new_hash
   new_hash=$(compute_hash "$src")
 
-  if [ -f "$file" ]; then
-    local existing_hash
-    existing_hash=$(compute_hash "$file")
+  if [[ -f "$file" ]]; then
+    local cipher_content
+    cipher_content=$(cat "$file")
 
-    if [ "$new_hash" = "$existing_hash" ]; then
+    local existing_hash
+    existing_hash=$(compute_hash <(decrypt_value "$cipher_content"))
+
+    if [[ "$new_hash" == "$existing_hash" ]]; then
       log INFO "No content change; skipping backup/update. [secret=$key]"
       return 0
     fi
 
-    log INFO "Existing secret will be overwritten due to updated configuration. [secret=$key]"
+    log INFO "Existing secret will be overwritten due to updated content. [secret=$key]"
 
-    if [ "${CLUSTER_SECRET_BACKUP:-}" = "true" ]; then
+    if [[ "${CLUSTER_SECRET_BACKUP:-}" == "true" ]]; then
       local backup_file
       backup_file="$file.bak_$(date +%s)"
 
@@ -160,11 +206,7 @@ store_secret() {
     log DEBUG "Creating new secret. [secret=$key]"
   fi
 
-  if [ -f "$src" ]; then
-    cp "$src" "$file"
-  else
-    printf '%s' "$src" > "$file"
-  fi
+  encrypt_value "$src" > "$file" || return 1
 
   log INFO "Secret created/updated. [secret=$key]"
 }
@@ -173,6 +215,12 @@ read_secret() {
   local key="$1"
   local dest="${2:-}"
 
+  # If a destination file is provided, do nothing (we assume it already lives on the shared volume)
+  if [[ -n "$dest" ]]; then
+    log DEBUG "Detected file-based secret retrieval; skipping. [secret=$key]"
+    return 0
+  fi
+
   local file="$CLUSTER_VOLUME_SECRETS/$key"
 
   if [[ ! -r "$file" ]]; then
@@ -180,13 +228,14 @@ read_secret() {
     return 1
   fi
 
-  if [ -n "$dest" ]; then
-    log INFO "Moving secret into destination: '$dest'. [secret=$key]"
-    cp -- "$file" "$dest"
+  cipher_content=$(cat "$file")
+  if [[ -n "$dest" ]]; then
+    decrypt_value "$cipher_content" "$dest" || return 1
   else
-    log INFO "Reading secret. [secret=$key]"
-    cat -- "$file"
+    decrypt_value "$cipher_content" || return 1
   fi
+
+  log DEBUG "Secret read and decrypted. [secret=$key]"
 }
 
 release_primary() {
