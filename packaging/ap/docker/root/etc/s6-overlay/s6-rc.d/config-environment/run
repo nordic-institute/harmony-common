@@ -15,12 +15,6 @@ get_property() {
 
 log DEBUG "Started"
 
-HARMONY_VERSION="${HARMONY_VERSION:-UNDEFINED}"
-
-log INFO "Starting Harmony Access Point version $HARMONY_VERSION"
-log INFO "    User UID: $(id -u)"
-log INFO "    User GID: $(id -g)"
-
 # -------------------------------
 # Load parameters from file (if defined)
 # -------------------------------

@@ -11,10 +11,6 @@ log INFO "Starting cluster sequence ($CLUSTER_BACKEND)..."
 
 init_backend
 
-if acquire_primary; then
-  log INFO "Assigned role: primary"
-else
-  log INFO "Assigned role: replica"
-
+if ! acquire_primary; then
   wait_for_ready
 fi

@@ -1,11 +1,14 @@
-#!/command/execlineb -S0
-with-contenv
+#!/command/with-contenv bash
+set -euo pipefail
 
-importas -D "3" SHUTDOWN_WAIT_TIME SHUTDOWN_WAIT_TIME
-importas -u NODE_ID NODE_ID
+if [ "${HARMONY_MODE:-}" = "init" ]; then
+  exit 0
+fi
 
-foreground { harmony-log DEBUG ${NODE_ID} "svc-harmonyap" "Delaying shutdown of Harmony Access Point for ${SHUTDOWN_WAIT_TIME} seconds" }
-foreground { sleep ${SHUTDOWN_WAIT_TIME} }
-foreground { harmony-log INFO ${NODE_ID} "svc-harmonyap" "Harmony Access Point shutdown completed" }
+SHUTDOWN_WAIT_TIME="${SHUTDOWN_WAIT_TIME:-3}"
 
-exit 0
+harmony-log DEBUG "$NODE_ID" "svc-harmonyap" "Delaying shutdown of Harmony Access Point for ${SHUTDOWN_WAIT_TIME} seconds"
+
+sleep "$SHUTDOWN_WAIT_TIME"
+
+harmony-log INFO "$NODE_ID" "svc-harmonyap" "Harmony Access Point shutdown completed"

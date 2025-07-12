@@ -1,7 +1,16 @@
-FROM ubuntu:24.04 AS builder
+FROM alpine:3.22 AS builder
 
 ARG S6_OVERLAY_VERSION
 ARG S6_OVERLAY_ARCH
+
+RUN apk add --no-cache \
+      tar \
+      xz \
+    && mkdir -p \
+      /opt/harmony-ap \
+      /opt/harmony-ap/plugins/config \
+      /opt/harmony-ap/extensions/lib \
+      /root-out
 
 # Documentation
 COPY packaging/ap/config/LICENSE.txt            /usr/share/doc/harmony-ap/
@@ -35,20 +44,12 @@ COPY packaging/ap/docker/server.xml.template            setup/
 COPY packaging/ap/docker/dependencies/s6-overlay/v${S6_OVERLAY_VERSION}/s6-overlay-noarch.tar.xz /tmp
 COPY packaging/ap/docker/dependencies/s6-overlay/v${S6_OVERLAY_VERSION}/s6-overlay-${S6_OVERLAY_ARCH}.tar.xz /tmp
 
-RUN command -v xz || apt-get update && apt-get install -qqy --no-install-recommends xz-utils && \
-    mkdir -p \
-      plugins/config \
-      extensions/lib \
-      /root-out && \
-    chmod -R ugo=rX /opt/harmony-ap/ && \
-    chmod a+rx /opt/harmony-ap/bin/*.sh && \
-    for file in /tmp/s6-overlay-*.tar.xz; do tar -C /root-out -Jxpf "$file"; done && \
-    apt-get clean -qqy && \
-    rm -rf \
-      /tmp/* \
-      /var/lib/apt/lists/* \
-      /var/log/* \
-      /var/tmp/*
+RUN for file in /tmp/s6-overlay-*.tar.xz; do \
+      tar -xJf "$file" -C /root-out; \
+    done \
+    && chmod -R a+rX /opt/harmony-ap \
+    && chmod a+rx /opt/harmony-ap/bin/*.sh \
+    && rm -rf /tmp/*
 
 FROM ubuntu:24.04
 
@@ -69,7 +70,9 @@ LABEL org.opencontainers.image.vendor="Nordic Institute for Interoperability Sol
       org.opencontainers.image.source="https://github.com/nordic-institute/harmony-access-point" \
       org.niis.harmony.build-id="$BUILD_ID"
 
-RUN apt-get update -qq && \
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,target=/var/lib/apt,sharing=locked \
+    apt-get update -qq && \
     apt-get upgrade -qqy && \
     apt-get install -qqy --no-install-recommends \
       crudini \
@@ -102,8 +105,11 @@ COPY --from=builder /root-out/ /
 COPY packaging/ap/docker/root/ /
 COPY --from=builder /opt/harmony-ap /opt/harmony-ap
 
+RUN mkdir -p /run && \
+    chown harmony-ap:harmony-ap /run
 USER harmony-ap
 
-ENTRYPOINT ["/init"]
+ENTRYPOINT ["/usr/bin/harmony-entrypoint"]
+CMD []
 
 EXPOSE 8443

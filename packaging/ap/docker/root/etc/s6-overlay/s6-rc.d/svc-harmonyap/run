@@ -1,16 +1,12 @@
-#!/command/execlineb -S0
-with-contenv
+#!/command/with-contenv bash
+set -euo pipefail
 
-importas -D 512m MAX_MEM MAX_MEM
-importas -u ACTIVEMQ_WORK_LOCATION ACTIVEMQ_WORK_LOCATION
-importas -u CATALINA_TEMP_DIR CATALINA_TEMP_DIR
-importas -u HARMONY_BASE HARMONY_BASE
-importas -u HARMONY_HOME HARMONY_HOME
-importas -u TLS_TRUSTSTORE_PATH TLS_TRUSTSTORE_PATH
-importas -u TLS_TRUSTSTORE_PASSWORD TLS_TRUSTSTORE_PASSWORD
-importas -u LOGBACK_CONFIG_FILE LOGBACK_CONFIG_FILE
-importas -u NODE_ID NODE_ID
-importas -u PRESERVE_BACKUP_FILE_DATE PRESERVE_BACKUP_FILE_DATE
+: "${MAX_MEM:=512m}"
+
+if [ "${HARMONY_MODE:-}" = init ]; then
+  harmony-log INFO "$NODE_ID" "svc-harmonyap" "Harmony Access Point is in init mode; startup skipped."
+  exec s6-svc -Od .
+fi
 
 exec java \
   -Xms256m -Xmx"$MAX_MEM" \
@@ -28,7 +24,7 @@ exec java \
   --add-opens=jdk.management/com.sun.management.internal=ALL-UNNAMED \
   --add-exports=java.base/jdk.internal.ref=ALL-UNNAMED \
   -Djava.awt.headless=true \
-  -Djava.io.tmpdir="${CATALINA_TMPDIR}" \
+  -Djava.io.tmpdir="${CATALINA_TEMP_DIR}" \
   -Djava.rmi.server.hostname=127.0.0.1 \
   -Djava.security.egd=file:/dev/urandom \
   -Djava.util.logging.config.file="${HARMONY_BASE}/conf/logging.properties" \
