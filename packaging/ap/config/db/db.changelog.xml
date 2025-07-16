@@ -84,26 +84,6 @@
     <sqlFile dbms="mysql,mariadb" relativeToChangelogFile="true" path="migrations/mysql-5.1.0-data.ddl"/>
   </changeSet>
 
-  <changeSet author="harmony" id="2.0.0-fix-indexes-drop">
-    <preConditions onFail="MARK_RAN" onError="HALT">
-      <indexExists tableName="TB_D_MESSAGE_PROPERTY"  indexName="UIDX_D_MSG_PROP_NAME_VALUE_TYPE"/>
-      <indexExists tableName="TB_D_PART_PROPERTY"     indexName="UIDX_D_PART_PROP_NAME_VALUE_TYPE"/>
-      <indexExists tableName="TB_D_SERVICE"           indexName="UIDX_D_SERVICE_VALUE_TYPE"/>
-      <indexExists tableName="TB_D_PARTY"             indexName="UIDX_D_PARTY_VALUE_TYPE"/>
-      <indexExists tableName="TB_D_AGREEMENT"         indexName="UIDX_D_AGREEMENT_VALUE_TYPE"/>
-    </preConditions>
-
-    <dropIndex tableName="TB_D_MESSAGE_PROPERTY"  indexName="UIDX_D_MSG_PROP_NAME_VALUE_TYPE"/>
-    <dropIndex tableName="TB_D_PART_PROPERTY"     indexName="UIDX_D_PART_PROP_NAME_VALUE_TYPE"/>
-    <dropIndex tableName="TB_D_SERVICE"           indexName="UIDX_D_SERVICE_VALUE_TYPE"/>
-    <dropIndex tableName="TB_D_PARTY"             indexName="UIDX_D_PARTY_VALUE_TYPE"/>
-    <dropIndex tableName="TB_D_AGREEMENT"         indexName="UIDX_D_AGREEMENT_VALUE_TYPE"/>
-  </changeSet>
-
-  <changeSet author="harmony" id="2.0.0-fix-indexes-recreate">
-    <sqlFile dbms="mysql,mariadb" relativeToChangelogFile="true" path="migrations/mysql-5.1.0-fix-indexes-recreate.ddl"/>
-  </changeSet>
-
   <changeSet author="harmony" id="2.2.2-fix-constraint">
     <sql dbms="mysql,mariadb">
       ALTER TABLE TB_EARCHIVEBATCH_UM DROP CONSTRAINT FK_EARCHIVE_BATCH_ID_FTR;
@@ -121,6 +101,10 @@
 
   <changeSet author="harmony" id="2.4.0-upgrade">
     <sqlFile dbms="mysql,mariadb" relativeToChangelogFile="true" endDelimiter="//" path="migrations/mysql-5.1.2-to-5.1.4-upgrade.ddl"/>
+  </changeSet>
+
+  <changeSet author="harmony" id="2.6.0-upgrade">
+    <sqlFile dbms="mysql,mariadb" relativeToChangelogFile="true" endDelimiter="//" path="migrations/mysql-5.1.4-to-5.1.8-upgrade.ddl"/>
   </changeSet>
 
 

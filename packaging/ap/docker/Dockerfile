@@ -1,7 +1,7 @@
 FROM alpine:3.22 AS builder
 
-ARG S6_OVERLAY_VERSION
-ARG S6_OVERLAY_ARCH
+ARG S6_VERSION
+ARG TARGETARCH
 
 RUN apk add --no-cache \
       tar \
@@ -41,8 +41,8 @@ COPY packaging/ap/docker/logging.properties             conf/
 COPY packaging/ap/docker/server.xml.template            setup/
 
 # Add s6-overlay files
-COPY packaging/ap/docker/dependencies/s6-overlay/v${S6_OVERLAY_VERSION}/s6-overlay-noarch.tar.xz /tmp
-COPY packaging/ap/docker/dependencies/s6-overlay/v${S6_OVERLAY_VERSION}/s6-overlay-${S6_OVERLAY_ARCH}.tar.xz /tmp
+COPY packaging/ap/docker/dependencies/s6-overlay/v${S6_VERSION}/s6-overlay-noarch.tar.xz /tmp
+COPY packaging/ap/docker/dependencies/s6-overlay/v${S6_VERSION}/s6-overlay-${TARGETARCH}.tar.xz /tmp
 
 RUN for file in /tmp/s6-overlay-*.tar.xz; do \
       tar -xJf "$file" -C /root-out; \

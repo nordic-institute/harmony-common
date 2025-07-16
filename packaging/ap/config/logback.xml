@@ -166,6 +166,11 @@
         <appender-ref ref="file"/>
     </logger>
 
+    <!--  Fix for known issue in CXF library -->
+    <logger name="org.apache.cxf.io.DelayedCachedOutputStreamCleaner" level="ERROR">
+        <appender-ref ref="file"/>
+    </logger>
+
     <root level="WARN">
         <appender-ref ref="file"/>
         <appender-ref ref="error_file"/>

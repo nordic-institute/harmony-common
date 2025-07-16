@@ -1,8 +1,9 @@
 #!/bin/bash
-set -e
+set -euo pipefail
+
 # CHANGE VERSION NUMBERS BELOW AS NEEDED
 # Version of Harmony Access Point
-APVERSION=2.5.0
+APVERSION=2.6.0
 # Version of Harmony SMP
 SMPVERSION=2.2.0
 
@@ -13,11 +14,11 @@ MARIADBJ_VERSION=2.7.12
 # NO VERSIONING RELATED MODIFICATIONS ARE NECESSARY AFTER THIS POINT!
 
 # DO NOT change variables below, instead if needed assign values externally
-if [ -z "$HARMONY_AP_REPO_PATH" ]; then
+if [ -z "${HARMONY_AP_REPO_PATH:-}" ]; then
   HARMONY_AP_REPO_PATH=../../harmony-access-point
 fi
 
-if [ -z "$HARMONY_SMP_REPO_PATH" ]; then
+if [ -z "${HARMONY_SMP_REPO_PATH:-}" ]; then
   HARMONY_SMP_REPO_PATH=../../harmony-smp
 fi
 
