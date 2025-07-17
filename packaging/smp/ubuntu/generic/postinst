@@ -86,13 +86,13 @@ case "$1" in
   HASHEDPASSWORD=$(java -cp "/opt/harmony-smp/webapps/ROOT/WEB-INF/lib/*" \
     eu.europa.ec.edelivery.smp.utils.BCryptPasswordHash "$APASSWORD")
 
-  $LIQUIBASE_HOME/liquibase.sh \
+  $LIQUIBASE_HOME/liquibase \
     --classpath=/opt/harmony-smp/lib/mysql-connector-j-8.2.0.jar \
     --driver=com.mysql.cj.jdbc.Driver \
     --url="$JDBC_URL" \
     --username="$DB_USER" \
     --password="$DB_PASSWORD" \
-    --changeLogFile=/opt/harmony-smp/db/db.changelog.xml \
+    --changelog-file=/opt/harmony-smp/db/db.changelog.xml \
     update -DadminUser="$AUSER" -DadminPassword="$HASHEDPASSWORD" 1>&2
 
   if [ ! -f /etc/harmony-smp/tomcat-conf/server.xml ]; then

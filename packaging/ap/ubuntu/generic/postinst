@@ -213,7 +213,7 @@ GRANT ALL ON $DB_SCHEMA.* TO '$DB_USER'@localhost;" | mysql >&2
   HASHEDPASSWORD=$(java -cp "/opt/harmony-ap/webapps/ROOT/WEB-INF/lib/*" eu.domibus.api.util.BCryptPasswordHash "$ADMIN_PASSWORD")
 
   # using defaultsFile to avoid revealing passwords in the process listing
-  /bin/bash $LIQUIBASE_HOME/liquibase --defaultsFile=<(echo "\
+  /bin/bash $LIQUIBASE_HOME/liquibase --defaults-file=<(echo "\
 classpath:/opt/harmony-ap/lib/mysql-connector-j-8.2.0.jar
 driver:com.mysql.cj.jdbc.Driver
 url:$URL
