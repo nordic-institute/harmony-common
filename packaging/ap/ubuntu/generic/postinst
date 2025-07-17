@@ -215,9 +215,10 @@ GRANT ALL ON $DB_SCHEMA.* TO '$DB_USER'@localhost;" | mysql >&2
     LIQUIBASE_COMMAND_USERNAME="$DB_USER" \
     LIQUIBASE_COMMAND_PASSWORD="${DB_PASSWORD//\\/\\\\}" \
     LIQUIBASE_COMMAND_DRIVER="com.mysql.cj.jdbc.Driver" \
-    LIQUIBASE_COMMAND_CLASSPATH="/opt/harmony-ap/lib/mysql-connector-j-8.2.0.jar" \
+    LIQUIBASE_CLASSPATH="/opt/harmony-ap/lib/mysql-connector-j-8.2.0.jar" \
     LIQUIBASE_ANALYTICS_ENABLED=false \
     LIQUIBASE_SHOW_BANNER=false \
+    LIQUIBASE_SQL_SHOW_SQL_WARNINGS=false \
     "/opt/harmony-ap/liquibase/liquibase" \
       --changelog-file=/opt/harmony-ap/db/db.changelog.xml \
       update \
