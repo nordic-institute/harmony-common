@@ -50,9 +50,6 @@ case "$1" in
   AUSER=""
   HASHEDPASSWORD=""
 
-  export LIQUIBASE_HOME=/opt/harmony-smp/liquibase
-  export LIQUIBASE_SHOW_BANNER=false
-
   if [[ "$DB_HOST" = localhost ]]; then
     SCHEMA_EXISTS=$(mysql -s -N -e "SELECT SCHEMA_NAME FROM INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME='$DB_SCHEMA'");
 
@@ -86,14 +83,20 @@ case "$1" in
   HASHEDPASSWORD=$(java -cp "/opt/harmony-smp/webapps/ROOT/WEB-INF/lib/*" \
     eu.europa.ec.edelivery.smp.utils.BCryptPasswordHash "$APASSWORD")
 
-  $LIQUIBASE_HOME/liquibase \
-    --classpath=/opt/harmony-smp/lib/mysql-connector-j-8.2.0.jar \
-    --driver=com.mysql.cj.jdbc.Driver \
-    --url="$JDBC_URL" \
-    --username="$DB_USER" \
-    --password="$DB_PASSWORD" \
-    --changelog-file=/opt/harmony-smp/db/db.changelog.xml \
-    update -DadminUser="$AUSER" -DadminPassword="$HASHEDPASSWORD" 1>&2
+  env -i \
+    LIQUIBASE_COMMAND_URL="$JDBC_URL" \
+    LIQUIBASE_COMMAND_USERNAME="$DB_USER" \
+    LIQUIBASE_COMMAND_PASSWORD="${DB_PASSWORD//\\/\\\\}" \
+    LIQUIBASE_COMMAND_DRIVER="com.mysql.cj.jdbc.Driver" \
+    LIQUIBASE_COMMAND_CLASSPATH="/opt/harmony-smp/lib/mysql-connector-j-8.2.0.jar" \
+    LIQUIBASE_ANALYTICS_ENABLED=false \
+    LIQUIBASE_SHOW_BANNER=false \
+    "/opt/harmony-smp/liquibase/liquibase" \
+      --changelog-file=/opt/harmony-smp/db/db.changelog.xml \
+      update \
+      -DADMIN_USERNAME="$AUSER" \
+      -DADMIN_PASSWORD_HASH="$HASHEDPASSWORD" \
+      2>&1 | sed 's/^/    /' >&2
 
   if [ ! -f /etc/harmony-smp/tomcat-conf/server.xml ]; then
     cp /opt/harmony-smp/setup/context.xml.template /etc/harmony-smp/tomcat-conf

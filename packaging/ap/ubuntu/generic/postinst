@@ -207,20 +207,23 @@ GRANT ALL ON $DB_SCHEMA.* TO '$DB_USER'@localhost;" | mysql >&2
   fi
 
   log "Applying database migrations..."
-  export LIQUIBASE_HOME=/opt/harmony-ap/liquibase
-  export LIQUIBASE_SHOW_BANNER=false
   URL="jdbc:mysql://$DB_HOST:$DB_PORT/$DB_SCHEMA"
   HASHEDPASSWORD=$(java -cp "/opt/harmony-ap/webapps/ROOT/WEB-INF/lib/*" eu.domibus.api.util.BCryptPasswordHash "$ADMIN_PASSWORD")
 
-  # using defaultsFile to avoid revealing passwords in the process listing
-  /bin/bash $LIQUIBASE_HOME/liquibase --defaults-file=<(echo "\
-classpath:/opt/harmony-ap/lib/mysql-connector-j-8.2.0.jar
-driver:com.mysql.cj.jdbc.Driver
-url:$URL
-username:$DB_USER
-password:${DB_PASSWORD//\\/\\\\}
-changeLogFile:/opt/harmony-ap/db/db.changelog.xml") \
-  update -DadminUser="$ADMIN_USER" -DadminPassword="$HASHEDPASSWORD" 2>&1 | sed 's/^/    /' >&2
+  env -i \
+    LIQUIBASE_COMMAND_URL="$URL" \
+    LIQUIBASE_COMMAND_USERNAME="$DB_USER" \
+    LIQUIBASE_COMMAND_PASSWORD="${DB_PASSWORD//\\/\\\\}" \
+    LIQUIBASE_COMMAND_DRIVER="com.mysql.cj.jdbc.Driver" \
+    LIQUIBASE_COMMAND_CLASSPATH="/opt/harmony-ap/lib/mysql-connector-j-8.2.0.jar" \
+    LIQUIBASE_ANALYTICS_ENABLED=false \
+    LIQUIBASE_SHOW_BANNER=false \
+    "/opt/harmony-ap/liquibase/liquibase" \
+      --changelog-file=/opt/harmony-ap/db/db.changelog.xml \
+      update \
+      -DADMIN_USERNAME="$ADMIN_USER" \
+      -DADMIN_PASSWORD_HASH="$HASHEDPASSWORD" \
+      2>&1 | sed 's/^/    /' >&2
 
   if [[ "$DB_HOST" = "localhost" ]]; then
     mysql -s -e "REVOKE SYSTEM_VARIABLES_ADMIN ON *.* FROM '$DB_USER'@'localhost';" >&2
