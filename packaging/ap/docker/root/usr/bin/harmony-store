@@ -48,6 +48,7 @@ validate_and_prepare() {
 process_stores() {
   # shellcheck disable=SC2034 # Used indirectly by passing the array name to a function
   declare -A input_keystore_config=(
+    [stage]="$STAGE"
     [public_cert_path]="$public_cert_path"
     [store_path]="$keystore_path"
     [store_password]="$keystore_password"
@@ -62,6 +63,7 @@ process_stores() {
 
   # shellcheck disable=SC2034 # Used indirectly by passing the array name to a function
   declare -A input_truststore_config=(
+    [stage]="$STAGE"
     [public_cert_path]="$public_cert_path"
     [alias]="$alias"
     [store_path]="$truststore_path"
