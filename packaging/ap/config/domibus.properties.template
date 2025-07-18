@@ -14,9 +14,6 @@
 # The title shown in the Tab of Admin Console (default value: "Domibus")
 #domibus.ui.title.name=Harmony
 
-# Asynchronous populated table is used for showing the messages on GUI. Defaults to false.
-#domibus.ui.replication.enabled=false
-
 #support team name
 #domibus.ui.support.team.name=Nordic Institute for Interoperability Solutions (NIIS)
 
@@ -135,7 +132,7 @@ domibus.database.port=
 #Please comment this property when Domibus is configured in multi-tenancy mode with MySQL and change the domibus.datasource.url property to use domibus.database.general.schema instead of domibus.database.schema
 domibus.database.schema=
 
-#Non-XA Datasource
+#Datasource
 #MySQL
 #Connector/J 8.0.x
 domibus.datasource.driverClassName=com.mysql.cj.jdbc.Driver
@@ -215,6 +212,8 @@ domibus.entityManagerFactory.jpaProperty.hibernate.id.new_generator_mappings=fal
 #domibus.entityManagerFactory.jpaProperty.hibernate.cache.region.factory_class=infinispan
 
 #Infinispan specific: infinispan config file
+# WARNING: When changing the configuration file for Infinispan, be aware of CVE-2025-0736.
+# The vulnerability occurs when cluster nodes discover each other via a shared database (JGroups with JDBC_PING), instead of using multicast (UDP) or static configurations.
 #domibus.entityManagerFactory.jpaProperty.hibernate.cache.infinispan.cfg=config/infinispan/domibus-infinispan-default.xml
 
 #Infinispan specific: factory for second level cache keys. For other cache providers it should be left empty.
@@ -226,7 +225,7 @@ domibus.entityManagerFactory.jpaProperty.hibernate.id.new_generator_mappings=fal
 #domibus.password.encryption.active=false
 
 #Enable this property if the password encryption is activated. Add the list of configured passwords to be encrypted.
-#domibus.password.encryption.properties=domibus.security.keystore.password,domibus.security.key.private.password,domibus.security.truststore.password,domibus.datasource.password,domibus.proxy.password,domibus.alert.sender.smtp.password,domibus.security.key.private.rsa.password,domibus.security.key.private.rsa.sign.password,domibus.security.key.private.rsa.decrypt.password,domibus.security.key.private.ecc.password,domibus.security.key.private.ecc.sign.password,domibus.security.key.private.ecc.decrypt.password
+#domibus.password.encryption.properties=domibus.security.keystore.password,domibus.security.key.private.password,domibus.security.truststore.password,domibus.datasource.password,domibus.proxy.password,domibus.alert.sender.smtp.password
 
 #The location where the encrypted key is stored
 #domibus.password.encryption.key.location=${domibus.config.location}/internal/encrypt
@@ -277,6 +276,10 @@ domibus.auth.unsecureLoginAllowed=false
 
 #Name of the authentication extension used to verify the chain trust. Default is CXF
 #domibus.extension.iam.authentication.identifier=DEFAULT_AUTHENTICATION_SPI
+
+#With this property, Domibus can disable the trust verification. By default, enabled.
+#domibus.extension.iam.trust.enabled=true
+
 #Name of the authorization extension used to check incoming message authorization. Default is truststore check.
 #domibus.extension.iam.authorization.identifier=DEFAULT_AUTHORIZATION_SPI
 
@@ -297,7 +300,7 @@ domibus.auth.unsecureLoginAllowed=false
 #domibus.passwordPolicy.pattern=^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*[~`!@#$%^&+=\\-_<>.,?:;*/()|\\[\\]{}'"\\\\]).{16,32}$
 
 #The error message shown to the user in case the password does not follow the regex put in the domibus.passwordPolicy.pattern property
-#domibus.passwordPolicy.validationMessage=Minimum length: 8 characters;Maximum length: 32 characters;At least one letter in lowercase;At least one letter in uppercase;At least one digit;At least one special character
+#domibus.passwordPolicy.validationMessage=Minimum length: 16 characters;Maximum length: 32 characters;At least one letter in lowercase;At least one letter in uppercase;At least one digit;At least one special character
 
 #Password expiration policy in days (0 to disable)
 #domibus.passwordPolicy.expiration=90
@@ -360,6 +363,9 @@ domibus.passwordPolicy.defaultUser.create=false
 #Domibus encrypts the payloads stored in the database or file system if this property is active.
 #domibus.payload.encryption.active=false
 
+#Domibus store the payload on a folder structure YYYY/DD/MM/HH determined by the time of the creation (UTC) + domibus.payload.file_system.folder.added_minutes
+#domibus.payload.file_system.folder.added_minutes=1
+
 #Cron expression that specifies the frequency of checking if the temporary payloads have expired
 #domibus.payload.temp.job.retention.cron=0 0/10 * * * ?
 
@@ -387,7 +393,7 @@ domibus.passwordPolicy.defaultUser.create=false
 #domibus.message.download.maxSize=10000000
 
 #Message resend job execution interval as a cron expression
-#domibus.message.resend.cron = 0 0/1 * * * ?
+#domibus.message.resend.cron = 0 0 0/12 * * ?
 
 #Activates the plugin notification of Test messages
 #domibus.message.test.notification=false
@@ -399,6 +405,9 @@ domibus.passwordPolicy.defaultUser.create=false
 
 #Retry Worker execution interval as a cron expression
 #domibus.msh.retry.cron=0/30 * * * * ?
+
+#Limits the number of WAITING_FOR_RETRY messages retrieved by the retry worker at every run.
+#domibus.msh.retry.maxMessageCount=1000
 
 #Retry strategy grants few extra seconds to avoid not sending the last attempt (value in milliseconds, default 30000)
 #domibus.msh.retry.messageExpirationDelay=30000
@@ -678,13 +687,6 @@ domibus.sendMessage.messageIdPattern=^(?!.*[=])[\\x20-\\x7E]*$
 #This check is a guard rail for dropping partitions when the eArchiving mechanism is disabled. Default is true.
 #domibus.partitions.drop.check.messages.earchived=true
 
-#Cron expression used to configure the sanitizer worker that targets messages not in a final state that are not processed anymore
-#domibus.ongoingMessagesSanitizing.worker.cron=0 0 0/2 ? * * *
-
-#The creation date of the last UserMessage processed by the ongoingMessagesSanitizer batch minus the ['delay' hour] will be latest userMessage taken for the sanitizer
-#Max value between the worker.delay.hours and the max retention values is used
-#domibus.ongoingMessagesSanitizing.worker.delay.hours=1
-
 # ---------------------------------- Proxy -------------------------------------
 #domibus.proxy.enabled=false
 #domibus.proxy.http.host=
@@ -742,6 +744,13 @@ activeMQ.embedded.configurationFile=file:///${domibus.config.location}/internal/
 # Number of threads used to parallelize the pull receipts.
 #domibus.pull.receipt.queue.concurrency=5-20
 
+# Minimum amount of time to wait for a pull receipt before changing the message status back to READY_TO_PULL. In minutes.
+#domibus.pull.receipt.timeout=5
+
+# When handling the reliability of an incoming receipt, in rare cases it may be necessary to try twice to retrieve the sent user message envelope.
+# This property specifies the number of milliseconds to wait before retrying. Use 0 to disable the retrial.
+#domibus.pull.receipt.reliability.retry=500
+
 #Number or requests per MPC executed every cron cycle. Generic value that applies to all MPCs.
 #domibus.pull.request.send.per.job.cycle=1
 
@@ -782,6 +791,9 @@ activeMQ.embedded.configurationFile=file:///${domibus.config.location}/internal/
 
 #SMTP Socket I/O timeout value in milliseconds
 #domibus.alert.mail.smtp.timeout=5000
+
+#Upgrade the connection to use TLS encryption. Since this parameter is Domibus independent, it should not be renamed
+#domibus.alert.mail.smtp.starttls.enable=true
 
 # -----------------------------------Mandatory configuration start (if domibus.alert.active=true and domibus.alert.mail.sending.active=true) -----------
 
@@ -844,10 +856,10 @@ activeMQ.embedded.configurationFile=file:///${domibus.config.location}/internal/
 #domibus.ongoingMessagesSanitizing.alert.level=MEDIUM
 
 #Subject of the email alerts that report the messages in a non-final state that are not processed anymore
-#domibus.ongoingMessagesSanitizing.alert.email.subject=Ongoing messages
+#domibus.ongoingMessagesSanitizing.alert.mail.subject=Ongoing messages
 
 #Body of the email alerts that report the messages in a non-final state that are not processed anymore
-#domibus.ongoingMessagesSanitizing.alert.email.body=There are messages currently in ongoing statuses that are not processed anymore. Here is the list of IDs and statuses of these messages: [{messages}].
+#domibus.ongoingMessagesSanitizing.alert.mail.body=There are messages currently in ongoing statuses that are not processed anymore. Here is the list of IDs and statuses of these messages: [{messages}].
 
 # ---------------------------------- Alert management:Authentication module -----------------
 
@@ -1092,6 +1104,9 @@ activeMQ.embedded.configurationFile=file:///${domibus.config.location}/internal/
 #Prints the AS4 payload in the logs while org.apache.cxf is set to at least INFO in logback.xml. Defaults to false.
 #domibus.logging.payload.print=false
 
+#Enable diagnostic logs
+#domibus.logging.diagnostic.enabled=false
+
 #Prints the AS4 metadata in the logs when org.apache.cxf is set to at least INFO in logback.xml. Defaults to true.
 #domibus.logging.metadata.print=true
 
@@ -1132,12 +1147,26 @@ activeMQ.embedded.configurationFile=file:///${domibus.config.location}/internal/
 
 #The strategy adds these minutes to the interval used to search back for messages in SEND_ENQUEUED and WAITING_FOR_RETRY
 #statuses to avoid picking up messages that have been just scheduled to send. Only positive values allowed; a value of
-#at least 360 (minutes) is recommended.
+#at least 360 (minutes) is recommended. The value must be higher than the time the SendRetryWorker needs to complete an
+#execution to ensure the two workers do not overlap.
 #domibus.messages.stuck.ignore.recent.minutes=360
+
+#Limits the number of stuck messages retrieved by the sanitizer worker at every run. If set to 0, no messages will be retried, and an alert will be raised instead.
+#domibus.messages.stuck.maxMessageCount=20000
 
 # ------------------------------- Domibus instance/environment name ------------------
 
 #domibus.instance.name = Domibus
+
+# ------------------------------- Diagnostics ----------------------------------------
+#Add logs containing diagnostics data at regular intervals, if enabled
+
+#Cron expression that specifies the frequency of the diagnostics
+#domibus.diagnostics.cron=0 0 0 ? * FRI *
+
+#Specify what diagnostics should be run. Leave empty to disable diagnostics
+#Set to versionInfo,jmsQueuesInfo,alertsCounts,messagesByStatusCounts to get all diagnostics
+#domibus.diagnostics.list=
 
 # ---------------------------------- Metrics -----------------
 
@@ -1248,6 +1277,12 @@ activeMQ.embedded.configurationFile=file:///${domibus.config.location}/internal/
 #Cron configuration for executing the eArchiving sanity process.
 #domibus.earchive.sanitizer.cron=0 0 0/1 * * ?
 
+# Time window limit (in days) for the continuous eArchiving process. (0 means no limit).
+#domibus.earchive.continuous.time_window_limit=0
+
+# Time window limit (in days) for the sanitizer eArchiving process. (0 means no limit).
+#domibus.earchive.sanitizer.time_window_limit=0
+
 #The creation date of the last UserMessage processed by the earchiving continuous batch minus the ['messageCheck.delay' hour] will be latest userMessage taken for the sanitizer
 #domibus.earchive.sanitizer.messagesCheck.delay.hours=24
 
@@ -1342,6 +1377,14 @@ activeMQ.embedded.configurationFile=file:///${domibus.config.location}/internal/
 # --------------------------------------------Quartz-------------------------------
 #Specifies the amount of time, in milliseconds that used to check if any quartz triggers are blocked. Default value is 10 minutes.
 #domibus.quartz.trigger.blocked.duration=600000
+
+#The number of milliseconds the scheduler will 'tolerate' a trigger to pass its next-fire-time by, before being considered "misfired". default: 60000
+#Recommended value for cluster environments: 120000
+#domibus.quartz.jobStore.misfireThreshold=60000
+
+#Whether or not the acquisition of next triggers to fire should occur within an explicit database lock. default: false.
+#Recommended value for cluster environments: true
+#domibus.quartz.jobStore.acquireTriggersWithinLock=false
 
 # --------------------------------------------Distributed Cache -------------------------------
 #The distributed cache is only used when Domibus runs in a cluster eg domibus.deployment.clustered=true
