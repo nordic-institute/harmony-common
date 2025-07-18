@@ -16,12 +16,18 @@ log() {
   fi
 }
 
-die() { log ERROR "$1"; exit 1; }
+die() {
+  log ERROR "$1";
+  exit 1;
+}
 
 ensure_boolean() {
   case "$1" in
     true|false) echo "$1" ;;
-    *) log WARN "Invalid boolean value '$1', defaulting to '$2'"; echo "$2" ;;
+    *)
+      log WARN "Invalid boolean value '$1', defaulting to '$2'";
+      echo "$2"
+      ;;
   esac
 }
 
@@ -32,7 +38,14 @@ property_helper() {
     set -- "${@:1:$(($#-1))}"
   fi
 
-  harmony-property --stage "$STAGE" --node-id "$NODE_ID" --action "$1" --config-path "$TEMP_CONFIG_PATH" --property "$2" $quiet_flag ${3:+--value "$3"}
+  harmony-property \
+    --stage "$STAGE" \
+    --node-id "$NODE_ID" \
+    --action "$1" \
+    --config-path "$TEMP_CONFIG_PATH" \
+    --property "$2" \
+    $quiet_flag \
+    ${3:+--value "$3"}
 }
 
 get_property()    { property_helper GET     "$@"; }

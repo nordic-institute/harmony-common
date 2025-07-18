@@ -14,11 +14,23 @@ define_liquibase_parameters() {
   changelog_file="db.changelog.xml"
 
   classpath="$liquibase_home"
-  for driver_jar in "${HARMONY_HOME}/lib"/mysql-connector-j-*.jar "${HARMONY_HOME}/lib"/mariadb-connector-j-*.jar; do
-    if [[ -f "$driver_jar" ]]; then
-      classpath="$classpath:$driver_jar"
+
+  drivers=(
+    "${HARMONY_HOME}/lib"/mysql-connector-j-*.jar
+    "${HARMONY_HOME}/lib"/mariadb-connector-j-*.jar
+  )
+
+  for driver in "${drivers[@]}"; do
+    if [[ -f "$driver" ]]; then
+      classpath="$classpath:$driver"
     fi
   done
+
+  if [[ "$LOG_LEVEL_THRESHOLD" == "DEBUG" ]]; then
+    sql_warnings=true
+  else
+    sql_warnings=false
+  fi
 
   liquibase_common_args=(
     --driver="$DB_DRIVER_CLASS"
@@ -30,16 +42,24 @@ define_liquibase_parameters() {
     --password="$DB_PASSWORD"
     --show-banner=false
     --analytics-enabled=false
+    --sql-show-sql-warnings="$sql_warnings"
   )
 }
 
 run_migrations() {
-  local _admin_user _admin_password _admin_password_hash
+  local _admin_user _admin_password _admin_password_hash history_output
 
   _admin_user="${ADMIN_USER:-$DEFAULT_ADMIN_USER}"
   _admin_password="${ADMIN_PASSWORD:-}"
 
-  if "$liquibase_home/liquibase" "${liquibase_common_args[@]}" history 2>&1 | grep -q "No changesets deployed"; then
+  if ! history_output=$("$liquibase_home/liquibase" "${liquibase_common_args[@]}" history 2>&1); then
+    log ERROR "Failed to execute 'liquibase history'. Database may be unreachable or misconfigured."
+
+    printf "\n\n%s\n" "$history_output" >&2
+    exit 1
+  fi
+
+  if grep -q "No changesets deployed" <<< "$history_output"; then
     log INFO "Database not initialized. Running migrations for the first time"
 
     log DEBUG "Defining admin user credentials"

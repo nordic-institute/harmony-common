@@ -38,7 +38,7 @@ get_base_url() {
     protocol="https"
   fi
 
-  echo "${protocol}://localhost:${PORT}"
+  echo "${protocol}://localhost:${SERVER_PORT}"
 }
 
 wait_for_service() {

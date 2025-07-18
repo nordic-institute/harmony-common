@@ -54,7 +54,7 @@ printf "%s" "$temp_config_path" > /var/run/s6/container_environment/TEMP_CONFIG_
 node_id="${NODE_ID:-$HOSTNAME}"
 deployment_clustered_raw="${DEPLOYMENT_CLUSTERED:-$(get_property "$config_path" 'domibus.deployment.clustered' 'false')}"
 deployment_clustered="$(ensure_boolean "$deployment_clustered_raw" "false")"
-cluster_backend="${CLUSTER_BACKEND:-database}"
+cluster_backend="${CLUSTER_BACKEND:-volume}"
 cluster_secret_backup_raw="${CLUSTER_SECRET_BACKUP:-true}"
 cluster_secret_backup="$(ensure_boolean "$cluster_secret_backup_raw" "true")"
 

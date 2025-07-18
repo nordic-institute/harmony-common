@@ -9,16 +9,16 @@ source /usr/lib/harmony-cluster
 
 log DEBUG "Started"
 
-if is_primary; then
-  set_ready_flag
-else
-  printf "%s" "ready" > /var/run/s6/container_environment/REPLICA_STATE
-fi
-
 if mv -f "$TEMP_CONFIG_PATH" "$CONFIG_PATH"; then
   log INFO "Configuration moved from '$TEMP_CONFIG_PATH' to '$CONFIG_PATH'"
 else
   die "Failed to move '$TEMP_CONFIG_PATH' to '$CONFIG_PATH'"
+fi
+
+if is_primary; then
+  set_ready_flag
+else
+  printf "%s" "ready" > /var/run/s6/container_environment/REPLICA_STATE
 fi
 
 log DEBUG "Done"

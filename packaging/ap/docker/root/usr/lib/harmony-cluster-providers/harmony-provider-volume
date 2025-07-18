@@ -171,7 +171,8 @@ store_secret() {
   local src="$2"
   local file="$CLUSTER_VOLUME_SECRETS/$key"
 
-  # If source is an existing file, do nothing (we assume it already lives on the shared volume)
+  # If source is an existing, do nothing
+  # Assumes it already exists on the shared volume and is not considered a secret
   if [[ -f "$src" ]]; then
     log DEBUG "Detected file-based secret storage; skipping. [secret=$key]"
     return 0
@@ -215,7 +216,8 @@ read_secret() {
   local key="$1"
   local dest="${2:-}"
 
-  # If a destination file is provided, do nothing (we assume it already lives on the shared volume)
+  # If a destination file is provided, do nothing
+  # Assumes it already exists on the shared volume and is not considered a secret
   if [[ -n "$dest" ]]; then
     log DEBUG "Detected file-based secret retrieval; skipping. [secret=$key]"
     return 0

@@ -11,6 +11,7 @@ readonly STAGE="init-webserver"
 : "${TLS_KEYSTORE_PATH:=${HARMONY_BASE}/etc/tls-keystore.p12}"
 : "${TLS_TRUSTSTORE_PATH:=${HARMONY_BASE}/etc/tls-truststore.p12}"
 : "${CATALINA_TEMP_DIR:=/var/tmp/harmony-ap}"
+: "${EXTERNAL_LB:=false}"
 
 setup_environment() {
   log DEBUG "Setting up default configuration files"
@@ -96,28 +97,40 @@ sync_tls_secrets() {
   fi
 }
 
-configure_server() {
-  log DEBUG "Configuring server SSL and ports"
+is_non_ssl_environment() {
+  [[ "$DEPLOYMENT_CLUSTERED" == "true" || "$EXTERNAL_LB" == "true" ]]
+}
 
-  local ssl_enabled=true
-  local port=8443
+resolve_server_config() {
+  log DEBUG "Resolving server SSL and port defaults"
 
-  EXTERNAL_LB="${EXTERNAL_LB:-false}"
-  if [[ "$DEPLOYMENT_CLUSTERED" == "true" || "$EXTERNAL_LB" == "true" ]]; then
-    ssl_enabled=false
-    port=8080
+  if [ -z "${SSL_ENABLED:-}" ]; then
+    if is_non_ssl_environment; then
+      SSL_ENABLED=false
+    else
+      SSL_ENABLED=true
+    fi
   fi
 
-  printf "%s" "$ssl_enabled" > /var/run/s6/container_environment/SSL_ENABLED
-  printf "%s" "$port" > /var/run/s6/container_environment/PORT
+  if [ -z "${SERVER_PORT:-}" ]; then
+    if is_non_ssl_environment; then
+      SERVER_PORT=8080
+    else
+      SERVER_PORT=8443
+    fi
+  fi
 
   log INFO "Server configuration:"
-  log INFO "    SSL enabled: $ssl_enabled"
-  log INFO "    Port: $port"
+  log INFO "    SSL enabled: $SSL_ENABLED"
+  log INFO "    Port: $SERVER_PORT"
+}
+
+configure_server() {
+  log DEBUG "Updating server configuration"
 
   xmlstarlet edit --pf \
-    --update '//Connector/@SSLEnabled'      --value "$ssl_enabled" \
-    --update '//Connector/@port'            --value "$port" \
+    --update '//Connector/@SSLEnabled'      --value "$SSL_ENABLED" \
+    --update '//Connector/@port'            --value "$SERVER_PORT" \
     --update '//Connector/@keystorePass'    --value "$TLS_KEYSTORE_PASSWORD" \
     --update '//Connector/@keystoreFile'    --value "$TLS_KEYSTORE_PATH" \
     --update '//Connector/@truststorePass'  --value "$TLS_TRUSTSTORE_PASSWORD" \
@@ -140,6 +153,8 @@ publish_environment_variables() {
   printf "%s" "$TLS_TRUSTSTORE_PASSWORD" > /var/run/s6/container_environment/TLS_TRUSTSTORE_PASSWORD
   printf "%s" "$TLS_TRUSTSTORE_PATH"     > /var/run/s6/container_environment/TLS_TRUSTSTORE_PATH
   printf "%s" "$CATALINA_TEMP_DIR"       > /var/run/s6/container_environment/CATALINA_TEMP_DIR
+  printf "%s" "$SSL_ENABLED"             > /var/run/s6/container_environment/SSL_ENABLED
+  printf "%s" "$SERVER_PORT"             > /var/run/s6/container_environment/SERVER_PORT
 }
 
 init_webserver() {
@@ -155,6 +170,7 @@ init_webserver() {
   fi
 
   sync_tls_secrets
+  resolve_server_config
   configure_server
   publish_environment_variables
 
