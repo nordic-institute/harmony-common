@@ -104,7 +104,7 @@
   </changeSet>
 
   <changeSet author="harmony" id="2.6.0-upgrade">
-    <sqlFile dbms="mysql,mariadb" relativeToChangelogFile="true" endDelimiter="//" path="migrations/mysql-5.1.4-to-5.1.8-upgrade.ddl"/>
+    <sqlFile dbms="mysql,mariadb" relativeToChangelogFile="true" endDelimiter="//" path="migrations/mysql-5.1.4-to-5.1.9-upgrade.ddl"/>
   </changeSet>
 
 
