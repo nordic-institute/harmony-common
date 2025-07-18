@@ -1,5 +1,12 @@
 #!/bin/bash
 
+: "${NODE_ID:=$HOSTNAME}"
+: "${LOG_LEVEL_THRESHOLD:=INFO}"
+: "${LOG_OUTPUT:=stderr}"
+: "${LOG_TIMESTAMP_FMT:=%Y-%m-%dT%H:%M:%S.%6NZ}"
+: "${LOG_FILE:=/var/log/harmony.log}"
+export NODE_ID LOG_LEVEL_THRESHOLD LOG_OUTPUT LOG_TIMESTAMP_FMT LOG_FILE
+
 source /usr/lib/harmony-common
 
 # shellcheck disable=SC2034 # Used in sourced scripts

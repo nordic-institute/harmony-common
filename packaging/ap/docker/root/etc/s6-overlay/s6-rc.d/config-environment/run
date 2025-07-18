@@ -10,7 +10,7 @@ get_property() {
   local property="$2"
   local default_value="$3"
 
-  harmony-property -s "$STAGE" -n "$node_id" -a GET -c "$cfg_path" -p "$property" -v "$default_value" --allow-missing-paths
+  harmony-property -s "$STAGE" -n "$NODE_ID" -a GET -c "$cfg_path" -p "$property" -v "$default_value" --allow-missing-paths
 }
 
 log DEBUG "Started"
@@ -51,14 +51,18 @@ printf "%s" "$temp_config_path" > /var/run/s6/container_environment/TEMP_CONFIG_
 # -------------------------------
 # Clustering options
 # -------------------------------
-node_id="${NODE_ID:-$HOSTNAME}"
 deployment_clustered_raw="${DEPLOYMENT_CLUSTERED:-$(get_property "$config_path" 'domibus.deployment.clustered' 'false')}"
 deployment_clustered="$(ensure_boolean "$deployment_clustered_raw" "false")"
-cluster_backend="${CLUSTER_BACKEND:-volume}"
+
+if [[ "$deployment_clustered" == "true" ]]; then
+  cluster_backend="${CLUSTER_BACKEND:-volume}"
+else
+  cluster_backend="${CLUSTER_BACKEND:-none}"
+fi
+
 cluster_secret_backup_raw="${CLUSTER_SECRET_BACKUP:-true}"
 cluster_secret_backup="$(ensure_boolean "$cluster_secret_backup_raw" "true")"
 
-printf "%s" "$node_id" > /var/run/s6/container_environment/NODE_ID
 printf "%s" "$deployment_clustered" > /var/run/s6/container_environment/DEPLOYMENT_CLUSTERED
 printf "%s" "$cluster_backend" > /var/run/s6/container_environment/CLUSTER_BACKEND
 printf "%s" "$cluster_secret_backup" > /var/run/s6/container_environment/CLUSTER_SECRET_BACKUP

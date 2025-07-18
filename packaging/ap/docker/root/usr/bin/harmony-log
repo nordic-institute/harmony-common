@@ -1,11 +1,6 @@
 #!/bin/bash
 set -euo pipefail
 
-: "${LOG_TIMESTAMP_FMT:=%Y-%m-%dT%H:%M:%S.%6NZ}"
-: "${LOG_LEVEL_THRESHOLD:=INFO}"
-: "${LOG_OUTPUT:=stderr}"
-: "${LOG_FILE:=/var/log/harmony.log}"
-
 declare -A LEVEL_NUM=([ERROR]=0 [WARN]=1 [INFO]=2 [DEBUG]=3)
 
 harmony_log() {
