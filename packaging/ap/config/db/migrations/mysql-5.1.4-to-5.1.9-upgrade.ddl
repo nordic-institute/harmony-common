@@ -1,13 +1,13 @@
 --  *********************************************************************
 --  Update Database Script
 --  *********************************************************************
---  Change Log: src/main/resources/db/upgrade/5.1.8/changelog-5.1.8-delta.xml
---  Ran at: 7/15/25, 11:01 AM
---  Against: null@offline:mysql?changeLogFile=target/liquibase/changelog-5.1.8-delta.mysql
+--  Change Log: src/main/resources/db/upgrade/5.1.9/changelog-5.1.9-delta.xml
+--  Ran at: 7/18/25, 10:07 AM
+--  Against: null@offline:mysql?changeLogFile=target/liquibase/changelog-5.1.9-delta.mysql
 --  Liquibase version: 4.17.0
 --  *********************************************************************
 
---  Changeset src/main/resources/db/upgrade/5.1.8/../../common/changelog-before-migration-statements-v2.xml::EDELIVERY-12287_assert_previous_migration_succeeded-v2-mysql::Gabriel Maier
+--  Changeset src/main/resources/db/upgrade/5.1.9/../../common/changelog-before-migration-statements-v2.xml::EDELIVERY-12287_assert_previous_migration_succeeded-v2-mysql::Gabriel Maier
 -- DELIMITER //
 
 DROP PROCEDURE IF EXISTS EXECUTE_AND_IGNORE_ERROR
@@ -80,7 +80,7 @@ CREATE INDEX IDX_MESSAGE_LOCK_INIT ON TB_MESSAGING_LOCK(INITIATOR);
 CREATE INDEX IDX_MESSAGE_LOCK_STATE ON TB_MESSAGING_LOCK(MESSAGE_STATE);
 //
 
---  Changeset src/main/resources/db/upgrade/5.1.8/changelog-5.1.8-delta.xml::EDELIVERY-15206::maierga
+--  Changeset src/main/resources/db/upgrade/5.1.9/changelog-5.1.9-delta.xml::EDELIVERY-15206::maierga
 -- NEDS-210: add-message-property-index
 CALL EXECUTE_AND_IGNORE_ERROR('ALTER TABLE TB_D_MESSAGE_PROPERTY ADD COLUMN CONTENT_HASH VARCHAR(64) GENERATED ALWAYS AS (SHA2(CONCAT(IFNULL(NAME, ''''), ''|'', IFNULL(VALUE, ''''), ''|'', IFNULL(TYPE, '''')), 256)) STORED', 1060);
 //
