@@ -75,6 +75,14 @@ acquire_primary() {
     lease_age=$(( $(date +%s) - $(cat "$LEASE_FILE" 2>/dev/null || echo 0) ))
     if (( lease_age < max_ttl )); then
       log DEBUG "Another active primary node (age=${lease_age}s)"
+
+      if [[ "${CLUSTER_ROLE:-}" != "replica" ]]; then
+        log DEBUG "Assigning REPLICA role to node '${NODE_ID}', previous role was: '${CLUSTER_ROLE:-}'"
+        CLUSTER_ROLE="replica"
+        export CLUSTER_ROLE
+        printf "%s" "$CLUSTER_ROLE" > /var/run/s6/container_environment/CLUSTER_ROLE
+      fi
+
       return 1
     fi
   fi

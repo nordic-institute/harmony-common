@@ -18,9 +18,9 @@ harmony_log() {
     *) echo "[ERROR] Invalid log level: '$level'" >&2; return 1 ;;
   esac
 
-  local threshold="${LOG_LEVEL_THRESHOLD^^}"
+  local threshold="${LOG_LEVEL^^}"
   if [[ -z "${LEVEL_NUM[$threshold]+_}" ]]; then
-    echo "[ERROR] Invalid LOG_LEVEL_THRESHOLD: '$threshold'" >&2
+    echo "[ERROR] Invalid LOG_LEVEL: '$threshold'" >&2
     return 1
   fi
 

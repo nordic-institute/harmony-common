@@ -37,10 +37,10 @@ add_prefix_suffix() {
 }
 
 construct_jmx_url() {
-  local host="$1"
+  local hosts="$1"
   local port="$2"
 
-  echo "service:jmx:rmi:///jndi/rmi://${host}:${port}/jmxrmi"
+  add_prefix_suffix "${hosts}" "service:jmx:rmi:///jndi/rmi://" ":${port}/jmxrmi"
 }
 
 configure_embedded_broker() {

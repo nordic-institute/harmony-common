@@ -26,7 +26,7 @@ define_liquibase_parameters() {
     fi
   done
 
-  if [[ "$LOG_LEVEL_THRESHOLD" == "DEBUG" ]]; then
+  if [[ "$LOG_LEVEL" == "DEBUG" ]]; then
     sql_warnings=true
   else
     sql_warnings=false
