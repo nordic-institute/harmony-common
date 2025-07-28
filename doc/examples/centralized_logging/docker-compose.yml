@@ -116,7 +116,7 @@ services:
       retries: 120
 
   harmony-ap:
-    image: niis/harmony-ap:2.4.0
+    image: niis/harmony-ap:2.6.0
     depends_on:
       harmony-db:
         condition: service_healthy
@@ -135,7 +135,6 @@ services:
     volumes:
       - ap-data:/var/opt/harmony-ap
     restart: on-failure
-    mem_limit: 1500m
     logging:
       driver: gelf
       options:

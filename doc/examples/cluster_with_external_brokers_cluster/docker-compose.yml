@@ -1,0 +1,104 @@
+services:
+  nginx:
+    image: nginx:1.29-alpine
+    depends_on:
+      - harmony-ap-luke
+      - harmony-ap-leia
+    ports:
+      - "8443:443"
+    volumes:
+      - './nginx.conf:/etc/nginx/nginx.conf:ro'
+      - './certs:/etc/nginx/certs:ro'
+
+  harmony-ap-luke:
+    image: niis/harmony-ap:2.6.0
+    depends_on:
+      - harmony-db
+      - harmony-broker-gandalf
+      - harmony-broker-frodo
+    environment:
+      - DB_HOST=harmony-db
+      - DB_PASSWORD=changeme
+      - ADMIN_PASSWORD=changeme
+      - PARTY_NAME=harmony-ap
+      - TLS_KEYSTORE_B64=${TLS_KEYSTORE_B64}
+      - TLS_KEYSTORE_PASSWORD=changeme
+      - DEPLOYMENT_CLUSTERED=true
+      - CLUSTER_SECRET_KEY=changeme
+      - ACTIVEMQ_BROKER_HOST=harmony-broker-gandalf,harmony-broker-frodo
+      - ACTIVEMQ_BROKER_NAME=gandalf,frodo
+      - ACTIVEMQ_USERNAME=admin
+      - ACTIVEMQ_PASSWORD=changeme
+    restart: unless-stopped
+    volumes:
+      - harmony-ap-data:/var/opt/harmony-ap
+
+  harmony-ap-leia:
+    image: niis/harmony-ap:2.6.0
+    depends_on:
+      - harmony-db
+      - harmony-broker-gandalf
+      - harmony-broker-frodo
+    environment:
+      - DB_HOST=harmony-db
+      - DB_PASSWORD=changeme
+      - ADMIN_PASSWORD=changeme
+      - PARTY_NAME=harmony-ap
+      - TLS_KEYSTORE_B64=${TLS_KEYSTORE_B64}
+      - TLS_KEYSTORE_PASSWORD=changeme
+      - DEPLOYMENT_CLUSTERED=true
+      - CLUSTER_SECRET_KEY=changeme
+      - ACTIVEMQ_BROKER_HOST=harmony-broker-gandalf,harmony-broker-frodo
+      - ACTIVEMQ_BROKER_NAME=gandalf,frodo
+      - ACTIVEMQ_USERNAME=admin
+      - ACTIVEMQ_PASSWORD=changeme
+    restart: unless-stopped
+    volumes:
+      - harmony-ap-data:/var/opt/harmony-ap
+
+  harmony-broker-gandalf:
+    image: apache/activemq-classic:5.18.7
+    environment:
+      - ACTIVEMQ_CONNECTION_USER=admin
+      - ACTIVEMQ_CONNECTION_PASSWORD=changeme
+      - ACTIVEMQ_JMX_USER=admin
+      - ACTIVEMQ_JMX_PASSWORD=changeme
+      - ACTIVEMQ_WEB_USER=webadmin
+      - ACTIVEMQ_WEB_PASSWORD=changeme
+      - ACTIVEMQ_DATA=/var/opt/apache-activemq
+      - ACTIVEMQ_TMP=/var/tmp
+    volumes:
+      - ./activemq-gandalf.xml:/opt/apache-activemq/conf/activemq.xml
+      - harmony-jms-data:/var/opt/apache-activemq
+
+  harmony-broker-frodo:
+    image: apache/activemq-classic:5.18.7
+    environment:
+      - ACTIVEMQ_CONNECTION_USER=admin
+      - ACTIVEMQ_CONNECTION_PASSWORD=changeme
+      - ACTIVEMQ_JMX_USER=admin
+      - ACTIVEMQ_JMX_PASSWORD=changeme
+      - ACTIVEMQ_WEB_USER=webadmin
+      - ACTIVEMQ_WEB_PASSWORD=changeme
+      - ACTIVEMQ_DATA=/var/opt/apache-activemq
+      - ACTIVEMQ_TMP=/var/tmp
+    volumes:
+      - ./activemq-frodo.xml:/opt/apache-activemq/conf/activemq.xml
+      - harmony-jms-data:/var/opt/apache-activemq
+
+  harmony-db:
+    image: mysql:8
+    environment:
+      - MYSQL_RANDOM_ROOT_PASSWORD=true
+      - MYSQL_DATABASE=harmony_ap
+      - MYSQL_USER=harmony_ap
+      - MYSQL_PASSWORD=changeme
+    command:
+      - "--character-set-server=utf8mb4"
+      - "--collation-server=utf8mb4_bin"
+    restart: on-failure
+    mem_limit: 512m
+
+volumes:
+  harmony-ap-data:
+  harmony-jms-data:
