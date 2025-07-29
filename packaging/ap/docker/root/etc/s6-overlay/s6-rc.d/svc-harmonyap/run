@@ -1,7 +1,7 @@
 #!/command/with-contenv bash
 set -euo pipefail
 
-: "${MAX_MEM:=512m}"
+: "${JAVA_OPTS:=-Xms256m -Xmx512m -XX:+UseParallelGC -XX:+ExitOnOutOfMemoryError -XX:MaxMetaspaceSize=256m}"
 
 if [ "${HARMONY_MODE:-}" = init ]; then
   harmony-log INFO "$NODE_ID" "svc-harmonyap" "Harmony Access Point is in init mode; startup skipped."
@@ -10,10 +10,7 @@ if [ "${HARMONY_MODE:-}" = init ]; then
 fi
 
 exec java \
-  -Xms256m -Xmx"$MAX_MEM" \
-  -XX:+UseParallelGC \
-  -XX:+ExitOnOutOfMemoryError \
-  -XX:MaxMetaspaceSize=256m \
+  $JAVA_OPTS \
   --add-opens=java.base/java.lang=ALL-UNNAMED \
   --add-opens=java.base/java.io=ALL-UNNAMED \
   --add-opens=java.base/java.util=ALL-UNNAMED \
