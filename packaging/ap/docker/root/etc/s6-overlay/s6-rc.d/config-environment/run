@@ -58,7 +58,7 @@ deployment_clustered_raw="${DEPLOYMENT_CLUSTERED:-$(get_property "$application_c
 deployment_clustered="$(ensure_boolean "$deployment_clustered_raw" "false")"
 
 if [[ "$deployment_clustered" == "true" ]]; then
-  cluster_backend="${CLUSTER_BACKEND:-volume}"
+  cluster_backend="${CLUSTER_BACKEND:-filesystem}"
 else
   cluster_backend="${CLUSTER_BACKEND:-none}"
 fi

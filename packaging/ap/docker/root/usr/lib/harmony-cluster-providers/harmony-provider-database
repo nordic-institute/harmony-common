@@ -116,7 +116,7 @@ acquire_primary() {
 
   if [[ "$rows" -gt 0 ]]; then
     if [[ "${CLUSTER_ROLE:-}" != "primary" ]]; then
-      log DEBUG "Assigning PRIMARY role to node '${NODE_ID}', previous role was: '${CLUSTER_ROLE:-}'"
+      log DEBUG "Assigning primary role to node '${NODE_ID}', previous role was: '${CLUSTER_ROLE:-}'"
       CLUSTER_ROLE="primary"
       export CLUSTER_ROLE
       printf "%s" "$CLUSTER_ROLE" > /var/run/s6/container_environment/CLUSTER_ROLE
@@ -128,7 +128,7 @@ acquire_primary() {
     log DEBUG "Another node holds the primary role"
 
     if [[ "${CLUSTER_ROLE:-}" != "replica" ]]; then
-      log DEBUG "Assigning REPLICA role to node '${NODE_ID}', previous role was: '${CLUSTER_ROLE:-}'"
+      log DEBUG "Assigning replica role to node '${NODE_ID}', previous role was: '${CLUSTER_ROLE:-}'"
       CLUSTER_ROLE="replica"
       export CLUSTER_ROLE
       printf "%s" "$CLUSTER_ROLE" > /var/run/s6/container_environment/CLUSTER_ROLE

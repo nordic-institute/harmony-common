@@ -1,13 +1,13 @@
 #!/usr/bin/with-contenv bash
 set -euo pipefail
 
-CLUSTER_VOLUME_SHARED="${CLUSTER_VOLUME_SHARED:-${HARMONY_BASE}/shared}"
-CLUSTER_VOLUME_SHARED="${CLUSTER_VOLUME_SHARED%/}"
-CLUSTER_VOLUME_SECRETS="${CLUSTER_VOLUME_SECRETS:-${CLUSTER_VOLUME_SHARED}/secrets}"
-CLUSTER_VOLUME_SECRETS="${CLUSTER_VOLUME_SECRETS%/}"
-LOCK_FILE="$CLUSTER_VOLUME_SHARED/cluster.lock"
-READY_FILE="$CLUSTER_VOLUME_SHARED/cluster.ready"
-LEASE_FILE="$CLUSTER_VOLUME_SHARED/cluster.lease"
+CLUSTER_FILESYSTEM_SHARED="${CLUSTER_FILESYSTEM_SHARED:-${HARMONY_BASE}/shared}"
+CLUSTER_FILESYSTEM_SHARED="${CLUSTER_FILESYSTEM_SHARED%/}"
+CLUSTER_FILESYSTEM_SECRETS="${CLUSTER_FILESYSTEM_SECRETS:-${CLUSTER_FILESYSTEM_SHARED}/secrets}"
+CLUSTER_FILESYSTEM_SECRETS="${CLUSTER_FILESYSTEM_SECRETS%/}"
+LOCK_FILE="$CLUSTER_FILESYSTEM_SHARED/cluster.lock"
+READY_FILE="$CLUSTER_FILESYSTEM_SHARED/cluster.ready"
+LEASE_FILE="$CLUSTER_FILESYSTEM_SHARED/cluster.lease"
 
 compute_hash() {
   local src="$1"
@@ -51,11 +51,15 @@ decrypt_value() {
 }
 
 init_backend() {
-  log DEBUG "Initializing volume backend for cluster"
+  log DEBUG "Initializing filesystem backend for cluster"
+
+  if [[ -z "${CLUSTER_SECRET_KEY:-}" ]]; then
+    die "The environment variable CLUSTER_SECRET_KEY must be defined for the filesystem cluster backend."
+  fi
 
   local DIRECTORIES=(
-    "$CLUSTER_VOLUME_SHARED"
-    "$CLUSTER_VOLUME_SECRETS"
+    "$CLUSTER_FILESYSTEM_SHARED"
+    "$CLUSTER_FILESYSTEM_SECRETS"
   )
 
   for dir in "${DIRECTORIES[@]}"; do
@@ -107,7 +111,7 @@ acquire_primary() {
     } >&$LOCKFD || log WARN "Could not write audit info into $LOCK_FILE."
 
     if [[ "${CLUSTER_ROLE:-}" != "primary" ]]; then
-      log DEBUG "Assigning PRIMARY role to node '${NODE_ID}', previous role was: '${CLUSTER_ROLE:-}'"
+      log DEBUG "Assigning primary role to node '${NODE_ID}', previous role was: '${CLUSTER_ROLE:-}'"
       CLUSTER_ROLE="primary"
       export CLUSTER_ROLE
       printf "%s" "$CLUSTER_ROLE" > /var/run/s6/container_environment/CLUSTER_ROLE
@@ -120,7 +124,7 @@ acquire_primary() {
     exec {LOCKFD}>&-
 
     if [[ "${CLUSTER_ROLE:-}" != "replica" ]]; then
-      log DEBUG "Assigning REPLICA role to node '${NODE_ID}', previous role was: '${CLUSTER_ROLE:-}'"
+      log DEBUG "Assigning replica role to node '${NODE_ID}', previous role was: '${CLUSTER_ROLE:-}'"
       CLUSTER_ROLE="replica"
       export CLUSTER_ROLE
       printf "%s" "$CLUSTER_ROLE" > /var/run/s6/container_environment/CLUSTER_ROLE
@@ -177,10 +181,10 @@ wait_for_ready() {
 store_secret() {
   local key="$1"
   local src="$2"
-  local file="$CLUSTER_VOLUME_SECRETS/$key"
+  local file="$CLUSTER_FILESYSTEM_SECRETS/$key"
 
   # If source is an existing, do nothing
-  # Assumes it already exists on the shared volume and is not considered a secret
+  # Assumes it already exists on the shared filesystem and is not considered a secret
   if [[ -f "$src" ]]; then
     log DEBUG "Detected file-based secret storage; skipping. [secret=$key]"
     return 0
@@ -225,13 +229,13 @@ read_secret() {
   local dest="${2:-}"
 
   # If a destination file is provided, do nothing
-  # Assumes it already exists on the shared volume and is not considered a secret
+  # Assumes it already exists on the shared filesystem and is not considered a secret
   if [[ -n "$dest" ]]; then
     log DEBUG "Detected file-based secret retrieval; skipping. [secret=$key]"
     return 0
   fi
 
-  local file="$CLUSTER_VOLUME_SECRETS/$key"
+  local file="$CLUSTER_FILESYSTEM_SECRETS/$key"
 
   if [[ ! -r "$file" ]]; then
     log DEBUG "Secret file not found or unreadable at '$file'; returning empty value. [secret=$key]"
