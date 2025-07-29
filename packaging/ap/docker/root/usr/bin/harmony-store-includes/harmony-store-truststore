@@ -143,16 +143,25 @@ process_truststore() {
   else
     if [[ -n "$store_base64" ]]; then
       log INFO "No truststore found. Loading from base64. [store=$store_path]"
-      load_store_from_base64 truststore_config
+      if ! load_store_from_base64 truststore_config; then
+        die "Failed to load truststore from base64. Aborting. [store=$store_path]"
+      fi
     else
       log INFO "No truststore found and no base64 provided. Creating new truststore. [store=$store_path]"
-      create_new_truststore truststore_config
+      if ! create_new_truststore truststore_config; then
+        die "Failed to create new truststore. Aborting. [store=$store_path]"
+      fi
     fi
   fi
 
   # After existence or creation, validate the truststore
-  validate_store_file_and_password truststore_config
+  if ! validate_store_file_and_password truststore_config; then
+    die "Truststore validation failed. Please verify file path and password. [store=$store_path]"
+  fi
 
   # Load the public certificate into the truststore
   import_public_certificate_if_needed truststore_config
+  if ! import_public_certificate_if_needed truststore_config; then
+    die "Failed to import public certificate. Aborting process. [store=$store_path]"
+  fi
 }

@@ -71,6 +71,8 @@ load_store_from_base64() {
   local store_base64="${store_base64_config[store_base64]}"
   local store_path="${store_base64_config[store_path]}"
 
+  log DEBUG "Decoding base64 store to file. [store=$store_path]"
+
   harmony-base64 --stage "$stage" --input "$store_base64" --output "$store_path"
 
   log INFO "Store loaded from base64. [store=$store_path]"
@@ -83,13 +85,15 @@ validate_store_file_and_password() {
   local store_password="${store_config[store_password]}"
   local store_type="${store_config[store_type]}"
 
+  log DEBUG "Checking store file exists and is readable. [store=$store_path]"
+
   if [[ ! -f "$store_path" ]]; then
-    log ERROR "Keystore or truststore file does not exist. [store=$store_path]"
+    log ERROR "Store file does not exist. [store=$store_path]"
     return 1
   fi
 
   if [[ ! -r "$store_path" ]]; then
-    log ERROR "Keystore or truststore file is not readable. [store=$store_path]"
+    log ERROR "Store file is not readable. [store=$store_path]"
     return 1
   fi
 
@@ -103,26 +107,26 @@ validate_store_password() {
   local store_password="${store_password_config[store_password]}"
   local store_type="${store_password_config[store_type]}"
 
+  log DEBUG "Validating store password for ${store_path} (type=${store_type})"
+
   local output
-  output=$(keytool -list -keystore "$store_path" -storepass "$store_password" -storetype "$store_type" 2>&1)
-  local exit_code=$?
+  if ! output=$(keytool -list -keystore "$store_path" -storepass "$store_password" -storetype "$store_type" 2>&1); then
+    if [[ "${output,,}" =~ "keystore password was incorrect" ]]; then
+      log ERROR "Store password was rejected. [store=$store_path]"
+      log ERROR "Possible causes:"
+      log ERROR "- The password provided is incorrect."
+      log ERROR "- OR the keystore format is incompatible with Java 11+ PKCS12 implementation."
+      log ERROR "If you are sure the password is correct, consider recreating the keystore using '-J-Dkeystore.pkcs12.legacy'."
+    else
+      log ERROR "Error validating password: ${output}. [store=$store_path]"
+    fi
 
-  if [[ $exit_code -eq 0 ]]; then
-    log DEBUG "Keystore or truststore validated successfully. [store=$store_path]"
-    return 0
+    return 1
   fi
 
-  if echo "$output" | grep -q "keystore password was incorrect"; then
-    log ERROR "Keystore or truststore password was rejected. [store=$store_path]"
-    log ERROR "Possible causes:"
-    log ERROR "- The password provided is incorrect."
-    log ERROR "- OR the keystore format is incompatible with Java 11+ PKCS12 implementation."
-    log ERROR "If you are sure the password is correct, consider recreating the keystore using '-J-Dkeystore.pkcs12.legacy'."
-  else
-    log ERROR "Failed to read the store at '$store_path': $output"
-  fi
+  log DEBUG "Password validated. [store=$store_path]"
 
-  return $exit_code
+  return 0
 }
 
 validate_certificate_in_store() {
@@ -136,6 +140,8 @@ validate_certificate_in_store() {
   local public_cert_path="${certificate_in_store_config[public_cert_path]}"
   local store_type="${certificate_in_store_config[store_type]}"
 
+  log DEBUG "Comparing fingerprints of alias '$alias'. [store=$store_path]"
+
   local store_fingerprint cert_fingerprint
 
   store_fingerprint=$(keytool -list -rfc -keystore "$store_path" -storepass "$store_password" -storetype "$store_type" -alias "$alias" \
@@ -147,11 +153,7 @@ validate_certificate_in_store() {
     | cut -d'=' -f2 \
     | tr -d ':')
 
-  if [[ "$store_fingerprint" == "$cert_fingerprint" ]]; then
-    return 0
-  else
-    return 1
-  fi
+  [[ "$store_fingerprint" == "$cert_fingerprint" ]]
 }
 
 alias_exists_in_store() {
@@ -164,23 +166,17 @@ alias_exists_in_store() {
   local store_password="${alias_exists_config[store_password]}"
   local store_type="${alias_exists_config[store_type]}"
 
-  local output
-  output=$(keytool \
-    -list \
-    -alias "$alias" \
-    -keystore "$store_path" \
-    -storetype "$store_type" \
-    -storepass "$store_password" \
-    2>&1)
-  local exit_code=$?
+  log DEBUG "Verifying alias '$alias' exists. [store=$store_path]"
 
-  if echo "$output" | grep -q "does not exist"; then
-    log DEBUG "Alias '$alias' not found in keystore. [store=$store_path]"
+  local output
+  if ! output=$(keytool -list -alias "$alias" -keystore "$store_path" -storetype "$store_type" -storepass "$store_password" 2>&1); then
+    if [[ "${output,,}" =~ "does not exist" ]]; then
+      log DEBUG "Alias '$alias' does not exist. [store=$store_path]"
+    else
+      log ERROR "Error checking alias '$alias': $output. [store=$store_path]"
+    fi
     return 1
-  elif [[ $exit_code -ne 0 ]]; then
-    log ERROR "Failed to list alias '$alias' in keystore '$store_path': $output"
-    return $exit_code
-  else
-    return 0
   fi
+
+  return 0
 }
