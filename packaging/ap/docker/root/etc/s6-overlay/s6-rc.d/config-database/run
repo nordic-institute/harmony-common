@@ -22,7 +22,7 @@ get_database_connection_details() {
     harmony-database \
       --mode get-connection-details \
       --stage "$STAGE" \
-      --config-path "$TEMP_CONFIG_PATH" \
+      --config-path "$APPLICATION_CONFIG_PATH_TEMP" \
       --property-prefix "domibus.datasource" \
       --db-url "${DB_URL:-}" \
       --db-driver-class "${DB_DRIVER_CLASS:-}" \

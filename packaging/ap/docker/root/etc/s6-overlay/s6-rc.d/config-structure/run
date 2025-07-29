@@ -50,11 +50,11 @@ copy_configuration_files() {
   cp -r --update=none "$HARMONY_HOME/internal"  "$HARMONY_BASE/etc/"
   cp -r --update=none "$HARMONY_HOME/policies"  "$HARMONY_BASE/etc/"
 
-  cp --update=none "$HARMONY_HOME/setup/domibus.properties.template"  "$CONFIG_PATH"
+  cp --update=none "$HARMONY_HOME/setup/domibus.properties.template"  "$APPLICATION_CONFIG_PATH"
 }
 
 adjust_permissions() {
-  chmod 600 "$CONFIG_PATH"
+  chmod 600 "$APPLICATION_CONFIG_PATH"
 }
 
 # Copy the configuration file to a temporary location before applying modifications.
@@ -62,7 +62,7 @@ adjust_permissions() {
 # and the final file is moved atomically to its destination, preventing partial updates,
 # stale data, and file locking issues on distributed mounts.
 copy_temp_config() {
-  cp "$CONFIG_PATH" "$TEMP_CONFIG_PATH"
+  cp "$APPLICATION_CONFIG_PATH" "$APPLICATION_CONFIG_PATH_TEMP"
 }
 
 config_structure() {

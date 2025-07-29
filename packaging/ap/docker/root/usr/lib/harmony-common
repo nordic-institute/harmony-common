@@ -42,7 +42,7 @@ property_helper() {
     --stage "$STAGE" \
     --node-id "$NODE_ID" \
     --action "$1" \
-    --config-path "$TEMP_CONFIG_PATH" \
+    --config-path "$APPLICATION_CONFIG_PATH_TEMP" \
     --property "$2" \
     $quiet_flag \
     ${3:+--value "$3"}

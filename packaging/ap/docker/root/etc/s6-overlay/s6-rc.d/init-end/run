@@ -9,10 +9,10 @@ source /usr/lib/harmony-cluster
 
 log DEBUG "Started"
 
-if mv -f "$TEMP_CONFIG_PATH" "$CONFIG_PATH"; then
-  log INFO "Configuration moved from '$TEMP_CONFIG_PATH' to '$CONFIG_PATH'"
+if mv -f "$APPLICATION_CONFIG_PATH_TEMP" "$APPLICATION_CONFIG_PATH"; then
+  log INFO "Configuration moved from '$APPLICATION_CONFIG_PATH_TEMP' to '$APPLICATION_CONFIG_PATH'"
 else
-  die "Failed to move '$TEMP_CONFIG_PATH' to '$CONFIG_PATH'"
+  die "Failed to move '$APPLICATION_CONFIG_PATH_TEMP' to '$APPLICATION_CONFIG_PATH'"
 fi
 
 if is_primary; then

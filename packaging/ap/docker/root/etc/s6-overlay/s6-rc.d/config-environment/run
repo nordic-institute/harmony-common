@@ -42,16 +42,16 @@ printf "%s" "$temp_dir" > /var/run/s6/container_environment/TEMP_DIR
 # -------------------------------
 # Config file paths
 # -------------------------------
-config_path="${CONFIG_PATH:-${harmony_base}/etc/domibus.properties}"
-temp_config_path="${temp_dir}/domibus.properties"
+application_config_path="${APPLICATION_CONFIG_PATH:-${harmony_base}/etc/domibus.properties}"
+application_config_path_temp="${temp_dir}/domibus.properties"
 
-printf "%s" "$config_path" > /var/run/s6/container_environment/CONFIG_PATH
-printf "%s" "$temp_config_path" > /var/run/s6/container_environment/TEMP_CONFIG_PATH
+printf "%s" "$application_config_path" > /var/run/s6/container_environment/APPLICATION_CONFIG_PATH
+printf "%s" "$application_config_path_temp" > /var/run/s6/container_environment/APPLICATION_CONFIG_PATH_TEMP
 
 # -------------------------------
 # Clustering options
 # -------------------------------
-deployment_clustered_raw="${DEPLOYMENT_CLUSTERED:-$(get_property "$config_path" 'domibus.deployment.clustered' 'false')}"
+deployment_clustered_raw="${DEPLOYMENT_CLUSTERED:-$(get_property "$application_config_path" 'domibus.deployment.clustered' 'false')}"
 deployment_clustered="$(ensure_boolean "$deployment_clustered_raw" "false")"
 
 if [[ "$deployment_clustered" == "true" ]]; then
@@ -70,7 +70,7 @@ printf "%s" "$cluster_secret_backup" > /var/run/s6/container_environment/CLUSTER
 # -------------------------------
 # Common cert options
 # -------------------------------
-party_name="${PARTY_NAME:-$(get_property "$config_path" 'domibus.security.key.private.alias' 'selfsigned')}"
+party_name="${PARTY_NAME:-$(get_property "$application_config_path" 'domibus.security.key.private.alias' 'selfsigned')}"
 cert_alias="${CERT_ALIAS:-$party_name}"
 cert_dir="${CERT_DIR:=${harmony_base}/etc/certs}"
 
