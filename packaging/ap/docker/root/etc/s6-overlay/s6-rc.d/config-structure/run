@@ -21,7 +21,7 @@ verify_permissions() {
 
   if (( HAS_PERMISSION_ISSUE )); then
     log WARN "Potential file permission issues detected. See documentation:"
-    log WARN "    https://github.com/nordic-institute/harmony-common/blob/main/doc/harmony-ap_docker_installation_guide.md#3211-distributed-file-systems"
+    log WARN "    https://github.com/nordic-institute/harmony-common/blob/main/doc/harmony-ap_docker_installation_guide.md#3211-distributed-file-systems#33-file-permissions-and-user-considerations"
   fi
 }
 
