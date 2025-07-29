@@ -43,8 +43,19 @@ construct_jmx_url() {
   add_prefix_suffix "${hosts}" "service:jmx:rmi:///jndi/rmi://" ":${port}/jmxrmi"
 }
 
+decode_from_base64() {
+  log DEBUG "Decoding ActiveMQ configuration from Base64 using harmony-base64..."
+  harmony-base64 --stage "$STAGE" --input "$ACTIVEMQ_EMBEDDED_CONFIG_B64" --output "$ACTIVEMQ_EMBEDDED_CONFIG_PATH" --force
+}
+
 configure_embedded_broker() {
   local broker_host="$1"
+
+  if [ -n "${ACTIVEMQ_EMBEDDED_CONFIG_B64:-}" ]; then
+    decode_from_base64
+  elif [ -f "$ACTIVEMQ_EMBEDDED_CONFIG_PATH" ]; then
+    log DEBUG "Using existing ActiveMQ configuration at ACTIVEMQ_EMBEDDED_CONFIG_PATH"
+  fi
 
   set_property "activeMQ.embedded.configurationFile" "file:///${ACTIVEMQ_EMBEDDED_CONFIG_PATH}"
   remove_property "activeMQ.username"
