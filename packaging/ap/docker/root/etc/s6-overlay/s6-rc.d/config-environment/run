@@ -20,11 +20,14 @@ log DEBUG "Started"
 # -------------------------------
 if [[ -n "${HARMONY_PARAM_FILE:-}" && -f "$HARMONY_PARAM_FILE" ]]; then
   log INFO "Reading parameters from $HARMONY_PARAM_FILE..."
-  while IFS='=' read -r key value; do
+  while IFS='=' read -r key value || [[ -n "$key" ]]; do
+    value=${value%$'\r'}
+
     # Ignore comments, empty keys, already defined variables, or empty values
     [[ "$key" =~ ^#.*$ || -z "$key" || -n "${!key:-}" || -z "$value" ]] && continue
     declare "$key=$value"
     printf "%s" "$value" > "/var/run/s6/container_environment/$key"
+    log DEBUG "Added environment variable: $key"
   done < "$HARMONY_PARAM_FILE"
 fi
 
