@@ -77,7 +77,7 @@ resolve_db_connection_details() {
   if [[ -n "${DB_URL:-}" ]]; then
     parse_db_url "$DB_URL"
     log DEBUG "Using provided database URL: $DB_URL"
-  elif [[ -n "${DB_HOST:-}" && -n "${DB_SCHEMA:-}" ]]; then
+  elif [[ -n "${DB_HOST:-}" ]]; then
     build_db_url
     log DEBUG "Constructed database URL from host, port and schema: $DB_URL"
   elif prop_url=$(get_property "${PROPERTY_PREFIX}.url") && [[ -n "$prop_url" && "$prop_url" != *\$\{*\}* ]]; then
