@@ -5,21 +5,17 @@ readonly STAGE="config-database"
 
 source /usr/lib/harmony-common
 
-get_property() {
-  local cfg_path="$1"
-  local property="$2"
-  local default_value="$3"
-
-  harmony-property -s "$STAGE" -n "$NODE_ID" -a GET -c "$cfg_path" -p "$property" -v "$default_value" --allow-missing-paths
-}
-
 readonly DEFAULT_DB_USER="harmony_ap"
 
 get_database_connection_details() {
   local user password
 
-  user="${DB_USER:-$(get_property "$CONFIG_PATH" 'domibus.datasource.user' "$DEFAULT_DB_USER")}"
-  password="${DB_PASSWORD:-$(get_property "$CONFIG_PATH" 'domibus.datasource.password')}"
+  user="${DB_USER:-$(get_property 'domibus.datasource.user' "$DEFAULT_DB_USER")}"
+  password="${DB_PASSWORD:-$(get_property 'domibus.datasource.password' "")}"
+
+  if [[ -z "$password" ]]; then
+    die "Database password (DB_PASSWORD) is required. Exiting."
+  fi
 
   local url driver host port schema
   read -r url driver host port schema < <(
@@ -49,8 +45,6 @@ validate_database_parameters() {
 
 wait_for_database() {
   local host="$1" port="$2" user="$3" pass="$4"
-
-  log INFO "Waiting for database at $DB_HOST:$DB_PORT/$DB_SCHEMA"
 
   harmony-database \
     --mode wait-for-db \

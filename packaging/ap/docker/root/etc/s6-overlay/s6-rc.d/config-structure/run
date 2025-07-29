@@ -65,7 +65,7 @@ copy_temp_config() {
   cp "$CONFIG_PATH" "$TEMP_CONFIG_PATH"
 }
 
-init_structure() {
+config_structure() {
   log DEBUG "Started"
 
   verify_permissions
@@ -77,4 +77,4 @@ init_structure() {
   log DEBUG "Done"
 }
 
-init_structure
+config_structure

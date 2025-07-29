@@ -28,8 +28,8 @@ validate_mandatory_parameters() {
 }
 
 validate_required_keys() {
-  local -n required_keys_config="$1"
-  shift
+  local -n required_keys_config="$1"; shift
+
   local missing=()
   for key in "$@"; do
     if [[ ! ${required_keys_config[$key]+_} ]]; then
@@ -57,11 +57,8 @@ normalize_optional_parameters() {
 
 validate_parameters() {
   case "${store_type^^}" in
-    PKCS12|JKS|JCEKS)
-      ;;
-    *)
-      die "Unsupported store type: '$store_type'."
-      ;;
+    PKCS12|JKS|JCEKS) ;;
+    *) die "Unsupported store type: '$store_type'." ;;
   esac
 }
 
@@ -159,6 +156,7 @@ validate_certificate_in_store() {
 
 alias_exists_in_store() {
   local -n alias_exists_config="$1"
+
   validate_required_keys alias_exists_config alias store_path store_password store_type
 
   local alias="${alias_exists_config[alias]}"

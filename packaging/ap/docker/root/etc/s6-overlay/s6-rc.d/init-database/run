@@ -131,7 +131,7 @@ publish_environment_variables() {
   printf "%s" "$ADMIN_PASSWORD" > /var/run/s6/container_environment/ADMIN_PASSWORD
 }
 
-init-database() {
+init_database() {
   log DEBUG "Started"
 
   if is_primary; then
@@ -148,4 +148,4 @@ init-database() {
   log DEBUG "Done"
 }
 
-init-database
+init_database

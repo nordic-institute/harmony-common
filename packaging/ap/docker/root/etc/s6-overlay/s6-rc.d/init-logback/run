@@ -17,7 +17,7 @@ use_default_conf() {
   log DEBUG "Using default Logback configuration at $LOGBACK_CONFIG_PATH"
 }
 
-init-logback() {
+init_logback() {
   log DEBUG "Started"
 
   if [ -n "${LOGBACK_CONFIG_B64:-}" ]; then
@@ -34,4 +34,4 @@ init-logback() {
   log DEBUG "Done"
 }
 
-init-logback
+init_logback

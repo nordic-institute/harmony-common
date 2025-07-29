@@ -177,4 +177,4 @@ init_webserver() {
   log DEBUG "Done"
 }
 
-init_webserver "$@"
+init_webserver
