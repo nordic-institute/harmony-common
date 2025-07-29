@@ -11,7 +11,7 @@ readonly STAGE="init-webserver"
 : "${TLS_KEYSTORE_PATH:=${HARMONY_BASE}/etc/tls-keystore.p12}"
 : "${TLS_TRUSTSTORE_PATH:=${HARMONY_BASE}/etc/tls-truststore.p12}"
 : "${CATALINA_TEMP_DIR:=/var/tmp/harmony-ap}"
-: "${EXTERNAL_LB:=false}"
+: "${LB_TLS_TERMINATION:=false}"
 
 get_server_prop() {
   local property_name="$1"
@@ -74,8 +74,8 @@ obtain_tls_store_password() {
 manage_tls_certificates() {
   log DEBUG "Processing TLS certificates"
 
-  TLS_KEYSTORE_BASE64="${TLS_KEYSTORE_BASE64:-}"
-  TLS_TRUSTSTORE_BASE64="${TLS_TRUSTSTORE_BASE64:-}"
+  TLS_KEYSTORE_B64="${TLS_KEYSTORE_B64:-}"
+  TLS_TRUSTSTORE_B64="${TLS_TRUSTSTORE_B64:-}"
 
   # Determine keystore and truststore current values
   local keystore_current
@@ -95,10 +95,10 @@ manage_tls_certificates() {
     --stage "$STAGE" \
     --keystore-path "$TLS_KEYSTORE_PATH" \
     --keystore-password "$TLS_KEYSTORE_PASSWORD" \
-    --keystore-base64 "$TLS_KEYSTORE_BASE64" \
+    --keystore-base64 "$TLS_KEYSTORE_B64" \
     --truststore-path "$TLS_TRUSTSTORE_PATH" \
     --truststore-password "$TLS_TRUSTSTORE_PASSWORD" \
-    --truststore-base64 "$TLS_TRUSTSTORE_BASE64" \
+    --truststore-base64 "$TLS_TRUSTSTORE_B64" \
     --should-add-certificate-to-truststore "true" \
     --alias "$CERT_ALIAS" \
     --public-cert-path "$TLS_PUBLIC_CERT_PATH" \
@@ -127,7 +127,7 @@ sync_tls_secrets() {
 }
 
 is_non_ssl_environment() {
-  [[ "$DEPLOYMENT_CLUSTERED" == "true" || "$EXTERNAL_LB" == "true" ]]
+  [[ "$DEPLOYMENT_CLUSTERED" == "true" || "$LB_TLS_TERMINATION" == "true" ]]
 }
 
 resolve_server_config() {

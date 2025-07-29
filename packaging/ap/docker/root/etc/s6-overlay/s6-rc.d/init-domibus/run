@@ -57,8 +57,8 @@ obtain_security_store_password() {
 manage_security_certificates() {
   log DEBUG "Processing security certificates"
 
-  SECURITY_KEYSTORE_BASE64="${SECURITY_KEYSTORE_BASE64:-}"
-  SECURITY_TRUSTSTORE_BASE64="${SECURITY_TRUSTSTORE_BASE64:-}"
+  SECURITY_KEYSTORE_B64="${SECURITY_KEYSTORE_B64:-}"
+  SECURITY_TRUSTSTORE_B64="${SECURITY_TRUSTSTORE_B64:-}"
 
   # Determine current keystore and truststore passwords
   local keystore_current
@@ -76,10 +76,10 @@ manage_security_certificates() {
     --stage "$STAGE" \
     --keystore-path "$SECURITY_KEYSTORE_PATH" \
     --keystore-password "$SECURITY_KEYSTORE_PASSWORD" \
-    --keystore-base64 "$SECURITY_KEYSTORE_BASE64" \
+    --keystore-base64 "$SECURITY_KEYSTORE_B64" \
     --truststore-path "$SECURITY_TRUSTSTORE_PATH" \
     --truststore-password "$SECURITY_TRUSTSTORE_PASSWORD" \
-    --truststore-base64 "$SECURITY_TRUSTSTORE_BASE64" \
+    --truststore-base64 "$SECURITY_TRUSTSTORE_B64" \
     --should-add-certificate-to-truststore "false" \
     --alias "$CERT_ALIAS" \
     --public-cert-path "$SECURITY_PUBLIC_CERT_PATH" \
