@@ -5,7 +5,8 @@ set -euo pipefail
 
 if [ "${HARMONY_MODE:-}" = init ]; then
   harmony-log INFO "$NODE_ID" "svc-harmonyap" "Harmony Access Point is in init mode; startup skipped."
-  exec s6-svc -Od .
+    s6-svc -d /run/service/svc-harmonyap
+    exit 0
 fi
 
 exec java \

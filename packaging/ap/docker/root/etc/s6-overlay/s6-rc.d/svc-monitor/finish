@@ -10,12 +10,14 @@ readonly STAGE="svc-monitor"
 source /usr/lib/harmony-common
 source /usr/lib/harmony-cluster
 
-ROLE="${CLUSTER_ROLE:-replica}"
+if [[ "$DEPLOYMENT_CLUSTERED" == "true" || "$CLUSTER_BACKEND" != "none" ]]; then
+  ROLE="${CLUSTER_ROLE:-replica}"
 
-log DEBUG "Finishing with exit code $EXIT_CODE, signal $SIGNAL, core dump $CORE_DUMP"
-log DEBUG "Stopping container with role: $ROLE"
+  log DEBUG "Finishing with exit code $EXIT_CODE, signal $SIGNAL, core dump $CORE_DUMP"
+  log DEBUG "Stopping container with role: $ROLE"
 
-if [ "$ROLE" = "primary" ]; then
-  log INFO "Primary container shutting down. Releasing primary state..."
-  release_primary
+  if [ "$ROLE" = "primary" ]; then
+    log INFO "Primary container shutting down. Releasing primary state..."
+    release_primary
+  fi
 fi

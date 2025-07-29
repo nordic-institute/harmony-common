@@ -9,6 +9,7 @@ source /usr/lib/harmony-cluster
 
 if [[ "$DEPLOYMENT_CLUSTERED" != "true" || "$CLUSTER_BACKEND" == "none" ]]; then
   log DEBUG "Clustering disabled or not using a cluster backend; exiting svc-monitor"
+  s6-svc -d /run/service/svc-monitor
   exit 0
 fi
 
