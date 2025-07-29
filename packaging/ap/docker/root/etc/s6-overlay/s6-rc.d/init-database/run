@@ -68,7 +68,7 @@ run_migrations() {
       _admin_password=$(harmony-password --stage "$STAGE" --mode generate)
     fi
 
-    if [[ -z "${ADMIN_USER:-}" || -z "${ADMIN_PASSWORD:-}" ]]; then
+    if [[ -z "${ADMIN_PASSWORD:-}" ]]; then
       log INFO "Harmony AP admin credentials:"
       log INFO "    Username: $_admin_user"
       log INFO "    Password: $_admin_password"
