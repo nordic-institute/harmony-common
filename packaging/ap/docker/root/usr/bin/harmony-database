@@ -130,7 +130,7 @@ wait_for_db() {
 
   log INFO "Waiting for database ${DB_HOST}:${DB_PORT} to become available..."
 
-  if ! timeout 60 bash -c "until MYSQL_PWD='$DB_PASSWORD' mysqladmin ping -h '$DB_HOST' -P '$DB_PORT' -u '$DB_USER' >/dev/null 2>&1; do sleep 5; done"; then
+  if ! timeout 60 bash -c "until MYSQL_PWD='$DB_PASSWORD' mysqladmin ping -h '$DB_HOST' -P '$DB_PORT' -u '$DB_USER' >/dev/null 2>&1; do sleep 3; done"; then
     die "Unable to connect to the database at ${DB_HOST}:${DB_PORT}. Exiting."
   fi
 
