@@ -38,7 +38,7 @@ To view a copy of this license, visit <https://creativecommons.org/licenses/by-s
 * [5 Centralized logging](#5-centralized-logging)
   * [5.1 Sending logs from AP to Elasticsearch with Logstash](#51-sending-logs-from-ap-to-elasticsearch-with-logstash)
     * [5.1.1 Input configuration](#511-input-configuration)
-      * [5.1.1.1 5.1.1.1 Send logs directly from Logback to Logstash](#5111-send-logs-directly-from-logback-to-logstash)
+      * [5.1.1.1 Send logs directly from Logback to Logstash](#5111-send-logs-directly-from-logback-to-logstash)
       * [5.1.1.2 Reading logs from log files](#5112-reading-logs-from-log-files)
       * [5.1.1.2 Using the GELF input plugin](#5113-using-the-gelf-input-plugin)
     * [5.1.2 Filter configuration](#512-filter-configuration)
@@ -309,7 +309,7 @@ Here, we specify the log file's path, the codec for parsing log messages, the st
 
 In more complex setups, integrating Filebeat into the system can be beneficial. Filebeat can read logs from files and either forward them to Logstash for advanced processing or send them directly to Elasticsearch when advanced log content processing is unnecessary. For more information, refer to the [Filebeat documentation](https://www.elastic.co/guide/en/beats/filebeat/current/index.html).
 
-###### 5.1.1.3 Using the GELF input plugin
+##### 5.1.1.3 Using the GELF input plugin
 
 The [gelf input plugin](https://www.elastic.co/guide/en/logstash/current/plugins-inputs-gelf.html) enables Logstash to receive logs in GELF (Graylog Extended Log Format) format over the network.
 
