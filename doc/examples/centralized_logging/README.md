@@ -6,20 +6,20 @@ This example demonstrates how to deploy a secure ELK stack alongside a Harmony A
 
 This environment shows how to:
 
-1.	Generate a self-signed CA and TLS certificates for Elasticsearch.
-2.	Initialize Elasticsearch with built-in users, roles, and TLS encryption.
-3.	Run Elasticsearch as a single-node cluster.
-4.	Deploy Kibana connected to the secured Elasticsearch instance.
-5.	Configure Logstash for JSON and GELF input, with structured filtering for application logs.
-6.	Run a MySQL database for Harmony AP data storage.
-7.	Launch the Harmony AP service with environment-driven configuration and optional GELF logging.
+1. Generate a self-signed CA and TLS certificates for Elasticsearch.
+2. Initialize Elasticsearch with built-in users, roles, and TLS encryption.
+3. Run Elasticsearch as a single-node cluster.
+4. Deploy Kibana connected to the secured Elasticsearch instance.
+5. Configure Logstash for JSON and GELF input, with structured filtering for application logs.
+6. Run a MySQL database for Harmony AP data storage.
+7. Launch the Harmony AP service with environment-driven configuration and optional GELF logging.
 
 All services are defined in a single docker-compose.yml file and coordinated using Docker Compose.
 
 ## Prerequisites
 
 - Docker & Docker Compose (installed & running)
--	Bash shell (Unix-like environment)
+- Bash shell (Unix-like environment)
 - cURL (for health checks and API calls)
 
 ## Directory Structure
@@ -62,8 +62,8 @@ docker compose -p ap-centralized-logging up -d
 
 Docker Compose will create and start:
 
--	Elasticsearch-setup container to create a CA, issue node certificates, and set built-in user passwords. It will stop after setup.
--	Elasticsearch-node container on port 9200 with TLS and security enabled.
+- Elasticsearch-setup container to create a CA, issue node certificates, and set built-in user passwords. It will stop after setup.
+- Elasticsearch-node container on port 9200 with TLS and security enabled.
 - Kibana container on port 5601 for the web interface.
 - Logstash container on ports 5014 (JSON input), 9600 (monitoring), and 12201/udp (GELF).
 - MySQL container for the Harmony AP schema.
