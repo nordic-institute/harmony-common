@@ -168,8 +168,8 @@ Since Docker handles log files, Logback does not save logs to the file system.
 
 To customize the Logback settings in the Harmony AP Docker image, you can choose one of the following methods:
 
--	Using the `LOGBACK_CONFIG_B64` environment variable by providing a custom Logback configuration file encoded in Base64 using this variable.
--	Mounting a custom configuration file into the container at the location specified by the `LOGBACK_CONFIG_PATH` environment variable. By default, this path is: `/var/opt/harmony-ap/etc/logback.xml`
+- Using the `LOGBACK_CONFIG_B64` environment variable by providing a custom Logback configuration file encoded in Base64 using this variable.
+- Mounting a custom configuration file into the container at the location specified by the `LOGBACK_CONFIG_PATH` environment variable. By default, this path is: `/var/opt/harmony-ap/etc/logback.xml`
 
 For detailed instructions, refer to the _Adjusting Log Levels and Configuration_ section in the Access Point Docker Installation Guide [IG-AP-D](#Ref_IG-AP-D).
 
