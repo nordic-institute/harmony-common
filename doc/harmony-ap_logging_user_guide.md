@@ -268,7 +268,7 @@ To use this method, define an appender in a custom `logback.xml` configuration t
 </logger>
 ```
 
-The official `logstash-logback-encoder` documentation provides more details on how to configure the appender and encoder: [Logstash Logback Encoder](https://github.com/logfellow/logstash-logback-encoder/blob/logstash-logback-encoder-8.1/README.md)
+The official `logstash-logback-encoder` documentation provides more details on how to configure the appender and encoder: [Logstash Logback Encoder](https://github.com/logfellow/logstash-logback-encoder/blob/logstash-logback-encoder-7.4/README.md)
 
 Once the appender is configured, Logstash should be set up to receive logs from the application. To configure Logstash you can use, for example, the [TCP input plugin](https://www.elastic.co/guide/en/logstash/current/plugins-inputs-tcp.html) or the [UDP input plugin](https://www.elastic.co/guide/en/logstash/current/plugins-inputs-udp.html). Also, the `json_lines` codec can be used to decode the logs sent by the appender. The `json_lines` codec ensures that each JSON object produced by the appender is decoded correctly. The following example shows how to configure Logstash to receive logs over TCP:
 
