@@ -3,15 +3,14 @@ services:
   elasticsearch-setup:
     image: elastic/elasticsearch:${ELK_VERSION}
     user: "0"
-    command: ["/bin/bash", "-c", "/usr/share/elasticsearch/config/elasticsearch-setup.sh"]
+    entrypoint: ["/bin/bash", "-c", "/usr/share/elasticsearch/config/elasticsearch-setup.sh"]
     volumes:
       - ./elasticsearch-setup.sh:/usr/share/elasticsearch/config/elasticsearch-setup.sh:ro
       - certs:/usr/share/elasticsearch/config/certs
     environment:
       - ELASTIC_PASSWORD=${ELASTIC_PASSWORD}
       - KIBANA_SYSTEM_PASSWORD=${KIBANA_SYSTEM_PASSWORD}
-      - LOGSTASH_INTERNAL_USERNAME=${LOGSTASH_INTERNAL_USERNAME}
-      - LOGSTASH_INTERNAL_PASSWORD=${LOGSTASH_INTERNAL_PASSWORD}
+      - LOGSTASH_WRITER_PASSWORD=${LOGSTASH_WRITER_PASSWORD}
     healthcheck:
       test: ["CMD-SHELL", "[ -f config/certs/elasticsearch-node/elasticsearch-node.crt ]"]
       interval: 1s
@@ -27,8 +26,8 @@ services:
       - "9200:9200" # Used for REST API
     environment:
       - node.name=elasticsearch-node
-      - ELASTIC_PASSWORD=${ELASTIC_PASSWORD}
       - discovery.type=single-node
+      - ELASTIC_PASSWORD=${ELASTIC_PASSWORD}
       - xpack.security.enabled=true
       - xpack.security.http.ssl.enabled=true
       - xpack.security.http.ssl.key=certs/elasticsearch-node/elasticsearch-node.key
@@ -76,17 +75,17 @@ services:
   logstash:
     image: elastic/logstash:${ELK_VERSION}
     depends_on:
-      kibana:
+      elasticsearch-node:
         condition: service_healthy
     ports:
-      - "4560:4560" # Used for tcp input
+      - "5014:5014" # Used for TCP input
       - "9600:9600" # Used for monitoring
       - "12201:12201/udp" # Used for gelf
     environment:
       - xpack.monitoring.enabled=false
       - ELASTIC_HOSTS=https://elasticsearch-node:9200
-      - ELASTIC_USER=${LOGSTASH_INTERNAL_USERNAME}
-      - ELASTIC_PASSWORD=${LOGSTASH_INTERNAL_PASSWORD}
+      - ELASTIC_USERNAME=logstash_writer
+      - ELASTIC_PASSWORD=${LOGSTASH_WRITER_PASSWORD}
     volumes:
       - certs:/usr/share/logstash/certs:ro
       - ./logstash.conf:/usr/share/logstash/pipeline/logstash.conf:ro
@@ -108,19 +107,11 @@ services:
       - "--collation-server=utf8mb4_bin"
     volumes:
       - db-data:/var/lib/mysql
-    restart: on-failure
-    mem_limit: 512m
-    healthcheck:
-      test: ["CMD-SHELL", "mysqladmin ping -h localhost -u harmony_ap -pdbpassword | grep 'mysqld is alive'"]
-      interval: 10s
-      timeout: 10s
-      retries: 120
+    restart: unless-stopped
 
   harmony-ap:
-    image: niis/harmony-ap:2.5.0
+    image: niis/harmony-ap:2.6.0
     depends_on:
-      harmony-db:
-        condition: service_healthy
       logstash:
         condition: service_healthy
     ports:
@@ -129,19 +120,21 @@ services:
       - DB_HOST=harmony-db
       - DB_SCHEMA=harmony_ap
       - DB_PASSWORD=dbpassword
-      - ADMIN_PASSWORD=Secret
+      - ADMIN_PASSWORD=changeme
       - USE_DYNAMIC_DISCOVERY=false
       - PARTY_NAME=org1_gw
       - SERVER_FQDN=harmony-ap
+      - LOGBACK_CONFIG_PATH=/srv/harmony-ap/logback.xml
     volumes:
       - ap-data:/var/opt/harmony-ap
-    restart: on-failure
-    mem_limit: 1500m
-    logging:
-      driver: gelf
-      options:
-        gelf-address: "udp://127.0.0.1:12201"
-        tag: "harmony-ap"
+      - ./logback.xml:/srv/harmony-ap/logback.xml:ro
+    restart: unless-stopped
+    # Alternatively, you can use GELF logging with Logstash
+    #logging:
+    #  driver: gelf
+    #  options:
+    #    gelf-address: "udp://127.0.0.1:12201"
+    #    tag: "harmony-ap"
 
 volumes:
   certs:

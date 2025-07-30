@@ -1,26 +1,24 @@
-# Harmony eDelivery Access - Access Point Logging Guide <!-- omit in toc -->
+# Harmony eDelivery Access - Access Point Logging Guide
 
-Version: 1.2
+Version: 1.2  
 Doc. ID: UG-AP-L
 
 ---
 
-## Version history <!-- omit in toc -->
+## Version history
 
-| Date       | Version | Description                                                       | Author           |
-|------------|---------|-------------------------------------------------------------------|------------------|
-| 13.12.2024 | 1.0     | Initial version                                                   | Diego Martin     |
-| 23.12.2024 | 1.1     | Add section about using appenders in Logback                      | Diego Martin     |
-| 13.01.2025 | 1.2     | Update `org.apache.cxf` logger definition to match latest version | Diego Martin     |
+| Date       | Version | Description                                                                   | Author       |
+|------------|---------|-------------------------------------------------------------------------------|--------------|
+| 13.12.2024 | 1.0     | Initial version                                                               | Diego Martin |
+| 13.01.2025 | 1.1     | Update `org.apache.cxf` logger definition to match latest version             | Diego Martin |
+| 30.07.2025 | 1.2     | Added direct Logstash logging from Logback; updated config and input sections | Diego Martin |
 
-## License <!-- omit in toc -->
+## License
 
 This document is licensed under the Creative Commons Attribution-ShareAlike 4.0 International License.
 To view a copy of this license, visit <https://creativecommons.org/licenses/by-sa/4.0/>
 
-## Table of Contents <!-- omit in toc -->
-
-<!-- vim-markdown-toc GFM -->
+## Table of Contents
 
 * [1 Introduction](#1-introduction)
   * [1.1 Target Audience](#11-target-audience)
@@ -36,22 +34,18 @@ To view a copy of this license, visit <https://creativecommons.org/licenses/by-s
   * [3.2 Logback configuration in Harmony AP Docker image](#32-logback-configuration-in-harmony-ap-docker-image)
     * [3.2.1 Viewing logs](#321-viewing-logs)
     * [3.2.2 Modifying the Logback configuration](#322-modifying-the-logback-configuration)
-      * [3.2.2.1 Modify the Logback configuration before starting the container](#3221-modify-the-logback-configuration-before-starting-the-container)
-      * [3.2.2.2 Modify the Logback configuration by creating a custom Docker image](#3222-modify-the-logback-configuration-by-creating-a-custom-docker-image)
 * [4 Enable logging of full messages for debugging](#4-enable-logging-of-full-messages-for-debugging)
 * [5 Centralized logging](#5-centralized-logging)
   * [5.1 Sending logs from AP to Elasticsearch with Logstash](#51-sending-logs-from-ap-to-elasticsearch-with-logstash)
     * [5.1.1 Input configuration](#511-input-configuration)
-      * [5.1.1.1 Reading logs from log files](#5111-reading-logs-from-log-files)
-      * [5.1.1.2 Using the GELF input plugin](#5112-using-the-gelf-input-plugin)
-      * [5.1.1.3 Using appenders in Logback](#5113-using-appenders-in-logback)
+      * [5.1.1.1 5.1.1.1 Send logs directly from Logback to Logstash](#5111-send-logs-directly-from-logback-to-logstash)
+      * [5.1.1.2 Reading logs from log files](#5112-reading-logs-from-log-files)
+      * [5.1.1.2 Using the GELF input plugin](#5113-using-the-gelf-input-plugin)
     * [5.1.2 Filter configuration](#512-filter-configuration)
     * [5.1.3 Output configuration](#513-output-configuration)
   * [5.2 Indexing and storing logs in Elasticsearch](#52-indexing-and-storing-logs-in-elasticsearch)
   * [5.3 Visualizing logs with Kibana](#53-visualizing-logs-with-kibana)
   * [5.4 Example Docker environment of Harmony AP with ELK stack](#54-example-docker-environment-of-harmony-ap-with-elk-stack)
-
-<!-- vim-markdown-toc -->
 
 ## 1 Introduction
 
@@ -60,6 +54,8 @@ Harmony eDelivery Access Access Point (AP) generates logs that provide insights 
 This document provides guidance on how the AP generates logs and how to improve further the logging system.
 
 ### 1.1 Target Audience
+
+This documentation is written for technical users (system administrators, DevOps, and engineers) who deploy or operate Harmony AP. Familiarity with the ELK stack is helpful but not strictly required.
 
 ### 1.2 Terms and abbreviations
 
@@ -170,25 +166,12 @@ Since Docker handles log files, Logback does not save logs to the file system.
 
 #### 3.2.2 Modifying the Logback configuration
 
-Logback configuration in the Harmony AP Docker package is located at `/var/opt/harmony-ap/etc/logback.xml`. To modify the Logback configuration in the Harmony AP Docker image, there are different approaches.
+To customize the Logback settings in the Harmony AP Docker image, you can choose one of the following methods:
 
-##### 3.2.2.1 Modify the Logback configuration before starting the container
+-	Using the `LOGBACK_CONFIG_B64` environment variable by providing a custom Logback configuration file encoded in Base64 using this variable.
+-	Mounting a custom configuration file into the container at the location specified by the `LOGBACK_CONFIG_PATH` environment variable. By default, this path is: `/var/opt/harmony-ap/etc/logback.xml`
 
-It is possible to initialize the Harmony AP container without starting it, allowing the user to update the Logback configuration file inside the container before it starts running.
-
-For detailed instructions, refer to the *3.2.2 Advanced Configuration* section in the Access Point Docker Installation Guide [IG-AP-D](#Ref_IG-AP-D).
-
-##### 3.2.2.2 Modify the Logback configuration by creating a custom Docker image
-
-Customized Logback configuration can be added to a custom Docker image. Here’s an example:
-
-```Dockerfile
-FROM niis/harmony-ap:2.3.0
-
-COPY logback.xml /opt/harmony-ap/setup/logback.xml
-```
-
-When the container starts, the file is automatically moved from the `setup` directory to its final destination at `/var/opt/harmony-ap/etc/logback.xml`.
+For detailed instructions, refer to the _Adjusting Log Levels and Configuration_ section in the Access Point Docker Installation Guide [IG-AP-D](#Ref_IG-AP-D).
 
 ## 4 Enable logging of full messages for debugging
 
@@ -239,13 +222,76 @@ For additional details, refer to the [Logstash documentation](#Ref_LOGSTASH).
 
 The input configuration specifies how Logstash should receive log messages. Logstash supports various [input plugins](https://www.elastic.co/guide/en/logstash/current/input-plugins.html) that allow it to receive logs from different sources, we will focus on reading logs from log files and gelf as those are the most relevant for AP.
 
-##### 5.1.1.1 Reading logs from log files
+##### 5.1.1.1 Send logs directly from Logback to Logstash
+
+Sending logs directly from the application provides the most efficient and real‑time integration with the ELK stack. Log events are encoded as JSON by Logback using the `logstash‑logback‑encoder` library and transmitted to Logstash. Because the logs are structured, they do not require parsing with Grok patterns.
+
+By using this method, only logs generated by the application are sent to Logstash, logs from the system running the application won't be included. This method is suitable for both the Linux package and the Docker image of Harmony AP.
+
+To use this method, define an appender in a custom `logback.xml` configuration that sends log events to Logstash. The following example illustrates how to configure a `LogstashTcpSocketAppender` with a `LoggingEventCompositeJsonEncoder`. It emits a rich JSON document including timestamp, level, thread, logger name, contextual data (MDC) and exception information:
+
+```xml
+<appender name="logstash" class="net.logstash.logback.appender.LogstashTcpSocketAppender">
+  <!-- Destination can be a single host:port or a comma‑separated list for high availability -->
+  <destination>logstash:5014</destination>
+
+  <!-- Encode logging events as JSON.  Providers define the fields included in the JSON document -->
+  <encoder class="net.logstash.logback.encoder.LoggingEventCompositeJsonEncoder">
+    <providers>
+      <timestamp>
+        <fieldName>@timestamp</fieldName>
+        <pattern>yyyy-MM-dd'T'HH:mm:ss.SSSZ</pattern>
+      </timestamp>
+      <logLevel fieldName="level"/>
+      <threadName fieldName="thread"/>
+      <loggerName fieldName="logger" shortenedLoggerNameLength="1"/>
+      <pattern>
+        <pattern>{ "line": "%domibusLine" }</pattern>
+      </pattern>
+
+      <!-- Include MDC context fields such as user, domain and message identifiers -->
+      <mdc>
+        <includeMdcKeyName>d_user</includeMdcKeyName>
+        <includeMdcKeyName>d_domain</includeMdcKeyName>
+        <includeMdcKeyName>d_messageId</includeMdcKeyName>
+        <includeMdcKeyName>d_messageEntityId</includeMdcKeyName>
+      </mdc>
+      <message/>
+      <stackTrace fieldName="exception"/>
+    </providers>
+  </encoder>
+</appender>
+
+<!-- Attach the appender to the relevant loggers.  This example sends all Domibus logs to Logstash. -->
+<logger name="eu.domibus" level="INFO">
+  <appender-ref ref="logstash"/>
+</logger>
+```
+
+The official `logstash-logback-encoder` documentation provides more details on how to configure the appender and encoder: [Logstash Logback Encoder](https://github.com/logfellow/logstash-logback-encoder/blob/logstash-logback-encoder-8.1/README.md)
+
+Once the appender is configured, Logstash should be set up to receive logs from the application. To configure Logstash you can use, for example, the [TCP input plugin](https://www.elastic.co/guide/en/logstash/current/plugins-inputs-tcp.html) or the [UDP input plugin](https://www.elastic.co/guide/en/logstash/current/plugins-inputs-udp.html). Also, the `json_lines` codec can be used to decode the logs sent by the appender. The `json_lines` codec ensures that each JSON object produced by the appender is decoded correctly. The following example shows how to configure Logstash to receive logs over TCP:
+
+```
+input {
+  tcp {
+    port => 5014         # must match the destination specified in the Logback configuration.
+    codec => json_lines  # decode newline‑delimited JSON logs
+  }
+}
+```
+
+Sending logs directly from the application provides near real‑time ingestion into the ELK stack and reduces the need for additional collectors. Because events are already encoded as JSON, there is no need to define complex parsing rules in Logstash.
+
+In this setup, Logstash becomes an optional component, as the application can send logs directly to Elasticsearch. However, Logstash is still useful for advanced processing, filtering, and enrichment of log messages before they are sent to Elasticsearch. Logstash provides also buffering, retry logic, and rate-limiting, which can be beneficial in production environments.
+
+##### 5.1.1.2 Reading logs from log files
 
 For systems that log to files, Logstash's [file input plugin](https://www.elastic.co/guide/en/logstash/current/plugins-inputs-file.html) can read logs directly from the filesystem. This plugin tails log files and supports log rotation.
 
-This method is recommended for the Linux package of Harmony AP.
+By using this method, you can digest any logs that are written to a file, including logs from the system running the application, not just the application logs. This method is suitable for both the Linux package and the Docker image of Harmony AP.
 
-Example configuration for reading logs from a file:
+Example Logstash configuration for reading logs from a file:
 
 ```conf
 input {
@@ -263,11 +309,11 @@ Here, we specify the log file's path, the codec for parsing log messages, the st
 
 In more complex setups, integrating Filebeat into the system can be beneficial. Filebeat can read logs from files and either forward them to Logstash for advanced processing or send them directly to Elasticsearch when advanced log content processing is unnecessary. For more information, refer to the [Filebeat documentation](https://www.elastic.co/guide/en/beats/filebeat/current/index.html).
 
-###### 5.1.1.2 Using the GELF input plugin
+###### 5.1.1.3 Using the GELF input plugin
 
 The [gelf input plugin](https://www.elastic.co/guide/en/logstash/current/plugins-inputs-gelf.html) enables Logstash to receive logs in GELF (Graylog Extended Log Format) format over the network.
 
-This method is commonly used for Docker containers and is recommended for the Harmony AP Docker image.
+By using this method, you can digest any logs produced by any Docker container that uses the GELF logging driver. This method is only suitable for the Docker image of Harmony AP.
 
 Example configuration for receiving GELF logs:
 
@@ -301,49 +347,13 @@ harmony-ap:
       tag: "harmony-ap"
 ```
 
-###### 5.1.1.3 Using appenders in Logback
-
-AP includes a Logback encoder and appender ([link to project](https://github.com/logfellow/logstash-logback-encoder)) that can send logs directly from the application to Logstash over the network. By using this method, only logs generated by the application are sent to Logstash, logs from the system running the application won't be included.
-
-This method is suitable for both the Linux package and the Docker image of Harmony AP.
-
-The Logback appender can send the logs over TCP or UDP. To configure Logstash to receive logs from Logback, use the [TCP input plugin](https://www.elastic.co/guide/en/logstash/current/plugins-inputs-tcp.html) or the [UDP input plugin](https://www.elastic.co/guide/en/logstash/current/plugins-inputs-udp.html). The following example shows how to configure the Logback appender to send logs over TCP:
-
-```conf
-input {
-  tcp {
-    port => 4560
-    codec => json
-  }
-}
-```
-
-This configuration listens for TCP messages on port `4560`.
-
-To configure the Logback appender to send logs over TCP, add the following example appender to the Logback configuration file:
-
-```xml
-<!-- Logstash appender -->
-<appender name="logstash" class="net.logstash.logback.appender.LogstashTcpSocketAppender">
-  <destination>logstash:4560</destination>
-  <encoder class="net.logstash.logback.encoder.LogstashEncoder"/>
-</appender>
-```
-
-And use the new appender in the desired logger:
-
-```xml
-<root level="WARN">
-  <appender-ref ref="stdout"/>
-  <appender-ref ref="logstash"/>
-</root>
-```
-
 #### 5.1.2 Filter configuration
 
 Filter configuration defines how Logstash parses and processes log messages. Logstash provides various [filter plugins](https://www.elastic.co/guide/en/logstash/current/filter-plugins.html) that allow it to parse, transform, and enrich log messages. The filter configuration is optional.
 
-To parse the log messages, it's important to know the structure of the log messages that will be parsed. The log structure is set by Logback in the encoder pattern used by the appender that generates the logs to be parsed. This information can be found in the Logback configuration file of Harmony AP for the [Linux package](#31-logback-configuration-in-harmony-ap-linux-package) or the [Docker image](#32-logback-configuration-in-harmony-ap-docker-image).
+When logs are emitted via Logstash using the JSON encoders described above, each event arrives as a structured JSON document. In many cases no additional parsing is necessary; you can directly use the fields created by the encoder in Kibana and Elasticsearch. However, filters remain useful for enriching logs (for example by adding geographic information or user details) or for renaming fields.
+
+If your logs are unstructured, or you read text log files, you can use Grok filters to parse the log messages. The log structure is set by Logback in the encoder pattern used by the appender that generates the logs to be parsed. This information can be found in the Logback configuration file of Harmony AP for the [Linux package](#31-logback-configuration-in-harmony-ap-linux-package) or the [Docker image](#32-logback-configuration-in-harmony-ap-docker-image).
 
 Depending on the log message structure, use the appropriate filter plugins to parse the log messages.
 
@@ -401,35 +411,4 @@ For more information on Kibana, refer to the [Kibana documentation](#Ref_KIBANA)
 
 ### 5.4 Example Docker environment of Harmony AP with ELK stack
 
-To set up a Harmony AP instance with the ELK stack, you can use the provided setup that can be found in [this folder](examples/centralized_logging). The example includes:
-
-- `.env` file that defines the environment variables used by the services. Those variables are the ELK stack version and the credentials for the ELK stack components.
-- `docker-compose.yml` file that defines the services used in the example environment. The services are:
-  - `harmony-ap`: A Harmony AP instance.
-  - `harmony-db`: A MySQL database for Harmony AP.
-  - `logstash`: A Logstash instance for processing log data coming from Harmony AP through GELF.
-  - `elasticsearch-node`: An Elasticsearch instance for indexing and storing log data.
-  - `elasticsearch-setup`: A container used to generate the certificates for SSL communication between the ELK components and set up `elasticsearch-node` with the required configuration.
-  - `kibana`: A Kibana instance for visualizing the data stored in Elasticsearch.
-- `logstash.conf` file that defines the Logstash configuration for processing the log data coming from Harmony AP.
-
-This example setup is meant for testing purposes only. The official ELK stack documentation should be consulted for production environments.
-
-In order to execute the environment, you need a system with [Docker](https://docs.docker.com/engine/install/) installed.
-
-To run the environment, follow these steps:
-
-1. Download all the files in [this folder](examples/centralized_logging). Place them in the same folder on your local machine.
-2. Open a terminal and navigate to the folder where the files are saved. Run the following command to start the environment:
-    ```bash
-    docker compose -p ap-centralized-logging up -d
-    ```
-3. After the environment is started, logs will be sent to Logstash using the GELF logging driver configured in the AP container. Logstash will process the logs and send them to Elasticsearch for storage.
-4. You can access the logs by opening Kibana in a web browser and navigating to `http://localhost:5601`. To log in Kibana, use the following credentials:
-   - Username: `elastic`
-   - Password `elasticchangeme`, unless you have changed it in the `.env` file.
-4. Logs will be available by accessing the `Observability` > `Logs` > `Explorer` section. This is the direct link: http://localhost:5601/app/observability-logs-explorer.
-5. You can stop and clean up the environment by running the following command:
-    ```bash
-    docker compose -p ap-centralized-logging down -v
-    ```
+To set up a Harmony AP instance with the ELK stack, you can use the provided setup that can be found in [this folder](examples/centralized_logging). Check the `README.md` in that folder for details on how to run it.
