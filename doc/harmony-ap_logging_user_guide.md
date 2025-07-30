@@ -331,7 +331,7 @@ To send logs to Logstash in GELF format from Docker, configure the Docker contai
 
 ```yaml
 harmony-ap:
-  image: niis/harmony-ap:<image tag>
+  image: niis/harmony-ap:<version>
   environment:
     - DB_HOST=harmony-db
     - DB_SCHEMA=harmony_ap
