@@ -32,9 +32,6 @@ To view a copy of this license, visit <https://creativecommons.org/licenses/by-s
   1.3 [Terms and abbreviations](#13-terms-and-abbreviations)  
   1.4 [References](#14-references)  
   1.5 [Environment Overview and Prerequisites](#15-environment-overview-and-prerequisites)  
-    1.5.1 [System Requirements](#151-system-requirements)  
-    1.5.2 [Database Prerequisites](#152-database-prerequisites)  
-    1.5.3 [Docker and Host Setup](#153-docker-and-host-setup)
 2. [Quick Start](#2-quick-start)  
   2.1 [Minimal Docker Run Command](#21-minimal-docker-run-command)  
   2.2 [What Happens on First Run](#22-what-happens-on-first-run)  
@@ -59,10 +56,11 @@ To view a copy of this license, visit <https://creativecommons.org/licenses/by-s
   6.4 [Broker Security and Networking](#64-broker-security-and-networking)
 7. [TLS and Certificates](#7-tls-and-certificates)  
   7.1 [Certificate Types in Harmony Access Point](#71-certificate-types-in-harmony-access-point)  
-  7.2 [Providing and Replacing Certificates](#72-providing-and-replacing-certificates)  
-  7.3 [Certificate Trust and Exchange](#73-certificate-trust-and-exchange)  
-  7.4 [Managing Certificates in a Cluster](#74-managing-certificates-in-a-cluster)  
-  7.5 [Summary of Certificate Management Best Practices](#75-summary-of-certificate-management-best-practices)
+  7.2 [Supplying and Updating Certificates](#72-supplying-and-updating-certificates)  
+  7.3 [Passwords for Keystores and Truststores](#73-passwords-for-keystores-and-truststores)  
+  7.4 [Certificate Trust and Exchange](#74-certificate-trust-and-exchange)  
+  7.5 [Managing Certificates in a Cluster](#75-managing-certificates-in-a-cluster)  
+  7.6 [Summary of Certificate Management Best Practices](#76-summary-of-certificate-management-best-practices)
 8. [Load Balancing and Proxy](#8-load-balancing-and-proxy)  
   8.1 [Sticky Sessions](#81-sticky-sessions)  
   8.2 [TLS Termination Options](#82-tls-termination-options)  
@@ -99,7 +97,7 @@ To view a copy of this license, visit <https://creativecommons.org/licenses/by-s
 
 ## 1 Introduction
 
-**Harmony eDelivery Access Access Point** is an open-source solution for secure message exchange, used to connect organizations to eDelivery networks in compliance with the CEF eDelivery AS4 profile. It is based on the European Commission's Domibus project.
+**Harmony eDelivery Access Access Point** is an open-source solution for secure message exchange, used to connect organizations to eDelivery networks in compliance with the CEF eDelivery AS4 profile. Harmony Access Point is based on the European Commission's Domibus project.
 
 ### 1.1 Target Audience
 
@@ -123,7 +121,8 @@ See introduction to eDelivery and Harmony eDelivery Access \[[INTRODUCTION](#Ref
 
 1. <a id="Ref_INTRODUCTION" class="anchor"></a>\[INTRODUCTION\] Report: Introduction to eDelivery and Harmony eDelivery Access, <https://www.niis.org/niis-publications/2021/12/19/report-introduction-to-edelivery-and-harmony-edelivery-access>
 2. <a id="Ref_UG-DDCG" class="anchor"></a>\[UG-DDCG\] Harmony eDelivery Access - Dynamic Discovery Configuration Guide. Document ID: [UG-DDCG](dynamic_discovery_configuration_guide.md)
-3. <a id="Ref_UG-AP-L" class="anchor"></a>\[UG-AP-L\] Harmony eDelivery Access - Access Point Logging Guide. Document ID: [UG-AP-L](harmony-ap_logging_user_guide.md)
+3. <a id="Ref_UG-SDCG" class="anchor"></a>\[UG-SDCG\] Harmony eDelivery Access - Static Discovery Configuration Guide. Document ID: [UG-SDCG](static_discovery_configuration_guide.md)
+4. <a id="Ref_UG-AP-L" class="anchor"></a>\[UG-AP-L\] Harmony eDelivery Access - Access Point Logging Guide. Document ID: [UG-AP-L](harmony-ap_logging_user_guide.md)
 
 ### 1.5 Environment Overview and Prerequisites
 
@@ -135,9 +134,9 @@ Before running the Harmony Access Point in Docker, ensure your environment meets
 
 - **Docker Engine:** Install Docker (Engine or Docker CE) on the host, version 20.10 or later is recommended. Ensure you can run containers and have enough permissions (if on Linux, run as a user in the docker group). If you already have Docker installed, you can check your version with `docker --version`.
 - **CPU Architecture:** The image supports both x86_64 and ARM64 architectures, so you can run it on standard servers or ARM-based machines (like AWS Graviton or Raspberry Pi) if needed.
-- **Memory and CPU:** Access Point is a Java application (running on Tomcat). Allocate sufficient memory, and adjust related settings for production depending on load (the Java heap can be tuned as discussed later). CPU requirements are modest for light loads but scale with message throughput and any cryptographic operations.
+- **Memory and CPU:** Access Point is a Java application (running on Tomcat). Allocate sufficient memory, and adjust related settings for production depending on load (the Java heap can be tuned as discussed later); by default, the image allocates 512 MB initial and 1 GB maximum heap size. CPU requirements are modest for light loads but scale with message throughput and any cryptographic operations.
 - **Operating System:** Any OS that runs Docker. Linux hosts are recommended. The container image is based on a Linux distribution (Ubuntu 24.04) and does not require a specific host OS beyond Docker. If using a Linux host, ensure a 64-bit kernel and a file system that supports needed features for Docker volumes. If on Windows/Mac, use Docker's virtualization (WSL2, Hyper-V, etc.).
-- **Network and Ports:** By default Access Point runs its web service over HTTPS on port **8443**. Ensure this port (or the host port you map it to) is open in your firewall for inbound connections from other eDelivery participants or users. If you plan to use the admin UI or receive messages, you'll typically expose 8443. If clustering, also ensure any additional ports for internode communication are open (for example, external load balancer's health checks, more on this in clustering section). Additionally, the MySQL database port (3306 by default) must be reachable from the container.
+- **Network and Ports:** By default Access Point runs its web service over HTTPS on port **8443**. Ensure this port (or the host port you map it to) is open in your firewall for inbound connections from other eDelivery participants or users. If you plan to use the admin UI or receive messages, you'll typically expose 8443. If clustering, also ensure any additional ports for internode communication are open (for example, external load balancer's health checks, more on this in the [Clustering](#5-clustering-and-high-availability) section). Additionally, the MySQL database port (3306 by default) must be reachable from the container. For more information, see the [Network Diagram](#9-network-diagram) section later in this document.
 
 #### 1.5.2 Database Prerequisites
 
@@ -155,7 +154,7 @@ Harmony Access Point requires an SQL database for its metadata and message state
 
 #### 1.5.3 Docker and Host Setup
 
-- **Docker Volumes:** Decide how you will manage persistent data (explained in detail in the Data Persistence section). A Docker named volume or a host directory with proper permissions to mount into the container at runtime might be needed. This is where Access Point will store its configuration and other runtime data.
+- **Docker Volumes:** Decide how you will manage persistent data (explained in detail in the [Data Persistence](#3-data-persistence) section). A Docker named volume or a host directory with proper permissions to mount into the container at runtime might be needed. This is where Access Point will store its configuration and other runtime data.
 - **Host Time:** It's recommended to synchronize your host system time via NTP or another time service. Accurate time is important for certificate validity and message timestamp checks. The container will use the host kernel's time.
 - **Environment Configuration:** Identify the environment variable values you will use for configuration (database host, passwords, etc.). Having those ready (or stored in a `.env` file or Docker Compose file) will simplify the quick start.
 
@@ -179,16 +178,18 @@ docker run -d --name harmony-ap \
 
 Let's break down this command:
 
-- **-d:** Runs the container in detached mode (in the background). This means the container will run without blocking your terminal, and you will need to use `docker logs` to see output. This flag is optional for the quick start.
+- **-d:** Runs the container in detached mode (in the background). This flag is optional for the quick start.
 - **--name harmony-ap:** Assigns a recognizable name to the container (optional but helps with management).
-- **-p 8443:8443:** Publishes the container's HTTPS port to the host. In this case, we expose port 8443 on the host and forward it to port 8443 in the container. Access Point listens on 8443 for HTTPS by default. After starting, the service will be accessible at `https://<YourHost>:8443/`.
-  - _Note:_ If you want the service on the standard HTTPS port 443, you can map `-p 443:8443`. This requires running Docker with a user with appropriate privileges. Alternatively, you can configure AP to listen on 443 internally, see the Appendix or how-to guides for changing ports.
-- **-v harmony-ap-data:/var/opt/harmony-ap:** Mounts a Docker named volume called "harmony-ap-data" to the container's data directory. The path `/var/opt/harmony-ap` is where Access Point stores its configuration, keystores, and other mutable state inside the container by default. Using a volume ensures this data persists across container restarts or upgrades. You can substitute a host directory, e.g. `-v /path/on/host:/var/opt/harmony-ap`, but ensure permissions as described in the persistence section.
+- **-p 8443:8443:** Publishes the container's HTTPS port to the host. Access Point listens on 8443 for HTTPS by default. After starting, the service will be accessible at `https://<YourHost>:8443/`.
+  - _Note:_ If you want the service on the standard HTTPS port 443, you can map `-p 443:8443`. This requires running Docker with a user with appropriate privileges. Alternatively, you can configure AP to listen on 443 internally, see the [Appendix](#13-appendix) or how-to guides for changing ports.
+- **-v harmony-ap-data:/var/opt/harmony-ap:** Mounts a Docker named volume called "harmony-ap-data" to the container's data directory. The path `/var/opt/harmony-ap` is where Access Point stores its configuration, keystores, and other mutable state inside the container by default. Using a volume ensures this data persists across container restarts or upgrades. You can substitute a host directory, e.g. `-v /path/on/host:/var/opt/harmony-ap`, but ensure permissions as described in the [File Permissions and User Considerations](#33-file-permissions-and-user-considerations) section.
 - **Database connection settings (-e DB_...):** These environment variables tell Access Point how to connect to MySQL. There are other variables you can set, like `DB_PORT`, `DB_SCHEMA`, or `DB_USER`, but we will use their default values. These are the minimum required for a quick start:
   - **DB_HOST:** The hostname or IP address of your MySQL server (in this example, `db.example.com`; for local testing it might be `localhost`).
   - **DB_PASSWORD:** The password for the database user. Replace `<YourDBPassword>` with the actual password or use an environment file to avoid putting secrets in the command line.
 - **-e ADMIN_PASSWORD=...:** The initial password for the admin user. Replace `<YourAdminPassword>` with a strong password of your choice. This is the password you will use to log into Access Point's web interface. This is optional; if not set, Access Point will generate a random password on first run and log it to the console, but we set it here for convenience.
 - **Image name niis/harmony-ap:<version>:** Specifies the Harmony Access Point Docker image from Docker Hub. Here we use the placeholder `<version>` tag for simplicity, but you should replace it with the actual version you want to run (e.g., `niis/harmony-ap:2.6.0`).
+
+For more details on the `docker run` command and its options, refer to the [Docker run documentation](https://docs.docker.com/engine/reference/run/).
 
 After running this command, Docker will download the image (if not already present) and start the container. You can verify it's running with `docker ps` (it should show a container named _harmony-ap_ up and listening on 8443).
 
@@ -197,7 +198,7 @@ If you prefer to use Docker Compose for easier management, here's a minimal `doc
 ```yaml
 services:
   harmony-ap:
-    image: niis/harmony-ap:2.6.0
+    image: niis/harmony-ap:<version>
     ports:
       - "8443:8443"
     environment:
@@ -234,7 +235,7 @@ volumes:
 
 On the first startup, the container will perform an initialization sequence:
 
-- If the mounted volume is empty (first run), Access Point will generate default configuration files and security materials. This includes generating **self-signed certificates** for TLS and for message signing/encryption. It's possible to provide your own certificates, as explained later in the TLS and Certificates section. These are placed in the `/var/opt/harmony-ap/etc` directory (symlinked from `/etc/harmony-ap` inside the container). The self-signed certificate allows the service to run immediately with TLS and secure messaging capabilities, though it will not be trusted by clients until you replace it with a CA-signed cert (see TLS and Certificates section).
+- If the mounted volume is empty (first run), Access Point will generate default configuration files and security materials. This includes generating **self-signed certificates** for TLS and for message signing/encryption. It's possible to provide your own certificates, as explained later in the [Supplying and Updating Certificates](#72-supplying-and-updating-certificates) section. These are placed in the `/var/opt/harmony-ap/etc` directory (symlinked from `/etc/harmony-ap` inside the container). The self-signed certificate allows the service to run immediately with TLS and secure messaging capabilities, though it will not be trusted by clients until you replace it with a CA-signed cert (see [Certificate Trust and Exchange](#74-certificate-trust-and-exchange) section).
 - The container will connect to MySQL using the provided environment variables. If the database schema is empty (first time setup), it will create the necessary tables and initial data. This includes default settings and an **administrator user account** for the admin UI.
 - **Admin Credentials:** The admin account (used to log into Access Point's web interface) is created at first startup. The username is "harmony" by default (unless changed in configuration). For the initial password, if you did not specify one via environment, the system will generate a random password and log it. In that case, check the container logs for a message on first startup that displays the generated admin password. For security, as the password was logged to the console, you should change it via the admin UI. As a best practice, consider setting a strong password via the `ADMIN_PASSWORD` environment variable on first run so you know the credential upfront (the container will then use that instead of generating one, and it will not be logged).
 - Once initialization is complete, Access Point will deploy its web application and start listening on port 8443. At this point, the container should be "Up" and healthy.
@@ -259,10 +260,10 @@ By using the quick start above, you have a running Access Point with minimal con
 
 - **Self-signed TLS certificate:** Suitable for testing, but in production you will replace this with a certificate from a trusted CA (see TLS and Certificates).
 - **Embedded default settings:** The container comes with embedded default configurations (such as a default logging configuration, default Tomcat configuration, etc.). These allow it to function out-of-the-box in a basic way. The quick setup doesn't include a PMode definition, so you will likely need to upload or configure your specific PMode (partnership agreements) via the UI or environment variables, and adjust other settings for your domain. The defaults are primarily for initial setup.
-- **Internal ActiveMQ broker (embedded):** Access Point includes an internal JMS broker (Apache ActiveMQ) for handling message queues. By default, this broker runs in the same container using an embedded configuration. We will discuss how to customize or externalize this in the Message Broker Setup section.
-- **Single-node deployment:** The quick start covers a standalone instance. If this node goes down, service is unavailable. For high availability, you can run multiple instances in a cluster with a shared database (and possibly shared storage), which we will cover in Clustering and High Availability.
+- **Internal ActiveMQ broker (embedded):** Access Point includes an internal JMS broker (Apache ActiveMQ) for handling message queues. By default, this broker runs in the same container using an embedded configuration. We will discuss how to customize or externalize this in the [Message Broker Setup](#6-message-broker-setup) section.
+- **Single-node deployment:** The quick start covers a standalone instance. If this node goes down, service is unavailable. For high availability, you can run multiple instances in a cluster with a shared database (and possibly shared storage), which we will cover in [Clustering and High Availability](#5-clustering-and-high-availability).
 
-At this point, you have a functional Access Point container. Next, we'll delve into how to persist its data and configure it in more detail, so that your setup is robust and tailored to your needs.
+At this point, you have a functional Access Point container. To test data exchange between two instances, you can start a second Access Point and follow the instructions in the [Static Discovery Configuration Guide](#Ref_UG-SDCG). This guide provides the steps for certificate setup and PMode configuration required for message exchange.
 
 ## 3 Data Persistence
 
@@ -273,22 +274,22 @@ Running Access Point in Docker requires careful handling of persistent data. Acc
 Docker containers are ephemeral by default; any changes to the container's filesystem are lost when the container is stopped. The Harmony Access Point, however, is a stateful application:
 
 - **Configuration files:** These include `domibus.properties` (the main configuration), XML files for plugins, keystore files for certificates (TLS and signing keys), truststore files, and Tomcat configuration (`server.xml`). These are generated or populated on first startup in the container's `/var/opt/harmony-ap/etc` directory.
--	**Security material:** The private keys and certificates are stored in keystore files on disk (e.g., `tls-keystore.p12`, `ap-keystore.p12`, and their corresponding truststores). Losing these would invalidate your node's identity and ability to decrypt messages.
--	**Message payloads and working files:** Harmony AP may store incoming message attachments (database only by default) or certain working data on disk (especially if not configured to use database storage for large objects). As message attachments could be written under the data directory if enabled, if those files disappear, you might lose the ability to resend or recover messages.
--	**JMS data (ActiveMQ):** The embedded ActiveMQ broker uses a file-based storage (KahaDB) to persist messages and transactions. This by default resides on the container's filesystem under the `/var/opt/harmony-ap/work` directory. If not persisted, a container restart could wipe in-transit messages or subscription info. Persisting the JMS store is important for reliability, particularly in production.
+- **Security material:** The private keys and certificates are stored in keystore files on disk (e.g., `tls-keystore.p12`, `ap-keystore.p12`, and their corresponding truststores). Losing these would invalidate your node's identity and ability to decrypt messages.
+- **Message payloads and working files:** Harmony AP may store incoming message attachments (database only by default) or certain working data on disk (especially if not configured to use database storage for large objects). As message attachments could be written under the data directory if enabled, if those files disappear, you might lose the ability to resend or recover messages.
+- **JMS data (ActiveMQ):** The embedded ActiveMQ broker uses a file-based storage (KahaDB) to persist messages and transactions. This by default resides on the container's filesystem under the `/var/opt/harmony-ap/work` directory. If not persisted, a container restart could wipe in-transit messages or subscription info. Persisting the JMS store is important for reliability, particularly in production.
 
 In summary, without using volumes, each restart would act like a fresh installation: new keys, empty config, etc., which is not acceptable in production. Therefore, **using Docker volumes or bind mounts for `/var/opt/harmony-ap` or configuring the container to use the database for persistence is essential for a stable deployment**. This ensures that all configuration, security material, and message state are retained across container restarts or upgrades.
+
+> **Note:** While this document focuses on the Access Point itself, any other critical service used in the environment, such as the database or a potential ActiveMQ external broker, must also be configured with its own appropriate data persistence strategy.
 
 ### 3.2 Using Volumes for Persistence (Standalone Mode)
 
 For a single-instance deployment, you can use either:
 
-- **A Docker named volume** (as in the quick start example, "harmony-ap-data").
-- **A bind mount to a host directory** (e.g., a path on the host filesystem).
+- **A Docker named volume (recommended for simplicity):** This is a volume managed by Docker. If you ran the quick start command with `-v harmony-ap-data:/var/opt/harmony-ap`, Docker created a volume named harmony-ap-data. All the state (configs, keystores, etc.) is now stored there. You can list volumes with `docker volume ls` and examine it with `docker volume inspect harmony-ap-data`. The advantage of a named volume is Docker will maintain it even if the container is removed. On container upgrades, you simply attach the same volume to the new container, and all prior state is present.
+- **A bind mount to a host directory** Alternatively, you might want the files directly accessible on the host (for backup or editing). In that case, create a directory on the host (e.g., `/srv/harmony-ap`) and mount it: `-v /srv/harmony-ap:/var/opt/harmony-ap`. Ensure that this directory has correct ownership and permissions as covered in the [File Permissions and User Considerations](#33-file-permissions-and-user-considerations) section below. The container will write its configuration and data files there, and you can inspect or modify them directly on the host.
 
-**Docker Named Volume (Recommended for Simplicity):** This is a volume managed by Docker. If you ran the quick start command with `-v harmony-ap-data:/var/opt/harmony-ap`, Docker created a volume named harmony-ap-data. All the state (configs, keystores, etc.) is now stored there. You can list volumes with `docker volume ls` and examine it with `docker volume inspect harmony-ap-data`. The advantage of a named volume is Docker will maintain it even if the container is removed. On container upgrades, you simply attach the same volume to the new container, and all prior state is present.
-
-**Host Directory Mount:** Alternatively, you might want the files directly accessible on the host (for backup or editing). In that case, create a directory on the host (e.g., `/srv/harmony-ap`) and mount it: `-v /srv/harmony-ap:/var/opt/harmony-ap`. Ensure that this directory has correct ownership and permissions as covered in the File Permissions and User Considerations section below. The container will write its configuration and data files there, and you can inspect or modify them directly on the host.
+For more details on Docker storage options, see the [Docker Storage documentation](https://docs.docker.com/engine/storage/).
 
 **Verifying Persistence:** After first run, if you inspect the volume or directory, you should see a structure like:
 
@@ -315,10 +316,10 @@ All these reside under the `/var/opt/harmony-ap` inside the container, which is 
 
 By persisting this, you ensure that:
 
--	On container restart or re-creation, Access Point finds existing config and does **not** regenerate new certificates or overwrite settings (unless a version upgrade introduces changes, in which case it might upgrade the files in place).
--	The admin password and user accounts remain as configured (these are stored in the DB and possibly in hashed form in the DB; as long as you keep the same DB, those persist, but certain settings like authentication configuration in properties file also persist).
--	Any messages stored on disk remain available. For instance, if a large file was being transmitted and AP crashed, having the volume means the new instance can potentially resume or handle it (assuming proper clustering or manual intervention).
--	ActiveMQ message queues persist, preventing message loss in crash scenarios. If the container stops ungracefully, the JMS journal on disk can be recovered on next start.
+- On container restart or re-creation, Access Point finds existing config and does **not** regenerate new certificates or overwrite settings (unless a version upgrade introduces changes, in which case it might upgrade the files in place).
+- The admin password and user accounts remain as configured (these are stored in the DB and possibly in hashed form in the DB; as long as you keep the same DB, those persist, but certain settings like authentication configuration in properties file also persist).
+- Any messages stored on disk remain available. For instance, if a large file was being transmitted and AP crashed, having the volume means the new instance can potentially resume or handle it (assuming proper clustering or manual intervention).
+- ActiveMQ message queues persist, preventing message loss in crash scenarios. If the container stops ungracefully, the JMS journal on disk can be recovered on next start.
 
 ### 3.3 File Permissions and User Considerations
 
@@ -336,25 +337,25 @@ docker run -d --name harmony-ap \
 ```
 This assumes you've also chowned `/srv/harmony-ap` to 1000:1000 on the host.
 
-When using **NFS or other distributed filesystems** for the volume (common in clustering, see below), a safe approach is running as the default user and having matching UID on the NFS. Keep in consideration that some distributed storage systems might not permit chown or certain operations by unknown UIDs.
+When using **NFS or other distributed filesystems** for the volume (common in [clustering](#5-clustering-and-high-availability), see below), a safe approach is running as the default user and having matching UID on the NFS. Keep in consideration that some distributed storage systems might not permit chown or certain operations by unknown UIDs.
 
 ### 3.4 Persistence in Cluster Mode
 
 In a clustered setup (multiple Access Point containers working together), data persistence has an extra dimension:
 
 - All nodes in the cluster must share certain data to stay in sync. Specifically, if using a file-based storage for messages or JMS, that storage must be accessible by all nodes. In practice, this means using a shared volume (network file system) for critical directories, or switching to database-backed storage to avoid file sharing.
-- We will cover two clustering approaches in the Clustering section:
+- We will cover two clustering approaches in the [Clustering](#5-clustering-and-high-availability) section:
   1. **Shared File System Mode:** All AP instances mount the same volume or network file system path at `/var/opt/harmony-ap`. This way, they literally share the same configuration and data files. This ensures they use identical configurations and can see each other's files (attachments, etc.). It's simple but requires a reliable NFS/SMB or similar setup. In this mode, you might run containers on different hosts but point them to the same NFS server path. Be cautious with file locking and performance on NFS.
-  2. **Database Storage Mode:** Harmony supports storing more data in the database (including certificates, secrets, etc.), which reduces the need for a shared filesystem. In this scenario, you could run multiple AP nodes with only the DB as the single source of truth. Harmony AP will share files like keystores and configuration files via the database, and each node can have its own local storage for temporary files. You also need to handle the JMS broker either via a shared persistent store or an external broker (discussed later). This mode can simplify deployment in cloud environments where a shared filesystem is not available, but it requires enabling the appropriate configuration for DB-based storage, for example, setting `CLUSTER_BACKEND=database` in the environment variables, as explained in the Clustering section.
+  2. **Database Storage Mode:** Harmony supports storing more data in the database (including certificates, secrets, etc.), which reduces the need for a shared filesystem. In this scenario, you could run multiple AP nodes with only the DB as the single source of truth. Harmony AP will share files like keystores and configuration files via the database, and each node can have its own local storage for temporary files. You also need to handle the JMS broker either via a shared persistent store or an external broker (discussed later). This mode can simplify deployment in cloud environments where a shared filesystem is not available, but it requires enabling the appropriate configuration for DB-based storage, for example, setting `CLUSTER_BACKEND=database` in the environment variables, as explained in the [Clustering](#5-clustering-and-high-availability) section.
 
 In either cluster scenario, **the database is always shared** among the nodes; that's how they share state about messages, users, etc. Each node will connect to the same DB schema.
 
 To summarize:
 
--	**Never run the container without some form of persistence in production**, or you will lose critical keys and config on restart.
--	For standalone, a local volume or host bind is fine.
--	For active-active cluster, plan a shared volume or ensure all nodes get the same config data via the available mechanisms (described in the Clustering section).
--	Ensure file permissions (UID/GID) are correct on the volumes for container's user.
+- **Never run the container without some form of persistence in production**, or you will lose critical keys and config on restart.
+- For standalone, a local volume or host bind is fine.
+- For active-active cluster, plan a shared volume or ensure all nodes get the same config data via the available mechanisms (described in the [Clustering](#5-clustering-and-high-availability) section).
+- Ensure file permissions (UID/GID) are correct on the volumes for container's user.
 
 ## 4 Configuration Overview
 
@@ -362,7 +363,7 @@ Harmony Access Point is highly configurable. You can tweak settings via configur
 
 ### 4.1 Configuration Methods: Environment Variables vs. Parameter file
 
-**1. Environment Variables:** The Docker image accepts various environment variables to configure common settings (database connection, passwords, clustering flags, etc.). This is the Docker-friendly way to inject config at runtime without editing files inside the container. On startup, the container's entrypoint script reads these variables and apply them. For example, by writing `DB_HOST` and `DB_PASSWORD` into `domibus.properties` or by setting system properties for the JVM. Environment variables are easy to set via `docker run -e` flags or in a Docker Compose file. A list of supported variables and their meanings is provided in the Appendix ("Environment Variable Reference").
+**1. Environment Variables:** The Docker image accepts various environment variables to configure common settings (database connection, passwords, clustering flags, etc.). This is the Docker-friendly way to inject config at runtime without editing files inside the container. On startup, the container's entrypoint script reads these variables and apply them. For example, by writing `DB_HOST` and `DB_PASSWORD` into `domibus.properties` or by setting system properties for the JVM. Environment variables are easy to set via `docker run -e` flags or in a Docker Compose file. A list of supported variables and their meanings is provided in the [Environment Variable Reference](#131-environment-variable-reference) section later in this document.
 
 **2. Parameter File:** The Docker container also supports a parameter file that contains key-value pairs for configuration, as an alternative to passing environment variables. You can create a text file with entries in `VAR=value` format and mount it into the container, then use the `HARMONY_PARAM_FILE` environment variable to tell the container to read from it. Lines starting with `#` are comments and ignored.
 
@@ -398,7 +399,7 @@ Some of the most common parameters you'll configure (via env or file) include:
   - `DB_SCHEMA`: The name of the database schema to use (default is `harmony_ap`).
   - `DB_USER` and `DB_PASSWORD`: The credentials for the database user. Default user is `harmony_ap` if not set; the password has no default and must be provided.
 - **Administrator Account:** The admin user to access the admin UI. You can set `ADMIN_USER` and `ADMIN_PASSWORD` as environment variables to specify the initial admin UI user explicitly (otherwise `harmony` will be used as the username and a random password will be generated). On first startup the initial user will be created. After that, changing the admin credentials should be done via the application rather than via this env var. If the admin credentials are changed, it's recommended to also update the environment variables to match, as some operations rely on them.
-- **Deployment Mode (Clustered or Not):** The environment variable `DEPLOYMENT_CLUSTERED` is a flag (true/false) that controls whether Access Point runs in clustered mode, which is false by default. Set it to true for multi-node clusters. In clustered mode, certain internal settings are adjusted (for example, Access Point will enable cache replication, avoids duplicate scheduled jobs, etc. more on that in the cluster section), and generally assumes other nodes are present.
+- **Deployment Mode (Clustered or Not):** The environment variable `DEPLOYMENT_CLUSTERED` is a flag (true/false) that controls whether Access Point runs in clustered mode, which is false by default. Set it to true for multi-node clusters. In clustered mode, certain internal settings are adjusted (for example, Access Point will enable cache replication, avoids duplicate scheduled jobs, etc. more on that in the [Clustering](#5-clustering-and-high-availability) section), and generally assumes other nodes are present.
 - **Load Balancer handling TLS termination:** `LB_TLS_TERMINATION` is a boolean flag (true/false) to indicate the service is behind an external load balancer or reverse proxy that handles TLS termination. When this is true, the container will configure Tomcat to listen on HTTP (port 8080) rather than HTTPS, expecting that the external proxy provides the HTTPS. Essentially, it disables the internal TLS connector.
 - **ActiveMQ Broker Configuration:** If using an external JMS broker or customizing the embedded one:
   - `ACTIVEMQ_BROKER_HOST`: Hostname(s) for the broker. By default, the AP uses an embedded broker (so this is typically not needed as it's set to 'localhost' by default). If you want the AP to connect to an external broker, set this to the broker host or a comma-separated list for a cluster (the container will construct a failover URL).
@@ -408,7 +409,7 @@ Some of the most common parameters you'll configure (via env or file) include:
 - **Trust Store and Keystore Passwords:** By default, on first run the container generates random passwords for the keystores/truststores (for TLS and for AS4 signing) and stores them internally. If you want to control these or supply your own keystores, you can use:
   - `TLS_KEYSTORE_PASSWORD` / `TLS_TRUSTSTORE_PASSWORD`
   - `SECURITY_KEYSTORE_PASSWORD` / `SECURITY_TRUSTSTORE_PASSWORD`
-  - (And corresponding base64 or path variables to supply the actual keystore content, as described in the TLS and Certificates section.)
+  - (And corresponding base64 or path variables to supply the actual keystore content, as described in the [TLS and Certificates section](#7-tls-and-certificates)).
 - **Logging Level:** The environment variable `LOG_LEVEL` can set the Docker entrypoint's logging threshold. Acceptable values: `ERROR`, `WARN`, `INFO` (default), `DEBUG`. If you need more verbose logs (for troubleshooting), you can set this to `DEBUG`.
 
 ### 4.3 Directory Layout and Notable Files
@@ -448,7 +449,7 @@ When Access Point is deployed in a cluster, all nodes share the same **eDelivery
 - **Cache and Coordination:** Access Point uses in-memory caches (for trust info, configuration, etc.) and has scheduled jobs (such as sending message retries, pulling messages from queues, etc.). In cluster mode, it enables a coordination mechanism so that these tasks are not duplicated across nodes or to ensure cache coherence. When clustering is enabled, the nodes will form a cache cluster where cache replication is used to share entries (like recently seen message IDs), elect a primary node for certain scheduled jobs (for example, to avoid multiple nodes sending the same retry), etc.
 - **External JMS (ActiveMQ) brokers:** By default, each AP node runs its own embedded JMS broker. In a cluster, you might prefer a setup where multiple independent brokers won't process its own message queues without coordination. Instead of each node running an embedded broker, you can run an external ActiveMQ broker (or a network of brokers) that all AP nodes connect to as clients. All Access Point containers would have their JMS connection configured to point to this external broker. In this case, the AP containers do not run their own brokers, so they operate more like stateless web servers delegating JMS to the external service. The advantage is simplification of AP nodes (and better decoupling), but it introduces an additional component to manage (the external ActiveMQ). This approach might be useful in Kubernetes or cloud setups where you use a managed message broker service.
 
-From a conceptual view: in cluster mode, the AP nodes are cooperating peers. There is _no strict primary-replica except for internal tasks_, all nodes can accept incoming AS4 messages and handle outgoing ones. However, for certain functions (like picking up messages from the database to send out, or triggering retries), one node might act as a scheduler at a time. The clustering ensures that if that node fails, another will take over those duties. This provides high availability.
+From a conceptual view: in cluster mode, the AP nodes are cooperating peers. There is _no strict primary-replica except for internal tasks_, all nodes can accept incoming AS4 messages and handle outgoing ones. However, for certain functions (like picking up messages from the database to send out, or triggering retries), only one node will act as a scheduler at a time. The clustering ensures that if that node fails, another will take over those duties. This provides high availability.
 
 ![clustered setup](img/ug_ap_cluster_overview_diagram.svg)
 
@@ -467,7 +468,7 @@ To enable clustering, you need to configure each container instance appropriatel
   - If embedded, but you haven't mounted `/var/opt/harmony-ap`, mount a **shared volume for ActiveMQ data** to all containers. In Docker Compose, you might define a volume and mount it at, `/var/opt/harmony-ap/work` on all instances. This way, all broker instances use the same KahaDB files and lock.
   - If using an external broker, set `ACTIVEMQ_BROKER_HOST` and related variables so all nodes connect to the same broker service. Also ensure all nodes use the same `ACTIVEMQ_BROKER_USERNAME` and `ACTIVEMQ_BROKER_PASSWORD` if applicable.
 - **Ensure time synchronization**: All nodes should have synchronized clocks (use NTP on hosts). This helps with log correlation and certain time-based features (like message expiration).
-- **Load Balancing:** Deploy a load balancer in front of the nodes to distribute incoming traffic. The load balancer should direct AS4 traffic (the `/services/msh` endpoint) to all nodes (round-robin or any preferred algorithm). For the admin UI, configure the load balancer for sticky sessions (so that once an admin logs in, their subsequent requests go to the same node, or else they would have to log in again on a different node, see the Load Balancing and Proxy section for more details on this).
+- **Load Balancing:** Deploy a load balancer in front of the nodes to distribute incoming traffic. The load balancer should direct AS4 traffic (the `/services/msh` endpoint) to all nodes (round-robin or any preferred algorithm). For the admin UI, configure the load balancer for sticky sessions (so that once an admin logs in, their subsequent requests go to the same node, or else they would have to log in again on a different node, see the [Load Balancing and Proxy](#8-load-balancing-and-proxy) section for more details on this).
 
 In summary, to set up clustering:
 
@@ -533,7 +534,7 @@ environment:
   ACTIVEMQ_PASSWORD: "changeme"
 ```
 
-In the examples folder, you can find an [example Docker Compose setup](https://github.com/nordic-institute/harmony-common/tree/main/doc/examples/cluster_with_external_broker) that includes a Harmony AP cluster of two nodes, connecting to an external ActiveMQ broker and a MySQL database. Nginx is used as a load balancer in front of the AP nodes. Check the `README.md` in that folder for details on how to run it.
+In the examples folder, you can find an [example Docker Compose setup](examples/cluster_with_external_broker) that includes a Harmony AP cluster of two nodes, connecting to an external ActiveMQ broker and a MySQL database. Nginx is used as a load balancer in front of the AP nodes. Check the `README.md` in that folder for details on how to run it.
 
 **Example 2: Cluster of AP nodes with external ActiveMQ in primary/replica mode:**
 
@@ -546,7 +547,7 @@ environment:
   ACTIVEMQ_PASSWORD: "changeme"
 ```
 
-In the examples folder, you can find an [example Docker Compose setup](https://github.com/nordic-institute/harmony-common/tree/main/doc/examples/cluster_with_external_brokers_cluster) which is a slightly modified version of the previous example, but with two ActiveMQ brokers configured in a primary/replica setup. The Harmony AP nodes connect to both brokers, allowing for failover and load balancing. This setup is more resilient to broker failures. Check the `README.md` in that folder for details on how to run it.
+In the examples folder, you can find an [example Docker Compose setup](examples/cluster_with_external_brokers_cluster) which is a slightly modified version of the previous example, but with two ActiveMQ brokers configured in a primary/replica setup. The Harmony AP nodes connect to both brokers, allowing for failover and load balancing. This setup is more resilient to broker failures. Check the `README.md` in that folder for details on how to run it.
 
 **Testing External Broker Setup:** If the external broker is not reachable when AP starts, the AP will log errors on JMS initialization and will periodically retry connecting. Ensure the network connectivity (e.g., if using Docker, the container can reach the broker host and port) and that any firewalls allow the connection.
 
@@ -570,7 +571,7 @@ Transport Layer Security (TLS) and certificate management are critical in an eDe
 
 There are **two sets of key pairs** (and corresponding certificates) used by Access Point:
 
-1. **TLS Certificiate (HTTPS):** This certificate is used to secure the HTTPS connection to your Access Point (the transport layer security). It identifies your Access Point service to others and is used in the TLS handshake when another Access Point or user connects to your node on port 8443. In eDelivery deployments, this is usually an X.509 certificate issued by a trusted Certificate Authority (CA) recognized by your partners (sometimes a public CA, or a private CA within a network). The private key and cert for TLS are stored in the TLS keystore (by default `tls-keystore.p12`) and trusted CAs are in the TLS truststore (by default `tls-truststore.p12`).
+1. **TLS Certificate (HTTPS):** This certificate is used to secure the HTTPS connection to your Access Point (the transport layer security). It identifies your Access Point service to others and is used in the TLS handshake when another Access Point or user connects to your node on port 8443. In eDelivery deployments, this is usually an X.509 certificate issued by a trusted Certificate Authority (CA) recognized by your partners (sometimes a public CA, or a private CA within a network). The private key and cert for TLS are stored in the TLS keystore (by default `tls-keystore.p12`) and trusted CAs are in the TLS truststore (by default `tls-truststore.p12`).
 2. **AS4 Message Signing/Encryption Certificate:** This certificate (sometimes called the "message security certificate") is used at the message layer (within the AS4 protocol) to sign outgoing messages and to decrypt incoming messages. It ensures message integrity and confidentiality. Typically, this is a different certificate from the TLS certificate and is often issued by a different CA (for example, an eDelivery-specific PKI). The public part of this certificate will need to be shared with your communication partners (usually via an SMP or other means), so they can encrypt messages to you and trust your signatures. Likewise, you'll import partner certificates into your truststore to trust their message signatures. By default, the private key for message security is stored in `ap-keystore.p12`, and trusted partner certificates (or their CA) would be in `ap-truststore.p12`.
 
 In summary:
@@ -582,11 +583,22 @@ In summary:
 
 By default, these files are created in format PKCS#12 on first run with placeholder self-signed credentials (with alias "selfsigned" and the default party name, etc.). The container's logs on first startup will usually mention that no keystore was found and one was created. This is fine for initial testing, but you can provide your own certificates or replace them with real ones as described in the next section.
 
-### 7.2 Providing and Replacing Certificates
+### 7.2 Supplying and Updating Certificates
 
-To use real certificates, you have a few options:
+When the container starts it looks for four PKCS#12 files:
 
-**Option 1: Provide via environment variables**: The container can accept base64-encoded keystores and truststores through environment variables. This is convenient for automation (you can store the base64 in a secure config and feed it to the container). The relevant variables are:
+| Purpose                                                    | Default Path                                 |
+|------------------------------------------------------------|----------------------------------------------|
+| TLS keystore (HTTPS certificate + key)                     | `/var/opt/harmony-ap/etc/tls-keystore.p12`   |
+| TLS truststore (trusted CAs or client certs for TLS)       | `/var/opt/harmony-ap/etc/tls-truststore.p12` |
+| AS4 message-level keystore (signing/encryption cert + key) | `/var/opt/harmony-ap/etc/ap-keystore.p12`    |
+| AS4 message-level truststore (partner or CA certs for AS4) | `/var/opt/harmony-ap/etc/ap-truststore.p12`  |
+
+You can do provide/update them by using the four approaches below.
+
+#### 7.2.1 Via environment variables
+
+The container accepts base64-encoded keystores and truststores through environment variables. This is convenient for automation (you can store the base64 in a secure config and feed it to the container). The relevant variables are:
 
 - `TLS_KEYSTORE_B64` and `TLS_TRUSTSTORE_B64` for the TLS PKCS#12 keystore/truststore.
 - `SECURITY_KEYSTORE_B64` and `SECURITY_TRUSTSTORE_B64` for the AS4 message-level PKCS#12 keystore/truststore.
@@ -597,9 +609,11 @@ environment:
   TLS_KEYSTORE_B64: "MIINdAIBAz[...]79AgIIAA=="
 ```
 
-The installer will decode it and create the corresponding files in the expected locations.
+As the keystores/truststores in base64 are provided at runtime, they take the highest precedence. If these variables are set, each time the container starts it will not look for the files at their corresponding paths, but instead decode the base64 values and create/overwrite the keystores/truststores in those paths so, when using this method any changes you make inside the container (for example through the admin UI or using keytool) will be lost at the next restart. To persist changes you must update the base64‑encoded variables with the new keystore/truststore.
 
-**Option 2: Mount Keystore/Truststore Files**: You can mount your certificate files into the container. For example, if you have `mykeystore.p12` on the host, you could do:
+#### 7.2.2 Host or volume mounts
+
+You can mount your certificate files into the container. For example, if you have `mykeystore.p12` on the host, you could do:
 
 ```bash
 -v /path/on/host/mykeystore.p12:/var/opt/harmony-ap/etc/tls-keystore.p12
@@ -611,7 +625,13 @@ This will overlay the existing certificate, if any, with your file. However, not
 - Run once to get initial files, stop container, replace files on volume with yours, then start again.
 - Alternatively, you can mount the keystores/truststores at a different path, in that case you would need to set the environment variables to point to them. For example, if you mount your keystore at `/custom/path/tls-keystore.p12`, you would set `TLS_KEYSTORE_PATH=/custom/path/tls-keystore.p12` in the environment variables. Same applies to the other stores (`TLS_TRUSTSTORE_PATH`, `SECURITY_KEYSTORE_PATH`, `SECURITY_TRUSTSTORE_PATH`).
 
-**Option 3: Import into existing keystores/truststores:** You could import certificates into the existing keystores/truststores file using keytool or openssl inside the container. This can be done either by `docker exec` into the running container or by mounting the volume and doing it from the host (since it's just a file).
+The container always reads the keystore/truststore from the mounted file; therefore, if you add certificates through the admin UI, remember to also update the file on the host so that the changes persist. Modifying the file inside the container using keytool or a similar tool will persist the changes through container restarts as long as the changes are made to the mounted file. For example, using the read only mount option (`:ro`, e.g., `-v /path/on/host/mykeystore.p12:/var/opt/harmony-ap/etc/tls-keystore.p12:ro`) will not work as the container will not be able to write to the file, and thus it will not be able to update the keystore/truststore.
+
+If mounting your own keystore or truststore files, ensure they are owned by the `harmony-ap` user (UID 999) and have appropriate permissions (`chmod 0640`, `chown harmony-ap`). The container will **not** start if it cannot read the keystore due to restrictive permissions. Conversely, if the permissions are too permissive, the security manager may reject the file for security reasons. It is recommended to match the permissions of existing files, generally owner read/write, group read, and no access for others.
+
+#### 7.2.3 Importing manually
+
+You could import certificates into the existing keystores/truststores file using keytool or openssl inside the container. This can be done either by `docker exec` into the running container or by mounting the volume and doing it from the host (since it's just a file).
 
 - For example, to import a new TLS certificate into the existing truststore, you could run:
   ```bash
@@ -622,27 +642,45 @@ This will overlay the existing certificate, if any, with your file. However, not
   docker restart harmony-ap-container-name
   ```
 
-**Permissions:** After placing new keystore/truststore files, set their ownership to `harmony-ap` (UID 999) and permissions as needed (`chmod 0640`, `chown harmony-ap`). The container will **not** start if it cannot read the keystore due to permission issues (and if too open permissions, the security manager will refuse it). Use the same mode as existing files (generally owner read/write, group read, others none).
+When using this method along with environment variables or host/volume mounts, remember that the underlying file must be persisted (as described in [7.2.2 Host or volume mounts](#722-host-or-volume-mounts)) or regenerate the base64 ([7.2.1 Via environment variables](#721-via-environment-variables)); otherwise your changes will be lost on the next container boot.
 
-**Passwords:** When generating on the first run of the container, you can either let the installer generate a random password for the TLS and security stores, or you can provide your own passwords via environment variables so the container can use those passwords when generating or accepting the provided stores. When letting the installer generate the stores, the passwords won't be shown in the logs for security reasons, but you can find them in their respective configuration files.
+#### 7.2.4 Using the admin UI
 
-- The TLS connector in Tomcat, configured in `server.xml`, uses the password from the `TLS_KEYSTORE_PASSWORD` and `TLS_TRUSTSTORE_PASSWORD` environment variables.
-- For the AS4 message-level signing/encryption stores, configured in `domibus.properties`, the passwords are taken from the `SECURITY_KEYSTORE_PASSWORD` and `SECURITY_TRUSTSTORE_PASSWORD` environment variables.
+The admin UI includes a Certificates section where you can manage the message‑level keystore and truststore and the TLS truststore. To upload a bundle, expand the Certificates menu and open the desired section, click Upload, choose the `.p12` file, provide its password and confirm. To add a single certificate for a partner, allowed in the "Truststore" and "TLS" sections, click "Add Certificate", select the `.cer` file, use the partner's party name as the alias and confirm.
+
+It is important to note that the admin UI does not support importing or replacing your server's TLS private key.  Only the message‑level keystore and truststores and the TLS truststore are manageable via the UI. Replacing the TLS private key requires you to provide a new `tls‑keystore.p12` file via environment variables, or by mounting the file, or to modify the keystore with keytool as described in Options 7.2.1–7.2.3.
+
+As with other methods, if the keystores/truststores are supplied via environment variables or mounted from the host, any certificates you add through the admin UI will be overwritten when the container restarts, because the file is recreated from the external source. Therefore, use the admin UI primarily for environments where the keystore/truststore is stored internally and not provided externally, or remember to update the source file/base64 value after adding certificates.
+
+### 7.3 Passwords for Keystores and Truststores
+
+Whether using imported certificates or generating them on the first run of the container, passwords are required for the TLS and security stores. You can provide these passwords via environment variables so the container can access or operate with the corresponding stores:
+
+- `TLS_KEYSTORE_PASSWORD` and `TLS_TRUSTSTORE_PASSWORD` for the TLS keystore/truststore.
+- `SECURITY_KEYSTORE_PASSWORD` and `SECURITY_TRUSTSTORE_PASSWORD` for the AS4 message-level keystore/truststore.
+
+If you let the installer generate the certificates, but do not provide these passwords, it will generate random passwords for the keystores and truststores. If you provide the passwords, they will be used instead of generating them.
+
+The keystores/truststores passwords will not be printed to the logs for security reasons, but they can be found in the corresponding configuration files.
+
+- The TLS connector in Tomcat, configured in `server.xml`, uses the password for the TLS keystore and truststore.
+- For the AS4 message-level signing/encryption stores, the keystore and truststore are configured in `domibus.properties`.
 
 Given that the keystore/truststore passwords are sensitive, you should keep them secret and not hard-code them or share them publicly. If you use environment variables, ensure they are set securely in your deployment scripts or orchestration tools.
 
-### 7.3 Certificate Trust and Exchange
+### 7.4 Certificate Trust and Exchange
 
 In an operational network, exchanging certificates with partners is crucial:
 
 - The AS4 signing certificate (your public key) needs to be shared with others. Typically, this is done via the SMP (Service Metadata Publisher) in eDelivery: you publish your certificate there so others can find it. If not using [dynamic discovery](#Ref_UG-DDCG), you'd manually send them your certificate.
 - The AS4 truststore (`ap-truststore.p12`) on your side should contain either the exact certificates of partners or the CA certificates that sign the partners certificates (depending on your trust model). For example, if all participants certificates are issued by a certain CA, just import that CA into `ap-truststore.p12`. If not, you'll import each partner's certificate (or their root).
--	The TLS certificate similarly might need to be trusted by partners. Usually for TLS, it's easiest if you use a certificate from a well-known CA that is already trusted by common trust stores (e.g., Let's Encrypt or a government CA). Then partners don't need to import your TLS cert specifically. If you use a private CA for TLS, you'll have to distribute that CA cert to partners to add to their `tls-truststore.p12`.
--	The TLS truststore (`tls-truststore.p12`) on your side should include any custom CAs or partner client certificates if mutual TLS is required. If your deployment requires client-certificate authentication on the TLS layer (some eDelivery networks do), then each partner's TLS certificate (or their CA) should be in your TLS truststore.
+- The TLS certificate similarly might need to be trusted by partners. Usually for TLS, it's easiest if you use a certificate from a well-known CA that is already trusted by common trust stores (e.g., Let's Encrypt or a government CA). Then partners don't need to import your TLS cert specifically. If you use a private CA for TLS, you'll have to distribute that CA cert to partners to add to their `tls-truststore.p12`.
+  - The TLS truststore is empty by default, so even commonly trusted CA certificates must be added explicitly.
+- The TLS truststore (`tls-truststore.p12`) on your side should include any custom CAs or partner client certificates if mutual TLS is required. If your deployment requires client-certificate authentication on the TLS layer (some eDelivery networks do), then each partner's TLS certificate (or their CA) should be in your TLS truststore.
 
 Keep these truststores up to date as partners join or certificates get renewed.
 
-### 7.4 Managing Certificates in a Cluster
+### 7.5 Managing Certificates in a Cluster
 
 If running multiple AP nodes:
 
@@ -653,15 +691,15 @@ If running multiple AP nodes:
 
 It's worth mentioning that the installation separates the Distinguished Name (DN) configured for TLS vs the one for signing cert. This just means your two certs can have different subject DN as they probably should (e.g., TLS cert might have `CN=ap.yourdomain.com`, whereas signing cert might have `CN=YourOrg AS4, OU=eDelivery`, etc.). The installer allows that; if generating keystores/truststores, you anyway have full control over DNs when creating CSRs.
 
-### 7.5 Summary of Certificate Management Best Practices
+### 7.6 Summary of Certificate Management Best Practices
 
 - Generate CSRs (Certificate Signing Requests) from the keystores and obtain CA-signed certificates for both TLS and AS4. You can generate a key pair and CSR using keytool or openssl, or even use the self-signed as a starting point (though typically you create a fresh key).
--	Always keep backups of your keystore files and passwords in a secure location. Losing them can mean losing access to encrypted data or requiring re-exchange of certificates.
--	Use strong passwords for all keystores and don't expose them unnecessarily (the environment variable or param file approach should be handled securely).
--	When updating/renewing certificates:
--	You can import the new cert into the existing keystore (under a new alias) and update config to use it, or simpler, replace the keystore file entirely if that's easier in Docker (just make sure to update passwords and references).
--	Plan the rollout so that partners have your new certificate before you switch, to avoid downtime (for AS4 cert, use dual-certificate approach: overlap the old and new during transition).
--	Similarly, update your truststores as partners update their certificates.
+- Always keep backups of your keystore files and passwords in a secure location. Losing them can mean losing access to encrypted data or requiring re-exchange of certificates.
+- Use strong passwords for all keystores and don't expose them unnecessarily (the environment variable or param file approach should be handled securely).
+- When updating/renewing certificates:
+  - You can import the new cert into the existing keystore (under a new alias) and update config to use it, or simpler, replace the keystore file entirely if that's easier in Docker (just make sure to update passwords and references).
+  - Plan the rollout so that partners have your new certificate before you switch, to avoid downtime (for AS4 cert, use dual-certificate approach: overlap the old and new during transition).
+  - Similarly, update your truststores as partners update their certificates.
 
 Proper certificate management ensures that your Access Point can establish trust with others in the network and maintain secure communications at both transport and message layers.
 
@@ -677,7 +715,7 @@ For AS4 message traffic (which is SOAP over HTTP to the `/services/msh` endpoint
 
 For the backend interface (the WSPlugin endpoint `/services/wsplugin` for message submission and pulling), no session state is maintained across calls either, so those can also be balanced without stickiness. If you have a long-running HTTP pull request, the LB should keep it on one node for that request, but subsequent pulls from the same backend client don't have to hit the same node, as each pull is independent.
 
-See the Network Diagram section for more details.
+See the [Network Diagram](#9-network-diagram) section for more details.
 
 ### 8.2 TLS Termination Options
 
@@ -716,7 +754,7 @@ Using DNS round-robin directly to nodes is generally not recommended because you
 
 Here are a couple of common patterns:
 
-1. **Single Node with Reverse Proxy:** Even for a single AP instance, you might put Nginx or Apache HTTPd in front to handle things like URL filtering or to serve as a WAF. In this case, configure the proxy to allow only necessary paths as described below in the Network Diagram section (i.e., maybe block admin UI from certain networks).
+1. **Single Node with Reverse Proxy:** Even for a single AP instance, you might put Nginx or Apache HTTPd in front to handle things like URL filtering or to serve as a WAF. In this case, configure the proxy to allow only necessary paths as described below in the [Network Diagram](#9-network-diagram) section (i.e., maybe block admin UI from certain networks).
 2. **Cluster with Load Balancer(s):** As described, multiple AP nodes, one load-balanced endpoint (e.g., `ap.example.com`). Typically deployed in a DMZ or cloud. This is the recommended production setup for HA.
 3. **Geographically Distributed Setup:** In some cases, organizations deploy AP nodes in different data centers or countries for resilience. They might use global DNS load balancing or have separate endpoints per region. This gets into complex territory because eDelivery typically expects one URL per participant. Usually, a single cluster across sites or an active-passive DR setup is used instead of active-active geo distribution, to avoid complexity in certificate management and endpoint advertisement.
 
@@ -815,16 +853,25 @@ Once the application (Tomcat + Harmony AP) starts up, the logging format and con
 
 **Log retention:** By default, Docker will keep all stdout output unless configured otherwise. Over time, this could fill up disk. It's wise to configure log rotation for Docker container logs. For example, if using Docker's JSON file logging, you can set a max file size and max files in the `daemon.json` or docker-compose (logging section). In Kubernetes, you set log retention at the node level.
 
-**Centralized logging (ELK, etc.):** Many deployments send container logs to Elasticsearch via Logstash/Fluentd, and use Kibana for searching. The output is already structured enough (with clear timestamps and sometimes thread or component tags) to filter. You might want to add more structure (e.g., JSON logging) if needed, but that requires adjusting the Logback config to output JSON.
+**Centralized logging (ELK, etc.):** Many deployments send container logs to Elasticsearch via Logstash/Fluentd, and use Kibana for searching. The output is already structured enough (with clear timestamps and sometimes thread or component tags) to filter. You might want to add more structure (e.g., JSON logging) if needed, but that requires adjusting the Logback config to output JSON. More on this in the [Integrating with Central Log Management](#105-integrating-with-central-log-management) section.
 
 ### 10.3 Adjusting Log Levels and Configuration
 
-The Harmony Access Point uses Logback as the logging framework. The default configuration (located in `logback.xml` in the `/var/opt/harmony-ap/etc` directory) sets logging levels for various packages:
+The Harmony Access Point allows you to adjust logging levels and configurations for both the container and the application. This is useful for debugging or monitoring purposes.
 
-- The container logs are set to `INFO`.
--	The application log level is set to `INFO`.
+#### 10.3.1 Container logs
 
-If you need to troubleshoot an issue, you might temporarily raise the log level to `DEBUG` for certain components. To debug request/responses, you might increase logging for `org.apache.cxf` in `logback.xml` from `WARN` (default) to `INFO`:
+The container logs are set to `INFO` by default which can be changed through the environment variable `LOG_LEVEL`. This environment  variable influences the logging threshold in the container's startup scripts. For example, setting `LOG_LEVEL=DEBUG` will make the entrypoint scripts log debug information.
+
+For more options, check the Docker image [Logging configuration](#1318-logging-configuration).
+
+##### 10.3.2 Application logs
+
+The Harmony Access Point uses Logback as the logging framework. The default configuration (located in `logback.xml` in the `/var/opt/harmony-ap/etc` directory) sets logging levels for various packages.
+
+In Logback each logger can have its own log level, which determines the minimum severity of messages that will be logged. The default configuration sets most components to `INFO`, meaning only informational messages will be logged. If you need to troubleshoot an issue, you might temporarily raise the log level to `DEBUG` for certain components.
+
+For example, to log the SOAP messages being sent and received in AS4 exchanges, you might increase logging for `org.apache.cxf` in `logback.xml`. This is one of the exceptions where the default logging level differs from `INFO`, in this case the default is `WARN`:
 
 ```xml
 <logger name="org.apache.cxf" level="INFO">
@@ -832,11 +879,7 @@ If you need to troubleshoot an issue, you might temporarily raise the log level 
 </logger>
 ```
 
-**Ways to adjust logging:**
-
-**Environment variable LOG_LEVEL:** This enviroment variable influences the default logging threshold in the container's startup scripts. For example, setting `LOG_LEVEL=DEBUG` will make the entrypoint scripts log debug information.
-
-**Editing logback.xml:** You can mount a custom logback.xml or use an environment variable to override it. Specifically, the container supports:
+**Ways to adjust logging in the application:** You can mount a custom `logback.xml` or use an environment variable to override it. Specifically, the container supports:
 
 - `LOGBACK_CONFIG_B64`: Base64-encoded custom `logback.xml` content. If you set this, on startup the container will decode it and replace the `/var/opt/harmony-ap/etc/logback.xml`.
 - `LOGBACK_CONFIG_PATH`: Alternatively, you could mount a file and point this variable to it, if not using the default path.
@@ -860,10 +903,10 @@ As mentioned, using a centralized logging system is highly recommended for produ
 
 You might want to parse logs for certain events:
 
--	Alerts or errors (e.g., search for "ERROR" or "WARN" logs).
--	Specific message IDs (to trace a message flow, e.g., search for a message ID or exchange ID across logs).
--	Security events (failures in signing or authentication attempts).
--	Administrative actions (like user logins to admin UI are logged).
+- Alerts or errors (e.g., search for "ERROR" or "WARN" logs).
+- Specific message IDs (to trace a message flow, e.g., search for a message ID or exchange ID across logs).
+- Security events (failures in signing or authentication attempts).
+- Administrative actions (like user logins to admin UI are logged).
 
 In the examples folder, you can find an [example Docker Compose setup](https://github.com/nordic-institute/harmony-common/tree/main/doc/examples/centralized_logging) that shows how to set up a centralized logging stack using the ELK stack (Elasticsearch, Logstash, Kibana) with Harmony Access Point.
 
@@ -907,10 +950,10 @@ For more in-depth information on the logging subsystem and how to interpret vari
 
 In summary, log management in Harmony AP involves:
 
--	Capturing logs (Docker stdout or file).
--	Adjusting verbosity when needed.
--	Protecting and monitoring those logs (since they may contain sensitive info like message IDs or even content in debug mode).
--	Using logs to troubleshoot issues (e.g., communication errors with partners, configuration mistakes, etc., will be evident in the logs).
+- Capturing logs (Docker stdout or file).
+- Adjusting verbosity when needed.
+- Protecting and monitoring those logs (since they may contain sensitive info like message IDs or even content in debug mode).
+- Using logs to troubleshoot issues (e.g., communication errors with partners, configuration mistakes, etc., will be evident in the logs).
 
 ## 11 Advanced Customization
 
@@ -938,7 +981,7 @@ This approach bakes the plugin into the image. You would then deploy using your 
 
 This would inject your plugin without creating a new image. One challenge here is that the container's `/opt/harmony-ap/plugins/lib` already contains the `ws-plugin.jar`. If you mount a directory onto `plugins/lib`, you might override the entire directory. To avoid that, you could mount the individual file (some Docker versions allow mounting a single file) or use a content init container (in Kubernetes, for instance) to inject the file onto a volume that is shared with the AP container. In Docker Compose, a named volume for plugins could be populated by one container and then used by the AP container.
 
-**Activation:** Ensure that any plugin configuration (e.g., enabling it in `domibus.properties` or providing necessary properties) is done. For example, a plugin might require certain properties like URLs or credentials for a backend. You can set them via environment variables (using the `domibus_*` dynamic mapping, explained below) or by editing the file on the volume.
+**Activation:** Ensure that any plugin configuration (e.g., enabling it in `domibus.properties` or providing necessary properties) is done. For example, a plugin might require certain properties like URLs or credentials for a backend. You can set them via environment variables (using the `domibus_*` [dynamic mapping](#13110-dynamic-mapping-of-environment-variables-to-configuration-parameters), explained below) or by editing the file on the volume.
 
 ### 11.2 Setting Java Memory and JVM Options
 
@@ -974,6 +1017,8 @@ You can manage PMode configurations in several ways:
 This mechanism is mainly for automating deployment. Harmony AP will check if there is any change in the PMode configuration and will reupload it automatically. In clustered deployments, this action will be performed by the primary node, ensure that all nodes have the same PMode configuration to avoid inconsistencies. In order to perform this action, the variables `ADMIN_USER` and `ADMIN_PASSWORD` must be set, as the PMode upload requires admin credentials.
 
 Alternatively, you can use the Admin UI to create and manage PMode configurations interactively. In the Admin UI, navigate to the "PMode Management" section, where you can create new PMode definitions, edit existing ones, and upload them directly. In that case, you do not need to set the `PMODE_CONFIG_B64` or mount a custom `pmode.xml`, as the Admin UI will handle the storage and retrieval of PMode configurations.
+
+If you provide a `pmode.xml` file via the volume or environment variable, any changes made through the Admin UI will not persist across container restarts, as the provided `pmode.xml` or base64 content will overwrite any change on the next start. To persist changes you must update the base64‑encoded variable or mounted file with the new PMode.
 
 ### 11.4 Running the container in init mode
 
@@ -1020,20 +1065,20 @@ Harmony Access Point periodically releases new versions with improvements, secur
 
 1. **Read Release Notes:** Always start by reading the release notes for the new version (available on the NIIS Confluence). Pay attention to any breaking changes or special migration steps. The release notes will instruct you to add or change certain configuration values, or to run additional scripts if needed.
 2. **Backup:** Prior to updating, take backups:
-   -	**Database Backup:** Perform a SQL dump or snapshot of the database. The update might involve DB schema changes (applied via Liquibase automatically), and having a backup allows you to rollback if needed by restoring the DB.
-   -	**Configuration Backup:** Since your config is probably on a volume, you can back up that volume (e.g., tar the `/var/opt/harmony-ap` directory, or if using named volume, use `docker run --rm -v harmony-ap-data:/data alpine tar czf /host/backup.tgz /data` as one approach).
-   -	Also note down the current image version for reference.
+   - **Database Backup:** Perform a SQL dump or snapshot of the database. The update might involve DB schema changes (applied via Liquibase automatically), and having a backup allows you to rollback if needed by restoring the DB.
+   - **Configuration Backup:** Since your config is probably on a volume, you can back up that volume (e.g., tar the `/var/opt/harmony-ap` directory, or if using named volume, use `docker run --rm -v harmony-ap-data:/data alpine tar czf /host/backup.tgz /data` as one approach).
+   - Also note down the current image version for reference.
 3. **Maintenance Window:** Plan for a maintenance window or at least a brief downtime. In a cluster, you might do rolling upgrades, but as a safe measure, it's often simpler to stop all nodes, upgrade, then start them (especially if DB schema changes are not backward compatible).
 
 ### 12.2 Upgrade Procedure
 
 For a non-clustered environment (single instance):
 
--	Stop the running container: `docker stop harmony-ap` (or however it's named).
--	Optionally, remove the stopped container (since you'll re-create it): `docker rm harmony-ap`.
--	Pull the new image: `docker pull niis/harmony-ap:<new-version>`.
--	Modify your run command or compose file to use the new image tag.
--	Start a container with the same volume and environment variables as before, unless there is any change related to the environment variables in the Release Notes. For example:
+- Stop the running container: `docker stop harmony-ap` (or however it's named).
+- Optionally, remove the stopped container (since you'll re-create it): `docker rm harmony-ap`.
+- Pull the new image: `docker pull niis/harmony-ap:<new-version>`.
+- Modify your run command or compose file to use the new image tag.
+- Start a container with the same volume and environment variables as before, unless there is any change related to the environment variables in the Release Notes. For example:
   ```bash
   docker run -d --name harmony-ap \
     -p 8443:8443 \
@@ -1137,7 +1182,7 @@ Below is a reference table of common environment variables supported by the Harm
 | `CLUSTER_VOLUME_SHARED`  | Shared dir when backend volume is used. Used to store runtime data. | `/var/lib/harmony-ap/shared`    | No       |
 | `CLUSTER_VOLUME_SECRETS` | Directory used to save secrets.                                     | `CLUSTER_VOLUME_SHARED/secrets` | No       |
 
-#### 13.1.4 Certificates & TLS
+#### 13.1.4 Certificates and TLS
 
 | Variable     | Description                                        | Default Value            | Required |
 |--------------|----------------------------------------------------|--------------------------|----------|
@@ -1271,8 +1316,8 @@ Here are some useful tips for debugging issues and accessing logs:
 
 - **View Container Logs:** Use `docker logs -f <ap_container>` to follow the logs of the Access Point container. On startup, watch for any exceptions or errors. The logs will show key events like database connection success, schema updates, plugin deployments, etc. For example, if the DB connection fails (wrong credentials or host), you'll see an error in the logs indicating so, fix the env vars and restart.
 - **Enabling Debug Logging:** If you need more verbose logs (for instance, to debug why a message isn't being sent), you can increase log levels. You can set the `LOG_LEVEL` environment variable to `DEBUG` to get more detailed logs in the Docker image. For the application logs, the easiest method is to edit the `logback.xml`:
-  -	Find the logger for the package you are interested in. For example, to debug AS4 messaging, look for the logger related to `org.apache.cxf` and change its level to `INFO` or `DEBUG`. Apply changes and restart the container.
-  -	**Caution:** Debug logs, especially full message dumps, can be very verbose and include sensitive data. Use only in non-prod or for short periods.
+  - Find the logger for the package you are interested in. For example, to debug AS4 messaging, look for the logger related to `org.apache.cxf` and change its level to `INFO` or `DEBUG`. Apply changes and restart the container.
+  - **Caution:** Debug logs, especially full message dumps, can be very verbose and include sensitive data. Use only in non-prod or for short periods.
 - **Inspecting the Database:** If you suspect a database issue (like user not created, or message stuck), you can connect to MySQL and inspect tables. For instance, there's a table for users (to verify admin user exists).
   - Connect with you MySQL client or use `docker exec -it <mysql_container> mysql -u harmony_ap -p` to open a MySQL shell (use the DB password). Then `USE harmony_ap;`, `SHOW TABLES;`, etc.
   - **Do not modify data manually** unless you know what you're doing (e.g., clearing a stuck message status for testing could be okay, but be careful).

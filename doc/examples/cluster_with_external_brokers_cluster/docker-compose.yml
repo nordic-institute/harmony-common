@@ -68,7 +68,7 @@ services:
       - ACTIVEMQ_DATA=/var/opt/apache-activemq
       - ACTIVEMQ_TMP=/var/tmp
     volumes:
-      - ./activemq-gandalf.xml:/opt/apache-activemq/conf/activemq.xml
+      - ./activemq-gandalf.xml:/opt/apache-activemq/conf/activemq.xml:ro
       - harmony-jms-data:/var/opt/apache-activemq
 
   harmony-broker-frodo:
@@ -83,7 +83,7 @@ services:
       - ACTIVEMQ_DATA=/var/opt/apache-activemq
       - ACTIVEMQ_TMP=/var/tmp
     volumes:
-      - ./activemq-frodo.xml:/opt/apache-activemq/conf/activemq.xml
+      - ./activemq-frodo.xml:/opt/apache-activemq/conf/activemq.xml:ro
       - harmony-jms-data:/var/opt/apache-activemq
 
   harmony-db:
@@ -97,8 +97,10 @@ services:
       - "--character-set-server=utf8mb4"
       - "--collation-server=utf8mb4_bin"
     restart: on-failure
-    mem_limit: 512m
+    volumes:
+      - harmony-db-data:/var/lib/mysql
 
 volumes:
   harmony-ap-data:
+  harmony-db-data:
   harmony-jms-data:

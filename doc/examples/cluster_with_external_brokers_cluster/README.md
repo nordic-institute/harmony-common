@@ -2,6 +2,8 @@
 
 This example shows a minimal setup deploying a Harmony AP cluster connected to an ActiveMQ messaging broker and a MySQL database. Nginx is used as a reverse proxy and load balancer to distribute traffic across the service nodes.
 
+This setup is designed for development and testing purposes.
+
 ## Overview
 
 This environment demonstrates how to:
@@ -67,3 +69,5 @@ To stop and remove all containers, networks, and volumes created by the `docker 
 ```bash
 docker compose down -v
 ```
+
+Using the `-v` flag will **also remove any named or anonymous volumes**, which means all persistent data will be deleted. The next time you run docker compose up, the environment will start from scratch — as if it’s a fresh setup. If you want to preserve volume data (e.g., for databases or other services that store state), omit the `-v` flag.
