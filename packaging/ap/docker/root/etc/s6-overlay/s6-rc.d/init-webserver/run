@@ -10,6 +10,8 @@ readonly STAGE="init-webserver"
 : "${TLS_PUBLIC_CERT_PATH:=${CERT_DIR%/}/$TLS_PUBLIC_CERT_NAME-$CERT_ALIAS.cer}"
 : "${TLS_KEYSTORE_PATH:=${HARMONY_BASE}/etc/tls-keystore.p12}"
 : "${TLS_TRUSTSTORE_PATH:=${HARMONY_BASE}/etc/tls-truststore.p12}"
+: "${TLS_KEYSTORE_B64:=${TLS_KEYSTORE_B64:-}}"
+: "${TLS_TRUSTSTORE_B64:=${TLS_TRUSTSTORE_B64:-}}"
 : "${CATALINA_TEMP_DIR:=/var/tmp/harmony-ap}"
 : "${LB_TLS_TERMINATION:=false}"
 
@@ -30,12 +32,16 @@ setup_environment() {
   chmod 600 "$HARMONY_BASE/conf/server.xml" "$HARMONY_BASE/etc/clientauthentication.xml"
 }
 
-load_tls_secrets() {
-  log DEBUG "Loading TLS secrets"
+load_tls_stores_from_secrets() {
+  if [ -z "$TLS_KEYSTORE_B64" ] && [ ! -f "$TLS_KEYSTORE_PATH" ]; then
+    log DEBUG "Reading TLS keystore file from secret"
+    read_secret "TLS-KEYSTORE-FILE" "$TLS_KEYSTORE_PATH" || true
+  fi
 
-  read_secret "TLS-KEYSTORE-FILE"    "$TLS_KEYSTORE_PATH"     || true
-  read_secret "TLS-TRUSTSTORE-FILE"  "$TLS_TRUSTSTORE_PATH"   || true
-  read_secret "TLS-PUBLIC-CERT-FILE" "$TLS_PUBLIC_CERT_PATH"  || true
+  if [ -z "$TLS_TRUSTSTORE_B64" ] && [ ! -f "$TLS_TRUSTSTORE_PATH" ]; then
+    log DEBUG "Reading TLS truststore file from secret"
+    read_secret "TLS-TRUSTSTORE-FILE" "$TLS_TRUSTSTORE_PATH" || true
+  fi
 }
 
 get_current_password() {
@@ -43,10 +49,10 @@ get_current_password() {
   local xml_attr="$2"
 
   local current_password
-  current_password=$(read_secret "$secret_name" || true)
+  current_password=$(get_server_prop "$xml_attr")
 
   if [ -z "$current_password" ]; then
-    current_password=$(get_server_prop "$xml_attr")
+    current_password=$(read_secret "$secret_name" || true)
   fi
 
   echo "$current_password"
@@ -54,9 +60,6 @@ get_current_password() {
 
 manage_tls_certificates() {
   log DEBUG "Processing TLS certificates"
-
-  TLS_KEYSTORE_B64="${TLS_KEYSTORE_B64:-}"
-  TLS_TRUSTSTORE_B64="${TLS_TRUSTSTORE_B64:-}"
 
   # Determine keystore and truststore current values
   local keystore_current
@@ -68,7 +71,7 @@ manage_tls_certificates() {
   TLS_DNAME="${TLS_DNAME:-CN=$TLS_FQDN}"
   TLS_SAN="${TLS_SAN:-DNS:$TLS_FQDN}"
 
-  mapfile -d $'\0' -t tls_vals < <(
+  tls_store_output=$(
     harmony-store \
       --stage "$STAGE" \
       --keystore-path "$TLS_KEYSTORE_PATH" \
@@ -84,29 +87,31 @@ manage_tls_certificates() {
       --san "$TLS_SAN"
   )
 
+  readarray -t tls_vals <<< "$tls_store_output"
+
   TLS_KEYSTORE_PASSWORD="${tls_vals[0]}"
   TLS_KEYSTORE_GENERATED="${tls_vals[1]}"
-  TLS_TRUSTSTORE_PASSWORD="${tls_vals[2]}"
-  TLS_TRUSTSTORE_GENERATED="${tls_vals[3]}"
+  TLS_KEYSTORE_PASSWORD_GENERATED="${tls_vals[2]}"
+  TLS_TRUSTSTORE_PASSWORD="${tls_vals[3]}"
+  TLS_TRUSTSTORE_GENERATED="${tls_vals[4]}"
+  TLS_TRUSTSTORE_PASSWORD_GENERATED="${tls_vals[5]}"
 }
 
-sync_tls_secrets() {
-  if is_primary; then
-    log DEBUG "Primary node: storing TLS secrets"
+store_secrets() {
+  if [[ "$TLS_KEYSTORE_PASSWORD_GENERATED" == "true" ]]; then
+    store_secret "TLS-KEYSTORE-PASSWORD" "$TLS_KEYSTORE_PASSWORD"
+  fi
 
-    store_secret "TLS-KEYSTORE-PASSWORD"   "$TLS_KEYSTORE_PASSWORD"
+  if [[ "$TLS_TRUSTSTORE_PASSWORD_GENERATED" == "true" ]]; then
     store_secret "TLS-TRUSTSTORE-PASSWORD" "$TLS_TRUSTSTORE_PASSWORD"
-    store_secret "TLS-KEYSTORE-FILE"       "$TLS_KEYSTORE_PATH"
-    store_secret "TLS-TRUSTSTORE-FILE"     "$TLS_TRUSTSTORE_PATH"
-    store_secret "TLS-PUBLIC-CERT-FILE"    "$TLS_PUBLIC_CERT_PATH"
-  else
-    log DEBUG "Replica node: retrieving TLS secrets"
+  fi
 
-    TLS_KEYSTORE_PASSWORD="$(read_secret "TLS-KEYSTORE-PASSWORD")"
-    TLS_TRUSTSTORE_PASSWORD="$(read_secret "TLS-TRUSTSTORE-PASSWORD")"
-    read_secret "TLS-KEYSTORE-FILE"    "$TLS_KEYSTORE_PATH"
-    read_secret "TLS-TRUSTSTORE-FILE"  "$TLS_TRUSTSTORE_PATH"
-    read_secret "TLS-PUBLIC-CERT-FILE" "$TLS_PUBLIC_CERT_PATH"
+  if [[ "$TLS_KEYSTORE_GENERATED" == "true" ]]; then
+    store_secret "TLS-KEYSTORE-FILE" "$TLS_KEYSTORE_PATH"
+  fi
+
+  if [[ "$TLS_TRUSTSTORE_GENERATED" == "true" ]]; then
+    store_secret "TLS-TRUSTSTORE-FILE" "$TLS_TRUSTSTORE_PATH"
   fi
 }
 
@@ -175,14 +180,13 @@ init_webserver() {
 
   setup_environment
 
+  load_tls_stores_from_secrets
+  manage_tls_certificates
+
   if is_primary; then
-    load_tls_secrets
-    manage_tls_certificates
-  else
-    log DEBUG "Not a primary node; skipping TLS certificates initialization"
+    store_secrets
   fi
 
-  sync_tls_secrets
   resolve_server_config
   configure_server
   publish_environment_variables

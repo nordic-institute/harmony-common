@@ -181,5 +181,5 @@ process_truststore() {
     die "Failed to import public certificate. Aborting process. [store=$store_path]"
   fi
 
-  printf '%s\0%s\0%s\0' "$store_password" "$store_generated" "$password_generated"
+  printf '%s\n%s\n%s\n' "$store_password" "$store_generated" "$password_generated"
 }

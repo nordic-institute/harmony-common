@@ -54,7 +54,7 @@ configure_embedded_broker() {
   if [ -n "${ACTIVEMQ_EMBEDDED_CONFIG_B64:-}" ]; then
     decode_from_base64
   elif [ -f "$ACTIVEMQ_EMBEDDED_CONFIG_PATH" ]; then
-    log DEBUG "Using existing ActiveMQ configuration at ACTIVEMQ_EMBEDDED_CONFIG_PATH"
+    log DEBUG "Using existing ActiveMQ configuration at '$ACTIVEMQ_EMBEDDED_CONFIG_PATH'"
   fi
 
   set_property "activeMQ.embedded.configurationFile" "file:///${ACTIVEMQ_EMBEDDED_CONFIG_PATH}"

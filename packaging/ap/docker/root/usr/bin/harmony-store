@@ -47,13 +47,15 @@ validate_and_prepare() {
 
 process_stores() {
   build_store_config input_keystore_config keystore
-  mapfile -d $'\0' -t keystore_vals < <(process_keystore input_keystore_config)
+  keystore_output=$(process_keystore input_keystore_config)
+  readarray -t keystore_vals <<< "$keystore_output"
   KEYSTORE_PASSWORD="${keystore_vals[0]}"
   KEYSTORE_GENERATED="${keystore_vals[1]}"
   KEYSTORE_PASSWORD_GENERATED="${keystore_vals[2]}"
 
   build_store_config input_truststore_config truststore
-  mapfile -d $'\0' -t truststore_vals < <(process_truststore input_truststore_config)
+  truststore_output=$(process_truststore input_truststore_config)
+  readarray -t truststore_vals <<< "$truststore_output"
   TRUSTSTORE_PASSWORD="${truststore_vals[0]}"
   TRUSTSTORE_GENERATED="${truststore_vals[1]}"
   TRUSTSTORE_PASSWORD_GENERATED="${truststore_vals[2]}"
@@ -65,7 +67,7 @@ main() {
 
   process_stores
 
-  printf '%s\0%s\0%s\0%s\0%s\0%s\0' \
+  printf '%s\n%s\n%s\n%s\n%s\n%s\n' \
     "$KEYSTORE_PASSWORD" "$KEYSTORE_GENERATED" "$KEYSTORE_PASSWORD_GENERATED" \
     "$TRUSTSTORE_PASSWORD" "$TRUSTSTORE_GENERATED" "$TRUSTSTORE_PASSWORD_GENERATED"
 }

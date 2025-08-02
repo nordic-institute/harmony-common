@@ -73,7 +73,7 @@ load_store_from_base64() {
 
   log DEBUG "Decoding base64 store to file. [store=$store_path]"
 
-  harmony-base64 --stage "$stage" --input "$store_base64" --output "$store_path"
+  harmony-base64 --stage "$stage" --input "$store_base64" --output "$store_path" --force
 
   log INFO "Store loaded from base64. [store=$store_path]"
 }

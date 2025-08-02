@@ -10,15 +10,21 @@ source /usr/lib/harmony-cluster
 : "${SECURITY_PUBLIC_CERT_PATH:=${CERT_DIR%/}/$SECURITY_PUBLIC_CERT_NAME-$CERT_ALIAS.cer}"
 : "${SECURITY_KEYSTORE_PATH:=${HARMONY_BASE}/etc/ap-keystore.p12}"
 : "${SECURITY_TRUSTSTORE_PATH:=${HARMONY_BASE}/etc/ap-truststore.p12}"
+: "${SECURITY_KEYSTORE_B64:=${SECURITY_KEYSTORE_B64:-}}"
+: "${SECURITY_TRUSTSTORE_B64:=${SECURITY_TRUSTSTORE_B64:-}}"
 
 readonly DEFAULT_DYNAMIC_DISCOVERY="false"
 
-load_security_secrets() {
-  log DEBUG "Loading TLS secrets"
+load_security_stores_from_secrets() {
+  if [ -z "$SECURITY_KEYSTORE_B64" ] && [ ! -f "$SECURITY_KEYSTORE_PATH" ]; then
+    log DEBUG "Reading security keystore file from secret"
+    read_secret "SECURITY-KEYSTORE-FILE" "$SECURITY_KEYSTORE_PATH" || true
+  fi
 
-  read_secret "SECURITY-KEYSTORE-FILE"     "$SECURITY_KEYSTORE_PATH"    || true
-  read_secret "SECURITY-TRUSTSTORE-FILE"   "$SECURITY_TRUSTSTORE_PATH"  || true
-  read_secret "SECURITY-PUBLIC-CERT-FILE"  "$SECURITY_PUBLIC_CERT_PATH" || true
+  if [ -z "$SECURITY_TRUSTSTORE_B64" ] && [ ! -f "$SECURITY_TRUSTSTORE_PATH" ]; then
+    log DEBUG "Reading security truststore file from secret"
+    read_secret "SECURITY-TRUSTSTORE-FILE" "$SECURITY_TRUSTSTORE_PATH" || true
+  fi
 }
 
 get_current_password() {
@@ -26,10 +32,10 @@ get_current_password() {
   local property_name="$2"
 
   local current_password
-  current_password=$(read_secret "$secret_name" || true)
+  current_password=$(get_property "$property_name")
 
   if [ -z "$current_password" ]; then
-    current_password=$(get_property "$property_name")
+    current_password=$(read_secret "$secret_name" || true)
   fi
 
   echo "$current_password"
@@ -37,9 +43,6 @@ get_current_password() {
 
 manage_security_certificates() {
   log DEBUG "Processing security certificates"
-
-  SECURITY_KEYSTORE_B64="${SECURITY_KEYSTORE_B64:-}"
-  SECURITY_TRUSTSTORE_B64="${SECURITY_TRUSTSTORE_B64:-}"
 
   # Determine current keystore and truststore passwords
   local keystore_current
@@ -49,7 +52,7 @@ manage_security_certificates() {
 
   SECURITY_DNAME="${SECURITY_DNAME:-CN=$PARTY_NAME}"
 
-  mapfile -d $'\0' -t security_vals < <(
+  security_store_output=$(
     harmony-store \
       --stage "$STAGE" \
       --keystore-path "$SECURITY_KEYSTORE_PATH" \
@@ -64,6 +67,8 @@ manage_security_certificates() {
       --dname "$SECURITY_DNAME"
   )
 
+  readarray -t security_vals <<< "$security_store_output"
+
   SECURITY_KEYSTORE_PASSWORD="${security_vals[0]}"
   SECURITY_KEYSTORE_GENERATED="${security_vals[1]}"
   SECURITY_KEYSTORE_PASSWORD_GENERATED="${security_vals[2]}"
@@ -72,24 +77,21 @@ manage_security_certificates() {
   SECURITY_TRUSTSTORE_PASSWORD_GENERATED="${security_vals[5]}"
 }
 
-sync_security_secrets() {
-  if is_primary; then
-    log DEBUG "Primary node: storing secrets"
+store_secrets() {
+  if [[ "$SECURITY_KEYSTORE_PASSWORD_GENERATED" == "true" ]]; then
+    store_secret "SECURITY-KEYSTORE-PASSWORD" "$SECURITY_KEYSTORE_PASSWORD"
+  fi
 
-    store_secret "SECURITY-KEYSTORE-PASSWORD"    "$SECURITY_KEYSTORE_PASSWORD"
-    store_secret "SECURITY-TRUSTSTORE-PASSWORD"  "$SECURITY_TRUSTSTORE_PASSWORD"
-    store_secret "SECURITY-KEYSTORE-FILE"        "$SECURITY_KEYSTORE_PATH"
-    store_secret "SECURITY-TRUSTSTORE-FILE"      "$SECURITY_TRUSTSTORE_PATH"
-    store_secret "SECURITY-PUBLIC-CERT-FILE"     "$SECURITY_PUBLIC_CERT_PATH"
-  else
-    log DEBUG "Replica node: reading secrets"
+  if [[ "$SECURITY_TRUSTSTORE_PASSWORD_GENERATED" == "true" ]]; then
+    store_secret "SECURITY-TRUSTSTORE-PASSWORD" "$SECURITY_TRUSTSTORE_PASSWORD"
+  fi
 
-    SECURITY_KEYSTORE_PASSWORD=$(read_secret "SECURITY-KEYSTORE-PASSWORD")
-    SECURITY_TRUSTSTORE_PASSWORD=$(read_secret "SECURITY-TRUSTSTORE-PASSWORD")
+  if [[ "$SECURITY_KEYSTORE_GENERATED" == "true" ]]; then
+    store_secret "SECURITY-KEYSTORE-FILE" "$SECURITY_KEYSTORE_PATH"
+  fi
 
-    read_secret "SECURITY-KEYSTORE-FILE"     "$SECURITY_KEYSTORE_PATH"
-    read_secret "SECURITY-TRUSTSTORE-FILE"   "$SECURITY_TRUSTSTORE_PATH"
-    read_secret "SECURITY-PUBLIC-CERT-FILE"  "$SECURITY_PUBLIC_CERT_PATH"
+  if [[ "$SECURITY_TRUSTSTORE_GENERATED" == "true" ]]; then
+    store_secret "SECURITY-TRUSTSTORE-FILE" "$SECURITY_TRUSTSTORE_PATH"
   fi
 }
 
@@ -146,14 +148,13 @@ publish_environment_variables() {
 init_domibus() {
   log DEBUG "Started"
 
+  load_security_stores_from_secrets
+  manage_security_certificates
+
   if is_primary; then
-    load_security_secrets
-    manage_security_certificates
-  else
-    log DEBUG "Not a primary node; skipping security certificates initialization"
+    store_secrets
   fi
 
-  sync_security_secrets
   persist_domibus_configuration
   process_domibus_environment_variables
   publish_environment_variables

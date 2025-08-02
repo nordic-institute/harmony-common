@@ -105,25 +105,18 @@ persist_database_connection_details() {
   set_property 'domibus.datasource.password' "$DB_PASSWORD" --quiet
 }
 
-sync_database_secrets() {
+sync_database_user() {
   if is_primary; then
     log DEBUG "Primary node: storing secrets"
-
-    store_secret "ADMIN-USER" "$ADMIN_USER"
 
     if [[ -n "${ADMIN_PASSWORD:-}" ]]; then
       log DEBUG "Admin password is set; storing as secret"
       store_secret "ADMIN-PASSWORD" "$ADMIN_PASSWORD"
-    else
-      log DEBUG "ADMIN_PASSWORD is empty; reading from existing secret"
-      ADMIN_PASSWORD=$(read_secret "ADMIN-PASSWORD")
     fi
-  else
-    log DEBUG "Replica node: reading secret"
-
-    ADMIN_USER=$(read_secret "ADMIN-USER")
-    ADMIN_PASSWORD=$(read_secret "ADMIN-PASSWORD")
   fi
+
+  ADMIN_USER="${ADMIN_USER:-$DEFAULT_ADMIN_USER}"
+  ADMIN_PASSWORD=${ADMIN_PASSWORD:-$(read_secret "ADMIN-PASSWORD")}
 }
 
 publish_environment_variables() {
@@ -141,7 +134,7 @@ init_database() {
     log DEBUG "Not a primary node; skipping database initialization"
   fi
 
-  sync_database_secrets
+  sync_database_user
   persist_database_connection_details
   publish_environment_variables
 
