@@ -323,7 +323,7 @@ process_pmode() {
   local xsrf_token
   if xsrf_token=$(get_auth_token "$base_url"); then
     if [ -z "${PMODE_ADMIN_PASSWORD:-}" ]; then
-      PMODE_ADMIN_PASSWORD=$(harmony-password --stage "$STAGE" --mode generate)
+      PMODE_ADMIN_PASSWORD=$(harmony-password --stage "$STAGE")
       log INFO "Generated PMode admin password"
     fi
 

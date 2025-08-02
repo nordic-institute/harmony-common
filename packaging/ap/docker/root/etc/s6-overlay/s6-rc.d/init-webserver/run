@@ -52,25 +52,6 @@ get_current_password() {
   echo "$current_password"
 }
 
-obtain_tls_store_password() {
-  local store_type="$1"
-  local password="$2"
-  local current_password="$3"
-
-  log DEBUG "Determining tls $store_type password"
-
-  local store_pass
-  store_pass=$(
-    harmony-password \
-      --stage "$STAGE" \
-      --mode determine \
-      --password-value "$password" \
-      --current-password "$current_password"
-  )
-
-  echo "$store_pass"
-}
-
 manage_tls_certificates() {
   log DEBUG "Processing TLS certificates"
 
@@ -83,27 +64,30 @@ manage_tls_certificates() {
   local truststore_current
   truststore_current=$(get_current_password "TLS-TRUSTSTORE-PASSWORD" "truststorePass")
 
-  # Determine final TLS store passwords
-  TLS_KEYSTORE_PASSWORD=$(obtain_tls_store_password "keystore" "${TLS_KEYSTORE_PASSWORD:-}" "$keystore_current")
-  TLS_TRUSTSTORE_PASSWORD=$(obtain_tls_store_password "truststore" "${TLS_TRUSTSTORE_PASSWORD:-}" "$truststore_current")
-
   TLS_FQDN="${TLS_FQDN:-$(hostname -f)}"
   TLS_DNAME="${TLS_DNAME:-CN=$TLS_FQDN}"
   TLS_SAN="${TLS_SAN:-DNS:$TLS_FQDN}"
 
-  harmony-store \
-    --stage "$STAGE" \
-    --keystore-path "$TLS_KEYSTORE_PATH" \
-    --keystore-password "$TLS_KEYSTORE_PASSWORD" \
-    --keystore-base64 "$TLS_KEYSTORE_B64" \
-    --truststore-path "$TLS_TRUSTSTORE_PATH" \
-    --truststore-password "$TLS_TRUSTSTORE_PASSWORD" \
-    --truststore-base64 "$TLS_TRUSTSTORE_B64" \
-    --should-add-certificate-to-truststore "true" \
-    --alias "$CERT_ALIAS" \
-    --public-cert-path "$TLS_PUBLIC_CERT_PATH" \
-    --dname "$TLS_DNAME" \
-    --san "$TLS_SAN"
+  mapfile -d $'\0' -t tls_vals < <(
+    harmony-store \
+      --stage "$STAGE" \
+      --keystore-path "$TLS_KEYSTORE_PATH" \
+      --keystore-password "${TLS_KEYSTORE_PASSWORD:-$keystore_current}" \
+      --keystore-base64 "$TLS_KEYSTORE_B64" \
+      --truststore-path "$TLS_TRUSTSTORE_PATH" \
+      --truststore-password "${TLS_TRUSTSTORE_PASSWORD:-$truststore_current}" \
+      --truststore-base64 "$TLS_TRUSTSTORE_B64" \
+      --should-add-certificate-to-truststore "true" \
+      --alias "$CERT_ALIAS" \
+      --public-cert-path "$TLS_PUBLIC_CERT_PATH" \
+      --dname "$TLS_DNAME" \
+      --san "$TLS_SAN"
+  )
+
+  TLS_KEYSTORE_PASSWORD="${tls_vals[0]}"
+  TLS_KEYSTORE_GENERATED="${tls_vals[1]}"
+  TLS_TRUSTSTORE_PASSWORD="${tls_vals[2]}"
+  TLS_TRUSTSTORE_GENERATED="${tls_vals[3]}"
 }
 
 sync_tls_secrets() {

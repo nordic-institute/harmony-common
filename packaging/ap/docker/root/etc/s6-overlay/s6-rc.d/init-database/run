@@ -65,7 +65,7 @@ run_migrations() {
     log DEBUG "Defining admin user credentials"
 
     if [[ -z "$_admin_password" ]]; then
-      _admin_password=$(harmony-password --stage "$STAGE" --mode generate)
+      _admin_password=$(harmony-password --stage "$STAGE")
     fi
 
     if [[ -z "${ADMIN_PASSWORD:-}" ]]; then

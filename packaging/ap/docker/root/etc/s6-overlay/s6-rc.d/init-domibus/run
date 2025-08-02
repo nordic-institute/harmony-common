@@ -35,25 +35,6 @@ get_current_password() {
   echo "$current_password"
 }
 
-obtain_security_store_password() {
-  local store_type="$1"
-  local password="$2"
-  local current_password="$3"
-
-  log DEBUG "Determining security $store_type password"
-
-  local store_pass
-  store_pass=$(
-    harmony-password \
-      --stage "$STAGE" \
-      --mode determine \
-      --password-value "$password" \
-      --current-password "$current_password"
-  )
-
-  echo "$store_pass"
-}
-
 manage_security_certificates() {
   log DEBUG "Processing security certificates"
 
@@ -66,24 +47,29 @@ manage_security_certificates() {
   local truststore_current
   truststore_current=$(get_current_password "SECURITY-TRUSTSTORE-PASSWORD" "domibus.security.truststore.password")
 
-  # Determine final security store passwords
-  SECURITY_KEYSTORE_PASSWORD=$(obtain_security_store_password "keystore" "${SECURITY_KEYSTORE_PASSWORD:-}" "$keystore_current")
-  SECURITY_TRUSTSTORE_PASSWORD=$(obtain_security_store_password "truststore" "${SECURITY_TRUSTSTORE_PASSWORD:-}" "$truststore_current")
-
   SECURITY_DNAME="${SECURITY_DNAME:-CN=$PARTY_NAME}"
 
-  harmony-store \
-    --stage "$STAGE" \
-    --keystore-path "$SECURITY_KEYSTORE_PATH" \
-    --keystore-password "$SECURITY_KEYSTORE_PASSWORD" \
-    --keystore-base64 "$SECURITY_KEYSTORE_B64" \
-    --truststore-path "$SECURITY_TRUSTSTORE_PATH" \
-    --truststore-password "$SECURITY_TRUSTSTORE_PASSWORD" \
-    --truststore-base64 "$SECURITY_TRUSTSTORE_B64" \
-    --should-add-certificate-to-truststore "false" \
-    --alias "$CERT_ALIAS" \
-    --public-cert-path "$SECURITY_PUBLIC_CERT_PATH" \
-    --dname "$SECURITY_DNAME"
+  mapfile -d $'\0' -t security_vals < <(
+    harmony-store \
+      --stage "$STAGE" \
+      --keystore-path "$SECURITY_KEYSTORE_PATH" \
+      --keystore-password "${SECURITY_KEYSTORE_PASSWORD:-$keystore_current}" \
+      --keystore-base64 "$SECURITY_KEYSTORE_B64" \
+      --truststore-path "$SECURITY_TRUSTSTORE_PATH" \
+      --truststore-password "${SECURITY_TRUSTSTORE_PASSWORD:-$truststore_current}" \
+      --truststore-base64 "$SECURITY_TRUSTSTORE_B64" \
+      --should-add-certificate-to-truststore "false" \
+      --alias "$CERT_ALIAS" \
+      --public-cert-path "$SECURITY_PUBLIC_CERT_PATH" \
+      --dname "$SECURITY_DNAME"
+  )
+
+  SECURITY_KEYSTORE_PASSWORD="${security_vals[0]}"
+  SECURITY_KEYSTORE_GENERATED="${security_vals[1]}"
+  SECURITY_KEYSTORE_PASSWORD_GENERATED="${security_vals[2]}"
+  SECURITY_TRUSTSTORE_PASSWORD="${security_vals[3]}"
+  SECURITY_TRUSTSTORE_GENERATED="${security_vals[4]}"
+  SECURITY_TRUSTSTORE_PASSWORD_GENERATED="${security_vals[5]}"
 }
 
 sync_security_secrets() {

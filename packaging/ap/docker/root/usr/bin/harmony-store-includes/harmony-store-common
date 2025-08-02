@@ -109,6 +109,10 @@ validate_store_password() {
 
   log DEBUG "Validating store password for ${store_path} (type=${store_type})"
 
+  if [[ -z "$store_password" ]]; then
+    log WARN "Store password not provided. [store=$store_path]"
+  fi
+
   local output
   if ! output=$(keytool -list -keystore "$store_path" -storepass "$store_password" -storetype "$store_type" 2>&1); then
     if [[ "${output,,}" =~ "keystore password was incorrect" ]]; then
@@ -179,4 +183,35 @@ alias_exists_in_store() {
   fi
 
   return 0
+}
+
+# shellcheck disable=SC2154,SC2034 # Used in the caller as refs
+build_store_config() {
+  local target="$1"; shift
+  local prefix="$1"; shift
+
+  declare -g -A "${target}=()"
+  local -n cfg="$target"
+
+  local path_var="${prefix}_path"
+  local password_var="${prefix}_password"
+  local base64_var="${prefix}_base64"
+
+  cfg[stage]="${STAGE}"
+  cfg[store_path]="${!path_var}"
+  cfg[store_password]="${!password_var}"
+  cfg[store_base64]="${!base64_var}"
+  cfg[store_type]="${store_type:-pkcs12}"
+  cfg[public_cert_path]="${public_cert_path}"
+  cfg[alias]="${alias}"
+  cfg[password_generated]=false
+
+  if [[ "$prefix" == "keystore" ]]; then
+    cfg[dname]="${dname}"
+    cfg[san]="${san:-}"
+  fi
+
+  if [[ "$prefix" == "truststore" ]]; then
+    cfg[should_add_certificate_to_truststore]="${should_add_certificate_to_truststore}"
+  fi
 }

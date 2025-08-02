@@ -66,7 +66,15 @@ delete_certificate_from_truststore() {
 
 create_new_truststore() {
   local -n new_truststore_config="$1"
-  validate_required_keys new_truststore_config alias store_path public_cert_path should_add_certificate_to_truststore
+  validate_required_keys new_truststore_config stage alias store_path public_cert_path should_add_certificate_to_truststore
+
+  if [[ -z "${new_truststore_config[store_password]:-}" ]]; then
+    log INFO "No truststore password provided; generating password. [store=$store_path]"
+
+    local password_generated
+    password_generated="$(harmony-password -s "${new_truststore_config[stage]}")"
+    new_truststore_config[store_password]="$password_generated"
+  fi
 
   local alias="${new_truststore_config[alias]}"
   local store_path="${new_truststore_config[store_path]}"
@@ -75,6 +83,7 @@ create_new_truststore() {
 
   temp_cert=""
 
+  # shellcheck disable=SC2317  # Invoked indirectly in trap
   cleanup_temp_cert() {
     if [[ -n "$temp_cert" && -f "$temp_cert" ]]; then
       rm -f "$temp_cert"
@@ -138,19 +147,27 @@ process_truststore() {
   local store_password="${truststore_config[store_password]}"
   local store_base64="${truststore_config[store_base64]}"
 
-  if [[ -f "$store_path" ]]; then
-    log INFO "Truststore already exists. Validating. [store=$store_path]"
+  local store_generated=false
+  local password_generated=false
+
+  if [[ -n "$store_base64" ]]; then
+    log INFO "Loading truststore from base64. [store=$store_path]"
+    if ! load_store_from_base64 truststore_config; then
+      die "Failed to load truststore from base64. Aborting. [store=$store_path]"
+    fi
+  elif [[ -f "$store_path" ]]; then
+    log INFO "Truststore already exists. [store=$store_path]"
   else
-    if [[ -n "$store_base64" ]]; then
-      log INFO "No truststore found. Loading from base64. [store=$store_path]"
-      if ! load_store_from_base64 truststore_config; then
-        die "Failed to load truststore from base64. Aborting. [store=$store_path]"
-      fi
-    else
-      log INFO "No truststore found and no base64 provided. Creating new truststore. [store=$store_path]"
-      if ! create_new_truststore truststore_config; then
-        die "Failed to create new truststore. Aborting. [store=$store_path]"
-      fi
+    log DEBUG "No truststore found and no base64 provided. [store=$store_path]"
+    log INFO "Creating new truststore. [store=$store_path]"
+    if ! create_new_truststore truststore_config; then
+      die "Failed to create new truststore. Aborting. [store=$store_path]"
+    fi
+    store_generated=true
+
+    if [[ "$store_password" != "${truststore_config[store_password]}" ]]; then
+      password_generated=true
+      store_password=${truststore_config[store_password]}
     fi
   fi
 
@@ -160,8 +177,9 @@ process_truststore() {
   fi
 
   # Load the public certificate into the truststore
-  import_public_certificate_if_needed truststore_config
   if ! import_public_certificate_if_needed truststore_config; then
     die "Failed to import public certificate. Aborting process. [store=$store_path]"
   fi
+
+  printf '%s\0%s\0%s\0' "$store_password" "$store_generated" "$password_generated"
 }

@@ -23,8 +23,6 @@ while true; do
       if [[ "${REPLICA_STATE:-}" == "ready" ]]; then
         set_ready_flag
       fi
-    else
-      log DEBUG "Waiting for primary to release lock..."
     fi
   fi
   sleep $(( RANDOM % 11 + 30 )) # Sleep for a random duration between 30 and 40 seconds
