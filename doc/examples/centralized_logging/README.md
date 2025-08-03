@@ -2,6 +2,8 @@
 
 This example demonstrates how to deploy a secure ELK stack alongside a Harmony AP application, using Docker Compose for orchestration.
 
+This setup is designed for development and testing purposes.
+
 ## Overview
 
 This environment shows how to:
@@ -18,7 +20,7 @@ All services are defined in a single docker-compose.yml file and coordinated usi
 
 ## Prerequisites
 
-- Docker & Docker Compose (installed & running)
+- Docker (v20.10+) and Docker Compose (v1.28+), installed and running
 - Bash shell (Unix-like environment)
 - cURL (for health checks and API calls)
 
