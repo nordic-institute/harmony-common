@@ -113,7 +113,7 @@ report concerns regarding the use or misuse of the trademarks of NIIS, contact u
 ## 5 Updates of Guidelines
 
 The NIIS® and Harmony eDelivery Access® Trademark Usage Guidelines may be modified from time to time by NIIS at our sole
-discretion and release new versions without notice. The current version is 2025 v1, published in January 2025.
+discretion and release new versions without notice. The current version is 2025 v1, published in August 2025.
 
 ## 6 Q&A
 
