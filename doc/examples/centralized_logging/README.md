@@ -21,8 +21,14 @@ All services are defined in a single docker-compose.yml file and coordinated usi
 ## Prerequisites
 
 - Docker (v20.10+) and Docker Compose (v1.28+), installed and running
-- Bash shell (Unix-like environment)
+- Terminal or shell (e.g., sh, PowerShell, cmd) to run Docker commands
 - cURL (for health checks and API calls)
+
+This example environment is compatible with any operating system that supports Docker, including:
+
+- Linux
+- macOS
+- Windows (using WSL2 or Docker Desktop)
 
 ## Directory Structure
 
