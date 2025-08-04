@@ -17,9 +17,17 @@ All components are orchestrated using Docker Compose.
 
 ## Prerequisites
 
-- Docker & Docker Compose (installed & running)
+- Docker (v24.10+) and Docker Compose (v2.20+), installed and running
+- Bash shell
 - OpenSSL
-- Bash shell (Unix-like environment)
+
+This example environment is compatible the following operating systems:
+
+- Linux
+- macOS
+- Windows with WSL2
+
+> Native Windows environments (without WSL2) are not supported due to compatibility issues with Bash scripts
 
 ## Setup and Usage
 
