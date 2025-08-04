@@ -21,19 +21,19 @@ WORKDIR /opt/harmony-ap
 
 # Copy files
 COPY packaging/commonbin/jdbc-drivers/*.jar             lib/
-COPY packaging/commonbin/harmony-ap                     webapps/ROOT/
+COPY packaging/commonbin/harmony-ap/                    webapps/ROOT/
 COPY packaging/commonbin/ws-plugin.jar                  plugins/lib/
 COPY packaging/commonbin/tomcat/bin/*.sh                bin/
 COPY packaging/commonbin/tomcat/bin/*.jar               bin/
-COPY packaging/commonbin/tomcat/lib                     lib/
+COPY packaging/commonbin/tomcat/lib/                    lib/
 COPY packaging/commonbin/tomcat/conf/web.xml            conf/
 COPY packaging/commonbin/tomcat/conf/catalina.properties   conf/
 COPY packaging/ap/config/activemq.xml                   internal/
 COPY packaging/ap/config/*Policy*.xml                   policies/
 COPY packaging/ap/config/signOnly.xml                   policies/
 COPY packaging/ap/config/doNothingPolicy.xml            policies/
-COPY packaging/ap/config/liquibase                      liquibase/
-COPY packaging/ap/config/db                             db/
+COPY packaging/ap/config/liquibase/                     liquibase/
+COPY packaging/ap/config/db/                            db/
 COPY packaging/ap/config/clientauthentication.xml.template  setup/
 COPY packaging/ap/config/domibus.properties.template    setup/
 COPY packaging/ap/docker/logback.xml                    setup/
