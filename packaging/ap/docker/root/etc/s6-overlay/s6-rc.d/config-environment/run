@@ -1,0 +1,84 @@
+#!/command/with-contenv bash
+set -euo pipefail
+
+readonly STAGE="config-environment"
+
+source /usr/lib/harmony-common
+
+get_property() {
+  local cfg_path="$1"
+  local property="$2"
+  local default_value="$3"
+
+  harmony-property -s "$STAGE" -n "$NODE_ID" -a GET -c "$cfg_path" -p "$property" -v "$default_value" --allow-missing-paths
+}
+
+log DEBUG "Started"
+
+# -------------------------------
+# Load parameters from file (if defined)
+# -------------------------------
+if [[ -n "${HARMONY_PARAM_FILE:-}" && -f "$HARMONY_PARAM_FILE" ]]; then
+  log INFO "Reading parameters from $HARMONY_PARAM_FILE..."
+  while IFS='=' read -r key value || [[ -n "$key" ]]; do
+    value=${value%$'\r'}
+
+    # Ignore comments, empty keys, already defined variables, or empty values
+    [[ "$key" =~ ^#.*$ || -z "$key" || -n "${!key:-}" || -z "$value" ]] && continue
+    declare "$key=$value"
+    printf "%s" "$value" > "/var/run/s6/container_environment/$key"
+    log DEBUG "Added environment variable: $key"
+  done < "$HARMONY_PARAM_FILE"
+fi
+
+# -------------------------------
+# Default directories
+# -------------------------------
+harmony_base="${HARMONY_BASE:-/var/opt/harmony-ap}" # Runtime state
+harmony_home="${HARMONY_HOME:-/opt/harmony-ap}"     # Static and read-only
+temp_dir="${TEMP_DIR:-/tmp/harmony-ap}"
+
+printf "%s" "$harmony_base" > /var/run/s6/container_environment/HARMONY_BASE
+printf "%s" "$harmony_home" > /var/run/s6/container_environment/HARMONY_HOME
+printf "%s" "$temp_dir" > /var/run/s6/container_environment/TEMP_DIR
+
+# -------------------------------
+# Config file paths
+# -------------------------------
+application_config_path="${APPLICATION_CONFIG_PATH:-${harmony_base}/etc/domibus.properties}"
+application_config_path_temp="${temp_dir}/domibus.properties"
+
+printf "%s" "$application_config_path" > /var/run/s6/container_environment/APPLICATION_CONFIG_PATH
+printf "%s" "$application_config_path_temp" > /var/run/s6/container_environment/APPLICATION_CONFIG_PATH_TEMP
+
+# -------------------------------
+# Clustering options
+# -------------------------------
+deployment_clustered_raw="${DEPLOYMENT_CLUSTERED:-$(get_property "$application_config_path" 'domibus.deployment.clustered' 'false')}"
+deployment_clustered="$(ensure_boolean "$deployment_clustered_raw" "false")"
+
+if [[ "$deployment_clustered" == "true" ]]; then
+  cluster_backend="${CLUSTER_BACKEND:-filesystem}"
+else
+  cluster_backend="${CLUSTER_BACKEND:-none}"
+fi
+
+cluster_secret_backup_raw="${CLUSTER_SECRET_BACKUP:-true}"
+cluster_secret_backup="$(ensure_boolean "$cluster_secret_backup_raw" "true")"
+
+printf "%s" "$deployment_clustered" > /var/run/s6/container_environment/DEPLOYMENT_CLUSTERED
+printf "%s" "$cluster_backend" > /var/run/s6/container_environment/CLUSTER_BACKEND
+printf "%s" "$cluster_secret_backup" > /var/run/s6/container_environment/CLUSTER_SECRET_BACKUP
+
+# -------------------------------
+# Common cert options
+# -------------------------------
+party_name="${PARTY_NAME:-$(get_property "$application_config_path" 'domibus.security.key.private.alias' 'selfsigned')}"
+cert_alias="${CERT_ALIAS:-$party_name}"
+cert_dir="${CERT_DIR:=${harmony_base}/etc/certs}"
+
+printf "%s" "$party_name" > /var/run/s6/container_environment/PARTY_NAME
+printf "%s" "$cert_alias" > /var/run/s6/container_environment/CERT_ALIAS
+printf "%s" "$cert_dir" > /var/run/s6/container_environment/CERT_DIR
+
+log DEBUG "Done"

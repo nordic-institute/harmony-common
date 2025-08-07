@@ -1,9 +1,10 @@
-../../../../../commonbin/mysql-connector-j-8.2.0.jar /opt/harmony-smp/lib/
+../../../../../commonbin/jdbc-drivers/mysql-connector-j-8.2.0.jar /opt/harmony-ap/lib/
+../../../../../commonbin/jdbc-drivers/mariadb-connector-j-2.7.12.jar /opt/harmony-ap/lib/
 ../../../../../commonbin/harmony-smp/* /opt/harmony-smp/webapps/ROOT/
-../../../../../commonbin/tomcat9/bin/*.sh /opt/harmony-smp/bin/
-../../../../../commonbin/tomcat9/bin/*.jar /opt/harmony-smp/bin/
-../../../../../commonbin/tomcat9/lib/* /opt/harmony-smp/lib/
-../../../../../commonbin/tomcat9/conf/* /etc/harmony-smp/tomcat-conf/
+../../../../../commonbin/tomcat/bin/*.sh /opt/harmony-smp/bin/
+../../../../../commonbin/tomcat/bin/*.jar /opt/harmony-smp/bin/
+../../../../../commonbin/tomcat/lib/* /opt/harmony-smp/lib/
+../../../../../commonbin/tomcat/conf/* /etc/harmony-smp/tomcat-conf/
 ../../../smp/config/smp.config.properties /etc/harmony-smp/
 ../../../smp/config/logback.xml /opt/harmony-smp/webapps/ROOT/WEB-INF/classes/
 ../../../smp/config/setenv.sh.template /opt/harmony-smp/setup/

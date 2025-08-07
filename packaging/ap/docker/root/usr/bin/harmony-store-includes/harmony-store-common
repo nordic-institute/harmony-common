@@ -1,0 +1,217 @@
+#!/bin/bash
+set -euo pipefail
+
+source /usr/lib/harmony-common
+
+require_commands() {
+  for cmd in "$@"; do
+    if ! command -v "$cmd" >/dev/null 2>&1; then
+      die "Required command '$cmd' not found in PATH."
+    fi
+  done
+}
+
+validate_mandatory_parameters() {
+  local missing=()
+  for var in "$@"; do
+    if [[ -z "${!var:-}" ]]; then
+      missing+=("$var")
+    fi
+  done
+
+  if (( ${#missing[@]} > 0 )); then
+    for var in "${missing[@]}"; do
+      log ERROR "Missing required parameter: '$var'."
+    done
+    exit 1
+  fi
+}
+
+validate_required_keys() {
+  local -n required_keys_config="$1"; shift
+
+  local missing=()
+  for key in "$@"; do
+    if [[ ! ${required_keys_config[$key]+_} ]]; then
+      missing+=("$key")
+    fi
+  done
+
+  if (( ${#missing[@]} > 0 )); then
+    for key in "${missing[@]}"; do
+      log ERROR "Missing required config key: '$key'."
+    done
+    exit 1
+  fi
+}
+
+normalize_optional_parameters() {
+  store_type="${store_type:-pkcs12}"
+  keystore_password="${keystore_password:-}"
+  keystore_base64="${keystore_base64:-}"
+  truststore_password="${truststore_password:-}"
+  truststore_base64="${truststore_base64:-}"
+  keystore_current_password="${keystore_current_password:-}"
+  truststore_current_password="${truststore_current_password:-}"
+}
+
+validate_parameters() {
+  case "${store_type^^}" in
+    PKCS12|JKS|JCEKS) ;;
+    *) die "Unsupported store type: '$store_type'." ;;
+  esac
+}
+
+load_store_from_base64() {
+  local -n store_base64_config="$1"
+
+  validate_required_keys store_base64_config stage store_base64 store_path
+
+  local stage="${store_base64_config[stage]}"
+  local store_base64="${store_base64_config[store_base64]}"
+  local store_path="${store_base64_config[store_path]}"
+
+  log DEBUG "Decoding base64 store to file. [store=$store_path]"
+
+  harmony-base64 --stage "$stage" --input "$store_base64" --output "$store_path" --force
+
+  log INFO "Store loaded from base64. [store=$store_path]"
+}
+
+validate_store_file_and_password() {
+  local -n store_config="$1"
+
+  local store_path="${store_config[store_path]}"
+  local store_password="${store_config[store_password]}"
+  local store_type="${store_config[store_type]}"
+
+  log DEBUG "Checking store file exists and is readable. [store=$store_path]"
+
+  if [[ ! -f "$store_path" ]]; then
+    log ERROR "Store file does not exist. [store=$store_path]"
+    return 1
+  fi
+
+  if [[ ! -r "$store_path" ]]; then
+    log ERROR "Store file is not readable. [store=$store_path]"
+    return 1
+  fi
+
+  validate_store_password store_config
+}
+
+validate_store_password() {
+  local -n store_password_config="$1"
+
+  local store_path="${store_password_config[store_path]}"
+  local store_password="${store_password_config[store_password]}"
+  local store_type="${store_password_config[store_type]}"
+
+  log DEBUG "Validating store password for ${store_path} (type=${store_type})"
+
+  if [[ -z "$store_password" ]]; then
+    log WARN "Store password not provided. [store=$store_path]"
+  fi
+
+  local output
+  if ! output=$(keytool -list -keystore "$store_path" -storepass "$store_password" -storetype "$store_type" 2>&1); then
+    if [[ "${output,,}" =~ "keystore password was incorrect" ]]; then
+      log ERROR "Store password was rejected. [store=$store_path]"
+      log ERROR "Possible causes:"
+      log ERROR "- The password provided is incorrect."
+      log ERROR "- OR the keystore format is incompatible with Java 11+ PKCS12 implementation."
+      log ERROR "If you are sure the password is correct, consider recreating the keystore using '-J-Dkeystore.pkcs12.legacy'."
+    else
+      log ERROR "Error validating password: ${output}. [store=$store_path]"
+    fi
+
+    return 1
+  fi
+
+  log DEBUG "Password validated. [store=$store_path]"
+
+  return 0
+}
+
+validate_certificate_in_store() {
+  local -n certificate_in_store_config="$1"
+
+  validate_required_keys certificate_in_store_config store_path store_password alias public_cert_path store_type
+
+  local store_path="${certificate_in_store_config[store_path]}"
+  local store_password="${certificate_in_store_config[store_password]}"
+  local alias="${certificate_in_store_config[alias]}"
+  local public_cert_path="${certificate_in_store_config[public_cert_path]}"
+  local store_type="${certificate_in_store_config[store_type]}"
+
+  log DEBUG "Comparing fingerprints of alias '$alias'. [store=$store_path]"
+
+  local store_fingerprint cert_fingerprint
+
+  store_fingerprint=$(keytool -list -rfc -keystore "$store_path" -storepass "$store_password" -storetype "$store_type" -alias "$alias" \
+    | openssl x509 -fingerprint -noout -sha256 \
+    | cut -d'=' -f2 \
+    | tr -d ':')
+
+  cert_fingerprint=$(openssl x509 -in "$public_cert_path" -fingerprint -noout -sha256 \
+    | cut -d'=' -f2 \
+    | tr -d ':')
+
+  [[ "$store_fingerprint" == "$cert_fingerprint" ]]
+}
+
+alias_exists_in_store() {
+  local -n alias_exists_config="$1"
+
+  validate_required_keys alias_exists_config alias store_path store_password store_type
+
+  local alias="${alias_exists_config[alias]}"
+  local store_path="${alias_exists_config[store_path]}"
+  local store_password="${alias_exists_config[store_password]}"
+  local store_type="${alias_exists_config[store_type]}"
+
+  log DEBUG "Verifying alias '$alias' exists. [store=$store_path]"
+
+  local output
+  if ! output=$(keytool -list -alias "$alias" -keystore "$store_path" -storetype "$store_type" -storepass "$store_password" 2>&1); then
+    if [[ "${output,,}" =~ "does not exist" ]]; then
+      log DEBUG "Alias '$alias' does not exist. [store=$store_path]"
+    else
+      log ERROR "Error checking alias '$alias': $output. [store=$store_path]"
+    fi
+    return 1
+  fi
+
+  return 0
+}
+
+# shellcheck disable=SC2154,SC2034 # Used in the caller as refs
+build_store_config() {
+  local target="$1"; shift
+  local prefix="$1"; shift
+
+  declare -g -A "${target}=()"
+  local -n cfg="$target"
+
+  local path_var="${prefix}_path"
+  local password_var="${prefix}_password"
+  local base64_var="${prefix}_base64"
+
+  cfg[stage]="${STAGE}"
+  cfg[store_path]="${!path_var}"
+  cfg[store_password]="${!password_var}"
+  cfg[store_base64]="${!base64_var}"
+  cfg[store_type]="${store_type:-pkcs12}"
+  cfg[public_cert_path]="${public_cert_path}"
+  cfg[alias]="${alias}"
+  cfg[password_generated]=false
+
+  if [[ "$prefix" == "keystore" ]]; then
+    cfg[dname]="${dname}"
+    cfg[san]="${san:-}"
+  fi
+
+  if [[ "$prefix" == "truststore" ]]; then
+    cfg[should_add_certificate_to_truststore]="${should_add_certificate_to_truststore}"
+  fi
+}

@@ -1,5 +1,14 @@
 # Changelog
 
+## Access Point 2.6.0 - 2025-07-15
+
+- NEDS-209: Merge Domibus 5.1.9 into Harmony Access Point
+- NEDS-209: Update dependencies with known vulnerabilities
+- NEDS-205: New Docker image for Access Point
+- NEDS-213: Fixed connection monitoring template
+- NEDS-210: Fixed index creation database migrations
+- NEDS-199-197: Improved logger configuration
+
 ## SMP - 2.2.0 - 2025-02-03
 
 - NEDS-194: Merge DomiSMP 5.1.0 into Harmony SMP code base

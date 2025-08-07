@@ -1,10 +1,13 @@
 #!/bin/bash
-set -e
+set -euo pipefail
+
 DIR="$(cd "$(dirname $0)" && pwd)"
 cd "$DIR"
 source ./_build_common.sh
 
-TAG=$APVERSION
+S6_VERSION=3.2.1.0
+TAG=$APVERSION-s6
+
 while getopts "t:" opt; do
   case "$opt" in
     t)
@@ -19,9 +22,13 @@ done
 shift $((OPTIND-1))
 
 prepare_commonbin
-docker build \
-  --build-arg VERSION="${APVERSION}" --build-arg MYSQLJ_VERSION="$MYSQLJ_VERSION" --build-arg BUILD_ID="${BUILD_ID:-local}" \
+docker buildx build \
+  --platform linux/amd64,linux/arm64 \
+  --pull \
+  --load \
+  --build-arg VERSION="${APVERSION}" \
+  --build-arg BUILD_ID="${BUILD_ID:-local}" \
+  --build-arg S6_VERSION="${S6_VERSION}" \
   -t niis/harmony-ap:"$TAG" \
   -t artifactory.niis.org/harmony-snapshot-docker/niis/harmony-ap:"$TAG" \
   -f ./ap/docker/Dockerfile ..
-

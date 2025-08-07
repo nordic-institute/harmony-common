@@ -1,41 +1,63 @@
 #!/bin/bash
-set -e
+set -euo pipefail
+
 # CHANGE VERSION NUMBERS BELOW AS NEEDED
 # Version of Harmony Access Point
-APVERSION=2.5.0
+APVERSION=2.6.0
 # Version of Harmony SMP
 SMPVERSION=2.2.0
 
-TOMCAT_VERSION=9.0.91
+TOMCAT_VERSION=9.0.107
 MYSQLJ_VERSION=8.2.0
+MARIADBJ_VERSION=2.7.12
 
 # NO VERSIONING RELATED MODIFICATIONS ARE NECESSARY AFTER THIS POINT!
 
 # DO NOT change variables below, instead if needed assign values externally
-if [ -z "$HARMONY_AP_REPO_PATH" ]; then
+if [ -z "${HARMONY_AP_REPO_PATH:-}" ]; then
   HARMONY_AP_REPO_PATH=../../harmony-access-point
 fi
 
-if [ -z "$HARMONY_SMP_REPO_PATH" ]; then
+if [ -z "${HARMONY_SMP_REPO_PATH:-}" ]; then
   HARMONY_SMP_REPO_PATH=../../harmony-smp
 fi
 
+fetch_jdbc_drivers() {
+  if [ ! -d commonbin/jdbc-drivers ]; then
+    mkdir -p commonbin/jdbc-drivers
+  fi
+
+  if [ ! -f commonbin/jdbc-drivers/mysql-connector-j-$MYSQLJ_VERSION.jar ]; then
+    echo "Fetching MySQL connector $MYSQLJ_VERSION"
+    rm -f commonbin/jdbc-drivers/mysql-connector-j-*.jar
+    curl -s -o commonbin/jdbc-drivers/mysql-connector-j-$MYSQLJ_VERSION.jar "https://repo1.maven.org/maven2/com/mysql/mysql-connector-j/$MYSQLJ_VERSION/mysql-connector-j-$MYSQLJ_VERSION.jar"
+  fi
+
+  if [ ! -f commonbin/jdbc-drivers/mariadb-connector-j-$MARIADBJ_VERSION.jar ]; then
+    echo "Fetching MariaDB connector $MARIADBJ_VERSION"
+    rm -f commonbin/jdbc-drivers/mariadb-connector-j-*.jar
+    curl -s -o commonbin/jdbc-drivers/mariadb-connector-j-$MARIADBJ_VERSION.jar "https://repo1.maven.org/maven2/org/mariadb/jdbc/mariadb-java-client/$MARIADBJ_VERSION/mariadb-java-client-$MARIADBJ_VERSION.jar"
+  fi
+}
+
+fetch_tomcat() {
+  if [ ! -d commonbin/tomcat ]; then
+    mkdir -p commonbin/tomcat
+  fi
+
+  if [ ! -f commonbin/tomcat/tomcat-$TOMCAT_VERSION.tar.gz ]; then
+    echo "Fetching Tomcat $TOMCAT_VERSION"
+    curl -s -o commonbin/tomcat/tomcat-$TOMCAT_VERSION.tar.gz "https://repo1.maven.org/maven2/org/apache/tomcat/tomcat/$TOMCAT_VERSION/tomcat-$TOMCAT_VERSION.tar.gz"
+
+    tar -xzf commonbin/tomcat/tomcat-$TOMCAT_VERSION.tar.gz -C commonbin/tomcat --strip-components=1
+    rm commonbin/tomcat/conf/logging.properties
+    rm commonbin/tomcat/conf/server.xml
+  fi
+}
+
 prepare_commonbin() {
-
-  if [ ! -f commonbin/mysql-connector-j-$MYSQLJ_VERSION.jar ]; then
-    echo "Fetching mysql connector"
-    curl -s -o commonbin/mysql-connector-j-$MYSQLJ_VERSION.jar "https://repo1.maven.org/maven2/com/mysql/mysql-connector-j/$MYSQLJ_VERSION/mysql-connector-j-$MYSQLJ_VERSION.jar"
-  fi
-
-  if [ ! -f commonbin/tomcat-$TOMCAT_VERSION.tar.gz ]; then
-    echo "Fetching tomcat 9"
-    curl -s -o commonbin/tomcat-$TOMCAT_VERSION.tar.gz "https://repo1.maven.org/maven2/org/apache/tomcat/tomcat/$TOMCAT_VERSION/tomcat-$TOMCAT_VERSION.tar.gz"
-  fi
-
-  mkdir -p commonbin/tomcat9
-  tar -xzf commonbin/tomcat-$TOMCAT_VERSION.tar.gz -C commonbin/tomcat9 --strip-components=1
-  rm commonbin/tomcat9/conf/logging.properties
-  rm commonbin/tomcat9/conf/server.xml
+  fetch_jdbc_drivers
+  fetch_tomcat
 
   # explode domibus war
   if [[ -d $HARMONY_AP_REPO_PATH ]]; then

@@ -1,0 +1,24 @@
+#!/command/with-contenv bash
+set -euo pipefail
+
+# shellcheck disable=SC2034 # Used in sourced scripts
+readonly STAGE="init-end"
+
+source /usr/lib/harmony-common
+source /usr/lib/harmony-cluster
+
+log DEBUG "Started"
+
+if mv -f "$APPLICATION_CONFIG_PATH_TEMP" "$APPLICATION_CONFIG_PATH"; then
+  log INFO "Configuration moved from '$APPLICATION_CONFIG_PATH_TEMP' to '$APPLICATION_CONFIG_PATH'"
+else
+  die "Failed to move '$APPLICATION_CONFIG_PATH_TEMP' to '$APPLICATION_CONFIG_PATH'"
+fi
+
+if is_primary; then
+  set_ready_flag
+else
+  printf "%s" "ready" > /var/run/s6/container_environment/REPLICA_STATE
+fi
+
+log DEBUG "Done"

@@ -1,0 +1,183 @@
+#!/bin/bash
+set -euo pipefail
+
+source /usr/lib/harmony-common
+
+parse_cli_args() {
+  ALLOW_MISSING_PATHS=false
+  HIDE_VALUE=false
+
+  # shellcheck disable=SC2034 # Used in sourced scripts
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      --stage|-s)             STAGE="${2:+$2-}pptcli";  shift 2 ;;
+      --node-id|-n)           NODE_ID="$2";     shift 2 ;;
+      --action|-a)            ACTION="$2";      shift 2 ;;
+      --config-path|-c)       CONFIG_PATH="$2"; shift 2 ;;
+      --property|-p)          PROPERTY="$2";    shift 2 ;;
+      --value|-v)             VALUE="$2";       shift 2 ;;
+      --quiet|-q)             HIDE_VALUE=true;  shift ;;
+      --allow-missing-paths)  ALLOW_MISSING_PATHS=true;  shift ;;
+      *) die "Unknown option: $1" ;;
+    esac
+  done
+}
+
+validate_cli_args() {
+  local missing=()
+
+  if [[ -z "$ACTION" ]]; then missing+=(--action); fi
+  if [[ -z "$CONFIG_PATH" ]]; then missing+=(--config-path); fi
+  if [[ -z "$PROPERTY" ]]; then missing+=(--property); fi
+
+  if [[ ${#missing[@]} -gt 0 ]]; then
+    local missing_str
+    printf -v missing_str '%s ' "${missing[@]}"
+    die "Missing required arguments: ${missing_str% }"
+  fi
+
+  if [[ "$ALLOW_MISSING_PATHS" != true ]]; then
+    local config_dir
+    config_dir="$(dirname "$CONFIG_PATH")"
+
+    if [[ ! -d "$config_dir" ]]; then
+      die "Directory does not exist: $config_dir"
+    fi
+
+    if [[ ( "$ACTION" == "SET" || "$ACTION" == "REMOVE" ) && ! -w "$config_dir" ]]; then
+      die "Directory is not writable: $config_dir"
+    fi
+
+    if [[ ! -f "$CONFIG_PATH" ]]; then
+      die "Configuration file does not exist: $CONFIG_PATH"
+    fi
+  else
+    log DEBUG "Path validation skipped due to --allow-missing-paths."
+  fi
+}
+
+# Escape special characters for Java property syntax
+escape_value() {
+  local input="$1"
+  # Escape backslashes
+  input="${input//\\/\\\\}"
+  # Escape Spring-style ${} placeholders: $ -> ${:$}
+  input="${input//\$\{/\$\{:\$\}\{}"
+  printf '%s' "$input"
+}
+
+# Reverse the escape performed by escape_value
+unescape_value() {
+  local input="$1"
+  # Unescape Spring-style placeholders
+  input="${input//\$\{:\$\}\{/\$\{}"
+  # Unescape backslashes
+  input="${input//\\\\/\\}"
+  printf '%s' "$input"
+}
+
+get_prop() {
+  local property="$1"
+  local default_value="${2:-}"
+  local value
+
+  value=$(crudini --get "$CONFIG_PATH" "" "$property" 2>/dev/null || echo "")
+
+  value=$(unescape_value "$value")
+
+  echo "${value:-$default_value}"
+}
+
+remove_prop() {
+  local property="$1"
+
+  if crudini --get "$CONFIG_PATH" "" "$property" &>/dev/null; then
+    if crudini --inplace --del "$CONFIG_PATH" "" "$property"; then
+      log DEBUG "Property '$property' removed from '$CONFIG_PATH'"
+    else
+      die "Failed to remove property '$property' from '$CONFIG_PATH'"
+    fi
+  else
+    log DEBUG "Property '$property' not found in '$CONFIG_PATH', nothing to remove"
+  fi
+}
+
+hide_value_if_needed() {
+  local value="$1"
+
+  if [[ "$HIDE_VALUE" == true ]]; then
+    echo "[HIDDEN]"
+  else
+    echo "$value"
+  fi
+}
+
+set_prop() {
+  local property="$1"
+  local value="${2:-}"
+
+  if [[ -z "$value" ]]; then
+    log DEBUG "No value provided for property '$property'. The property will be removed."
+    remove_prop "$property"
+    return
+  fi
+
+  value=$(escape_value "$value")
+
+  if crudini --inplace --set "$CONFIG_PATH" "" "$property" "$value"; then
+    if [[ "$value" == "true" || "$value" == "false" ]]; then
+      local state
+      if [[ "$value" == "true" ]]; then
+        state="enabled"
+      else
+        state="disabled"
+      fi
+      log DEBUG "Property '$property' $state"
+    else
+      local shown_value
+      shown_value="$(hide_value_if_needed "$value")"
+
+      log DEBUG "Property '$property' set to '$shown_value'"
+    fi
+  else
+    die "Failed to set property '$property' in '$CONFIG_PATH'"
+  fi
+}
+
+safe_set_prop() {
+  local property="$1"
+  local new_value="$2"
+  local current_value
+
+  current_value=$(get_prop "$property")
+  if [[ "$current_value" == "$new_value" ]]; then
+    local shown_value
+    shown_value="$(hide_value_if_needed "$current_value")"
+
+    log DEBUG "Property '$property' already set to '$shown_value'; skipping"
+  else
+    set_prop "$property" "$new_value"
+  fi
+
+  return 0
+}
+
+perform_action() {
+  case "$ACTION" in
+    GET) get_prop "$PROPERTY" "${VALUE:-}" ;;
+    SET) safe_set_prop "$PROPERTY" "${VALUE:-}" ;;
+    REMOVE) remove_prop "$PROPERTY" ;;
+    *) die "Invalid action '$ACTION'. Use 'GET', 'SET', 'SAFE-SET', or 'REMOVE'." ;;
+  esac
+}
+
+main() {
+  parse_cli_args "$@"
+  validate_cli_args
+  perform_action
+  exit 0
+}
+
+if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
+  main "$@"
+fi
