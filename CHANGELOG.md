@@ -3,7 +3,7 @@
 ## SMP - 2.2.1 - 2025-08-07
 
 - NEDS-215: Merge DomiSMP 5.1.1 into Harmony SMP code base
-- NEDS-219: <ServiceMetadata> now uses <ID> instead of <ServiceID> (still supported, but deprecated) for SMP 2.0 compliance
+- NEDS-219: ServiceMetadata now uses ID instead of ServiceID (still supported, but deprecated) for SMP 2.0 compliance
 
 ## Access Point 2.6.0 - 2025-07-15
 
