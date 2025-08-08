@@ -92,7 +92,7 @@ case "$1" in
     LIQUIBASE_ANALYTICS_ENABLED=false \
     LIQUIBASE_SHOW_BANNER=false \
     LIQUIBASE_SQL_SHOW_SQL_WARNINGS=false \
-    "/opt/harmony-smp/liquibase/liquibase.sh" \
+    "/opt/harmony-smp/liquibase/liquibase" \
       --changelog-file=/opt/harmony-smp/db/db.changelog.xml \
       update \
       -DADMIN_USERNAME="$AUSER" \
