@@ -6,7 +6,7 @@ cd "$DIR"
 source ./_build_common.sh
 
 S6_VERSION=3.2.1.0
-TAG=$APVERSION-s6
+TAG=$APVERSION
 
 while getopts "t:" opt; do
   case "$opt" in

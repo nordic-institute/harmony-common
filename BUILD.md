@@ -9,7 +9,7 @@ To view a copy of this license, visit <https://creativecommons.org/licenses/by-s
 
 This guide provides instructions for building Harmony eDelivery Access from source. The build process can produce two types of artifacts:
 
-1. **Debian packages** (.deb) for installing Access Point and SMP on Ubuntu 20.04, 22.04, and 24.04.
+1. **Debian packages** (`.deb`) for installing Access Point and SMP on Ubuntu 22.04, and 24.04.
 2. A multi-platform **Docker image** for deploying the Access Point.
 
 ## Prerequisites
@@ -18,7 +18,7 @@ This guide provides instructions for building Harmony eDelivery Access from sour
 
 - **Docker:** Creates a consistent environment for generating both the Debian packages and the final Docker image, making the build process independent of your host system. Docker Desktop or Engine (version 20.10 or newer) must be installed.
 - **For native builds only:**
-  - An Ubuntu host (20.04, 22.04, or 24.04).
+  - An Ubuntu host (22.04 or 24.04).
   - OpenJDK / JDK (version 8 or compatible).
   - Maven.
   - Standard build tools like `gcc`.
