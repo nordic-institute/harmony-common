@@ -2,9 +2,9 @@ harmony-ap (2.6.0-0) stable; urgency=medium
 
   * New upstream Domibus release 5.1.9
   * Update dependencies with known vulnerabilities
-  * Fixed connection monitoring template
-  * Fixed index creation for database migrations
-  * Enhanced xsd:dateTime parsing by supporting standard format via configuration property
+  * Fix connection monitoring template
+  * Fix index creation for database migrations
+  * Enhance xsd:dateTime parsing by supporting standard format via configuration property
 
  -- Nordic Institute for Interoperability Solutions (NIIS) <edelivery@niis.org>  Tue, 15 Jul 2025 11:15:33 +0300
 
