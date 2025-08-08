@@ -1,6 +1,6 @@
 # Harmony eDelivery Access - Dynamic Discovery Configuration Guide <!-- omit in toc -->
 
-Version: 1.12  
+Version: 1.13  
 Doc. ID: UG-DDCG
 
 ---
@@ -22,6 +22,7 @@ Doc. ID: UG-DDCG
 | 01.06.2024 | 1.10    | Update links to external documents                                           | Petteri Kivimäki |
 | 13.01.2025 | 1.11    | Update links to external documents                                           | Diego Martin     |
 | 05.02.2025 | 1.12    | Update links to external documents                                           | Diego Martin     |
+| 08.08.2025 | 1.13    | Update links to external documents                                           | Diego Martin     |
 
 ## License <!-- omit in toc -->
 
@@ -89,7 +90,7 @@ See eDelivery documentation \[[TERMS](#Ref_TERMS)\].
 1. <a id="Ref_TERMS" class="anchor"></a>\[TERMS\] eDelivery Documentation, <https://ec.europa.eu/digital-building-blocks/sites/display/DIGITAL/eDelivery>
 2. <a id="Ref_IG-AP" class="anchor"></a>\[IG-AP\] Harmony eDelivery Access - Access Point Installation Guide. Document ID: [IG-AS](harmony-ap_installation_guide.md)
 3. <a id="Ref_IG-SMP" class="anchor"></a>\[IG-SMP\] Harmony eDelivery Access - Service Metadata Publisher Installation Guide. Document ID: [IG-SMP](harmony-smp_installation_guide.md)
-4. <a id="Ref_DOMIBUS_ADMIN_GUIDE" class="anchor"></a>\[DOMIBUS_ADMIN_GUIDE\] Access Point Administration Guide - Domibus 5.1.6, <https://docs.edelivery.tech.ec.europa.eu/domibus/5.1.6/#adminguide>
+4. <a id="Ref_DOMIBUS_ADMIN_GUIDE" class="anchor"></a>\[DOMIBUS_ADMIN_GUIDE\] Access Point Administration Guide - Domibus 5.1.9, <https://docs.edelivery.tech.ec.europa.eu/domibus/5.1.9/#adminguide>
 5. <a id="Ref_SMP_ADMIN_GUIDE" class="anchor"></a>\[SMP_ADMIN_GUIDE\] DomiSMP Administration Guide - DomiSMP 5.1, <https://docs.edelivery.tech.ec.europa.eu/domismp/prod/5.1/>
 6. <a id="Ref_UG-SDCG" class="anchor"></a>\[UG-SDCG\] Harmony eDelivery Access - Static Discovery Configuration Guide. Document ID: [UG-SDCG](static_discovery_configuration_guide.md)
 
