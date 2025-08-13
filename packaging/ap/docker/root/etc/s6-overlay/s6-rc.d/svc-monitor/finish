@@ -1,0 +1,23 @@
+#!/command/with-contenv bash
+
+EXIT_CODE=$1
+SIGNAL=$2
+CORE_DUMP=$3
+
+# shellcheck disable=SC2034 # Used in sourced scripts
+readonly STAGE="svc-monitor"
+
+source /usr/lib/harmony-common
+source /usr/lib/harmony-cluster
+
+if [[ "$DEPLOYMENT_CLUSTERED" == "true" || "$CLUSTER_BACKEND" != "none" ]]; then
+  ROLE="${CLUSTER_ROLE:-replica}"
+
+  log DEBUG "Finishing with exit code $EXIT_CODE, signal $SIGNAL, core dump $CORE_DUMP"
+  log DEBUG "Stopping container with role: $ROLE"
+
+  if [ "$ROLE" = "primary" ]; then
+    log INFO "Primary container shutting down. Releasing primary state..."
+    release_primary
+  fi
+fi

@@ -1,0 +1,14 @@
+#!/command/with-contenv bash
+set -euo pipefail
+
+if [ "${HARMONY_MODE:-}" = "init" ]; then
+  exit 0
+fi
+
+SHUTDOWN_WAIT_TIME="${SHUTDOWN_WAIT_TIME:-3}"
+
+harmony-log DEBUG "$NODE_ID" "svc-harmonyap" "Delaying shutdown of Harmony Access Point for ${SHUTDOWN_WAIT_TIME} seconds"
+
+sleep "$SHUTDOWN_WAIT_TIME"
+
+harmony-log INFO "$NODE_ID" "svc-harmonyap" "Harmony Access Point shutdown completed"

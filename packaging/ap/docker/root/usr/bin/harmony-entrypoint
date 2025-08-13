@@ -1,0 +1,30 @@
+#!/bin/bash
+set -euo pipefail
+
+: "${NODE_ID:=$HOSTNAME}"
+: "${LOG_LEVEL:=INFO}"
+: "${LOG_OUTPUT:=stderr}"
+: "${LOG_TIMESTAMP_FMT:=%Y-%m-%dT%H:%M:%S.%6NZ}"
+: "${LOG_FILE:=/var/log/harmony.log}"
+export NODE_ID LOG_LEVEL LOG_OUTPUT LOG_TIMESTAMP_FMT LOG_FILE
+
+source /usr/lib/harmony-common
+
+# shellcheck disable=SC2034 # Used in sourced scripts
+readonly STAGE="harmony-entrypoint"
+
+HARMONY_VERSION="${HARMONY_VERSION:-UNDEFINED}"
+
+log INFO "Starting Harmony Access Point version $HARMONY_VERSION"
+log INFO "    User UID: $(id -u)"
+log INFO "    User GID: $(id -g)"
+
+# If the user passes "init" in the CLI, we activate the special mode and
+# remove the argument before calling /init so that s6-overlay starts normally.
+if [ "${1:-}" = "init" ]; then
+  log WARN "Harmony Access Point init mode activated"
+  export HARMONY_MODE=init
+  shift
+fi
+
+exec /init "$@"

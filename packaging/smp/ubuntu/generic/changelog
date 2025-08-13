@@ -1,3 +1,10 @@
+harmony-smp (2.2.1-0) stable; urgency=medium
+
+  * New upstream release DomiSMP 5.1.1
+  * Update ServiceMetadata to use ID instead of ServiceID (still supported, but deprecated) for the OASIS Service Metadata Publishing (SMP) Version 2.0 specification compliance
+
+ -- Nordic Institute for Interoperability Solutions (NIIS) <edelivery@niis.org>  Thu, 07 Aug 2025 16:30:19 +0300
+
 harmony-smp (2.2.0-0) stable; urgency=medium
 
   * New upstream release DomiSMP 5.1.0

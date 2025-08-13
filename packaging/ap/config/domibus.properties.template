@@ -3,13 +3,16 @@
 #Specifies if Domibus should run in cluster mode. This affects for instance whether the Quartz jobs are clustered.
 #domibus.deployment.clustered=false
 
+#In cluster mode, specifies if the database synchronization mechanism should be used when initializing the Quartz scheduler
+#domibus.scheduler.bootstrap.synchronized=true
+
+#Timeout for the database synchronization mechanism, in milliseconds
+#domibus.synchronization.timeout=10000
+
 # ---------------------------------- GUI -------------------------
 
 # The title shown in the Tab of Admin Console (default value: "Domibus")
 #domibus.ui.title.name=Harmony
-
-# Asynchronous populated table is used for showing the messages on GUI. Defaults to false.
-#domibus.ui.replication.enabled=false
 
 #support team name
 #domibus.ui.support.team.name=Nordic Institute for Interoperability Solutions (NIIS)
@@ -20,17 +23,40 @@
 #Max rows for CSV export
 #domibus.ui.csv.rows.max=10000
 
-#Minimum expected waiting time for 'Resend' action, for the received messages get stuck in SEND_ENQUEUED status.
-#Resend button in the UI will enable only after below specific minutes from the message's received time.
-#domibus.action.resend.wait.minutes=5
+# how many minutes after message's received date the Resend button will become enabled for messages having SEND_ENQUEUED status
+#domibus.ui.resend.action.enabled.received.minutes=5
 
 #The limit when calculating the number of message logs(disabled when 0)
 #domibus.ui.pages.messageLogs.countLimit=50000
 
-# ---------------------------------- Keystore/Truststore -----------------------
+#The initial/default interval (in hours) for filtering messages
+#domibus.ui.pages.messageLogs.interval.default=24
 
-#The location of the keystore
+#Whether the Messages page should be the default landing page after login (defaults to true, but should be set to false in high load environments)
+#domibus.ui.pages.messageLogs.landingPage.enabled=true
+
+#Whether the Messages page has all the advanced capabilities (defaults to true, but should be set to false in high load environments)
+#domibus.ui.pages.messageLogs.search.advanced.enabled=true
+
+#Used to secure the session of admin console; set to true only in conjunction with https protocol
+#domibus.ui.session.secure=false
+
+#Used to set the the session timeout of admin console ( in minutes )
+#domibus.ui.session.timeout=30
+
+#Used to set the SameSite attribute of cookies (session and all others) used by the admin console. Possible values are: Strict, None, Lax
+#domibus.ui.session.sameSite=Strict
+
+#Used to which JVM to route to for session affinity ensuring that the value of the session cookie is formatted as
+#'sessionId + "." + jvmRoute'; the jvmRoute can be the name of an environment variable or a Java system property
+#(default empty, i.e. no session affinity)
+#domibus.ui.session.jvmroute=
+
+# ---------------------------------- Keystore/Truststore (Single Tenancy) -----------------------
+
+#The initial location of the keystore; used only the first time domibus starts and persisted in the DB to be used from there on
 domibus.security.keystore.location=${domibus.config.location}/ap-keystore.p12
+
 #The type of the used keystore
 domibus.security.keystore.type=pkcs12
 
@@ -44,8 +70,8 @@ domibus.security.key.private.alias=
 #The private key password
 domibus.security.key.private.password=
 
-#Truststore
-#The location of the truststore
+# --- Truststore ---
+#The initial location of the truststore; used only the first time domibus starts and persisted in the DB to be used from there on
 domibus.security.truststore.location=${domibus.config.location}/ap-truststore.p12
 
 #Type of the used truststore
@@ -53,6 +79,43 @@ domibus.security.truststore.type=pkcs12
 
 #The password used to load the trustStore
 domibus.security.truststore.password=
+
+# ------------- Security Profiles -------------------
+
+#For enabling Security Profiles for signing and encryption uncomment the following parameters accordingly
+
+# --- RSA Profile ---
+
+#Sign
+#domibus.security.key.private.rsa.sign.alias=blue_gw_rsa_sign
+#domibus.security.key.private.rsa.sign.password=test123
+#domibus.security.key.private.rsa.sign.type=RSA
+
+#Decrypt
+#domibus.security.key.private.rsa.decrypt.alias=blue_gw_rsa_decrypt
+#domibus.security.key.private.rsa.decrypt.password=test123
+#domibus.security.key.private.rsa.decrypt.type=RSA
+
+# --- ECC Profile ---
+
+#Sign
+#domibus.security.key.private.ecc.sign.alias=blue_gw_ecc_sign
+#domibus.security.key.private.ecc.sign.password=test123
+#The type property specifies the algorithm type of the message signing certificate. Instead of the algorithm type name, the corresponding curve identifier will pe specified.
+#One or more algorithm types can be specified, comma-separated.
+#For eg. "1.3.101.112" is the identifier of the ED25519 algorithm's curve. ECDSA algorithms can be used as well.
+#domibus.security.key.private.ecc.sign.type=1.3.101.112
+
+#Decrypt
+#domibus.security.key.private.ecc.decrypt.alias=blue_gw_ecc_decrypt
+#domibus.security.key.private.ecc.decrypt.password=test123
+#The type property specifies the algorithm type of the message decryption certificate. Instead of the algorithm type name, the corresponding curve identifier will pe specified.
+#One or more algorithm types can be defined, comma-separated.
+#For eg. "1.3.101.112" is the identifier of the X25519 algorithm's curve and "1.3.101.111" is the identifier of the X448 algorithm's curve. Other curves can be used as well.
+#domibus.security.key.private.ecc.decrypt.type=1.3.101.110,1.3.101.111
+
+#Priority order of Security Profiles used in Dynamic Discovery to set the Transport Profile
+#domibus.security.profile.order=ECC,RSA
 
 # ---------------------------------- Database ----------------------------------
 
@@ -62,37 +125,99 @@ domibus.database.serverName=
 #Database port
 domibus.database.port=
 
-#General schema. Mandatory only if Domibus is configured in multi-tenancy mode.
+#General schema. If uncommented Domibus will run in multi-tenancy mode.
 #domibus.database.general.schema=general_schema
 
-#Domibus schema. If Domibus is configured in multi-tenancy mode this property is used to define the schema for the default domain.
-#Please comment this property, if Domibus is configured in single-tenancy mode with Oracle database.
+#Database schema.
+#Please comment this property when Domibus is configured in multi-tenancy mode with MySQL and change the domibus.datasource.url property to use domibus.database.general.schema instead of domibus.database.schema
 domibus.database.schema=
 
-#Non-XA Datasource
+#Datasource
 #MySQL
 #Connector/J 8.0.x
 domibus.datasource.driverClassName=com.mysql.cj.jdbc.Driver
 domibus.datasource.url=jdbc:mysql://${domibus.database.serverName}:${domibus.database.port}/${domibus.database.schema}?sslMode=preferred&allowPublicKeyRetrieval=true&useLegacyDatetimeCode=false&serverTimezone=UTC
+
 domibus.datasource.user=
 domibus.datasource.password=
-domibus.datasource.idleTimeout=600
+
+#HikariCP specific
+#Controls the maximum lifetime of a connection in the pool (in seconds)
 domibus.datasource.maxLifetime=1800
-domibus.datasource.minimumIdle=5
+
+#Controls the maximum amount of time (in seconds) that a client will wait for a connection from the pool
+#domibus.datasource.connectionTimeout=30
+
+#Controls the maximum amount of time (in seconds) that a connection is allowed to sit idle in the pool
+domibus.datasource.idleTimeout=600
+
+#Controls the maximum size that the pool is allowed to reach, including both idle and in-use connections
 domibus.datasource.maxPoolSize=100
+
+#Controls the minimum number of idle connections that HikariCP tries to maintain in the pool
+domibus.datasource.minimumIdle=5
+
+#Represents a user-defined name for the connection pool and appears mainly in logging and JMX management consoles; empty to auto-generate
+#domibus.datasource.poolName=
+
+#Quartz Datasource
+
+#the name of the DataSource class provided by the JDBC driver
+#domibus.quartz.datasource.driverClassName=${domibus.datasource.driverClassName}
+
+#the JDBC url for the DB
+#domibus.quartz.datasource.url=${domibus.datasource.url}
+
+#domibus.quartz.datasource.user=${domibus.datasource.user}
+#domibus.quartz.datasource.password=${domibus.datasource.password}
+
+#HikariCP specific
+#Controls the maximum lifetime of a connection in the pool (in seconds)
+#domibus.quartz.datasource.maxLifetime=1800
+
+#Controls the maximum amount of time (in seconds) that a client will wait for a connection from the pool
+#domibus.quartz.datasource.connectionTimeout=30
+
+#Controls the maximum amount of time (in seconds) that a connection is allowed to sit idle in the pool
+#domibus.quartz.datasource.idleTimeout=600
+
+#Controls the maximum size that the pool is allowed to reach, including both idle and in-use connections
+#domibus.quartz.datasource.maxPoolSize=5
+
+#Controls the minimum number of idle connections that HikariCP tries to maintain in the pool
+#domibus.quartz.datasource.minimumIdle=1
+
+#Represents a user-defined name for the connection pool and appears mainly in logging and JMX management consoles; empty to auto-generate
+#domibus.quartz.datasource.poolName=
 
 # ---------------------------------- EntityManagerFactory ----------------------
 
 #Packages to be scanned(comma separated)
 #domibus.entityManagerFactory.packagesToScan=eu.domibus
 
+#Number of rows fetched when there is more than a one row result on select statements (use only for Oracle, for MySQL JDBC driver caches the entire result set up front, so no need to set the fetch size)
+#domibus.entityManagerFactory.jpaProperty.hibernate.jdbc.fetch_size=50
+
 #MySQL
 #Connector/J 8.0.x
 domibus.entityManagerFactory.jpaProperty.hibernate.connection.driver_class=com.mysql.cj.jdbc.Driver
+
 domibus.entityManagerFactory.jpaProperty.hibernate.dialect=org.hibernate.dialect.MySQL8Dialect
 domibus.entityManagerFactory.jpaProperty.hibernate.id.new_generator_mappings=false
 
+#Enable or disable the formatting of SQL statements generated by Hibernate
 #domibus.entityManagerFactory.jpaProperty.hibernate.format_sql=true
+
+#Second level cache provider (use "infinispan" for Infinispan and "eu.domibus.core.cache.DomibusCacheRegionFactory" for Ehcache)
+#domibus.entityManagerFactory.jpaProperty.hibernate.cache.region.factory_class=infinispan
+
+#Infinispan specific: infinispan config file
+# WARNING: When changing the configuration file for Infinispan, be aware of CVE-2025-0736.
+# The vulnerability occurs when cluster nodes discover each other via a shared database (JGroups with JDBC_PING), instead of using multicast (UDP) or static configurations.
+#domibus.entityManagerFactory.jpaProperty.hibernate.cache.infinispan.cfg=config/infinispan/domibus-infinispan-default.xml
+
+#Infinispan specific: factory for second level cache keys. For other cache providers it should be left empty.
+#domibus.entityManagerFactory.jpaProperty.hibernate.cache.keys_factory=eu.domibus.core.cache.DomibusCacheKeysFactory
 
 # ---------------------------------- Security ----------------------------------
 
@@ -100,10 +225,13 @@ domibus.entityManagerFactory.jpaProperty.hibernate.id.new_generator_mappings=fal
 #domibus.password.encryption.active=false
 
 #Enable this property if the password encryption is activated. Add the list of configured passwords to be encrypted.
-#domibus.password.encryption.properties=domibus.security.keystore.password,domibus.security.key.private.password,domibus.security.truststore.password,domibus.datasource.xa.property.password,domibus.datasource.password,domibus.proxy.password,domibus.alert.sender.smtp.password
+#domibus.password.encryption.properties=domibus.security.keystore.password,domibus.security.key.private.password,domibus.security.truststore.password,domibus.datasource.password,domibus.proxy.password,domibus.alert.sender.smtp.password
 
 #The location where the encrypted key is stored
 #domibus.password.encryption.key.location=${domibus.config.location}/internal/encrypt
+
+#Password can be viewed if true;
+#domibus.properties.password.view.allow=true
 
 #To activate security set this to false
 domibus.auth.unsecureLoginAllowed=false
@@ -129,10 +257,29 @@ domibus.auth.unsecureLoginAllowed=false
 #Configure http timeout (http.connection.timeout, http.socket.timeout, http.connection-manager.timeout) in seconds. Defaults to 10 seconds.
 #domibus.certificate.crl.http.timeout=10
 
+#Enable caching of CRLs by URL. To enable, also uncomment the cache in the ehcache xml configuration
+# If crlByCert cache is not enabled or if it doesn't contain the key for a certificate then this cache is used
+#domibus.certificate.crlByUrl.cache.enabled=false
+
+#Enable caching of CRLs by certificate. Note that, while a CRL is cached, any certificates that were revoked since it was cached would still be accepted
+#domibus.certificate.crlByCert.cache.enabled=true
+
+#Complexity rules for all properties passwords
+#Default value requires Minimum length: 16 characters; Maximum length: 32 characters; At least one letter in lowercase; At least one letter in uppercase; At least one digit; At least one special character
+#domibus.properties.passwordPolicy.pattern=^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*[~`!@#$%^&+=\\-_<>.,?:;*/()|\\[\\]{}'"\\\\]).{16,32}$
+
+#If true will enforce the complexity rules for all properties passwords by stopping Domibus
+#If set to false only warnings are logged
+#domibus.properties.passwordPolicy.enforce=false
+
 # ---------------------------------- Extensions ----------------------------------
 
 #Name of the authentication extension used to verify the chain trust. Default is CXF
 #domibus.extension.iam.authentication.identifier=DEFAULT_AUTHENTICATION_SPI
+
+#With this property, Domibus can disable the trust verification. By default, enabled.
+#domibus.extension.iam.trust.enabled=true
+
 #Name of the authorization extension used to check incoming message authorization. Default is truststore check.
 #domibus.extension.iam.authorization.identifier=DEFAULT_AUTHORIZATION_SPI
 
@@ -150,10 +297,10 @@ domibus.auth.unsecureLoginAllowed=false
 # ---------------------------------- Password Policy -----------------------------------
 
 #Password minimum complexity rules (empty to disable password complexity enforcement)
-#domibus.passwordPolicy.pattern=^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*[~`!@#$%^&+=\\-_<>.,?:;*/()|\\[\\]{}'"\\\\]).{8,32}$
+#domibus.passwordPolicy.pattern=^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*[~`!@#$%^&+=\\-_<>.,?:;*/()|\\[\\]{}'"\\\\]).{16,32}$
 
 #The error message shown to the user in case the password does not follow the regex put in the domibus.passwordPolicy.pattern property
-#domibus.passwordPolicy.validationMessage=Minimum length: 8 characters;Maximum length: 32 characters;At least one letter in lowercase;At least one letter in uppercase;At least one digit;At least one special character
+#domibus.passwordPolicy.validationMessage=Minimum length: 16 characters;Maximum length: 32 characters;At least one letter in lowercase;At least one letter in uppercase;At least one digit;At least one special character
 
 #Password expiration policy in days (0 to disable)
 #domibus.passwordPolicy.expiration=90
@@ -170,18 +317,28 @@ domibus.auth.unsecureLoginAllowed=false
 #Default password validation policy enabled/disabled (by default is enabled)
 #domibus.passwordPolicy.checkDefaultPassword=true
 
+#Default user creation policy enabled/disabled (by default is enabled)
+domibus.passwordPolicy.defaultUser.create=false
+
+#Default user password generation policy enabled/disabled (by default is enabled)
+#domibus.passwordPolicy.defaultUser.autogeneratePassword=true
+
+#Default user password regeneration policy enabled/disabled (by default is disabled).
+#domibus.passwordPolicy.defaultUser.reGeneratePassword=false
+
 #Cron expression that specifies the frequency of the password expiration check
 #domibus.passwordPolicies.check.cron=0 0 0/1 * * ?
 
-domibus.passwordPolicy.defaultUser.create=false
+#Position of the Bouncy Castle in the security providers list; Performance will decrease if the Bouncy Castle provider is moved downward in the list
+#domibus.security.provider.bouncyCastle.position=1
 
 # ---------------------------------- Plugin Users Password Policy -----------------------------------
 
 #Password minimum complexity rules (empty to disable password complexity enforcement)
-#domibus.plugin.passwordPolicy.pattern=(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*[~`!@#$%^&+=\\-_<>.,?:;*/()|\\[\\]{}'"\\\\]).{8,32}$
+#domibus.plugin.passwordPolicy.pattern=(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*[~`!@#$%^&+=\\-_<>.,?:;*/()|\\[\\]{}'"\\\\]).{16,32}$
 
 #The error message shown to the user in case the password does not follow the regex put in the domibus.plugin.passwordPolicy.pattern property
-#domibus.plugin.passwordPolicy.validationMessage=Minimum length: 8 characters;Maximum length: 32 characters;At least one letter in lowercase;At least one letter in uppercase;At least one digit;At least one special character
+#domibus.plugin.passwordPolicy.validationMessage=Minimum length: 16 characters;Maximum length: 32 characters;At least one letter in lowercase;At least one letter in uppercase;At least one digit;At least one special character
 
 #Password expiration policy in days (0 to disable)
 #domibus.plugin.passwordPolicy.expiration=90
@@ -206,6 +363,9 @@ domibus.passwordPolicy.defaultUser.create=false
 #Domibus encrypts the payloads stored in the database or file system if this property is active.
 #domibus.payload.encryption.active=false
 
+#Domibus store the payload on a folder structure YYYY/DD/MM/HH determined by the time of the creation (UTC) + domibus.payload.file_system.folder.added_minutes
+#domibus.payload.file_system.folder.added_minutes=1
+
 #Cron expression that specifies the frequency of checking if the temporary payloads have expired
 #domibus.payload.temp.job.retention.cron=0 0/10 * * * ?
 
@@ -218,18 +378,46 @@ domibus.passwordPolicy.defaultUser.create=false
 #List of directories to check for cleaning the temporary files.
 #domibus.payload.temp.job.retention.directories=domibus.attachment.temp.storage.location
 
+#Limit attachments per message to 28 (count enforced by Apache Santuario library for extended XML signature validation. Ref: https://santuario.apache.org/faq.html#faq-4.SecureValidation)
+#domibus.payload.limit.28attachments.per.message=true
+
+#When set to true, Domibus tries to decompress the archived payloads on receiving a message. In case it fails to decompress one payload, an error receipt is returned. Defaults to false.
+#domibus.payload.decompression.validation.active=false
+
 # ---------------------------------- Message -----------------------------------
 
-#The suffix of the messageId generated by this instance of domibus. Schema is:  ${UUID}@${SUFFIX}
+#The suffix of the messageId generated by this instance of Domibus. Schema is:  ${UUID}@${SUFFIX}
 #domibus.msh.messageid.suffix=edelivery.digital
+
+#The maximum size of message in bytes that can be downloaded via admin console
+#domibus.message.download.maxSize=10000000
+
+#Message resend job execution interval as a cron expression
+#domibus.message.resend.cron = 0 0 0/12 * * ?
+
+#Activates the plugin notification of Test messages
+#domibus.message.test.notification=false
+
+#If enabled, diagnostics data will be logged when a message submission fails
+#domibus.message.submission.diagnostics.enabled=false
 
 # ---------------------------------- Retry -------------------------------------
 
 #Retry Worker execution interval as a cron expression
-#domibus.msh.retry.cron=0/5 * * * * ?
+#domibus.msh.retry.cron=0/30 * * * * ?
 
-#Retry strategy grants few extra seconds to avoid not sending the last attempt (value in miliseconds, default 5000)
-#domibus.msh.retry.messageExpirationDelay=5000
+#Limits the number of WAITING_FOR_RETRY messages retrieved by the retry worker at every run.
+#domibus.msh.retry.maxMessageCount=1000
+
+#Retry strategy grants few extra seconds to avoid not sending the last attempt (value in milliseconds, default 30000)
+#domibus.msh.retry.messageExpirationDelay=30000
+
+#Retry strategy adds these extra minutes to the interval used to search back for messages in WAITING_FOR_RETRY status. For performance reasons, the interval defaults to 10 minutes.
+#When there are older messages in WAITING_FOR_RETRY (e.g. restored messages), increase the interval to capture those messages as well.
+#domibus.msh.retry.timeoutDelay=10
+
+#List of party names for which the smart retry feature is active (comma-separated list)
+#domibus.smart.retry.enabled=
 
 # ---------------------------------- Dynamic Discovery -------------------------
 
@@ -242,38 +430,68 @@ domibus.smlzone=
 #The dynamic discovery client to be used for the dynamic process. Possible values: OASIS and PEPPOL. Defaults to OASIS.
 #domibus.dynamicdiscovery.client.specification=OASIS
 
-#Specifies the PEPPOL dynamic discovery client mode: PRODUCTION or TEST mode. Defaults to TEST.
-#domibus.dynamicdiscovery.peppolclient.mode=TEST
+#The lookup types used by the dynamic discovery client
+#domibus.dynamicdiscovery.client.dns.lookup.types=NAPTR,CNAME
+
+#The document schemes that are used for wildcard matching eg for peppol-doctype-wildcard
+#domibus.dynamicdiscovery.client.wildcardDocumentSchemes=
+
+#OASIS client specific properties
 
 #Apart from validating response of signer certificates against the truststore, the Oasis Dynamic Discovery Client gives
 #the possibility to add (optional) a regular expression to validate the subject of the SMP signer certificate when only issuer chain is added to truststore.
 #domibus.dynamicdiscovery.oasisclient.regexCertificateSubjectValidation=^.*EHEALTH_SMP.*$
 
+#The role of the responder PartyId for the Oasis Dynamic Discovery Client
+#domibus.dynamicdiscovery.oasisclient.partyid.responder.role=http://docs.oasis-open.org/ebxml-msg/ebms/v3.0/ns/core/200704/responder
+
+#The type of the PartyId for the Oasis Dynamic Discovery Client
+#domibus.dynamicdiscovery.oasisclient.partyid.type=urn:oasis:names:tc:ebcore:partyid-type:unregistered
+
+#Peppol client specific properties
+
 #Apart from validating response of signer certificates against the truststore, the Peppol Dynamic Discovery Client gives
 #the possibility to add (optional) a regular expression to validate the subject of the SMP signer certificate when only issuer chain is added to truststore,
 #domibus.dynamicdiscovery.peppolclient.regexCertificateSubjectValidation=.*
 
-#The role of the responder PartyId may be defined here
-#domibus.dynamicdiscovery.partyid.responder.role=http://docs.oasis-open.org/ebxml-msg/ebms/v3.0/ns/core/200704/responder
+#The role of the responder PartyId for the Peppol Dynamic Discovery Client
+#domibus.dynamicdiscovery.peppolclient.partyid.responder.role=http://docs.oasis-open.org/ebxml-msg/ebms/v3.0/ns/core/200704/responder
 
-#The type of the PartyId may be defined here (default values are: urn:fdc:peppol.eu:2017:identifiers:ap for PEPPOL and urn:oasis:names:tc:ebcore:partyid-type:unregistered for OASIS
-#domibus.dynamicdiscovery.partyid.type=urn:oasis:names:tc:ebcore:partyid-type:unregistered
+#The type of the PartyId for the Peppol Dynamic Discovery Client
+#domibus.dynamicdiscovery.peppolclient.partyid.type=urn:fdc:peppol.eu:2017:identifiers:ap
+
+# List of certificate policy OIDs separated by comma where at least one must be in the service metadata signer's
+# certificate policy extension to consider it as is trusted. Example: 1.3.6.1.4.1.7879.13.25
+# (empty value disables the certificate policy validation)
+#domibus.dynamicdiscovery.client.allowedCertificatePolicyOIDs=
 
 #The AS4 transport profile by which the endpoint is identified in the SMP response
 #domibus.dynamicdiscovery.transportprofileas4=bdxr-transport-ebms3-as4-v1p0
+
+#Retention cron expression for the job responsible for deleting from the truststore the dynamically discovered certificates and from the Pmode dynamically discovered parties
+#It executes at 23:00 every Saturday
+#domibus.dynamicdiscovery.lookup.clean.retention.cron=0 0 23 ? * SAT *
+
+#Retention in hours for deleting the following entities:
+# - from the truststore the dynamically discovered certificates
+# - from the Pmode the dynamically discovered parties
+# - final recipient endpoint URL
+#Entities will be deleted if they are not lookup up during the configured value
+#If the property value is empty, the entities will not be deleted
+#domibus.dynamicdiscovery.lookup.clean.retention.hours=48
+
+#Global cache property for dynamic discovery lookup caching in seconds
+#domibus.dynamicdiscovery.lookup.cache.ttl=3600
 
 # ---------------------------------- JMS ---------------------------------------
 
 #Domibus internal queue used for dispatching the pull requests
 #domibus.jms.queue.pull=domibus.internal.pull.queue
 
-#Domibus internal queue used for UI replication
-#domibus.jms.queue.ui.replication=domibus.internal.ui.replication.queue
-
 #The maximum pool size of the JMS connection factory
 #domibus.jms.connectionFactory.maxPoolSize=100
 
-#The maximum number of pending messages to be listed from the backend notification queue. Setting this property is expected to avoid timeouts due to huge resultsets being served.
+#The maximum number of pending messages to be listed from the backend notification queue. Setting this property is expected to avoid timeouts due to huge result sets being served.
 #Setting this property to zero returns all pending messages
 #domibus.listPendingMessages.maxCount=10000
 
@@ -304,12 +522,23 @@ domibus.smlzone=
 #not valid or it has been revoked Domibus will not accept the message (default is true)
 #domibus.sender.certificate.validation.onreceiving=true
 
-#If activated Domibus will verify before receiving a message, the validity and authorization on the sender's certificate. When disabled,
-#none of the other checks are performed on the sender's certificate.
+#If activated Domibus will verify before receiving a User Message when using Push/Pull or a Signal Acknowledgement (NRR) when using Pull, that the sender certificate is valid and not revoked
+# When disabled, none of the other checks are performed on the sender's certificate.
 #domibus.sender.trust.validation.onreceiving=true
 
-#When this property is not empty Domibus will verify before receiving a message, that the subject of the sender's certificate matches the regular expression.
+#If activated Domibus will verify before receiving syncronously a signal message following a push or pull request, that the sender certificate is valid and not revoked
+#domibus.sender.trust.validation.signal.sync.onreceiving=true
+
+#When this property is not empty Domibus will verify before receiving a message(using static or dynamic discovery), that the subject of the sender's certificate matches the regular expression.
 #domibus.sender.trust.validation.expression=
+
+#When this property is not empty Domibus will verify before receiving a message using dynamic discovery receiver, that the subject of the sender's certificate matches the regular expression when only issuer chain is added to truststore
+#A string separated comma(,) of regular expressions which will be applied to the subject DN of the certificate used for signature validation, after trust verification of the certificate chain associated with the certificate.
+#domibus.sender.trust.dynamicReceiver.validation.expression=.*
+
+# List of certificate policy OIDs separated by comma. When this property is not empty Domibus will verify before receiving a message,
+# that certificate contains at lest one certificate policy OID in certificatePolicy extension to consider it as is trusted.
+#domibus.sender.trust.validation.allowedCertificatePolicyOIDs=
 
 #When enabled, Domibus will verify before receiving a message, that the alias (party name) is present in the signing certificate subject.
 #domibus.sender.certificate.subject.check=false
@@ -318,8 +547,11 @@ domibus.smlzone=
 #loaded based on the alias (party name)
 #domibus.sender.trust.validation.truststore_alias=true
 
-#Accepted Format for MessageId (Default value, based on RFC2822 [CORE 5.2.2.1]: ^[\\x20-\\x7E]*$ )
-#domibus.sendMessage.messageIdPattern=^[\\x20-\\x7E]*$
+#Enable the use of the system default certificates (cacerts) to ensure the server trust when downloading over HTTPS
+#domibus.cacerts.download.enabled=true
+
+#Accepted Format for MessageId (Default value, based on RFC2822 [CORE 5.2.2.1]: ^[\\x20-\\x7E]*$ ): all characters in hexa interval 20-7E but '=' character)
+domibus.sendMessage.messageIdPattern=^(?!.*[=])[\\x20-\\x7E]*$
 
 #Accepted Format for xsd:datetime for AS4 communication
 #domibus.datetime.pattern.onreceiving=yyyy-MM-dd'T'HH:mm:ss[.SSSSSSSSS][.SSSSSS][.SSS][z]
@@ -327,17 +559,43 @@ domibus.smlzone=
 #Format of xsd:datetime used for AS4Receipt
 #domibus.datetime.pattern.onsending=yyyy-MM-dd'T'HH:mm:ss.SSS'Z'
 
-#Validate PartyInfo From/To initiator and responder roles. This property helps maintaining backwards compatibility.
-#domibus.partyinfo.roles.validation.enabled=false
+#Validate PartyInfo From/To initiator and responder roles. This property helps maintaining backwards compatibility. It is recommended to be enabled. By default enabled.
+#domibus.partyinfo.roles.validation.enabled=true
+
+#Validate the qualified name of the Mpc in the received UserMessage on MSH endpoint matches the qualified name of the Mpc configured on the pMode leg configuration
+#domibus.pmode.legconfiguration.mpc.validation.enabled=true
+
+#This property defines the behavior of Domibus when the Mpc attribute is not present in the UserMessage.
+# If set to true, Domibus fills in the value of the Mpc with the value found in the matching leg configuration (configured in the pMode).
+# If set to false, Domibus fills in the value of the Mpc with the value of the EBMS3 defaultMpc ("http://docs.oasis-open.org/ebxml-msg/ebms/v3.0/ns/core/200704/defaultMPC")
+#domibus.pmode.legconfiguration.mpc.enabled=true
+
+#If enabled, detailed diagnostics data will be logged when a message does not match the PMode
+#domibus.pmode.legconfiguration.diagnostics.enabled=false
+
+#Accepted Format for action (Default value: ^[^=]*$: all characters but '=' character )
+#domibus.pmode.validation.action.pattern=^[^=]*$
+
+#Accepted Format for service value in the PMode (Default value: ^[^=]*$: all characters but '=')
+#domibus.pmode.validation.service.value.pattern=^[^=]*$
+
+#Accepted Format for service type in the PMode (Default value: ^[^=]*$: all characters but '=')
+#domibus.pmode.validation.service.type.pattern=^[^=]*$
+
+#Pattern for validating partyIdType field (empty to disable)
+#domibus.partIdType.validation.pattern=^urn:oasis:names:tc:ebcore:partyid\-type:[a-zA-Z0-9_:-]+$
+
+#The error message shown to the user in case the partyIdType doesn't follow the regex put in the default.domibus.partIdType.validation.pattern property
+#domibus.partIdType.validation.message=You should follow the rule: urn:oasis:names:tc:ebcore:partyid-type:[....]
 
 # ---------------------------------- Dispatcher --------------------------------
 
-#Timeout values for communication between the access points
+#Timeout values for communication between the Access Points
 #ConnectionTimeOut - Specifies the amount of time, in milliseconds, that the consumer will attempt to establish a connection before it times out. 0 is infinite.
-#domibus.dispatcher.connectionTimeout=240000
+#domibus.dispatcher.connectionTimeout=60000
 
 #ReceiveTimeout - Specifies the amount of time, in milliseconds, that the consumer will wait for a response before it times out. 0 is infinite.
-#domibus.dispatcher.receiveTimeout=240000
+#domibus.dispatcher.receiveTimeout=60000
 
 #Allows chunking when sending messages to other Access Points
 #domibus.dispatcher.allowChunking=false
@@ -356,7 +614,7 @@ domibus.smlzone=
 #when sending large messages(SplitAndJoin) to other Access Points
 #domibus.dispatcher.largeFiles.concurrency=1
 
-#Cache the dispatcher clients used for communication between the access points. Defaults to true.
+#Cache the dispatcher clients used for communication between the Access Points. Defaults to true.
 #domibus.dispatcher.cacheable=true
 
 #Specifies if the connection will be kept alive between C2 and C3. Default value is true.
@@ -405,33 +663,31 @@ domibus.smlzone=
 #Uncomment the following line if you need to tweak the maximum messages with payload deleted to be fully deleted by the retention worker. Defaults to 50.
 #domibus.retentionWorker.message.retention.payload_deleted.max.delete=50
 
-#Define the deletion startegy. Possible values are: DEFAULT and STORED_PROCEDURE
+#Define the deletion strategy. Possible values are: DEFAULT, PARTITIONS (Oracle only)
 #domibus.retentionWorker.deletion.strategy=DEFAULT
 
 ### Configure next properties depending on the selected deletion strategy
 ### ---------------------------------- Retention - Deletion Strategy DEFAULT ---------------------------------
 
-#Maximum number of messages to be deleted by the retention worker in a bulk delete (when not specified in the pMode MPC). Defaults to 1000, maximum allowed when using Oracle database.
+#Maximum number of messages to be deleted by the retention worker in a bulk delete (when not specified in the PMode MPC). Defaults to 1000, maximum allowed when using Oracle database.
 #domibus.retentionWorker.message.retention.batch.delete=1000
 
 #Specify concurrency limits via a "lower-upper" String, e.g. "5-10", or a simple upper limit String, e.g. "10" (the lower limit will be 1 in this case)
 #when deleting messages
 #domibus.retention.jms.concurrency=5-10
 
-### ---------------------------------- Retention - Deletion Strategy STORED_PROCEDURE ---------------------------------
+### ---------------------------------- Retention - Deletion Strategy PARTITIONS ---------------------------------
+#Cron expression used for configuring the partition worker scheduling. The partition worker verifies if partitions were properly created in advance
+#domibus.partitions.worker.cron=0 9 * * * ?
 
-#Timeout for the user message deletion job. Default is 1200 seconds.
-#domibus.retentionWorker.deletion.jobs.timeout=1200
+#Maximum number of expired partitions to be dropped by the retention worker in one run. Defaults to 10 partitions.
+#domibus.partitions.drop.max_partitions=10
 
-#Number of jobs running stored procedures in the database in parallel. Defaults to 2.
-#domibus.retentionWorker.deletion.jobs.number=2
-
-#The interval in minutes between start and end of a deletion job. Defaults to one day.
-#All deletion jobs will delete messages within one interval, apart from the last one which covers all of the remaining.
-#domibus.retentionWorker.deletion.jobs.interval=1440
+#When set to true, before dropping a partition, verifies if all messages on that partition were previously archived.
+#This check is a guard rail for dropping partitions when the eArchiving mechanism is disabled. Default is true.
+#domibus.partitions.drop.check.messages.earchived=true
 
 # ---------------------------------- Proxy -------------------------------------
-
 #domibus.proxy.enabled=false
 #domibus.proxy.http.host=
 #domibus.proxy.http.port=
@@ -444,13 +700,16 @@ domibus.smlzone=
 #The host of the JMS broker
 #activeMQ.broker.host=localhost
 
-#The name of the JMS broker
+#The name of the JMS broker; one or more names can be defined, comma-separated (must match the number of JMX service URLs,
+#as defined in activeMQ.JMXURL)
+#ActiveMQ recommends that the broker name must be unique in the network
 #activeMQ.brokerName=localhost
 
-#The configuration file of the embedded ActiveMQ broker. IN case an external broker is used this property is not needed and it should be removed
+#The configuration file of the embedded ActiveMQ broker. In case an external broker is used this property is not needed and it should be removed
 activeMQ.embedded.configurationFile=file:///${domibus.config.location}/internal/activemq.xml
 
-#The service URL of the MBeanServer
+#The service URL of the MBeanServers; one or more URLs can be defined, comma-separated (must match the number of broker names,
+#as defined in activeMQ.brokerName)
 #activeMQ.JMXURL=service:jmx:rmi:///jndi/rmi://${activeMQ.broker.host}:${activeMQ.connectorPort}/jmxrmi
 
 #The port that the JMX connector will use for connecting to ActiveMQ
@@ -485,6 +744,13 @@ activeMQ.embedded.configurationFile=file:///${domibus.config.location}/internal/
 # Number of threads used to parallelize the pull receipts.
 #domibus.pull.receipt.queue.concurrency=5-20
 
+# Minimum amount of time to wait for a pull receipt before changing the message status back to READY_TO_PULL. In minutes.
+#domibus.pull.receipt.timeout=5
+
+# When handling the reliability of an incoming receipt, in rare cases it may be necessary to try twice to retrieve the sent user message envelope.
+# This property specifies the number of milliseconds to wait before retrying. Use 0 to disable the retrial.
+#domibus.pull.receipt.reliability.retry=500
+
 #Number or requests per MPC executed every cron cycle. Generic value that applies to all MPCs.
 #domibus.pull.request.send.per.job.cycle=1
 
@@ -512,7 +778,7 @@ activeMQ.embedded.configurationFile=file:///${domibus.config.location}/internal/
 #Force message into READY_TO_PULL when mpc attribute is present (default is false)
 #domibus.pull.force_by_mpc=false
 
-#Mpc initiator separator. This is used when the mpc provides information on the initiator: baseMpc/SEPARATOR/partyName
+#MPC initiator separator. This is used when the MPC provides information on the initiator: baseMpc/SEPARATOR/partyName
 #domibus.pull.mpc_initiator_separator=PID
 
 # ---------------------------------- Alert management -----------------------------------
@@ -526,12 +792,15 @@ activeMQ.embedded.configurationFile=file:///${domibus.config.location}/internal/
 #SMTP Socket I/O timeout value in milliseconds
 #domibus.alert.mail.smtp.timeout=5000
 
+#Upgrade the connection to use TLS encryption. Since this parameter is Domibus independent, it should not be renamed
+#domibus.alert.mail.smtp.starttls.enable=true
+
 # -----------------------------------Mandatory configuration start (if domibus.alert.active=true and domibus.alert.mail.sending.active=true) -----------
 
-#Smtp server url for sending alert.
+#SMTP server url for sending alert.
 #domibus.alert.sender.smtp.url=
 
-#Smtp server port.
+#SMTP server port.
 #domibus.alert.sender.smtp.port=
 
 #(optional) Smtp server user.
@@ -556,14 +825,14 @@ activeMQ.embedded.configurationFile=file:///${domibus.config.location}/internal/
 #Lifetime in days of alerts before cleaning.
 #domibus.alert.cleaner.alert.lifetime=20
 
-#Concurency to process the alerts.
+#Concurrency to process the alerts.
 #domibus.alert.queue.concurrency=1
 
 #Frequency of failed alerts retry.
-#domibus.alert.retry.cron=0 0/1 * * * ?
+#domibus.alert.retry.cron=0 0/10 * * * ?
 
 #Elapsed time in minutes between alert retry.
-#domibus.alert.retry.time=1
+#domibus.alert.retry.time=10
 
 #Maximum number of attempts for failed alerts
 #domibus.alert.retry.max_attempts=2
@@ -582,6 +851,15 @@ activeMQ.embedded.configurationFile=file:///${domibus.config.location}/internal/
 
 #Messaging alert module mail subject.
 #domibus.alert.msg.communication_failure.mail.subject=Message status change
+
+#The priority level of the alerts that report the messages in a non-final state that are not processed anymore (LOW, MEDIUM or HIGH)
+#domibus.ongoingMessagesSanitizing.alert.level=MEDIUM
+
+#Subject of the email alerts that report the messages in a non-final state that are not processed anymore
+#domibus.ongoingMessagesSanitizing.alert.mail.subject=Ongoing messages
+
+#Body of the email alerts that report the messages in a non-final state that are not processed anymore
+#domibus.ongoingMessagesSanitizing.alert.mail.body=There are messages currently in ongoing statuses that are not processed anymore. Here is the list of IDs and statuses of these messages: [{messages}].
 
 # ---------------------------------- Alert management:Authentication module -----------------
 
@@ -749,16 +1027,32 @@ activeMQ.embedded.configurationFile=file:///${domibus.config.location}/internal/
 #Account enabled mail subject.
 #domibus.alert.plugin.user.account_enabled.subject=Account enabled
 
-# ---------------------------------- UI Replication -----------------------------------
-#Cron job that will check unsynchronized data between native tables and TB_UI_MESSAGE_UI
-#domibus.ui.replication.sync.cron=0 0 2 * * ?
+# ---------------------------------- Alert management: Partitions -----------------
+#Frequency in days between alerts.
+#domibus.alert.partition.check.frequency_days=1
 
-#max number of records that will be processed by cron job
-#domibus.ui.replication.sync.cron.max.rows=10000
+# ---------------------------------- Alert management: E-Archiving Module -----------------
+#Enable/disable the EArchiving notification failed alerts.
+#domibus.alert.earchive.notification.active=true
 
-#time to wait (in milliseconds) before performing the update synchronization of each row
-#reducing below 200 could lead in some desynchronization issues
-#domibus.ui.replication.wait.before.update=200
+#EArchiving notification failed alert level.
+#domibus.alert.earchive.notification.level=MEDIUM
+
+#EArchiving notification failed mail subject.
+#domibus.alert.earchive.notification.mail.subject=E-Archiving client notification failed
+
+# ---------------------------------- Alert management: Connection Monitoring -----------------
+#Enable/disable the Connection monitoring failed notification alerts.
+#domibus.alert.connection.monitoring.parties=ALL
+
+#Connection monitoring failed alert frequency in days.
+#domibus.alert.connection.monitoring.frequency_days=1
+
+#EArchiving notification failed alert level.
+#domibus.alert.connection.monitoring.level=MEDIUM
+
+#EArchiving notification failed mail subject.
+#domibus.alert.connection.monitoring.mail.subject=Connection monitoring failed
 
 # ---------------------------------- Various -----------------------------------
 
@@ -798,11 +1092,20 @@ activeMQ.embedded.configurationFile=file:///${domibus.config.location}/internal/
 #The maximum length accepted for a property value, in bytes. Defaults to 10000.
 #domibus.property.length.max=10000
 
-#Enables the validation of domibus properties values (defaults to true)
+#Enables the validation of Domibus properties values (defaults to true)
 #domibus.property.validation.enabled=true
+
+#The minimum interval of time after which a new backup file is created, in hours. Defaults to 24. 0 for creating a backup file on every change.
+#domibus.property.backup.period.min=24
+
+#The maximum number of backup files to keep. Defaults to 10. 0 for keeping all of them.
+#domibus.property.backup.history.max=10
 
 #Prints the AS4 payload in the logs while org.apache.cxf is set to at least INFO in logback.xml. Defaults to false.
 #domibus.logging.payload.print=false
+
+#Enable diagnostic logs
+#domibus.logging.diagnostic.enabled=false
 
 #Prints the AS4 metadata in the logs when org.apache.cxf is set to at least INFO in logback.xml. Defaults to true.
 #domibus.logging.metadata.print=true
@@ -815,12 +1118,55 @@ activeMQ.embedded.configurationFile=file:///${domibus.config.location}/internal/
 # Defaults to limit (18000 bytes)
 #domibus.logging.cxf.limit=18000
 
-#The maximum file size in bytes that can be uploaded through REST ( pMode, trustStore)
-#domibus.file.upload.maxSize=10000000
+#Prints the details of the remote receiver certificate used to encrypt the message when sending or the details of the
+#remote sender certificate used to verify the trust of the message when receiving. Defaults to false.
+#domibus.logging.remote.certificates.print=false
+
+#Prints the details of the local sender certificate corresponding to its private key being used to sign the message
+#when sending or the details of the local receiver certificate corresponding to its private key when decrypting the
+#message when receiving. Please note, when enabling this property, there is an extra delay introduced needed to load
+#the certificate corresponding to the private key. Defaults to false.
+#domibus.logging.local.certificates.print=false
+
+#Prints messages that have been prepared to be sent but which have been enqueued for more than the maximum number
+#of minutes that is configured in this property value. Nothing is logged when the eu.domibus.core.ebms3.sender
+#logger level is not set to DEBUG or when this value is not greater than 0. Defaults to 0.
+#domibus.logging.sendMessage.enqueued.max.minutes=0
+
+#Disables offloading the SSL connection to another application - e.g. SSL Forward Proxy - (defaults to false)
+#domibus.connection.cxf.ssl.offload.enable=false
+
+#The maximum file size in bytes that can be uploaded through REST ( pMode, trustStore). The default is 50MB.
+#domibus.file.upload.maxSize=52428800
+
+#How long(in seconds) HSTS should last in the browser's cache(default one year)
+#domibus.httpSecurity.httpStrictTransportSecurity.maxAge=31536000
+
+#Cron expression that specifies the frequency of dispatching messages stuck in SEND_ENQUEUED and WAITING_FOR_RETRY
+#domibus.messages.stuck.cron=0 0 0/3 * * ?
+
+#The strategy adds these minutes to the interval used to search back for messages in SEND_ENQUEUED and WAITING_FOR_RETRY
+#statuses to avoid picking up messages that have been just scheduled to send. Only positive values allowed; a value of
+#at least 360 (minutes) is recommended. The value must be higher than the time the SendRetryWorker needs to complete an
+#execution to ensure the two workers do not overlap.
+#domibus.messages.stuck.ignore.recent.minutes=360
+
+#Limits the number of stuck messages retrieved by the sanitizer worker at every run. If set to 0, no messages will be retried, and an alert will be raised instead.
+#domibus.messages.stuck.maxMessageCount=20000
 
 # ------------------------------- Domibus instance/environment name ------------------
 
 #domibus.instance.name = Domibus
+
+# ------------------------------- Diagnostics ----------------------------------------
+#Add logs containing diagnostics data at regular intervals, if enabled
+
+#Cron expression that specifies the frequency of the diagnostics
+#domibus.diagnostics.cron=0 0 0 ? * FRI *
+
+#Specify what diagnostics should be run. Leave empty to disable diagnostics
+#Set to versionInfo,jmsQueuesInfo,alertsCounts,messagesByStatusCounts to get all diagnostics
+#domibus.diagnostics.list=
 
 # ---------------------------------- Metrics -----------------
 
@@ -829,32 +1175,32 @@ activeMQ.embedded.configurationFile=file:///${domibus.config.location}/internal/
 #For development purposes and browsing, though, it can be very useful.
 #domibus.metrics.jmx.reporter.enable=false
 
-#Enable sl4j reporter for dropwizard metrics.
-#domibus.metrics.slf4j.reporter.enable=true
+#Enable SLF4J reporter for dropwizard metrics.
+#domibus.metrics.slf4j.reporter.enable=false
 
 #The time unit used to configure the frequency of writing statistics into the statistic.log file.
 #Possible values are:SECONDS, MINUTES, HOURS
 #domibus.metrics.slf4j.reporter.period.time.unit=MINUTES
 
 #The number of period of the previously time unit used to configure the frequency of writing statistics into the statistic.log file.
-#EG: the default configuration will write statistics with the file every 1 MINUTE.
+#For example, the default configuration will write statistics with the file every 1 MINUTE.
 #domibus.metrics.slf4j.reporter.period.number=1
 
 #Activate drop wizard memory metrics
-#domibus.metrics.monitor.memory=true
+#domibus.metrics.monitor.memory=false
 
 #Activate drop wizard gc metrics
-#domibus.metrics.monitor.gc=true
+#domibus.metrics.monitor.gc=false
 
 #Activate drop wizard cached threads metrics
-#domibus.metrics.monitor.cached.threads=true
+#domibus.metrics.monitor.cached.threads=false
 
 #Activate drop wizard JMS Queues metrics
-#domibus.metrics.monitor.jms.queues=true
+#domibus.metrics.monitor.jms.queues=false
 
 # how long (in seconds) the JMS count will be cached
-# defaults to 0 - the count isn't cached
-#domibus.metrics.monitor.jms.queues.refresh.period=0
+# defaults to 10
+#domibus.metrics.monitor.jms.queues.refresh.period=10
 
 # show counts only for DLQ queue
 #domibus.metrics.monitor.jms.queues.show.dlq.only=true
@@ -880,10 +1226,207 @@ activeMQ.embedded.configurationFile=file:///${domibus.config.location}/internal/
 #Specifies the parties for which to monitor the connection (comma-separated list)
 #domibus.monitoring.connection.party.enabled=
 
+#Specifies the parties for which to delete the old test messages (comma separated list)
+#domibus.monitoring.connection.party.history.delete=ALL
+
 #Cron expression that specifies the frequency of test messages sent to monitor the C2-C3 connections
 #domibus.monitoring.connection.cron=0 0 0/2 ? * * *
 
-# --------------------------- Payload Decompression Validation -----------------------
+#Cron expression that specifies the frequency of test messages sent to itself (e.g. C2-C2 connections)
+#domibus.monitoring.connection.self.cron=0 0 0/1 ? * * *
+
+#Cron expression that specifies the frequency of deleting test message history sent to gateway party
+#domibus.monitoring.connection.messages.received.history.delete.cron=0 0 0/1 ? * * *
+
+# --------------------------------------------Error Logs-------------------------------
+
+#Cron configuration for cleaning error logs without message ids.
+#domibus.errorlog.cleaner.cron=0 0 0/1 * * ?
+
+#Cron job will delete error logs without message ids older than this property days
+#domibus.errorlog.cleaner.older.days=100
+
+#how maximum error logs will be deleted for each job run
+#domibus.errorlog.cleaner.batch.size=5000
+
+# --------------------------------------------EArchiving-------------------------------
+#Domibus allows for e-archiving if activated
+#domibus.earchive.active=false
+
+#In a cluster configuration the earchive file system storage needs to be accessible by all the nodes from the cluster.
+#domibus.earchive.storage.location=your_file_system_location
+
+#Allows to create empty export batches if no messages are found. If false, no batch nor files created when no messages found.
+#domibus.earchive.export.empty=false
+
+#Specify concurrency limits via a "lower-upper" String, e.g. "5-10", or a simple upper limit String, e.g. "10" (the lower limit will be 1 in this case)
+#for the eArchiving queue
+#domibus.earchive.queue.concurrency=1-1
+
+#Specify concurrency limits via a "lower-upper" String, e.g. "5-10", or a simple upper limit String, e.g. "10" (the lower limit will be 1 in this case)
+#when notify batches updates to other EArchive client
+#domibus.earchive.notification.queue.concurrency=1-1
+
+#Specify concurrency limits via a "lower-upper" String, e.g. "5-10", or a simple upper limit String, e.g. "10" (the lower limit will be 1 in this case)
+#when error in notifying batches updates to other EArchive client
+#domibus.earchive.notification.dlq.concurrency=1-1
+
+#Cron configuration for executing the eArchiving continuous process.
+#domibus.earchive.cron=0 0 0/1 * * ?
+
+#Cron configuration for executing the eArchiving sanity process.
+#domibus.earchive.sanitizer.cron=0 0 0/1 * * ?
+
+# Time window limit (in days) for the continuous eArchiving process. (0 means no limit).
+#domibus.earchive.continuous.time_window_limit=0
+
+# Time window limit (in days) for the sanitizer eArchiving process. (0 means no limit).
+#domibus.earchive.sanitizer.time_window_limit=0
+
+#The creation date of the last UserMessage processed by the earchiving continuous batch minus the ['messageCheck.delay' hour] will be latest userMessage taken for the sanitizer
+#domibus.earchive.sanitizer.messagesCheck.delay.hours=24
+
+#Cron configuration for executing the eArchiving cleanup process.
+#domibus.earchive.retention.cron=0 0 0/2 * * ?
+
+#maximum messages to be archived for one batch
+#domibus.earchive.batch.size=5000
+
+#maximum payload size of messages to be archived for one batch(in Mb); 0 to disable
+#domibus.earchive.batch.size.payload=0
+
+#maximum earchive batches to be created during one job
+#domibus.earchive.batch.max=10
+
+#Timeout used to retrieve the messages in minutes. Defaults to 0.
+# WARNING: this value is rounded to the previous whole hour to limit the messages search scope
+# (ex: runtime = 15h12 | if retry.timeout=5  -> latest time for a message to be taken into account: 15h00 and earlier
+#                      | if retry.timeout=30 -> latest time for a message to be taken into account: 14h00 and earlier)
+#-1 disables this functionality and retrieve the timeout with the loaded PMode
+#domibus.earchive.batch.retry.timeout=0
+
+#Endpoint where the e-archiving client receives notifications
+#domibus.earchive.notification.url=
+
+#The user used to access the endpoint of the e-archiving client
+#domibus.earchive.notification.username=
+
+#The password used to access the endpoint of the e-archiving client
+#domibus.earchive.notification.password=
+
+#Timeout used when notifying the e-archiving client
+#domibus.earchive.notification.timeout=5000
+
+#Specify whether to use a proxy when notifying the e-archiving client
+#domibus.earchive.notification.useProxy=false
+
+# For methods: History Of Exports and enqueued batches, also return message list as part of batches objects.
+# Note: in case of large batch size returning message list in all of the batches in a list will slow down the response time of the services.
+#domibus.earchive.rest.messages.return=false
+
+#If a batch is not archived during this time, it is considered as expired
+#domibus.earchive.retention.days=30
+
+#Maximum number of earchive batches to delete at a time
+#domibus.earchive.retention.delete.max=5000
+
+#If physically delete archived and/or expired batches from the corresponding tables
+#domibus.earchive.retention.delete.db=true
+
+#An alert is sent if the start date of the continuous job was not updated between now and now - allowed_window (in hours)
+#domibus.earchive.start_date.stopped.allowed_hours=24
+
+#Enable/disable the Earchive non final message alert.
+#domibus.alert.earchive.messages_non_final.active=true
+
+#Alert level for Earchive non final message.
+#domibus.alert.earchive.messages_non_final.level=HIGH
+
+#Earchive non final message mail subject.
+#domibus.alert.earchive.messages_non_final.mail.subject=Earchive: message not in final state
+
+#Enable/disable the Earchive start date stopped alert.
+#domibus.alert.earchive.start_date_stopped.active=true
+
+#Alert level for Earchive start date stopped.
+#domibus.alert.earchive.start_date_stopped.level=HIGH
+
+#Earchive start date stopped mail subject.
+#domibus.alert.earchive.start_date_stopped.mail.subject=Earchive: continuous job start date stopped
+
+#Enable if e-archiving client needs to receive notifications with additional details like message start date and end date
+#domibus.earchive.notification.details.enabled=false
+
+#Enable/disable the Earchive message export failed alert.
+#domibus.alert.earchive.export.failed.active=true
+
+#Alert level for Earchive message export failed alert.
+#domibus.alert.earchive.export.failed.level=HIGH
+
+#Earchive message export failed alert mail subject.
+#domibus.alert.earchive.export.failed.mail.subject=Earchive: sanitizer export message failed
+
+#Cron configuration for executing the eArchiving process needed to reexport stuck messages.
+#domibus.earchive.stuck.cron=0 0 0/1 * * ?
+
+#The strategy adds these minutes to the interval used to search back for batches stuck in STARTED statuses to avoid
+#picking up batches that have been just created. Only positive values allowed; a value of at least 360 (minutes) is
+#recommended.
+#domibus.earchive.stuck.ignore.recent.minutes=360
+
+# --------------------------------------------Quartz-------------------------------
+#Specifies the amount of time, in milliseconds that used to check if any quartz triggers are blocked. Default value is 10 minutes.
+#domibus.quartz.trigger.blocked.duration=600000
+
+#The number of milliseconds the scheduler will 'tolerate' a trigger to pass its next-fire-time by, before being considered "misfired". default: 60000
+#Recommended value for cluster environments: 120000
+#domibus.quartz.jobStore.misfireThreshold=60000
+
+#Whether or not the acquisition of next triggers to fire should occur within an explicit database lock. default: false.
+#Recommended value for cluster environments: true
+#domibus.quartz.jobStore.acquireTriggersWithinLock=false
+
+# --------------------------------------------Distributed Cache -------------------------------
+#The distributed cache is only used when Domibus runs in a cluster eg domibus.deployment.clustered=true
+
+#Maximum used heap size in megabytes
+#domibus.cache.distributed.size=5
+
+#The maximum number of seconds for each entry to stay in the cache. Entries that are older than timeToLiveSeconds will be automatically evicted from the cache.
+#Updates on the entry will change the eviction time. Any integer between 0 and Integer.MAX_VALUE. 0 means infinite. Default is 1h.
+#domibus.cache.distributed.ttl=3600
+
+#Maximum number of seconds for each entry to stay idle in the cache. Entries that are idle (not touched) for more than max idle seconds will get automatically evicted from the cache.
+#Entry is touched if get(), getAll(), put() or containsKey() is called. Any integer between 0 and Integer.MAX_VALUE. 0 means infinite. Default is 3600.
+#The time precision is limited by 1 second. The MaxIdle that less than 1 second can lead to unexpected behaviour.
+#domibus.cache.distributed.idle.max=3600
+
+#The near cache default size for the distributed cache
+#domibus.cache.distributed.nearcache.size=5000
+
+#The maximum number of seconds for each entry to stay in the near cache
+#domibus.cache.distributed.nearcache.ttl=3600
+
+#Set the maximum number of seconds each entry can stay in the Near Cache as untouched (not-read).
+#Entries that are not read (touched) more than domibus.cache.distributed.nearcache.idle.max value will get removed from the Near Cache.
+#domibus.cache.distributed.nearcache.idle.max=3600
+
+#Sets the port the distributed cache member will try to bind on.
+#A valid port value is between 0 and 65535. A port number of 0 will let the system pick up an ephemeral port.
+#domibus.cache.distributed.port=6701
+
+#Sets if a distributed cache member is allowed to find a free port by incrementing the port number when it encounters an occupied port.
+#If you explicitly want to control the port a distributed cache member is going to use, set domibus.cache.distributed.port.autoincrement to false. In this case, the distributed cache member is going to try the port
+#and if the port is not free, the member will not start and throw an exception.
+#If this value is set to true, the distributed cache will start at the port specified and will try until it finds a free port, or until it runs out of ports to try
+#domibus.cache.distributed.port.autoincrement=true
+
+#The maximum number of ports allowed to use in case autoincrement is set to true
+#domibus.cache.distributed.port.count=5
+
+#Sets the well known members of the distributed cache. Can be a comma separated string, eg '10.11.12.1,10.11.12.2' which indicates multiple members are going to be added.
+#You can also provide a range of IP addresses, such as 10.11.12.1-7.
+#domibus.cache.distributed.members=127.0.0.1
 
 #Domibus validates decompressed payload if activated
 domibus.payload.decompression.validation.active=false

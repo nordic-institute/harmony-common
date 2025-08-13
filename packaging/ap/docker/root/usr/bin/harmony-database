@@ -1,0 +1,162 @@
+#!/bin/bash
+set -euo pipefail
+
+source /usr/lib/harmony-common
+
+readonly DEFAULT_DB_DRIVER_CLASS="com.mysql.cj.jdbc.Driver"
+readonly DEFAULT_DB_URL_PREFIX="jdbc:mysql://"
+readonly DEFAULT_DB_URL_PARAMS="?sslMode=preferred&allowPublicKeyRetrieval=true&useLegacyDatetimeCode=false&serverTimezone=UTC"
+readonly DEFAULT_DB_SCHEMA="harmony_ap"
+readonly DEFAULT_DB_PORT="3306"
+readonly DEFAULT_PROPERTY_PREFIX="domibus.datasource"
+
+parse_cli_args() {
+  # shellcheck disable=SC2034 # Used in sourced scripts
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      --mode)         MODE="$2";        shift 2 ;;
+      --stage)        STAGE="${2:+$2-}dbcli";  shift 2 ;;
+      --node-id)      NODE_ID="$2";     shift 2 ;;
+      --config-path)  CONFIG_PATH="$2"; shift 2 ;;
+      --property-prefix) PROPERTY_PREFIX="$2";  shift 2 ;;
+      --db-url)       DB_URL="$2";      shift 2 ;;
+      --db-driver-class) DB_DRIVER_CLASS="$2";  shift 2 ;;
+      --db-host)      DB_HOST="$2";     shift 2 ;;
+      --db-port)      DB_PORT="$2";     shift 2 ;;
+      --db-schema)    DB_SCHEMA="$2";   shift 2 ;;
+      --db-user)      DB_USER="$2";     shift 2 ;;
+      --db-password)  DB_PASSWORD="$2"; shift 2 ;;
+      *) die "Unknown option: $1" ;;
+    esac
+  done
+}
+
+parse_db_url() {
+  local url="$1"
+  local no_scheme no_params hostport path host port ipv6_pattern
+
+  no_scheme="${url#*://}"                           # strip 'jdbc:<vendor>://' prefix
+  no_params="${no_scheme%%\?*}"                     # remove query string (e.g. "?param")
+  if [[ "$no_params" == */* ]]; then
+    hostport="${no_params%%/*}"                     # split at first "/" for host:port
+    path="${no_params#*/}"                          # remainder is schema/path
+  else
+    die "DB_URL parsing error: schema is required in URL"
+  fi
+
+  ipv6_pattern='^\[[0-9A-Fa-f:]+\](:[0-9]+)?$'      # IPv6 literal with optional port
+  if [[ "$hostport" =~ $ipv6_pattern ]]; then
+    host="${hostport%]*}"                           # drop trailing "]" and port
+    host="${host#[}"                                # drop leading "["
+    port="${hostport##*:}"                          # part after last ":"
+  elif [[ "$hostport" == *:* ]]; then
+    host="${hostport%%:*}"                          # part before ":" for host
+    port="${hostport##*:}"                          # part after last ":" for port
+  else
+    host="$hostport"                                # no port present
+    port=""                                         # empty port
+  fi
+
+  DB_HOST="${DB_HOST:-$host}"
+  DB_PORT="${DB_PORT:-$port}"
+  DB_SCHEMA="${DB_SCHEMA:-$path}"
+}
+
+build_db_url() {
+  if [ -z "${DB_HOST:-}" ]; then
+    die "Missing required database host (DB_HOST); cannot construct database URL"
+  fi
+
+  DB_PORT="${DB_PORT:-$DEFAULT_DB_PORT}"
+  DB_SCHEMA="${DB_SCHEMA:-$DEFAULT_DB_SCHEMA}"
+
+  DB_URL="${DEFAULT_DB_URL_PREFIX}${DB_HOST}:${DB_PORT}/${DB_SCHEMA}${DEFAULT_DB_URL_PARAMS}"
+}
+
+resolve_db_connection_details() {
+  if [[ -n "${DB_URL:-}" ]]; then
+    parse_db_url "$DB_URL"
+    log DEBUG "Using provided database URL: $DB_URL"
+  elif [[ -n "${DB_HOST:-}" ]]; then
+    build_db_url
+    log DEBUG "Constructed database URL from host, port and schema: $DB_URL"
+  elif prop_url=$(get_property "${PROPERTY_PREFIX}.url") && [[ -n "$prop_url" && "$prop_url" != *\$\{*\}* ]]; then
+    DB_URL="$prop_url"
+
+    parse_db_url "$DB_URL"
+    log DEBUG "Using database URL from configuration: $DB_URL"
+  else
+    DB_HOST=$(get_property "domibus.database.serverName")
+    DB_PORT=$(get_property "domibus.database.port")
+    DB_SCHEMA=$(get_property "domibus.database.schema")
+
+    build_db_url
+    log DEBUG "Constructed database URL from configuration properties: $DB_URL"
+  fi
+
+  if [[ -n "${DB_URL:-}" && -z "${DB_DRIVER_CLASS:-}" ]]; then
+    case "$DB_URL" in
+      jdbc:mariadb:*) DB_DRIVER_CLASS="org.mariadb.jdbc.Driver" ;;
+      jdbc:mysql:*)   DB_DRIVER_CLASS="com.mysql.cj.jdbc.Driver" ;;
+    esac
+  fi
+
+  DB_SCHEMA="${DB_SCHEMA:-$DEFAULT_DB_SCHEMA}"
+  DB_PORT="${DB_PORT:-$DEFAULT_DB_PORT}"
+  DB_DRIVER_CLASS="${DB_DRIVER_CLASS:-$DEFAULT_DB_DRIVER_CLASS}"
+}
+
+validate_db_connection_details() {
+  if [[ -z "${DB_URL:-}" || -z "${DB_HOST:-}" || -z "${DB_PORT:-}" ]]; then
+    die "Database parameter validation failed: DB_URL, DB_HOST, and DB_PORT must not be empty"
+  fi
+}
+
+print_connection_info() {
+  log DEBUG "Database connection information:"
+  log DEBUG "  URL: $DB_URL"
+  log DEBUG "  Driver class: $DB_DRIVER_CLASS"
+  log DEBUG "  Host: $DB_HOST"
+  log DEBUG "  Port: $DB_PORT"
+  log DEBUG "  Schema: $DB_SCHEMA"
+
+  printf '%s %s %s %s %s\n' "$DB_URL" "$DB_DRIVER_CLASS" "$DB_HOST" "$DB_PORT" "$DB_SCHEMA"
+}
+
+wait_for_db() {
+  if [[ -z "${DB_USER:-}" || -z "${DB_PASSWORD:-}" ]]; then
+    die "Database user and password must be set"
+  fi
+
+  log INFO "Waiting for database ${DB_HOST}:${DB_PORT} to become available..."
+
+  if ! timeout 60 bash -c "until MYSQL_PWD='$DB_PASSWORD' mysqladmin ping -h '$DB_HOST' -P '$DB_PORT' -u '$DB_USER' >/dev/null 2>&1; do sleep 3; done"; then
+    die "Unable to connect to the database at ${DB_HOST}:${DB_PORT}. Exiting."
+  fi
+
+  log INFO "Database is available"
+}
+
+main() {
+  parse_cli_args "$@"
+
+  PROPERTY_PREFIX="${PROPERTY_PREFIX:-$DEFAULT_PROPERTY_PREFIX}"
+
+  case "$MODE" in
+    get-connection-details)
+      resolve_db_connection_details
+      validate_db_connection_details
+      print_connection_info
+      ;;
+    wait-for-db)
+      wait_for_db
+      ;;
+    *)
+      die "Unsupported mode: $MODE. Available modes: resolve-db-url, wait-for-db."
+      ;;
+  esac
+}
+
+if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
+  main "$@"
+fi

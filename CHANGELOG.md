@@ -1,5 +1,20 @@
 # Changelog
 
+## SMP - 2.2.1 - 2025-08-07
+
+- NEDS-215: Merge DomiSMP 5.1.1 into Harmony SMP code base
+- NEDS-219: Update ServiceMetadata to use ID instead of ServiceID (still supported, but deprecated) for the OASIS Service Metadata Publishing (SMP) Version 2.0 specification compliance
+
+## Access Point 2.6.0 - 2025-07-15
+
+- NEDS-209: Merge Domibus 5.1.9 into Harmony Access Point
+- NEDS-209: Update dependencies with known vulnerabilities
+- NEDS-205: New Docker image for Access Point
+- NEDS-213: Fix connection monitoring template
+- NEDS-210: Fix index creation database migrations
+- NEDS-197-199: Improve logger configuration
+- NEDS-214: Enhance xsd:dateTime parsing by supporting standard format via configuration property
+
 ## SMP - 2.2.0 - 2025-02-03
 
 - NEDS-194: Merge DomiSMP 5.1.0 into Harmony SMP code base

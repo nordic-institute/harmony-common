@@ -1,0 +1,41 @@
+#!/command/with-contenv bash
+set -euo pipefail
+
+: "${JAVA_OPTS:=-Xms256m -Xmx512m -XX:+UseParallelGC -XX:+ExitOnOutOfMemoryError -XX:MaxMetaspaceSize=256m}"
+
+if [ "${HARMONY_MODE:-}" = init ]; then
+  harmony-log INFO "$NODE_ID" "svc-harmonyap" "Harmony Access Point is in init mode; startup skipped."
+    s6-svc -d /run/service/svc-harmonyap
+    exit 0
+fi
+
+exec java \
+  $JAVA_OPTS \
+  --add-opens=java.base/java.lang=ALL-UNNAMED \
+  --add-opens=java.base/java.io=ALL-UNNAMED \
+  --add-opens=java.base/java.util=ALL-UNNAMED \
+  --add-opens=java.base/java.util.concurrent=ALL-UNNAMED \
+  --add-opens=java.rmi/sun.rmi.transport=ALL-UNNAMED \
+  --add-opens=java.base/java.nio=ALL-UNNAMED \
+  --add-opens=java.base/sun.nio.ch=ALL-UNNAMED \
+  --add-opens=java.management/sun.management=ALL-UNNAMED \
+  --add-opens=jdk.management/com.sun.management.internal=ALL-UNNAMED \
+  --add-exports=java.base/jdk.internal.ref=ALL-UNNAMED \
+  -Djava.awt.headless=true \
+  -Djava.io.tmpdir="${CATALINA_TEMP_DIR}" \
+  -Djava.rmi.server.hostname=127.0.0.1 \
+  -Djava.security.egd=file:/dev/urandom \
+  -Djava.util.logging.config.file="${HARMONY_BASE}/conf/logging.properties" \
+  -Djava.util.logging.manager=org.apache.juli.ClassLoaderLogManager \
+  -Djavax.net.ssl.trustStore="${TLS_TRUSTSTORE_PATH}" \
+  -Djavax.net.ssl.trustStorePassword="${TLS_TRUSTSTORE_PASSWORD}" \
+  -Dlogback.configurationFile="${LOGBACK_CONFIG_FILE}" \
+  -Dcatalina.base="${HARMONY_BASE}" \
+  -Dcatalina.home="${HARMONY_HOME}" \
+  -Ddomibus.config.location="${HARMONY_BASE}/etc" \
+  -Ddomibus.work.location="${ACTIVEMQ_WORK_LOCATION}" \
+  -Ddomibus.extensions.location="${HARMONY_HOME}" \
+  -Ddomibus.node.id="${NODE_ID}" \
+  -Ddomibus.backup.preserveFileDate="${PRESERVE_BACKUP_FILE_DATE}" \
+  -classpath "${HARMONY_HOME}/bin/bootstrap.jar:${HARMONY_HOME}/bin/tomcat-juli.jar" \
+  org.apache.catalina.startup.Bootstrap

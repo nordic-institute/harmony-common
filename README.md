@@ -37,10 +37,10 @@ The [open-source community of Harmony eDelivery Access](https://edelivery.digita
 
 ## Installation
 
-The easiest way to install Harmony is to use the installation packages provided by NIIS. The installation guides for Access Point and SMP are available here:
+The easiest way to install Harmony is to use the installation packages or Docker image provided by NIIS. The installation guides for Access Point and SMP are available here:
 
-- [Access Point](doc/harmony-ap_installation_guide.md)
-- [SMP](doc/harmony-smp_installation_guide.md)
+- Access Point: [Ubuntu servers](doc/harmony-ap_installation_guide.md) - [Docker image](doc/harmony-ap_docker_installation_guide.md)
+- SMP: [Ubuntu servers](doc/harmony-smp_installation_guide.md)
 
 ## Building Packages
 
