@@ -1,0 +1,18 @@
+Source: harmony-ap
+Section: web
+Priority: optional
+Maintainer: Nordic Institute for Interoperability Solutions (NIIS) <edelivery@niis.org>
+Build-Depends: debhelper-compat (= 13)
+Standards-Version: 4.7.0
+Homepage: https://edelivery.digital
+Rules-Requires-Root: no
+Vcs-Git: https://github.com/nordic-institute/harmony-access-point.git
+Vcs-Browser: https://github.com/nordic-institute/harmony-access-point
+
+Package: harmony-ap
+Architecture: all
+Multi-Arch: foreign
+Depends: ${misc:Depends}, openjdk-11-jre-headless | java11-runtime-headless | java11-runtime | java8-runtime-headless | java8-runtime, mysql-server, mysql-client, crudini, xmlstarlet, grep, tzdata
+Description: Harmony eDelivery Access - Access Point (AP)
+ A packaged Access Point service for Harmony eDelivery. Installs Tomcat
+ runtime, webapp and utilities. Service unit provided for systemd.

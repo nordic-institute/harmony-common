@@ -1,0 +1,76 @@
+inputs:
+  # Tomcat
+  - from: vendor:tomcat
+    do: unpack
+    strip: 1
+    exclude:
+      - "webapps/**"
+      - "**/*.bat"
+      - "**/*.txt"
+      - "**/*.md"
+    into: .
+    routes:
+      - include:
+          - "bin/*.sh"
+          - "bin/*.jar"
+        into: /opt/harmony-smp/bin
+      - include:
+          - "lib/**"
+        into: /opt/harmony-smp/lib
+      - include:
+          - "conf/**"
+        exclude:
+          - "conf/logging.properties"
+          - "conf/server.xml"
+        into: /opt/harmony-smp/setup/tomcat-defaults
+
+  # Liquibase
+  - from: vendor:liquibase
+    do: unpack
+    include:
+      - "liquibase"
+      - "internal/lib/commons-collections4.jar"
+      - "internal/lib/commons-io.jar"
+      - "internal/lib/commons-lang3.jar"
+      - "internal/lib/commons-text.jar"
+      - "internal/lib/h2.jar"
+      - "internal/lib/liquibase-core.jar"
+      - "internal/lib/opencsv.jar"
+      - "internal/lib/picocli.jar"
+      - "internal/lib/snakeyaml.jar"
+    into: /opt/harmony-smp/liquibase
+
+  # JDBC drivers
+  - from: vendor:mysqlj
+    do: copy
+    into: /opt/harmony-smp/lib/mysql-connector-j.jar
+  - from: vendor:mariadbj
+    do: copy
+    into: /opt/harmony-smp/lib/mariadb-java-client.jar
+
+  # Application
+  - from: artifact:war
+    do: unpack
+    strip: 0
+    into: /opt/harmony-smp/webapps/ROOT/
+
+  # Overlays
+  - from: project:components/smp/overlays/common
+    do: copy
+    into: /
+  - from: project:components/smp/overlays/deb
+    do: copy
+    into: /
+    when: { scopes: [deb] }
+
+  # Deb
+  - from: project:components/smp/packaging/deb/generic
+    do: copy
+    into: /deb
+    when: { scopes: [ deb ] }
+
+  # Changelog
+  - from: project:CHANGELOG.md
+    do: copy
+    into: /usr/share/doc/harmony-smp/CHANGELOG.md
+    when: { scopes: [deb] }

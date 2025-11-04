@@ -1,0 +1,48 @@
+# ============================
+# Build output
+# ============================
+/build/
+/.gradle/
+/out/
+
+# ============================
+# Java / Maven artifacts
+# ============================
+*.class
+*.hprof
+
+# ============================
+# Gradle / Metadata
+# ============================
+.gradle
+/gradle/wrapper/gradle-wrapper.jar
+.gradletasknamecache
+*.gc
+
+# ============================
+# VCS
+# ============================
+.git/
+.gitignore
+.gitattributes
+
+# ============================
+# IDE / Editor Configuration
+# ============================
+.idea/
+.vscode/
+*.iml
+
+# ============================
+# Temporary / OS junk
+# ============================
+*~
+*.swp
+*.swo
+*.log
+*.tmp
+*.bak
+*.orig
+*.rej
+.DS_Store
+Thumbs.db

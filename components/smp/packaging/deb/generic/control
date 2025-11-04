@@ -1,0 +1,18 @@
+Source: harmony-smp
+Section: web
+Priority: optional
+Maintainer: Nordic Institute for Interoperability Solutions (NIIS) <edelivery@niis.org>
+Build-Depends: debhelper-compat (= 13)
+Standards-Version: 4.7.0
+Homepage: https://edelivery.digital
+Rules-Requires-Root: no
+Vcs-Git: https://github.com/nordic-institute/harmony-smp.git
+Vcs-Browser: https://github.com/nordic-institute/harmony-smp
+
+Package: harmony-smp
+Architecture: all
+Multi-Arch: foreign
+Depends: ${misc:Depends}, openjdk-11-jre-headless | java11-runtime-headless | java11-runtime | java8-runtime-headless | java8-runtime, mysql-server, mysql-client, xmlstarlet, gettext-base
+Description: Harmony eDelivery Access - Service Metadata Publisher (SMP)
+ A packaged SMP service for Harmony eDelivery. Installs Tomcat runtime,
+ webapp and utilities. Service unit provided for systemd.
