@@ -1,5 +1,10 @@
 # Building Harmony eDelivery Access
 
+## License
+
+This document is licensed under the Creative Commons Attribution-ShareAlike 4.0 International License.
+To view a copy of this license, visit <https://creativecommons.org/licenses/by-sa/4.0/>
+
 ## Overview
 
 Harmony Common provides the Gradle build system that produces deployable artifacts for **Harmony Access Point (AP)** and **Harmony Service Metadata Publisher (SMP)** components. The build compiles upstream Maven projects, assembles file trees based on manifest definitions, and outputs Debian packages and Docker images.
