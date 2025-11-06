@@ -7,12 +7,22 @@ pluginManagement {
 buildCache {
   local {
     isEnabled = true
+    directory = file(".gradle/build-cache")
   }
 
   remote<HttpBuildCache> {
     val cacheUrl = providers.gradleProperty("harmony.cache.url").orNull
-    url = cacheUrl?.let { uri(it) }
-    isEnabled = cacheUrl != null
+    val component = providers.gradleProperty("harmony.cache.component").orNull
+    val version = providers.gradleProperty("harmony.cache.version").orNull
+
+    url = when {
+      cacheUrl != null && component != null && version != null ->
+        uri("$cacheUrl$component/$version/")
+      cacheUrl != null ->
+        uri(cacheUrl)
+      else -> null
+    }
+    isEnabled = url != null
 
     isPush = providers.gradleProperty("harmony.cache.push")
       .map { it.toBoolean() }
