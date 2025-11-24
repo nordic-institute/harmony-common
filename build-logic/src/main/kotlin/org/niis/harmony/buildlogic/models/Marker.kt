@@ -20,7 +20,7 @@ data class DockerBuildMarker(
   val tags: List<String>,
   val platforms: String,
   val vcsRevision: String,
-  val buildId: String,
+  val buildNumber: Int,
   val baseImageDigests: String,
   val dockerfile: String,
   val contextRel: String,

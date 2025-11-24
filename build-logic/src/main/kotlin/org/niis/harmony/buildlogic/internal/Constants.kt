@@ -5,7 +5,8 @@ internal object Constants {
   object BuildDefaults {
     // General
     val COMPONENTS: List<String> = listOf("ap", "smp")
-    const val BUILD_ID: String = "local"
+    const val BUILD_NUMBER: Int = 0
+    const val CACHE_RESTORE_ONLY: Boolean = false
 
     // Compile
     const val COMPILE_SKIP_TESTS: Boolean = false

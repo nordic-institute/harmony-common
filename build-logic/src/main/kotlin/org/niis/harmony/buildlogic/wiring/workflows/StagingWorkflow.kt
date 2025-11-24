@@ -1,6 +1,7 @@
 package org.niis.harmony.buildlogic.wiring.workflows
 
 import org.gradle.api.Project
+import org.gradle.api.file.Directory
 import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.TaskProvider
 import org.niis.harmony.buildlogic.internal.Mappers
@@ -49,7 +50,8 @@ internal fun Project.registerStagingWorkflows(
     scope = Scope.DOCKER,
     contentProviders = allInputs.docker,
     taskNameSuffix = "Docker",
-    outputDir = BuildOutputPaths.dockerStagingDir(project, component.name)
+    outputDir = BuildOutputPaths.dockerStagingDir(project, component.name),
+    cacheRestoreOnly = context.build.cache.restoreOnly
   ).also { it.configure { dependsOn(dependsOn) } }
 
   val debTasks = component.deb.distros.get().associateWith { distro ->
@@ -59,7 +61,8 @@ internal fun Project.registerStagingWorkflows(
       distro = distro,
       contentProviders = allInputs.debByDistro.getValue(distro),
       taskNameSuffix = "Deb${distro.toTaskName()}",
-      outputDir = BuildOutputPaths.debStagingDir(project, component.name, distro)
+      outputDir = BuildOutputPaths.debStagingDir(project, component.name, distro),
+      cacheRestoreOnly = context.build.cache.restoreOnly
     ).also { it.configure { dependsOn(dependsOn) } }
   }
 
@@ -162,7 +165,8 @@ private fun Project.registerAssembleStagingTask(
   distro: String? = null,
   contentProviders: ContentProviders,
   taskNameSuffix: String,
-  outputDir: Provider<org.gradle.api.file.Directory>
+  outputDir: Provider<Directory>,
+  cacheRestoreOnly: Provider<Boolean>
 ): TaskProvider<AssembleStagingTask> {
   val taskName = "assembleStaging${component.name.toTaskName()}$taskNameSuffix"
   return tasks.register(taskName, AssembleStagingTask::class.java) {
@@ -185,5 +189,6 @@ private fun Project.registerAssembleStagingTask(
     this.projectPaths.set(contentProviders.projectPaths)
 
     this.stagingDir.set(outputDir)
+    this.cacheRestoreOnly.set(cacheRestoreOnly)
   }
 }

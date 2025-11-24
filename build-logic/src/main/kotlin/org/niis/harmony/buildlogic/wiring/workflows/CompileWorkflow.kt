@@ -1,6 +1,7 @@
 package org.niis.harmony.buildlogic.wiring.workflows
 
 import org.gradle.api.Project
+import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.TaskProvider
 import org.niis.harmony.buildlogic.internal.utils.BuildOutputPaths
 import org.niis.harmony.buildlogic.internal.utils.toTaskName
@@ -8,7 +9,8 @@ import org.niis.harmony.buildlogic.models.ComponentConfig
 import org.niis.harmony.buildlogic.tasks.CompileMavenComponentTask
 
 internal fun Project.registerCompileWorkflow(
-  component: ComponentConfig
+  component: ComponentConfig,
+  cacheRestoreOnly: Provider<Boolean>
 ): TaskProvider<CompileMavenComponentTask> {
   val taskName = "compileJava${component.name.toTaskName()}"
   return tasks.register(taskName, CompileMavenComponentTask::class.java) {
@@ -48,5 +50,7 @@ internal fun Project.registerCompileWorkflow(
     component.compile.artifacts.get().values.forEach { artifactProvider ->
       this.artifacts.from(artifactProvider)
     }
+
+    this.cacheRestoreOnly.set(cacheRestoreOnly)
   }
 }

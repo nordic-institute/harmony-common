@@ -21,10 +21,11 @@ internal fun Project.registerDockerWorkflowForTarget(
   version: Provider<String>,
   epoch: Provider<Long>,
   revision: Provider<String>,
-  buildId: Provider<String>,
+  buildNumber: Provider<Int>,
   dependsOnTask: TaskProvider<*>,
   contextDirProvider: Provider<Directory>,
-  dockerfileProvider: Provider<RegularFile>
+  dockerfileProvider: Provider<RegularFile>,
+  cacheRestoreOnly: Provider<Boolean>
 ): TaskProvider<BuildDockerTask> {
   val taskName = "buildDocker${nameForTask.toTaskName()}"
   return tasks.register(taskName, BuildDockerTask::class.java) {
@@ -48,15 +49,18 @@ internal fun Project.registerDockerWorkflowForTarget(
     this.vcsRevision.set(revision)
     this.dockerfile.set(dockerfileProvider)
     this.dockerContext.set(contextDirProvider)
-    this.buildId.set(buildId)
+    this.buildNumber.set(buildNumber)
+    this.cacheRestoreOnly.set(cacheRestoreOnly)
 
     this.baseImageDigests.set(
-      providers.of(BaseImageDigestsValueSource::class.java) {
-        parameters.dockerExecutable.set(tools.docker)
-        parameters.dockerfile.set(dockerfileProvider)
-        parameters.enabled.set(target.trackBase)
-        parameters.execTimeoutSeconds.set(tools.execTimeoutSeconds)
-      }
+      target.baseImageDigests.orElse(
+        providers.of(BaseImageDigestsValueSource::class.java) {
+          parameters.dockerExecutable.set(tools.docker)
+          parameters.dockerfile.set(dockerfileProvider)
+          parameters.enabled.set(target.trackBase)
+          parameters.execTimeoutSeconds.set(tools.execTimeoutSeconds)
+        }
+      )
     )
 
     this.markerFile.set(BuildOutputPaths.dockerMarker(project, nameForTask, version))

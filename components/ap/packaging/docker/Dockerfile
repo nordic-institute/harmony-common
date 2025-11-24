@@ -18,7 +18,7 @@ FROM ubuntu:24.04
 
 ARG VERSION
 ARG VCS_REVISION
-ARG BUILD_ID
+ARG BUILD_NUMBER
 ARG AP_UID="999"
 ARG AP_GID="999"
 
@@ -33,7 +33,7 @@ LABEL org.opencontainers.image.vendor="Nordic Institute for Interoperability Sol
       org.opencontainers.image.source="https://github.com/nordic-institute/harmony-access-point" \
       org.opencontainers.image.version="$VERSION" \
       org.opencontainers.image.revision="${VCS_REVISION:-local}" \
-      org.niis.harmony.build-id="${BUILD_ID:-local}"
+      org.niis.harmony.build-number="${BUILD_NUMBER:-0}"
 
 RUN set -eux; \
     apt-get update -qq; \

@@ -43,6 +43,9 @@ abstract class CompileMavenComponentTask @Inject constructor(
   @get:Internal
   abstract val repoDir: DirectoryProperty
 
+  @get:Internal
+  abstract val cacheRestoreOnly: Property<Boolean>
+
   @get:Input
   abstract val sourceDateEpoch: Property<Long>
 
@@ -87,6 +90,16 @@ abstract class CompileMavenComponentTask @Inject constructor(
 
   @TaskAction
   fun execute() {
+    check(!(cacheRestoreOnly.getOrElse(false))) {
+      """
+      Build cache miss: This task requires cached artifacts but none were found.
+
+      Build number: #${project.providers.gradleProperty("harmony.${component.get()}.build.number").orNull ?: "unknown"}
+      Component:    ${component.get()}
+      Version:      ${version.get()}
+      """.trimIndent()
+    }
+
     val repositoryDir = repoDir.get().asFile.also {
       require(it.isDirectory) { "Maven repository directory does not exist: ${it.absolutePath}" }
     }

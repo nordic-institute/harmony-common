@@ -33,6 +33,9 @@ abstract class BuildDockerTask @Inject constructor(
   @get:Internal
   abstract val component: Property<String>
 
+  @get:Internal
+  abstract val cacheRestoreOnly: Property<Boolean>
+
   @get:Input
   abstract val version: Property<String>
 
@@ -40,7 +43,7 @@ abstract class BuildDockerTask @Inject constructor(
   abstract val sourceDateEpoch: Property<Long>
 
   @get:Input
-  abstract val buildId: Property<String>
+  abstract val buildNumber: Property<Int>
 
   @get:Input
   abstract val imageName: Property<String>
@@ -111,6 +114,17 @@ abstract class BuildDockerTask @Inject constructor(
 
   @TaskAction
   fun execute() {
+    check(!(cacheRestoreOnly.getOrElse(false))) {
+      """
+      Build cache miss: This task requires cached artifacts but none were found.
+
+      Build number: #${project.providers.gradleProperty("harmony.${component.get()}.build.number").orNull ?: "unknown"}
+      Component:    ${component.get()}
+      Version:      ${version.get()}
+      Output mode:  ${outputMode.get().name.lowercase()}
+      """.trimIndent()
+    }
+
     validateDockerfileCopies()
 
     val buildSpec = createBuildSpec()
@@ -148,12 +162,12 @@ abstract class BuildDockerTask @Inject constructor(
       !stagingRoot.resolve(path).exists()
     }
 
-    if (missingPaths.isNotEmpty()) {
-      throw IllegalStateException(
-        "Dockerfile COPY statements reference paths that don't exist in staging:\n" +
-        missingPaths.joinToString("\n") { "  - $it" } +
-        "\nEnsure manifest.yml generates these paths or update Dockerfile"
-      )
+    check(missingPaths.isEmpty()) {
+      """
+      Dockerfile COPY statements reference paths that don't exist in staging:
+      ${missingPaths.joinToString("\n") { "  - $it" }}
+      Ensure manifest.yml generates these paths or update Dockerfile
+      """.trimIndent()
     }
 
     val stagingDirectories = stagingRoot.listFiles()
@@ -168,15 +182,16 @@ abstract class BuildDockerTask @Inject constructor(
 
     if (undeclaredPaths.isNotEmpty()) {
       logger.warn(
-        "Staging directories not declared in Dockerfile COPY statements:\n" +
-        undeclaredPaths.sorted().joinToString("\n") { "  - $it" } +
-        "\nThese directories will NOT be included in the Docker image."
+        """
+        Staging directories not declared in Dockerfile COPY statements:
+        ${undeclaredPaths.sorted().joinToString("\n") { "  - $it" }}
+        These directories will NOT be included in the Docker image.
+        """.trimIndent()
       )
     }
 
     logger.info(
-      "Validated Dockerfile COPY statements: " +
-      "${copyStatements.size} paths declared, ${missingPaths.size} missing, ${undeclaredPaths.size} undeclared"
+      "Validated Dockerfile COPY statements: ${copyStatements.size} paths declared, ${missingPaths.size} missing, ${undeclaredPaths.size} undeclared"
     )
   }
 
@@ -285,7 +300,7 @@ abstract class BuildDockerTask @Inject constructor(
         "SOURCE_DATE_EPOCH" to sourceDateEpoch.get().toString(),
         "VERSION" to version.get(),
         "VCS_REVISION" to vcsRevision.get(),
-        "BUILD_ID" to buildId.get(),
+        "BUILD_NUMBER" to buildNumber.get().toString(),
         "BASE_IMAGE_DIGESTS" to baseImageDigests.get()
       ),
       provenanceDisabled = provenanceDisabled.getOrElse(true),
@@ -315,7 +330,7 @@ abstract class BuildDockerTask @Inject constructor(
       tags = tags.get(),
       platforms = platforms.get(),
       vcsRevision = vcsRevision.get(),
-      buildId = buildId.get(),
+      buildNumber = buildNumber.get(),
       baseImageDigests = baseImageDigests.get(),
       dockerfile = dockerfileRel,
       contextRel = contextRel,

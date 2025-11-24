@@ -8,6 +8,7 @@ import org.niis.harmony.buildlogic.internal.utils.parseCsvList
 import org.niis.harmony.buildlogic.internal.utils.sanitize
 import org.niis.harmony.buildlogic.models.BuildConfig
 import org.niis.harmony.buildlogic.models.BuildInfoConfig
+import org.niis.harmony.buildlogic.models.CacheConfig
 import org.niis.harmony.buildlogic.models.CompileConfig
 import org.niis.harmony.buildlogic.models.ComponentConfig
 import org.niis.harmony.buildlogic.models.DebConfig
@@ -26,7 +27,10 @@ object ConfigFactory {
     return BuildConfig(
       components = resolver.list("components").orElse(Constants.BuildDefaults.COMPONENTS),
       debBuilderImage = resolver.string("deb.builder.image").orElse(Constants.BuildDefaults.DEB_BUILDER_IMAGE),
-      debBuilderTag = resolver.string("deb.builder.tag").orElse(Constants.BuildDefaults.DEB_BUILDER_TAG)
+      debBuilderTag = resolver.string("deb.builder.tag").orElse(Constants.BuildDefaults.DEB_BUILDER_TAG),
+      cache = CacheConfig(
+        restoreOnly = resolver.boolean("cache.restoreOnly").orElse(Constants.BuildDefaults.CACHE_RESTORE_ONLY)
+      )
     )
   }
 
@@ -76,11 +80,11 @@ object ConfigFactory {
     }
 
     return CompileConfig(
-      skipTests = resolver.boolean("compile.skipTests", Constants.BuildDefaults.COMPILE_SKIP_TESTS),
+      skipTests = resolver.boolean("compile.skipTests").orElse(Constants.BuildDefaults.COMPILE_SKIP_TESTS),
       repoDir = repoDir,
       mavenProfiles = resolver.list("compile.maven.profiles").orElse(Constants.BuildDefaults.COMPILE_MAVEN_PROFILES),
       mavenGoals = resolver.list("compile.maven.goals").orElse(Constants.BuildDefaults.COMPILE_MAVEN_GOALS),
-      javaVersion = resolver.int("compile.javaVersion", Constants.BuildDefaults.COMPILE_JAVA_VERSION),
+      javaVersion = resolver.int("compile.javaVersion").orElse(Constants.BuildDefaults.COMPILE_JAVA_VERSION),
       artifacts = artifacts
     )
   }
@@ -91,7 +95,7 @@ object ConfigFactory {
 
   private fun createDebConfig(project: Project, resolver: PropertyResolver, component: String) = DebConfig(
     distros = resolver.list("deb.distros").orElse(Constants.BuildDefaults.DEB_DISTROS),
-    sign = resolver.boolean("deb.sign", Constants.BuildDefaults.DEB_SIGN),
+    sign = resolver.boolean("deb.sign").orElse(Constants.BuildDefaults.DEB_SIGN),
     keyId = resolver.string("deb.keyId"),
     packageName = resolver.string("deb.packageName").orElse(debPackageName(component)),
     gpgHome = resolver.string("deb.gpgHome").orElse(project.provider { defaultGpgHome() })
@@ -106,9 +110,10 @@ object ConfigFactory {
     outputMode = resolver.string("docker.outputMode")
       .orElse(Constants.BuildDefaults.DOCKER_OUTPUT_MODE)
       .map { DockerOutputMode.fromString(it) },
-    trackBase = resolver.boolean("docker.trackBase", Constants.BuildDefaults.DOCKER_TRACK_BASE),
-    pullAlways = resolver.boolean("docker.pullAlways", Constants.BuildDefaults.DOCKER_PULL_ALWAYS),
-    provenanceDisabled = resolver.boolean("docker.provenanceDisabled", Constants.BuildDefaults.DOCKER_PROVENANCE_DISABLED)
+    trackBase = resolver.boolean("docker.trackBase").orElse(Constants.BuildDefaults.DOCKER_TRACK_BASE),
+    pullAlways = resolver.boolean("docker.pullAlways").orElse(Constants.BuildDefaults.DOCKER_PULL_ALWAYS),
+    provenanceDisabled = resolver.boolean("docker.provenanceDisabled").orElse(Constants.BuildDefaults.DOCKER_PROVENANCE_DISABLED),
+    baseImageDigests = resolver.string("docker.baseImageDigests")
   )
 
   private fun createBuildInfoConfig(
@@ -131,7 +136,7 @@ object ConfigFactory {
     return BuildInfoConfig(
       epoch = epoch,
       revision = revision,
-      buildId = resolver.string("build.id").orElse(Constants.BuildDefaults.BUILD_ID)
+      buildNumber = resolver.int("build.number").orElse(Constants.BuildDefaults.BUILD_NUMBER)
     )
   }
 
@@ -200,8 +205,8 @@ object ConfigFactory {
 
     fun string(key: String) = resolve(key)
     fun list(key: String) = listCache.getOrPut(key) { resolve(key).map { it.parseCsvList() } }
-    fun boolean(key: String, default: Boolean) = resolve(key).map { it.toBoolean() }.orElse(default)
-    fun int(key: String, default: Int) = resolve(key).map { it.toInt() }.orElse(default)
+    fun boolean(key: String) = resolve(key).map { it.toBoolean() }
+    fun int(key: String) = resolve(key).map { it.toInt() }
 
     fun vendorMetadata(dependency: String, key: String): Provider<String> {
       return resolve("vendor.$dependency.$key")

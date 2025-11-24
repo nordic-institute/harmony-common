@@ -66,7 +66,7 @@ object PluginWiring {
   )
 
   private fun registerComponentWorkflows(component: ComponentConfig, context: BuildContext) {
-    val compileTask = context.root.registerCompileWorkflow(component)
+    val compileTask = context.root.registerCompileWorkflow(component, context.build.cache.restoreOnly)
     val stagingTasks = context.root.registerStagingWorkflows(component, context, dependsOn = compileTask)
 
     val dockerfileProvider = stagingTasks.docker.flatMap { it.stagingDir.file("Dockerfile") }
@@ -78,10 +78,11 @@ object PluginWiring {
       version = component.version,
       epoch = component.buildInfo.epoch,
       revision = component.buildInfo.revision,
-      buildId = component.buildInfo.buildId,
+      buildNumber = component.buildInfo.buildNumber,
       dependsOnTask = stagingTasks.docker,
       contextDirProvider = stagingTasks.docker.flatMap { it.stagingDir },
-      dockerfileProvider = dockerfileProvider
+      dockerfileProvider = dockerfileProvider,
+      cacheRestoreOnly = context.build.cache.restoreOnly
     )
 
     context.root.registerPrintDockerBaseDigestsTask(

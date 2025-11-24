@@ -8,7 +8,12 @@ import java.io.File
 data class BuildConfig(
   val components: Provider<List<String>>,
   val debBuilderImage: Provider<String>,
-  val debBuilderTag: Provider<String>
+  val debBuilderTag: Provider<String>,
+  val cache: CacheConfig
+)
+
+data class CacheConfig(
+  val restoreOnly: Provider<Boolean>
 )
 
 data class ComponentConfig(
@@ -50,13 +55,14 @@ data class DockerTargetConfig(
   val outputMode: Provider<DockerOutputMode>,
   val trackBase: Provider<Boolean>,
   val pullAlways: Provider<Boolean>,
-  val provenanceDisabled: Provider<Boolean>
+  val provenanceDisabled: Provider<Boolean>,
+  val baseImageDigests: Provider<String>
 )
 
 data class BuildInfoConfig(
   val epoch: Provider<Long>,
   val revision: Provider<String>,
-  val buildId: Provider<String>
+  val buildNumber: Provider<Int>
 )
 
 data class VendorConfig(

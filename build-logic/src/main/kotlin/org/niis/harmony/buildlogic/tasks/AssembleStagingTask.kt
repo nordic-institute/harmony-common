@@ -51,6 +51,9 @@ abstract class AssembleStagingTask @Inject constructor(
   @get:Internal
   abstract val component: Property<String>
 
+  @get:Internal
+  abstract val cacheRestoreOnly: Property<Boolean>
+
   @get:Input
   abstract val scope: Property<Scope>
 
@@ -84,6 +87,17 @@ abstract class AssembleStagingTask @Inject constructor(
 
   @TaskAction
   fun execute() {
+    check(!(cacheRestoreOnly.getOrElse(false))) {
+      """
+      Build cache miss: This task requires cached artifacts but none were found.
+
+      Build number: #${project.providers.gradleProperty("harmony.${component.get()}.build.number").orNull ?: "unknown"}
+      Component:    ${component.get()}
+      Scope:        ${scope.get().name.lowercase()}
+      Distro:       ${distro.orNull ?: "N/A"}
+      """.trimIndent()
+    }
+
     require(manifestFingerprint.orNull?.isNotBlank() == true) {
       "Manifest fingerprint is blank. Caching may be ineffective. " +
       "(component='${component.get()}', scope='${scope.get()}', distro='${distro.orNull}')."

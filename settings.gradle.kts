@@ -14,10 +14,13 @@ buildCache {
     val cacheUrl = providers.gradleProperty("harmony.cache.url").orNull
     val component = providers.gradleProperty("harmony.cache.component").orNull
     val version = providers.gradleProperty("harmony.cache.version").orNull
+    val discriminator = providers.gradleProperty("harmony.cache.discriminator").orNull
 
     url = when {
-      cacheUrl != null && component != null && version != null ->
-        uri("$cacheUrl$component/$version/")
+      cacheUrl != null && component != null && version != null -> {
+        val cacheKey = if (discriminator != null) "$version/$discriminator" else version
+        uri("$cacheUrl$component/$cacheKey/")
+      }
       cacheUrl != null ->
         uri(cacheUrl)
       else -> null

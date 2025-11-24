@@ -258,7 +258,7 @@ Properties are organized by category. **Global or per-component** means you can 
 |--------------------------|-----------------------------|----------------------|
 | `harmony.build.epoch`    | SOURCE_DATE_EPOCH timestamp | Git commit timestamp |
 | `harmony.build.revision` | VCS revision hash           | Git HEAD commit      |
-| `harmony.build.id`       | Build identifier            | `local`              |
+| `harmony.build.number`   | Build number                | `0`                  |
 
 #### Vendor Dependencies (Global or Per-Component)
 
@@ -467,12 +467,12 @@ Override reproducibility metadata if needed:
 ```properties
 harmony.ap.build.epoch=1234567890
 harmony.ap.build.revision=abc123
-harmony.ap.build.id=ci-run-456
+harmony.ap.build.number=456
 ```
 
 ### CI/CD Integration
 
-Typical CI pipeline command:
+#### Basic CI Pipeline Command
 
 ```bash
 ./gradlew --no-daemon \
@@ -480,12 +480,43 @@ Typical CI pipeline command:
   -Pharmony.compile.skipTests=false
 ```
 
+#### CI Pipeline with Remote Build Cache
+
+To leverage remote build cache in CI for faster rebuilds:
+
+```bash
+./gradlew --no-daemon --build-cache \
+  buildDebAp buildDockerAp \
+  -Pharmony.build.number=${BUILD_NUMBER} \
+  -Pharmony.ap.version=2.7.0 \
+  -Pharmony.cache.url=https://artifactory.example.com/cache-repo/ \
+  -Pharmony.cache.component=ap \
+  -Pharmony.cache.version=2.7.0 \
+  -Pharmony.cache.discriminator=${BUILD_NUMBER} \
+  -Pharmony.cache.push=true \
+  -Pharmony.cache.username=${CACHE_USER} \
+  -Pharmony.cache.password=${CACHE_PASSWORD}
+```
+
+**Cache property explanation:**
+- `harmony.build.number` - Identifies this specific build (embedded in artifacts)
+- `harmony.cache.component` - First path segment: `<url>/<component>/...`
+- `harmony.cache.version` - Second path segment: `<url>/<component>/<version>/...`
+- `harmony.cache.discriminator` - Discriminates between builds: `<url>/<component>/<version>/<discriminator>/`
+- `harmony.cache.push=true` - Uploads build results to cache after successful build
+- `harmony.cache.restoreOnly=true` - (Optional) Fails if cache miss, useful for publish jobs
+
+**Example cache paths:**
+- Without discriminator: `https://artifactory.example.com/cache-repo/ap/2.7.0/`
+- With discriminator=123: `https://artifactory.example.com/cache-repo/ap/2.7.0/123/`
+
 **CI environment considerations:**
 - Use `--no-daemon` to avoid leaving background processes
+- Use `--build-cache` to enable remote caching
 - Authenticate to Docker registries before building if pushing images
 - Set `harmony.exec.docker=docker` explicitly if needed
 - Archive outputs from `build/deb/` and `build/metadata/` for provenance
-- Consider enabling remote build cache for faster rebuilds
+- Use same `harmony.cache.discriminator` across jobs to share build artifacts via cache
 
 ### Customizing Component Repositories
 

@@ -42,6 +42,9 @@ abstract class BuildDebTask @Inject constructor(
   @get:Internal
   abstract val distro: Property<String>
 
+  @get:Internal
+  abstract val cacheRestoreOnly: Property<Boolean>
+
   @get:Input
   abstract val debSign: Property<Boolean>
 
@@ -101,6 +104,17 @@ abstract class BuildDebTask @Inject constructor(
 
   @TaskAction
   fun execute() {
+    check(!(cacheRestoreOnly.getOrElse(false))) {
+      """
+      Build cache miss: This task requires cached artifacts but none were found.
+
+      Build number: #${project.providers.gradleProperty("harmony.${component.get()}.build.number").orNull ?: "unknown"}
+      Component:    ${component.get()}
+      Version:      ${version.get()}
+      Distro:       ${distro.get()}
+      """.trimIndent()
+    }
+
     val workspace = setupWorkspace()
     prepareDebianDirectoryFromStaging(workspace)
     val signingSetup = prepareSigningSetup(workspace)
@@ -163,12 +177,12 @@ abstract class BuildDebTask @Inject constructor(
   private fun validateInstallFile(workspace: Workspace, stagingRoot: File) {
     val installFile = workspace.debianDir.resolve("install")
 
-    if (!installFile.exists()) {
-      throw IllegalStateException(
-        "debian/install file is missing for component='${component.get()}', distro='${distro.get()}'. " +
-        "This file is required to specify which directories from staging should be packaged. " +
-        "Create it at: components/${component.get()}/packaging/deb/generic/install"
-      )
+    check(installFile.exists()) {
+      """
+      debian/install file is missing for component='${component.get()}', distro='${distro.get()}'.
+      This file is required to specify which directories from staging should be packaged.
+      Create it at: components/${component.get()}/packaging/deb/generic/install
+      """.trimIndent()
     }
 
     val declaredPaths = installFile.readLines()
@@ -182,12 +196,12 @@ abstract class BuildDebTask @Inject constructor(
       !stagingRoot.resolve(path).exists()
     }
 
-    if (missingPaths.isNotEmpty()) {
-      throw IllegalStateException(
-        "debian/install references paths that don't exist in staging for component='${component.get()}':\n" +
-        missingPaths.joinToString("\n") { "  - /$it" } +
-        "\nEnsure manifest.yml generates these paths or update debian/install"
-      )
+    check(missingPaths.isEmpty()) {
+      """
+      debian/install references paths that don't exist in staging for component='${component.get()}':
+      ${missingPaths.joinToString("\n") { "  - /$it" }}
+      Ensure manifest.yml generates these paths or update debian/install
+      """.trimIndent()
     }
 
     val stagingDirectories = stagingRoot.listFiles()
@@ -200,15 +214,16 @@ abstract class BuildDebTask @Inject constructor(
 
     if (undeclaredPaths.isNotEmpty()) {
       logger.warn(
-        "Staging directories not declared in debian/install for component='${component.get()}':\n" +
-        undeclaredPaths.sorted().joinToString("\n") { "  - /$it" } +
-        "\nThese directories will NOT be included in the .deb package."
+        """
+        Staging directories not declared in debian/install for component='${component.get()}':
+        ${undeclaredPaths.sorted().joinToString("\n") { "  - /$it" }}
+        These directories will NOT be included in the .deb package.
+        """.trimIndent()
       )
     }
 
     logger.info(
-      "Validated debian/install for component='${component.get()}': " +
-      "${declaredPaths.size} paths declared, ${missingPaths.size} missing, ${undeclaredPaths.size} undeclared"
+      "Validated debian/install for component='${component.get()}': ${declaredPaths.size} paths declared, ${missingPaths.size} missing, ${undeclaredPaths.size} undeclared"
     )
   }
 
