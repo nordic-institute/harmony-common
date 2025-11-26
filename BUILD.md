@@ -488,10 +488,10 @@ To leverage remote build cache in CI for faster rebuilds:
 ./gradlew --no-daemon --build-cache \
   buildDebAp buildDockerAp \
   -Pharmony.build.number=${BUILD_NUMBER} \
-  -Pharmony.ap.version=2.7.0 \
+  -Pharmony.ap.version=1.0.0 \
   -Pharmony.cache.url=https://artifactory.example.com/cache-repo/ \
   -Pharmony.cache.component=ap \
-  -Pharmony.cache.version=2.7.0 \
+  -Pharmony.cache.version=1.0.0 \
   -Pharmony.cache.discriminator=${BUILD_NUMBER} \
   -Pharmony.cache.push=true \
   -Pharmony.cache.username=${CACHE_USER} \
@@ -507,8 +507,8 @@ To leverage remote build cache in CI for faster rebuilds:
 - `harmony.cache.restoreOnly=true` - (Optional) Fails if cache miss, useful for publish jobs
 
 **Example cache paths:**
-- Without discriminator: `https://artifactory.example.com/cache-repo/ap/2.7.0/`
-- With discriminator=123: `https://artifactory.example.com/cache-repo/ap/2.7.0/123/`
+- Without discriminator: `https://artifactory.example.com/cache-repo/ap/1.0.0/`
+- With discriminator=123: `https://artifactory.example.com/cache-repo/ap/1.0.0/123/`
 
 **CI environment considerations:**
 - Use `--no-daemon` to avoid leaving background processes
