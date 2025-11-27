@@ -8,6 +8,22 @@ import org.niis.harmony.buildlogic.internal.utils.toTaskName
 import org.niis.harmony.buildlogic.models.ComponentConfig
 import org.niis.harmony.buildlogic.tasks.CompileMavenComponentTask
 
+private val EXCLUDED_GENERATED_DIRS = listOf(
+  "**/target/**",
+  "**/node/**",
+  "**/node_modules/**",
+  "**/dist/**",
+  "**/test_backupFile/**"
+)
+
+private val EXCLUDED_METADATA = listOf(
+  ".git/**",
+  ".idea/**",
+  "**/*.iml",
+  "**/*.md",
+  "**/.gitignore"
+)
+
 internal fun Project.registerCompileWorkflow(
   component: ComponentConfig,
   cacheRestoreOnly: Provider<Boolean>
@@ -30,7 +46,7 @@ internal fun Project.registerCompileWorkflow(
       providers.provider {
         fileTree(component.compile.repoDir.get().asFile) {
           include("**/src/**")
-          exclude("**/target/**", ".git/**", ".idea/**", "**/*.iml")
+          exclude(EXCLUDED_GENERATED_DIRS + EXCLUDED_METADATA)
         }
       }
     )
@@ -38,7 +54,7 @@ internal fun Project.registerCompileWorkflow(
       providers.provider {
         fileTree(component.compile.repoDir.get().asFile) {
           include("**/pom.xml")
-          exclude("**/target/**")
+          exclude(EXCLUDED_GENERATED_DIRS)
         }
       }
     )
