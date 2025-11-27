@@ -36,7 +36,10 @@ internal fun Project.registerCompileWorkflow(
     )
     this.poms.from(
       providers.provider {
-        fileTree(component.compile.repoDir.get().asFile) { include("**/pom.xml") }
+        fileTree(component.compile.repoDir.get().asFile) {
+          include("**/pom.xml")
+          exclude("**/target/**")
+        }
       }
     )
     this.wrapper.from(
