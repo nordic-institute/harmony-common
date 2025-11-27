@@ -33,9 +33,6 @@ RUN apt-get update -qq \
  && groupadd -g "${GID}" "${UNAME}" 2>/dev/null \
         || groupmod -n "${UNAME}" "$(getent group "${GID}" | cut -d: -f1)" \
  && useradd -m -u "${UID}" -g "${GID}" "${UNAME}" 2>/dev/null \
-        || usermod -l "${UNAME}" -d /home/"${UNAME}" -m "$(getent passwd "${UID}" | cut -d: -f1)" \
- && mkdir -p /workspace \
- && chown "${UNAME}:${UNAME}" /workspace
+        || usermod -l "${UNAME}" -d /home/"${UNAME}" -m "$(getent passwd "${UID}" | cut -d: -f1)"
 
 USER ${UNAME}
-WORKDIR /workspace
