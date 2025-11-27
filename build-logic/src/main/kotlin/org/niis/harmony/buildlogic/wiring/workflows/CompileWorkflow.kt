@@ -12,8 +12,7 @@ private val EXCLUDED_GENERATED_DIRS = listOf(
   "**/target/**",
   "**/node/**",
   "**/node_modules/**",
-  "**/dist/**",
-  "**/test_backupFile/**"
+  "**/dist/**"
 )
 
 private val EXCLUDED_METADATA = listOf(
@@ -47,7 +46,7 @@ internal fun Project.registerCompileWorkflow(
         fileTree(component.compile.repoDir.get().asFile) {
           include("**/src/**")
           exclude(EXCLUDED_GENERATED_DIRS + EXCLUDED_METADATA)
-        }
+        }.files
       }
     )
     this.poms.from(
@@ -55,7 +54,7 @@ internal fun Project.registerCompileWorkflow(
         fileTree(component.compile.repoDir.get().asFile) {
           include("**/pom.xml")
           exclude(EXCLUDED_GENERATED_DIRS)
-        }
+        }.files
       }
     )
     this.wrapper.from(
