@@ -9,10 +9,6 @@ repositories {
   mavenCentral()
 }
 
-kotlin {
-  jvmToolchain(21)
-}
-
 dependencies {
   implementation(libs.jackson.dataformat.yaml)
   implementation(libs.jackson.module.kotlin)

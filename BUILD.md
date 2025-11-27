@@ -13,12 +13,12 @@ This guide covers how to build these artifacts locally and configure the build f
 
 ## Prerequisites
 
-| Tool                      | Why it is needed                        | Notes                                          |
-|---------------------------|-----------------------------------------|------------------------------------------------|
-| Git 2.30+                 | Clone and manage Harmony repositories   | -                                              |
-| JDK 17 or newer           | Run Gradle and Kotlin build logic       | Set `JAVA_HOME` if not using system default    |
-| Docker 20.10+ with Buildx | Build Docker images and Debian packages | Run `docker buildx create --use` once per host |
-| GnuPG (optional)          | Sign Debian packages                    | Only needed if you plan to sign `.deb` files   |
+| Tool                      | Why it is needed                        | Notes                                                                       |
+|---------------------------|-----------------------------------------|-----------------------------------------------------------------------------|
+| Git 2.30+                 | Clone and manage Harmony repositories   | -                                                                           |
+| JDK 17+                   | Run Gradle wrapper and build-logic      | Set `JAVA_HOME` if not using system default                                 |
+| Docker 20.10+ with Buildx | Build Docker images and Debian packages | Run `docker buildx create --use` once per host                              |
+| GnuPG (optional)          | Sign Debian packages                    | Only needed if you plan to sign `.deb` files                                |
 
 ## Repository Layout
 
