@@ -1,17 +1,21 @@
 package org.niis.harmony.buildlogic.internal
 
-import com.fasterxml.jackson.core.JsonFactory
-import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.dataformat.yaml.YAMLFactory
-import com.fasterxml.jackson.module.kotlin.registerKotlinModule
+import tools.jackson.databind.ObjectMapper
+import tools.jackson.databind.json.JsonMapper
+import tools.jackson.dataformat.yaml.YAMLMapper
+import tools.jackson.module.kotlin.kotlinModule
 
 object Mappers {
 
   val json: ObjectMapper by lazy {
-    ObjectMapper(JsonFactory()).registerKotlinModule()
+    JsonMapper.builder()
+      .addModule(kotlinModule())
+      .build()
   }
 
   val yaml: ObjectMapper by lazy {
-    ObjectMapper(YAMLFactory()).registerKotlinModule()
+    YAMLMapper.builder()
+      .addModule(kotlinModule())
+      .build()
   }
 }

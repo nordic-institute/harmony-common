@@ -17,24 +17,25 @@ ENV LANG=C.UTF-8 \
     APT_LISTCHANGES_FRONTEND=none \
     DEBIAN_FRONTEND=noninteractive
 
-RUN apt-get -qq update \
- && apt-get -qqy install --no-install-recommends \
-      build-essential \
-      debhelper \
-      devscripts \
-      fakeroot \
-      gnupg \
-      gzip \
-      libdistro-info-perl \
-      tzdata \
+RUN apt-get update -qq \
+ && apt-get install -qqy --no-install-recommends \
+        build-essential \
+        debhelper \
+        devscripts \
+        fakeroot \
+        gnupg \
+        gzip \
+        libdistro-info-perl \
+        tzdata \
  && rm -rf /var/lib/apt/lists/* \
- && echo "${TZ}" > /etc/timezone \
  && ln -snf "/usr/share/zoneinfo/${TZ}" /etc/localtime \
+ && echo "${TZ}" > /etc/timezone \
  && groupadd -g "${GID}" "${UNAME}" 2>/dev/null \
-    || groupmod -n "${UNAME}" "$(getent group "${GID}" | cut -d: -f1)" \
+        || groupmod -n "${UNAME}" "$(getent group "${GID}" | cut -d: -f1)" \
  && useradd -m -u "${UID}" -g "${GID}" "${UNAME}" 2>/dev/null \
-    || usermod -l "${UNAME}" -d /home/"${UNAME}" -m "$(getent passwd "${UID}" | cut -d: -f1)" \
- && install -d -o "${UID}" -g "${GID}" /home/"${UNAME}"/.m2
+        || usermod -l "${UNAME}" -d /home/"${UNAME}" -m "$(getent passwd "${UID}" | cut -d: -f1)" \
+ && mkdir -p /workspace \
+ && chown "${UNAME}:${UNAME}" /workspace
 
 USER ${UNAME}
-WORKDIR /mnt
+WORKDIR /workspace

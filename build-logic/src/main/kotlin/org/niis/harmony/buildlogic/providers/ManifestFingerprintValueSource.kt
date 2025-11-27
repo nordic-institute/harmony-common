@@ -1,9 +1,9 @@
 package org.niis.harmony.buildlogic.providers
 
-import com.fasterxml.jackson.databind.JsonNode
-import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.databind.node.ArrayNode
-import com.fasterxml.jackson.databind.node.ObjectNode
+import tools.jackson.databind.JsonNode
+import tools.jackson.databind.ObjectMapper
+import tools.jackson.databind.node.ArrayNode
+import tools.jackson.databind.node.ObjectNode
 import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.provider.Property
 import org.gradle.api.provider.ValueSource
@@ -92,20 +92,20 @@ abstract class ManifestFingerprintValueSource : ValueSource<String, ManifestFing
   private fun canonicalizeObject(obj: ObjectNode): ObjectNode {
     val sorted = jsonMapper.createObjectNode()
 
-    obj.fieldNames().asSequence().toList().sorted().forEach { key ->
+    obj.propertyNames().toList().sorted().forEach { key ->
       val value = obj.get(key)
-      sorted.set<JsonNode>(key, canonicalizeNode(value))
+      sorted.set(key, canonicalizeNode(value))
     }
 
     return sorted
   }
 
   private fun isSortableStringArray(node: JsonNode): Boolean =
-    node.isArray && node.elements().asSequence().all { it.isTextual }
+    node.isArray && node.all { it.isString }
 
   private fun sortStringArray(array: ArrayNode): ArrayNode {
-    val sortedValues = array.elements().asSequence()
-      .map { it.asText("") }
+    val sortedValues = array.asSequence()
+      .map { it.asString("") }
       .sorted()
 
     val newArray = jsonMapper.createArrayNode()

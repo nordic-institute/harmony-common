@@ -1,6 +1,6 @@
 package org.niis.harmony.buildlogic.internal.utils
 
-import com.fasterxml.jackson.databind.ObjectMapper
+import tools.jackson.databind.ObjectMapper
 import org.niis.harmony.buildlogic.internal.Mappers
 import org.niis.harmony.buildlogic.models.Manifest
 import org.niis.harmony.buildlogic.models.Scope
