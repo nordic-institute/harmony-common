@@ -12,7 +12,8 @@ private val EXCLUDED_GENERATED_DIRS = listOf(
   "**/target/**",
   "**/node/**",
   "**/node_modules/**",
-  "**/dist/**"
+  "**/dist/**",
+  "**/src/main/resources/META-INF/resources/**"
 )
 
 private val EXCLUDED_METADATA = listOf(
