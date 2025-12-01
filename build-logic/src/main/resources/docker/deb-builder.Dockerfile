@@ -8,14 +8,13 @@ LABEL maintainer="Nordic Institute for Interoperability Solutions <edelivery@nii
 
 ARG TZ=UTC
 ARG UNAME=builder
-ARG UID=1000
-ARG GID=1000
 
 ENV LANG=C.UTF-8 \
     LC_ALL=C.UTF-8 \
     TZ=${TZ} \
     APT_LISTCHANGES_FRONTEND=none \
-    DEBIAN_FRONTEND=noninteractive
+    DEBIAN_FRONTEND=noninteractive \
+    HOME=/build
 
 RUN apt-get update -qq \
  && apt-get install -qqy --no-install-recommends \
@@ -30,9 +29,9 @@ RUN apt-get update -qq \
  && rm -rf /var/lib/apt/lists/* \
  && ln -snf "/usr/share/zoneinfo/${TZ}" /etc/localtime \
  && echo "${TZ}" > /etc/timezone \
- && groupadd -g "${GID}" "${UNAME}" 2>/dev/null \
-        || groupmod -n "${UNAME}" "$(getent group "${GID}" | cut -d: -f1)" \
- && useradd -m -u "${UID}" -g "${GID}" "${UNAME}" 2>/dev/null \
-        || usermod -l "${UNAME}" -d /home/"${UNAME}" -m "$(getent passwd "${UID}" | cut -d: -f1)"
+ && useradd --system --shell /bin/bash "${UNAME}" \
+ && mkdir /build \
+ && chown "${UNAME}:${UNAME}" /build
 
-USER ${UNAME}
+USER "${UNAME}"
+WORKDIR /build

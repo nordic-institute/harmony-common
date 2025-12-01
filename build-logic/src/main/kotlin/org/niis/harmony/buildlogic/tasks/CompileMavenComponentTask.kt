@@ -38,13 +38,13 @@ abstract class CompileMavenComponentTask @Inject constructor(
   abstract val component: Property<String>
 
   @get:Internal
-  abstract val version: Property<String>
-
-  @get:Internal
   abstract val repoDir: DirectoryProperty
 
   @get:Internal
   abstract val cacheRestoreOnly: Property<Boolean>
+
+  @get:Input
+  abstract val version: Property<String>
 
   @get:Input
   abstract val sourceDateEpoch: Property<Long>
@@ -202,6 +202,7 @@ abstract class CompileMavenComponentTask @Inject constructor(
       javaRuntimeId = javaRuntimeId,
       mavenGoals = mavenGoals.get(),
       mavenProfiles = mavenProfiles.get(),
+      skipTests = skipTests.getOrElse(false),
       sourceDateEpoch = sourceDateEpoch.get(),
       artifacts = artifactPaths,
       timestamp = System.currentTimeMillis()

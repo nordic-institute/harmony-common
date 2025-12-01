@@ -37,13 +37,10 @@ abstract class BuildDebTask @Inject constructor(
   abstract val component: Property<String>
 
   @get:Internal
-  abstract val version: Property<String>
-
-  @get:Internal
-  abstract val distro: Property<String>
-
-  @get:Internal
   abstract val cacheRestoreOnly: Property<Boolean>
+
+  @get:Input
+  abstract val version: Property<String>
 
   @get:Input
   abstract val debSign: Property<Boolean>
@@ -53,6 +50,9 @@ abstract class BuildDebTask @Inject constructor(
 
   @get:Input
   abstract val packageName: Property<String>
+
+  @get:Input
+  abstract val distro: Property<String>
 
   @get:InputDirectory
   @get:PathSensitive(PathSensitivity.RELATIVE)

@@ -8,6 +8,7 @@ data class CompileMarker(
   val javaRuntimeId: String,
   val mavenGoals: List<String>,
   val mavenProfiles: List<String>,
+  val skipTests: Boolean,
   val sourceDateEpoch: Long,
   val artifacts: List<String>,
   val timestamp: Long
