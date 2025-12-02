@@ -175,7 +175,7 @@ harmony.ap.docker.tags=X.Y.Z,latest
 # Multi-platform builds (comma-separated, empty = host architecture)
 harmony.docker.platforms=linux/amd64,linux/arm64
 
-# Docker output mode: load | push | tar | oci
+# Docker output mode: load | push | tar | oci-dir | oci-tar
 harmony.ap.docker.outputMode=load
 ```
 
@@ -243,14 +243,14 @@ Properties are organized by category. **Global or per-component** means you can 
 
 #### Docker Images (Global or Per-Component)
 
-| Property                            | Description                                         | Default                     |
-|-------------------------------------|-----------------------------------------------------|-----------------------------|
-| `harmony.docker.imageName`          | Docker image repository                             | `niis/harmony-<component>`  |
-| `harmony.docker.tags`               | Image tags (CSV)                                    | Component version           |
-| `harmony.docker.platforms`          | Build platforms (CSV)                               | (empty = host architecture) |
-| `harmony.docker.outputMode`         | Output destination: `load`, `push`, `tar`, or `oci` | `load`                      |
-| `harmony.docker.pullAlways`         | Always pull base images during build                | `true`                      |
-| `harmony.docker.provenanceDisabled` | Disable provenance attestation generation           | `true`                      |
+| Property                            | Description                                                        | Default                     |
+|-------------------------------------|--------------------------------------------------------------------|-----------------------------|
+| `harmony.docker.imageName`          | Docker image repository                                            | `niis/harmony-<component>`  |
+| `harmony.docker.tags`               | Image tags (CSV)                                                   | Component version           |
+| `harmony.docker.platforms`          | Build platforms (CSV)                                              | (empty = host architecture) |
+| `harmony.docker.outputMode`         | Output destination: `load`, `push`, `tar`, `oci-dir`, or `oci-tar` | `load`                      |
+| `harmony.docker.pullAlways`         | Always pull base images during build                               | `true`                      |
+| `harmony.docker.provenanceDisabled` | Disable provenance attestation generation                          | `true`                      |
 
 #### Build Reproducibility (Global or Per-Component)
 
@@ -363,28 +363,34 @@ The `outputMode` property controls how the built image is handled:
   - Requires Docker daemon running locally
 
 - **`push`**: Push image to registry
-  - Supports multi-platform builds
+  - Supports multi-platform builds with manifest list
   - Requires registry credentials configured (`docker login`)
   - Image available for other systems to pull
 
-- **`tar`**: Export image as tarball to `build/docker/<component>/<version>/image.tar`
-  - Supports multi-platform builds
-  - Gradle can cache the image file (useful for CI pipelines)
-  - Load later with: `docker load < build/docker/ap/1.0.0/image.tar`
+- **`tar`**: Export image filesystem as tarball to `build/docker/<component>/<version>/image.tar`
+  - Useful for extracting filesystem contents
+  - Exports only the filesystem layers without OCI manifest list, losing multi-architecture support
+  - Cannot be loaded with `docker load` as a complete image
 
-- **`oci`**: Export image in OCI format to `build/docker/<component>/<version>/image-oci/`
-  - Supports multi-platform builds
-  - Standard OCI image layout
-  - Can be imported by OCI-compatible tools
+- **`oci-dir`**: Export image in OCI format as directory to `build/docker/<component>/<version>/image-oci/`
+  - Standard OCI image layout (directory structure)
+  - Preserves multi-platform manifest list
+  - Can be imported by OCI-compatible tools (e.g., `skopeo`, `crane`)
+  - Cannot be loaded directly with `docker load`
+
+- **`oci-tar`**: Export image in OCI format as tarball to `build/docker/<component>/<version>/image-oci.tar`
+  - Preserves the OCI manifest list, maintaining multi-architecture support
+  - Load later with: `docker load < build/docker/ap/1.0.0/image-oci.tar`
+  - Requires containerd image store for multi-platform `docker load` support
 
 **CI Pipeline Example:**
 
 ```bash
-# Build job: Generate cached image
-./gradlew buildDockerAp -Pharmony.ap.docker.outputMode=tar
+# Build job: Generate cached OCI image
+./gradlew buildDockerAp -Pharmony.ap.docker.outputMode=oci-tar
 
 # Test job (different agent): Load from Gradle cache
-docker load < build/docker/ap/1.0.0/image.tar
+docker load < build/docker/ap/1.0.0/image-oci.tar
 docker run --rm niis/harmony-ap:1.0.0 /test-script.sh
 
 # Publish job: Push to registry
@@ -394,6 +400,10 @@ docker run --rm niis/harmony-ap:1.0.0 /test-script.sh
 **Important notes:**
 - Ensure Docker Buildx is properly configured: `docker buildx create --use`
 - You must be authenticated to the target registry when pushing
+- For `docker load` with multi-platform OCI images, containerd image store must be enabled:
+  - Docker Desktop: Enabled by default
+  - Docker Engine 29+: Enabled by default on new installations
+  - Docker Engine < 29: Add `"features": {"containerd-snapshotter": true}` to `/etc/docker/daemon.json`
 
 ### Signing Debian Packages
 

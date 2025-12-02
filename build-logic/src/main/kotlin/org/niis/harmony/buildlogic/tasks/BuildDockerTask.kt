@@ -89,7 +89,11 @@ abstract class BuildDockerTask @Inject constructor(
 
   @get:OutputDirectory
   @get:Optional
-  abstract val ociOutput: DirectoryProperty
+  abstract val ociDirOutput: DirectoryProperty
+
+  @get:OutputFile
+  @get:Optional
+  abstract val ociTarOutput: RegularFileProperty
 
   private data class DockerBuildSpec(
     val dockerExecutable: String,
@@ -247,8 +251,12 @@ abstract class BuildDockerTask @Inject constructor(
           require(spec.outputPath != null) { "TAR output mode requires output path" }
           addAll(listOf("--output", "type=tar,dest=${spec.outputPath.absolutePath}"))
         }
-        DockerOutputMode.OCI -> {
-          require(spec.outputPath != null) { "OCI output mode requires output path" }
+        DockerOutputMode.OCI_DIR -> {
+          require(spec.outputPath != null) { "OCI_DIR output mode requires output path" }
+          addAll(listOf("--output", "type=oci,tar=false,dest=${spec.outputPath.absolutePath}"))
+        }
+        DockerOutputMode.OCI_TAR -> {
+          require(spec.outputPath != null) { "OCI_TAR output mode requires output path" }
           addAll(listOf("--output", "type=oci,dest=${spec.outputPath.absolutePath}"))
         }
       }
@@ -283,7 +291,8 @@ abstract class BuildDockerTask @Inject constructor(
     val mode = outputMode.get()
     val outputPath = when (mode) {
       DockerOutputMode.TAR -> tarOutput.get().asFile.also { it.parentFile.mkdirs() }
-      DockerOutputMode.OCI -> ociOutput.get().asFile.also { it.mkdirs() }
+      DockerOutputMode.OCI_DIR -> ociDirOutput.get().asFile.also { it.mkdirs() }
+      DockerOutputMode.OCI_TAR -> ociTarOutput.get().asFile.also { it.parentFile.mkdirs() }
       else -> null
     }
 

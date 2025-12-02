@@ -42,6 +42,9 @@ object BuildOutputPaths {
   fun dockerOutputTar(project: Project, component: String, version: Provider<String>): Provider<RegularFile> =
     version.flatMap { project.layout.buildDirectory.file("docker/$component/$it/image.tar") }
 
-  fun dockerOutputOci(project: Project, component: String, version: Provider<String>): Provider<Directory> =
+  fun dockerOutputOciDir(project: Project, component: String, version: Provider<String>): Provider<Directory> =
     version.flatMap { project.layout.buildDirectory.dir("docker/$component/$it/image-oci") }
+
+  fun dockerOutputOciTar(project: Project, component: String, version: Provider<String>): Provider<RegularFile> =
+    version.flatMap { project.layout.buildDirectory.file("docker/$component/$it/image-oci.tar") }
 }

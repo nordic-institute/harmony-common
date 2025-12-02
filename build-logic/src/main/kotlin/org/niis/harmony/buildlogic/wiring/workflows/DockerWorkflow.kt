@@ -68,7 +68,8 @@ internal fun Project.registerDockerWorkflowForTarget(
     target.outputMode.map { mode ->
       when (mode) {
         DockerOutputMode.TAR -> this.tarOutput.set(BuildOutputPaths.dockerOutputTar(project, nameForTask, version))
-        DockerOutputMode.OCI -> this.ociOutput.set(BuildOutputPaths.dockerOutputOci(project, nameForTask, version))
+        DockerOutputMode.OCI_DIR -> this.ociDirOutput.set(BuildOutputPaths.dockerOutputOciDir(project, nameForTask, version))
+        DockerOutputMode.OCI_TAR -> this.ociTarOutput.set(BuildOutputPaths.dockerOutputOciTar(project, nameForTask, version))
         else -> { /* LOAD and PUSH don't produce file outputs */ }
       }
     }.get()
