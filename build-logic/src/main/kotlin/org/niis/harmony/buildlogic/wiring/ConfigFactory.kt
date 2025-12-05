@@ -5,6 +5,8 @@ import org.gradle.api.Project
 import org.gradle.api.file.Directory
 import org.gradle.api.provider.Provider
 import org.niis.harmony.buildlogic.internal.Constants
+import org.niis.harmony.buildlogic.internal.Mappers
+import org.niis.harmony.buildlogic.internal.utils.OciDigest
 import org.niis.harmony.buildlogic.internal.utils.parseCsvList
 import org.niis.harmony.buildlogic.internal.utils.sanitize
 import org.niis.harmony.buildlogic.models.BuildConfig
@@ -19,6 +21,7 @@ import org.niis.harmony.buildlogic.models.StagingConfig
 import org.niis.harmony.buildlogic.models.VendorConfig
 import org.niis.harmony.buildlogic.providers.SourceDateEpochValueSource
 import org.niis.harmony.buildlogic.providers.VcsRevisionValueSource
+import tools.jackson.module.kotlin.readValue
 import java.io.File
 
 object ConfigFactory {
@@ -115,6 +118,15 @@ object ConfigFactory {
     pullAlways = resolver.boolean("docker.pullAlways").orElse(Constants.BuildDefaults.DOCKER_PULL_ALWAYS),
     provenanceDisabled = resolver.boolean("docker.provenanceDisabled").orElse(Constants.BuildDefaults.DOCKER_PROVENANCE_DISABLED),
     baseImageDigests = resolver.string("docker.baseImageDigests")
+      .map { json ->
+        val digests: Map<String, String?> = Mappers.json.readValue(json)
+        digests.forEach { (image, digest) ->
+          if (digest != null) {
+            OciDigest.requireValid(digest, image)
+          }
+        }
+        digests
+      }
   )
 
   private fun createBuildInfoConfig(

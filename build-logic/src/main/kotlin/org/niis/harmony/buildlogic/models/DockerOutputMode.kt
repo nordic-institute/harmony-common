@@ -21,7 +21,4 @@ enum class DockerOutputMode {
       }
     }
   }
-
-  val producesFileOutput: Boolean
-    get() = this == TAR || this == OCI_DIR || this == OCI_TAR
 }

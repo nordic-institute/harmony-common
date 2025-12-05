@@ -5,7 +5,9 @@ import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.file.ProjectLayout
 import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.provider.ListProperty
+import org.gradle.api.provider.MapProperty
 import org.gradle.api.provider.Property
+import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.CacheableTask
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputDirectory
@@ -35,6 +37,9 @@ abstract class BuildDockerTask @Inject constructor(
 
   @get:Internal
   abstract val cacheRestoreOnly: Property<Boolean>
+
+  @get:Internal
+  lateinit var baseImageDigestsForMarker: Provider<Map<String, String?>>
 
   @get:Input
   abstract val version: Property<String>
@@ -70,7 +75,7 @@ abstract class BuildDockerTask @Inject constructor(
   abstract val vcsRevision: Property<String>
 
   @get:Input
-  abstract val baseImageDigests: Property<String>
+  abstract val baseImageDigests: MapProperty<String, String>
 
   @get:InputFile
   @get:PathSensitive(PathSensitivity.RELATIVE)
@@ -103,17 +108,16 @@ abstract class BuildDockerTask @Inject constructor(
     val platformsCsv: String?,
     val outputMode: DockerOutputMode,
     val outputPath: File?,
-    val iidTempFile: File,
+    val metadataFile: File,
     val buildArgs: Map<String, String>,
+    val sourceDateEpoch: Long,
     val provenanceDisabled: Boolean,
     val pullAlways: Boolean
   )
 
   private data class DockerBuildResult(
     val primaryRef: String?,
-    val tags: List<String>,
-    val requestedPlatformsCsv: String?,
-    val imageId: String?
+    val imageDigest: String?
   )
 
   @TaskAction
@@ -207,30 +211,26 @@ abstract class BuildDockerTask @Inject constructor(
       "Dockerfile not found or unreadable: ${spec.dockerfile}"
     }
 
-    spec.iidTempFile.parentFile.mkdirs()
-    spec.iidTempFile.delete()
+    spec.metadataFile.parentFile.mkdirs()
+    spec.metadataFile.delete()
 
     val command = buildBuildxCommand(spec)
 
     execOps.exec {
       commandLine(command)
+      environment("SOURCE_DATE_EPOCH", spec.sourceDateEpoch.toString())
       isIgnoreExitValue = false
     }
 
-    val iid = try {
-      spec.iidTempFile.takeIf { it.isFile }?.readText()?.trim().orEmpty()
-    } catch (e: Exception) {
-      logger.warn("Could not read IID file at ${spec.iidTempFile.path}", e)
-      null
+    val imageDigest = try {
+      readImageDigestFromMetadata(spec.metadataFile)
     } finally {
-      spec.iidTempFile.delete()
+      spec.metadataFile.delete()
     }
 
     return DockerBuildResult(
       primaryRef = spec.tags.firstOrNull(),
-      tags = spec.tags.distinct(),
-      requestedPlatformsCsv = spec.platformsCsv,
-      imageId = iid
+      imageDigest = imageDigest
     )
   }
 
@@ -261,9 +261,7 @@ abstract class BuildDockerTask @Inject constructor(
         }
       }
 
-      if (!spec.outputMode.producesFileOutput) {
-        addAll(listOf("--iidfile", spec.iidTempFile.absolutePath))
-      }
+      addAll(listOf("--metadata-file", spec.metadataFile.absolutePath))
 
       spec.tags.forEach { tag -> addAll(listOf("-t", tag)) }
       spec.buildArgs.forEach { (key, value) -> addAll(listOf("--build-arg", "$key=$value")) }
@@ -286,7 +284,7 @@ abstract class BuildDockerTask @Inject constructor(
     val baseName = imageName.get()
     val fullTags = imageTags.map { t -> if (':' in t) t else "$baseName:$t" }
 
-    val iidTemp = File(temporaryDir, "docker-iid.txt")
+    val metadataFile = File(temporaryDir, "docker-metadata.json")
 
     val mode = outputMode.get()
     val outputPath = when (mode) {
@@ -304,17 +302,31 @@ abstract class BuildDockerTask @Inject constructor(
       platformsCsv = platforms.get(),
       outputMode = mode,
       outputPath = outputPath,
-      iidTempFile = iidTemp,
+      metadataFile = metadataFile,
       buildArgs = mapOf(
-        "SOURCE_DATE_EPOCH" to sourceDateEpoch.get().toString(),
         "VERSION" to version.get(),
         "VCS_REVISION" to vcsRevision.get(),
-        "BUILD_NUMBER" to buildNumber.get().toString(),
-        "BASE_IMAGE_DIGESTS" to baseImageDigests.get()
+        "BUILD_NUMBER" to buildNumber.get().toString()
       ),
+      sourceDateEpoch = sourceDateEpoch.get(),
       provenanceDisabled = provenanceDisabled.getOrElse(true),
       pullAlways = pullAlways.getOrElse(true)
     )
+  }
+
+  private fun readImageDigestFromMetadata(file: File): String? {
+    if (!file.isFile) {
+      logger.warn("Buildx metadata file not found at {}", file.absolutePath)
+      return null
+    }
+
+    return runCatching {
+      val root = Mappers.json.readTree(file)
+      val digest = root.path("containerimage.digest").asString()
+      digest.takeIf { it.isNotBlank() }
+    }.onFailure { ex ->
+      logger.warn("Failed to parse buildx metadata file at ${file.absolutePath}", ex)
+    }.getOrNull()
   }
 
   private fun writeDeterministicMarker(result: DockerBuildResult) {
@@ -340,13 +352,13 @@ abstract class BuildDockerTask @Inject constructor(
       platforms = platforms.get(),
       vcsRevision = vcsRevision.get(),
       buildNumber = buildNumber.get(),
-      baseImageDigests = baseImageDigests.get(),
+      baseImageDigests = baseImageDigestsForMarker.get(),
       dockerfile = dockerfileRel,
       contextRel = contextRel,
-      imageId = result.imageId ?: "",
+      imageDigest = result.imageDigest ?: "",
       primaryTag = result.primaryRef,
       provenanceDisabled = provenanceDisabled.getOrElse(true),
-      pulled = pullAlways.getOrElse(true),
+      pullAlways = pullAlways.getOrElse(true),
       outputMode = outputMode.get().name.lowercase(),
       sourceDateEpoch = sourceDateEpoch.get(),
       timestamp = System.currentTimeMillis()

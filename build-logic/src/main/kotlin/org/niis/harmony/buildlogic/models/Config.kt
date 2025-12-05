@@ -56,7 +56,7 @@ data class DockerTargetConfig(
   val trackBase: Provider<Boolean>,
   val pullAlways: Provider<Boolean>,
   val provenanceDisabled: Provider<Boolean>,
-  val baseImageDigests: Provider<String>
+  val baseImageDigests: Provider<Map<String, String?>>
 )
 
 data class BuildInfoConfig(

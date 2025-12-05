@@ -1,6 +1,6 @@
 # Harmony eDelivery Access - Access Point Docker Installation Guide
 
-Version: 2.0  
+Version: 2.1  
 Doc. ID: IG-AP-D
 
 ---
@@ -18,6 +18,7 @@ Doc. ID: IG-AP-D
 | 13.12.2024 | 1.6     | Add reference to the Logging Guide \[UG-AP-L\]            | Diego Martin     |
 | 13.01.2025 | 1.7     | Update links to external documents                        | Diego Martin     |
 | 23.07.2025 | 2.0     | Rewrite documentation to cover the new options introduced | Diego Martin     |
+| 05.12.2025 | 2.1     | Added section describing tagging strategy                 | Diego Martin     |
 
 ## License
 
@@ -1087,12 +1088,11 @@ These tags never change once created. They always point to the same image digest
   - **Example:** `niis/harmony-ap:1.0.0`
   - **Use case:** Production environments requiring exact version control and reproducibility
 
-- **`<version>-<date>`** - Full version with build date (e.g., `1.0.0-20251230`)
-  - Points to a specific build from a particular date
+- **`<version>-<date>`** - Full version with build date (e.g., `1.0.0-20301231`)
+  - Created only for security refreshes (base image updates)
   - Date format: YYYYMMDD (UTC)
-  - Includes both original builds and security refreshes
-  - **Example:** `niis/harmony-ap:1.0.0-20251230`
-  - **Use case:** Audit requirements, compliance, or when you need to pin to a specific build including refreshes
+  - **Example:** `niis/harmony-ap:1.0.0-20301231`
+  - **Use case:** Audit requirements, compliance, or when you need to pin to a specific security refresh
 
 #### Mutable Tags (Rolling Updates)
 
@@ -1108,25 +1108,23 @@ These tags are updated to point to newer images as security patches and updates 
 
 **Scenario 1: Initial Release**
 ```bash
-# First publication of version 1.0.0 on December 30th, 2025
+# First publication of version 1.0.0
 niis/harmony-ap:1.0.0               # Immutable - original build
-niis/harmony-ap:1.0.0-20251230      # Immutable - same as above, with date
 niis/harmony-ap:1.0                 # Mutable - points to 1.0.0
 ```
 
 **Scenario 2: Security Refresh (Base Image Update)**
 ```bash
-# Security refresh on December 31st (same application code, updated base)
+# Security refresh of version 1.0.0 (same application code, updated base)
 niis/harmony-ap:1.0.0               # Unchanged - still points to original
-niis/harmony-ap:1.0.0-20251231      # NEW immutable tag for the refresh
-niis/harmony-ap:1.0                 # Updated to point to 1.0.0-20251231
+niis/harmony-ap:1.0.0-20301231      # NEW immutable tag for the refresh
+niis/harmony-ap:1.0                 # Updated to point to 1.0.0-20301231
 ```
 
 **Scenario 3: New Patch Release**
 ```bash
-# New version 1.0.1 released on Junuary 1st
+# New version 1.0.1
 niis/harmony-ap:1.0.1               # NEW immutable tag
-niis/harmony-ap:1.0.1-20260101      # NEW immutable tag with date
 niis/harmony-ap:1.0                 # Updated to point to 1.0.1
 ```
 
@@ -1135,7 +1133,7 @@ niis/harmony-ap:1.0                 # Updated to point to 1.0.1
 | Your Requirement                                      | Recommended Tag  | Update Behavior                    |
 |-------------------------------------------------------|------------------|------------------------------------|
 | **Maximum stability** - exact version lock            | `1.0.0`          | Never changes                      |
-| **Specific build** - for audit/compliance             | `1.0.0-20251231` | Never changes                      |
+| **Specific build** - for audit/compliance             | `1.0.0-20301231` | Never changes                      |
 | **Automatic security updates** - within minor version | `1.0`            | Updates with patches and refreshes |
 | **Testing/Staging** - latest in series                | `1.0`            | Updates with patches and refreshes |
 

@@ -66,9 +66,16 @@ class BuildOutputPathsTest {
   }
 
   @Test
-  fun `provides docker oci output path`() {
-    val oci = BuildOutputPaths.dockerOutputOci(project, "ap", project.provider { "1.0.0" }).get().asFile.toPath()
-    val relative = oci.relativeTo(buildDir).toString().replace('\\', '/')
+  fun `provides docker oci dir output path`() {
+    val ociDir = BuildOutputPaths.dockerOutputOciDir(project, "ap", project.provider { "1.0.0" }).get().asFile.toPath()
+    val relative = ociDir.relativeTo(buildDir).toString().replace('\\', '/')
     assertEquals("docker/ap/1.0.0/image-oci", relative)
+  }
+
+  @Test
+  fun `provides docker oci tar output path`() {
+    val ociTar = BuildOutputPaths.dockerOutputOciTar(project, "ap", project.provider { "1.0.0" }).get().asFile.toPath()
+    val relative = ociTar.relativeTo(buildDir).toString().replace('\\', '/')
+    assertEquals("docker/ap/1.0.0/image-oci.tar", relative)
   }
 }

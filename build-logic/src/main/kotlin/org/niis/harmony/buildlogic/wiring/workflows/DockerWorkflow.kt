@@ -52,15 +52,21 @@ internal fun Project.registerDockerWorkflowForTarget(
     this.buildNumber.set(buildNumber)
     this.cacheRestoreOnly.set(cacheRestoreOnly)
 
+    val rawBaseImageDigests = target.baseImageDigests.orElse(
+      providers.of(BaseImageDigestsValueSource::class.java) {
+        parameters.dockerExecutable.set(tools.docker)
+        parameters.dockerfile.set(dockerfileProvider)
+        parameters.enabled.set(target.trackBase)
+        parameters.execTimeoutSeconds.set(tools.execTimeoutSeconds)
+      }
+    )
+
+    this.baseImageDigestsForMarker = rawBaseImageDigests
+
     this.baseImageDigests.set(
-      target.baseImageDigests.orElse(
-        providers.of(BaseImageDigestsValueSource::class.java) {
-          parameters.dockerExecutable.set(tools.docker)
-          parameters.dockerfile.set(dockerfileProvider)
-          parameters.enabled.set(target.trackBase)
-          parameters.execTimeoutSeconds.set(tools.execTimeoutSeconds)
-        }
-      )
+      rawBaseImageDigests.map { original ->
+        original.filterValues { it != null }.mapValues { (_, v) -> v!! }
+      }
     )
 
     this.markerFile.set(BuildOutputPaths.dockerMarker(project, nameForTask, version))
@@ -94,9 +100,7 @@ internal fun Project.registerPrintDockerBaseDigestsTask(
         parameters.execTimeoutSeconds.set(tools.execTimeoutSeconds)
       }.get()
 
-      val structuredMap = BaseImageDigestsValueSource.toStructuredMap(digests)
-
-      println(Mappers.json.writeValueAsString(structuredMap))
+      println(Mappers.json.writeValueAsString(digests))
     }
   }
 }

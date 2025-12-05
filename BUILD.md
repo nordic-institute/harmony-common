@@ -13,12 +13,12 @@ This guide covers how to build these artifacts locally and configure the build f
 
 ## Prerequisites
 
-| Tool                      | Why it is needed                        | Notes                                                                       |
-|---------------------------|-----------------------------------------|-----------------------------------------------------------------------------|
-| Git 2.30+                 | Clone and manage Harmony repositories   | -                                                                           |
-| JDK 17+                   | Run Gradle wrapper and build-logic      | Set `JAVA_HOME` if not using system default                                 |
-| Docker 20.10+ with Buildx | Build Docker images and Debian packages | Run `docker buildx create --use` once per host                              |
-| GnuPG (optional)          | Sign Debian packages                    | Only needed if you plan to sign `.deb` files                                |
+| Tool                      | Why it is needed                        | Notes                                          |
+|---------------------------|-----------------------------------------|------------------------------------------------|
+| Git 2.30+                 | Clone and manage Harmony repositories   | -                                              |
+| JDK 17+                   | Run Gradle wrapper and build-logic      | Set `JAVA_HOME` if not using system default    |
+| Docker 20.10+ with Buildx | Build Docker images and Debian packages | Run `docker buildx create --use` once per host |
+| GnuPG (optional)          | Sign Debian packages                    | Only needed if you plan to sign `.deb` files   |
 
 ## Repository Layout
 
@@ -251,14 +251,18 @@ Properties are organized by category. **Global or per-component** means you can 
 | `harmony.docker.outputMode`         | Output destination: `load`, `push`, `tar`, `oci-dir`, or `oci-tar` | `load`                      |
 | `harmony.docker.pullAlways`         | Always pull base images during build                               | `true`                      |
 | `harmony.docker.provenanceDisabled` | Disable provenance attestation generation                          | `true`                      |
+| `harmony.docker.trackBase`          | Track base image digests for reproducibility                       | `true`                      |
+| `harmony.docker.baseImageDigests`   | Pre-computed base image digests (JSON)                             | (auto-resolved)             |
 
 #### Build Reproducibility (Global or Per-Component)
 
-| Property                 | Description                 | Default              |
-|--------------------------|-----------------------------|----------------------|
-| `harmony.build.epoch`    | SOURCE_DATE_EPOCH timestamp | Git commit timestamp |
-| `harmony.build.revision` | VCS revision hash           | Git HEAD commit      |
-| `harmony.build.number`   | Build number                | `0`                  |
+| Property                 | Description                 | Default                                                   |
+|--------------------------|-----------------------------|-----------------------------------------------------------|
+| `harmony.build.epoch`    | SOURCE_DATE_EPOCH timestamp | Maximum git commit timestamp across involved repositories |
+| `harmony.build.revision` | VCS revision hash           | Git HEAD commit from component repository                 |
+| `harmony.build.number`   | Build number                | `0`                                                       |
+
+**Note**: If `harmony.build.epoch` or `harmony.build.revision` are not explicitly set and cannot be determined from git, the build will fail.
 
 #### Vendor Dependencies (Global or Per-Component)
 
@@ -434,6 +438,8 @@ To sign `.deb` packages with GPG:
 
 ### Custom Debian Builder Image
 
+> **Image availability**: Builder images follow the lifecycle of the Harmony versions they support. Images for end-of-life versions may be removed after support ends. If you need long-term access to a specific builder image, consider mirroring it to your own registry.
+
 If you maintain a custom builder image with specific tooling:
 
 ```bash
@@ -468,16 +474,46 @@ The build will attempt to pull the image, show a warning if it fails, then proce
 
 The build system implements reproducible builds by default:
 
-- **SOURCE_DATE_EPOCH**: Set from git commit timestamp, normalized across all build steps
-- **Build metadata**: VCS revision, build ID tracked in output markers
-- **Deterministic builder images**: Pinned base image digests
+- **Source date epoch**: Derived from the maximum git commit timestamp across the component repository and harmony-common, ensuring changes in either repository result in a new epoch
+- **VCS revision**: Taken from the component repository's HEAD commit
+- **Build number**: Build ID tracked in output markers
+- **Base image digest tracking**: Immutable references to base images for traceability
 
-Override reproducibility metadata if needed:
+**Important**: Both `Source date epoch` and `VCS revision` require valid git repositories. If git is unavailable or the repositories are not valid git repositories, the build will fail. You can override these values explicitly:
 
 ```properties
 harmony.ap.build.epoch=1234567890
 harmony.ap.build.revision=abc123
 harmony.ap.build.number=456
+```
+
+#### Base Image Digest Tracking
+
+When `harmony.docker.trackBase=true` (default), the build resolves and records the immutable digest of each base image referenced in the Dockerfile. This provides:
+
+- **Traceability**: Know exactly which base image version was used
+- **Security monitoring**: Detect when base images have been updated with security patches
+- **Reproducibility**: Rebuild with the same base image by pinning digests
+
+The digests are stored in the build marker file (`build/metadata/docker/<component>/<version>.json`) and follow the [OCI Image Spec](https://github.com/opencontainers/image-spec/blob/main/descriptor.md) format, supporting multiple algorithms (sha256, sha512, blake3).
+
+**Example marker output:**
+```json
+{
+  "baseImageDigests": {
+    "ubuntu:24.04": "sha256:abc123...",
+    "scratch": null
+  }
+}
+```
+
+Note: The special `scratch` image (empty base) has no digest and is recorded as `null`.
+
+**CI usage**: In CI pipelines, you can pre-compute digests and pass them to avoid repeated registry lookups:
+
+```bash
+./gradlew buildDockerAp \
+  -Pharmony.docker.baseImageDigests='{"ubuntu:24.04":"sha256:abc...","scratch":null}'
 ```
 
 ### CI/CD Integration
