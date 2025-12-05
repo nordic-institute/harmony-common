@@ -1,9 +1,6 @@
 package org.niis.harmony.buildlogic.providers
 
-import tools.jackson.databind.JsonNode
-import tools.jackson.databind.ObjectMapper
-import tools.jackson.databind.node.ArrayNode
-import tools.jackson.databind.node.ObjectNode
+import org.gradle.api.GradleException
 import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.provider.Property
 import org.gradle.api.provider.ValueSource
@@ -12,6 +9,10 @@ import org.niis.harmony.buildlogic.internal.Mappers
 import org.niis.harmony.buildlogic.internal.utils.ManifestParser
 import org.niis.harmony.buildlogic.models.Manifest
 import org.niis.harmony.buildlogic.models.Scope
+import tools.jackson.databind.JsonNode
+import tools.jackson.databind.ObjectMapper
+import tools.jackson.databind.node.ArrayNode
+import tools.jackson.databind.node.ObjectNode
 import java.security.MessageDigest
 
 abstract class ManifestFingerprintValueSource : ValueSource<String, ManifestFingerprintValueSource.Params> {
@@ -28,25 +29,39 @@ abstract class ManifestFingerprintValueSource : ValueSource<String, ManifestFing
   override fun obtain(): String {
     val manifest = parameters.manifestFile.asFile.get()
     if (!manifest.isFile) {
-      return sha256("MISSING_MANIFEST/${parameters.scope.get()}/${parameters.distro.orNull.orEmpty()}")
+      throw GradleException(
+        "Cannot determine manifest fingerprint: manifest file '${manifest.absolutePath}' does not exist. " +
+        "Ensure the manifest is generated or configure the correct path."
+      )
     }
 
     val rootNode = yamlMapper.readTree(manifest)
     val inputsNode = rootNode.get("inputs") as? ArrayNode
-      ?: return sha256("NO_INPUTS/${parameters.scope.get()}/${parameters.distro.orNull.orEmpty()}")
+      ?: throw GradleException(
+        "Cannot determine manifest fingerprint: manifest '${manifest.absolutePath}' has no 'inputs' array. " +
+        "Check the manifest format or adjust the fingerprinting logic."
+      )
 
-    val currentScope = parameters.scope.get()
-    val currentDistro = parameters.distro.orNull
+    val scope = parameters.scope.get()
+    val rawDistro = parameters.distro.orNull
 
-    val applicableSteps = filterAndCanonicalizeSteps(inputsNode, currentScope, currentDistro)
+    val effectiveDistro = when (scope) {
+      Scope.DOCKER -> rawDistro ?: "docker"
+      else -> rawDistro ?: throw GradleException(
+        "Cannot determine manifest fingerprint: distro was not configured for scope '$scope'. " +
+        "This is an internal configuration error. Ensure 'distro' is set when wiring ManifestFingerprintValueSource."
+      )
+    }
+
+    val applicableSteps = filterAndCanonicalizeSteps(inputsNode, scope, effectiveDistro)
 
     if (applicableSteps.isEmpty) {
-      return sha256("NO_MATCHING_STEPS/${currentScope}/${currentDistro.orEmpty()}")
+      return sha256("NO_MATCHING_STEPS/$scope/$effectiveDistro")
     }
 
     val payload = buildString {
-      appendLine("--SCOPE=${currentScope.name}")
-      appendLine("--DISTRO=${currentDistro.orEmpty()}")
+      appendLine("--SCOPE=${scope.name}")
+      appendLine("--DISTRO=$effectiveDistro")
       append(jsonMapper.writeValueAsString(applicableSteps))
     }
     return sha256(payload)

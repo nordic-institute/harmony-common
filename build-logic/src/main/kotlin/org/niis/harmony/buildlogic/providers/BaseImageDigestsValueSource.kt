@@ -1,5 +1,6 @@
 package org.niis.harmony.buildlogic.providers
 
+import org.gradle.api.GradleException
 import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.provider.Property
 import org.gradle.api.provider.ValueSource
@@ -24,18 +25,19 @@ abstract class BaseImageDigestsValueSource : ValueSource<String, BaseImageDigest
     }
 
     val dockerfile = parameters.dockerfile.asFile.orNull
-    if (dockerfile == null || !dockerfile.isFile) {
-      logger.warn("Dockerfile not found at: {}", parameters.dockerfile.orNull)
-      return "NO_DOCKERFILE"
+    require(dockerfile != null && dockerfile.isFile) {
+      "Dockerfile not found at: ${parameters.dockerfile.orNull}. " +
+      "Base image digest tracking requires a valid Dockerfile."
     }
 
     val baseImageRefs = parseBaseImageRefs(dockerfile)
-    if (baseImageRefs.isEmpty()) {
-      return "NO_FROM"
+    require(baseImageRefs.isNotEmpty()) {
+      "Dockerfile at ${dockerfile.absolutePath} contains no FROM instructions. " +
+      "Cannot track base image digests without base images."
     }
 
     val dockerExecutable = parameters.dockerExecutable.orNull
-      ?: error("Docker executable path is required but was not set.")
+      ?: throw GradleException("Docker executable path is required but was not set.")
 
     val resolvedDigests = baseImageRefs.map { ref ->
       resolveDigest(dockerExecutable, ref) ?: error(
@@ -122,8 +124,11 @@ abstract class BaseImageDigestsValueSource : ValueSource<String, BaseImageDigest
       }
 
     if (!processResult.isSuccess) {
-      logger.warn("Failed to inspect Docker image '{}'. Stderr: {}", imageRef, processResult.stderr.trim())
-      return null
+      throw GradleException(
+        "Failed to resolve digest for base image '$imageRef'. " +
+        "Stderr: ${processResult.stderr.trim()}. " +
+        "Ensure image exists and is accessible from the build environment."
+      )
     }
 
     val matcher = DIGEST_LINE_PATTERN.matcher(processResult.stdout)

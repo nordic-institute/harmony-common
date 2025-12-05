@@ -1,5 +1,6 @@
 package org.niis.harmony.buildlogic.providers
 
+import org.gradle.api.GradleException
 import org.gradle.api.Project
 import org.gradle.testfixtures.ProjectBuilder
 import org.niis.harmony.buildlogic.models.Scope
@@ -8,18 +9,21 @@ import java.nio.file.Files
 import java.security.MessageDigest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
+import kotlin.test.assertTrue
 
 class ManifestFingerprintValueSourceTest {
 
   @Test
-  fun `missing manifest returns sentinel digest`() {
+  fun `throws when manifest file does not exist`() {
     val project = newProject()
     val missing = File(project.projectDir, "missing.yml")
 
-    val fingerprint = fingerprint(project, missing, Scope.DOCKER, "jammy")
-    val expected = sha256("MISSING_MANIFEST/DOCKER/jammy")
+    val exception = assertFailsWith<GradleException> {
+      fingerprint(project, missing, Scope.DEB, "jammy")
+    }
 
-    assertEquals(expected, fingerprint)
+    assertTrue(exception.message!!.contains("does not exist"))
   }
 
   @Test
@@ -119,6 +123,138 @@ class ManifestFingerprintValueSourceTest {
     val expected = sha256("NO_MATCHING_STEPS/DOCKER/jammy")
 
     assertEquals(expected, fingerprint)
+  }
+
+  @Test
+  fun `throws when manifest has no inputs array`() {
+    val project = newProject()
+    val manifest = File(project.projectDir, "manifest.yml").apply {
+      writeText(
+        """
+        name: test
+        version: 1
+        """.trimIndent()
+      )
+    }
+
+    val exception = assertFailsWith<GradleException> {
+      fingerprint(project, manifest, Scope.DOCKER, null)
+    }
+
+    assertTrue(exception.message!!.contains("has no 'inputs' array"))
+  }
+
+  @Test
+  fun `throws when manifest has non array inputs`() {
+    val project = newProject()
+    val manifest = File(project.projectDir, "manifest.yml").apply {
+      writeText(
+        """
+        inputs:
+          name: not-an-array
+        """.trimIndent()
+      )
+    }
+
+    val exception = assertFailsWith<GradleException> {
+      fingerprint(project, manifest, Scope.DOCKER, null)
+    }
+
+    assertTrue(exception.message!!.contains("has no 'inputs' array"))
+  }
+
+  @Test
+  fun `changes in non applicable steps do not affect fingerprint`() {
+    val project = newProject()
+
+    val manifestA = File(project.projectDir, "manifest-a.yml").apply {
+      writeText(
+        """
+        inputs:
+          - do: copy
+            from: artifacts/app.war
+            into: /opt/app
+            when:
+              scopes: [docker]
+              distros: [jammy]
+          - do: copy
+            from: artifacts/only-for-deb-A.zip
+            into: /opt/app
+            when:
+              scopes: [deb]
+        """.trimIndent()
+      )
+    }
+
+    val manifestB = File(project.projectDir, "manifest-b.yml").apply {
+      writeText(
+        """
+        inputs:
+          - do: copy
+            from: artifacts/app.war
+            into: /opt/app
+            when:
+              scopes: [docker]
+              distros: [jammy]
+          - do: copy
+            from: artifacts/only-for-deb-B.zip
+            into: /opt/app
+            when:
+              scopes: [deb]
+        """.trimIndent()
+      )
+    }
+
+    val scope = Scope.DOCKER
+    val distro = "jammy"
+
+    val fingerprintA = fingerprint(project, manifestA, scope, distro)
+    val fingerprintB = fingerprint(project, manifestB, scope, distro)
+
+    assertEquals(fingerprintA, fingerprintB)
+  }
+
+  @Test
+  fun `docker scope without distro uses docker as effective distro in sentinel`() {
+    val project = newProject()
+    val manifest = File(project.projectDir, "manifest.yml").apply {
+      writeText(
+        """
+        inputs:
+          - do: copy
+            from: artifacts/app.war
+            into: /opt/app
+            when:
+              scopes: [deb]
+        """.trimIndent()
+      )
+    }
+
+    val fingerprint = fingerprint(project, manifest, Scope.DOCKER, null)
+    val expected = sha256("NO_MATCHING_STEPS/DOCKER/docker")
+
+    assertEquals(expected, fingerprint)
+  }
+
+  @Test
+  fun `throws when non docker scope has no distro configured`() {
+    val project = newProject()
+    val manifest = File(project.projectDir, "manifest.yml").apply {
+      writeText(
+        """
+        inputs:
+          - do: copy
+            from: artifacts/app.war
+            into: /opt/app
+        """.trimIndent()
+      )
+    }
+
+    val exception = assertFailsWith<GradleException> {
+      fingerprint(project, manifest, Scope.DEB, null)
+    }
+
+    assertTrue(exception.message!!.contains("distro was not configured for scope 'DEB'"))
   }
 
   private fun newProject(): Project {

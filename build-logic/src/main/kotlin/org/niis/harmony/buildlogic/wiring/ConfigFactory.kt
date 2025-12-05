@@ -1,5 +1,6 @@
 package org.niis.harmony.buildlogic.wiring
 
+import org.gradle.api.GradleException
 import org.gradle.api.Project
 import org.gradle.api.file.Directory
 import org.gradle.api.provider.Provider
@@ -39,7 +40,7 @@ object ConfigFactory {
 
     val version = resolver.string("version")
       .orElse(project.provider {
-        error("Version is missing for component '$component'. Define 'harmony.$component.version'.")
+        throw GradleException("Version is missing for component '$component'. Define 'harmony.$component.version'.")
       })
 
     val compile = createCompileConfig(project, component, version, resolver)
@@ -63,7 +64,7 @@ object ConfigFactory {
   ): CompileConfig {
     val repoDir = resolver.string("compile.repo").map { project.layout.projectDirectory.dir(it)
     }.orElse(project.provider {
-      error("Mandatory property 'harmony.$component.compile.repo' is not defined in gradle.properties.")
+      throw GradleException("Mandatory property 'harmony.$component.compile.repo' is not defined in gradle.properties.")
     })
 
     val artifactPrefix = "harmony.$component.compile.artifact."
@@ -122,7 +123,7 @@ object ConfigFactory {
     val epoch = resolver.string("build.epoch").map { it.toLong() }
       .orElse(project.providers.of(SourceDateEpochValueSource::class.java) {
         parameters.gitExecutable.set(tools.git)
-        parameters.repoDir.set(repoDir)
+        parameters.repoDirs.from(repoDir, project.layout.projectDirectory)
         parameters.execTimeoutSeconds.set(tools.execTimeoutSeconds)
       })
 
@@ -147,7 +148,7 @@ object ConfigFactory {
       resolveVersion = { dependency ->
         resolver.vendorMetadata(dependency, "version")
           .orElse(project.provider {
-            error(
+            throw GradleException(
               "Missing version for vendor dependency '$dependency' (required by component '$component')."
             )
           })
@@ -187,7 +188,7 @@ object ConfigFactory {
     if (envOverride != null) return envOverride
 
     val userHome = System.getProperty("user.home")
-      ?: error("System property 'user.home' is not set. Configure 'harmony.deb.gpgHome'.")
+      ?: throw GradleException("System property 'user.home' is not set. Configure 'harmony.deb.gpgHome'.")
     return File(userHome, ".gnupg").absolutePath
   }
 

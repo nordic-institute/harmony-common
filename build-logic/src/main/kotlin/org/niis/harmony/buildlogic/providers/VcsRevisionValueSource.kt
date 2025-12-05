@@ -1,12 +1,11 @@
 package org.niis.harmony.buildlogic.providers
 
+import org.gradle.api.GradleException
 import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.provider.Property
 import org.gradle.api.provider.ValueSource
 import org.gradle.api.provider.ValueSourceParameters
 import org.niis.harmony.buildlogic.internal.utils.ProcessRunner
-import org.slf4j.LoggerFactory
-import java.io.File
 
 abstract class VcsRevisionValueSource : ValueSource<String, VcsRevisionValueSource.Params> {
 
@@ -18,21 +17,35 @@ abstract class VcsRevisionValueSource : ValueSource<String, VcsRevisionValueSour
 
   override fun obtain(): String {
     val gitExecutable = parameters.gitExecutable.orNull
-    if (gitExecutable != null) {
-      val repoDir = parameters.repoDir.orNull?.asFile ?: File(System.getProperty("user.dir"))
-      val command = listOf(gitExecutable, "rev-parse", "--short", "HEAD")
-      val result = ProcessRunner.execute(command, workingDir = repoDir, timeoutSeconds = parameters.execTimeoutSeconds.get())
+      ?: throw GradleException(
+        "Cannot determine VCS revision: git executable not found. " +
+        "Set 'harmony.build.revision' explicitly or ensure git is available."
+      )
 
-      if (result.isSuccess && result.stdout.isNotBlank()) {
-        return result.stdout.trim()
-      }
+    val repoDirFile = parameters.repoDir.orNull?.asFile
+      ?: throw GradleException(
+        "Cannot determine VCS revision: repository directory was not configured. " +
+        "This is an internal configuration error. Ensure 'repoDir' is set when wiring VcsRevisionValueSource."
+      )
+
+    val command = listOf(gitExecutable, "rev-parse", "--short", "HEAD")
+    val result = ProcessRunner.execute(
+      command,
+      workingDir = repoDirFile,
+      timeoutSeconds = parameters.execTimeoutSeconds.get()
+    )
+
+    val stdout = result.stdout.trim()
+    if (!result.isSuccess || stdout.isBlank()) {
+      throw GradleException(
+        "Cannot determine VCS revision from repository '${repoDirFile.absolutePath}'.\n" +
+        "Git command: ${command.joinToString(" ")}\n" +
+        "Exit code: ${result.exitCode}\n" +
+        "Stderr: ${result.stderr.ifBlank { "<empty>" }}\n" +
+        "Set 'harmony.build.revision' explicitly or ensure this directory is a valid git repository."
+      )
     }
 
-    logger.warn("Could not determine VCS revision. Falling back to 'UNKNOWN'.")
-    return "UNKNOWN"
-  }
-
-  private companion object {
-    private val logger = LoggerFactory.getLogger(VcsRevisionValueSource::class.java)
+    return stdout
   }
 }

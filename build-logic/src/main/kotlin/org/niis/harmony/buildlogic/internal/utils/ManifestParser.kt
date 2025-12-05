@@ -1,9 +1,9 @@
 package org.niis.harmony.buildlogic.internal.utils
 
-import tools.jackson.databind.ObjectMapper
 import org.niis.harmony.buildlogic.internal.Mappers
 import org.niis.harmony.buildlogic.models.Manifest
 import org.niis.harmony.buildlogic.models.Scope
+import tools.jackson.databind.ObjectMapper
 import java.io.File
 import java.util.Locale
 

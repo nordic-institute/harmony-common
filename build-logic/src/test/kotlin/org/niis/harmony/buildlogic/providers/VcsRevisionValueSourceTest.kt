@@ -4,6 +4,7 @@ import io.mockk.every
 import io.mockk.mockkObject
 import io.mockk.unmockkAll
 import io.mockk.verify
+import org.gradle.api.GradleException
 import org.gradle.api.Project
 import org.gradle.testfixtures.ProjectBuilder
 import org.niis.harmony.buildlogic.internal.utils.ProcessRunner
@@ -11,6 +12,8 @@ import java.nio.file.Files
 import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
+import kotlin.test.assertTrue
 
 class VcsRevisionValueSourceTest {
 
@@ -20,14 +23,17 @@ class VcsRevisionValueSourceTest {
   }
 
   @Test
-  fun `returns UNKNOWN when git executable is not set`() {
+  fun `throws exception when git executable is not set`() {
     val project = newProject()
 
-    val result = obtain(project) {
-      gitExecutable.set(null as String?)
+    val exception = assertFailsWith<GradleException> {
+      obtain(project) {
+        repoDir.set(project.projectDir)
+      }
     }
 
-    assertEquals("UNKNOWN", result)
+    assertTrue(exception.message!!.contains("git executable not found"))
+    assertTrue(exception.message!!.contains("harmony.build.revision"))
   }
 
   @Test
@@ -66,7 +72,7 @@ class VcsRevisionValueSourceTest {
   }
 
   @Test
-  fun `returns UNKNOWN when git command fails`() {
+  fun `throws exception when git command fails`() {
     val project = newProject()
 
     mockkObject(ProcessRunner)
@@ -78,16 +84,24 @@ class VcsRevisionValueSourceTest {
       stderr = "fatal: not a git repository"
     )
 
-    val result = obtain(project) {
-      gitExecutable.set("/usr/bin/git")
-      repoDir.set(project.projectDir)
+    val exception = assertFailsWith<GradleException> {
+      obtain(project) {
+        gitExecutable.set("/usr/bin/git")
+        repoDir.set(project.projectDir)
+      }
     }
 
-    assertEquals("UNKNOWN", result)
+    val message = exception.message ?: error("Exception message should not be null")
+
+    assertTrue(message.contains("Cannot determine VCS revision"))
+    assertTrue(message.contains("harmony.build.revision"))
+    assertTrue(message.contains("git rev-parse --short HEAD"), "Expected git command in error message")
+    assertTrue(message.contains("Exit code: 128"), "Expected exit code in error message")
+    assertTrue(message.contains("fatal: not a git repository"), "Expected stderr in error message")
   }
 
   @Test
-  fun `returns UNKNOWN when git output is blank`() {
+  fun `throws exception when git output is blank`() {
     val project = newProject()
 
     mockkObject(ProcessRunner)
@@ -99,12 +113,14 @@ class VcsRevisionValueSourceTest {
       stderr = ""
     )
 
-    val result = obtain(project) {
-      gitExecutable.set("/usr/bin/git")
-      repoDir.set(project.projectDir)
+    val exception = assertFailsWith<GradleException> {
+      obtain(project) {
+        gitExecutable.set("/usr/bin/git")
+        repoDir.set(project.projectDir)
+      }
     }
 
-    assertEquals("UNKNOWN", result)
+    assertTrue(exception.message!!.contains("Cannot determine VCS revision"))
   }
 
   @Test
@@ -162,6 +178,19 @@ class VcsRevisionValueSourceTest {
         environment = any()
       )
     }
+  }
+
+  @Test
+  fun `throws exception when repoDir is not set`() {
+    val project = newProject()
+
+    val exception = assertFailsWith<GradleException> {
+      obtain(project) {
+        gitExecutable.set("/usr/bin/git")
+      }
+    }
+
+    assertTrue(exception.message!!.contains("repository directory was not configured"))
   }
 
   private fun newProject(): Project {

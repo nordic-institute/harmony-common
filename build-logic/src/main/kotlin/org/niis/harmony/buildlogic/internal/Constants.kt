@@ -6,6 +6,8 @@ internal object Constants {
     // General
     val COMPONENTS: List<String> = listOf("ap", "smp")
     const val BUILD_NUMBER: Int = 0
+
+    // Cache
     const val CACHE_RESTORE_ONLY: Boolean = false
 
     // Compile

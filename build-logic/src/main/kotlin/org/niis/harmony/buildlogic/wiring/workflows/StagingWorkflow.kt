@@ -1,5 +1,6 @@
 package org.niis.harmony.buildlogic.wiring.workflows
 
+import org.gradle.api.GradleException
 import org.gradle.api.Project
 import org.gradle.api.file.Directory
 import org.gradle.api.provider.Provider
@@ -112,7 +113,7 @@ private fun resolveArtifactInputs(
       alias.set(ref.alias)
       file.set(
         available[ref.alias]
-          ?: error("Unknown artifact alias '${ref.alias}' in manifest for component '${component.name}'. " +
+          ?: throw GradleException("Unknown artifact alias '${ref.alias}' in manifest for component '${component.name}'. " +
                    "Available: ${available.keys.sorted().joinToString(", ")}")
       )
     }
@@ -151,7 +152,7 @@ private fun resolveProjectInputs(
           when {
             dir.isDirectory -> dirProv.asFileTree
             file.isFile     -> root.objects.fileCollection().from(file)
-            else -> error("Project path '${ref.path}' not found for component '${component.name}'.")
+            else -> throw GradleException("Project path '${ref.path}' not found for component '${component.name}'.")
           }
         }
       )

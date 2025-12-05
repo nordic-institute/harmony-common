@@ -4,14 +4,15 @@ import io.mockk.every
 import io.mockk.mockkObject
 import io.mockk.unmockkAll
 import io.mockk.verify
+import org.gradle.api.GradleException
 import org.gradle.api.Project
 import org.gradle.testfixtures.ProjectBuilder
 import org.niis.harmony.buildlogic.internal.utils.ProcessRunner
 import java.nio.file.Files
-import java.time.Instant
 import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertTrue
 
 class SourceDateEpochValueSourceTest {
@@ -22,17 +23,17 @@ class SourceDateEpochValueSourceTest {
   }
 
   @Test
-  fun `returns current time when git executable is not set`() {
+  fun `throws exception when git executable is not set`() {
     val project = newProject()
-    val before = Instant.now().epochSecond
 
-    val result = obtain(project) {
-      gitExecutable.set(null as String?)
+    val exception = assertFailsWith<GradleException> {
+      obtain(project) {
+        repoDirs.from(project.projectDir)
+      }
     }
 
-    val after = Instant.now().epochSecond
-
-    assertTrue(result >= before && result <= after + 1, "Expected $result to be between $before and $after")
+    assertTrue(exception.message!!.contains("git executable not found"))
+    assertTrue(exception.message!!.contains("harmony.build.epoch"))
   }
 
   @Test
@@ -56,7 +57,7 @@ class SourceDateEpochValueSourceTest {
 
     val result = obtain(project) {
       gitExecutable.set("/usr/bin/git")
-      repoDir.set(project.projectDir)
+      repoDirs.from(project.projectDir)
     }
 
     assertEquals(expectedTimestamp, result)
@@ -72,7 +73,7 @@ class SourceDateEpochValueSourceTest {
   }
 
   @Test
-  fun `returns current time when git command fails`() {
+  fun `throws exception when git command fails for all repos`() {
     val project = newProject()
 
     mockkObject(ProcessRunner)
@@ -84,18 +85,19 @@ class SourceDateEpochValueSourceTest {
       stderr = "fatal: not a git repository"
     )
 
-    val before = Instant.now().epochSecond
-    val result = obtain(project) {
-      gitExecutable.set("/usr/bin/git")
-      repoDir.set(project.projectDir)
+    val exception = assertFailsWith<GradleException> {
+      obtain(project) {
+        gitExecutable.set("/usr/bin/git")
+        repoDirs.from(project.projectDir)
+      }
     }
-    val after = Instant.now().epochSecond
 
-    assertTrue(result >= before && result <= after + 1, "Expected $result to be between $before and $after")
+    assertTrue(exception.message!!.contains("failed to get git timestamp"))
+    assertTrue(exception.message!!.contains("harmony.build.epoch"))
   }
 
   @Test
-  fun `returns current time when git output is not a valid timestamp`() {
+  fun `throws exception when git output is not a valid timestamp`() {
     val project = newProject()
 
     mockkObject(ProcessRunner)
@@ -107,14 +109,14 @@ class SourceDateEpochValueSourceTest {
       stderr = ""
     )
 
-    val before = Instant.now().epochSecond
-    val result = obtain(project) {
-      gitExecutable.set("/usr/bin/git")
-      repoDir.set(project.projectDir)
+    val exception = assertFailsWith<GradleException> {
+      obtain(project) {
+        gitExecutable.set("/usr/bin/git")
+        repoDirs.from(project.projectDir)
+      }
     }
-    val after = Instant.now().epochSecond
 
-    assertTrue(result >= before && result <= after + 1, "Expected $result to be between $before and $after")
+    assertTrue(exception.message!!.contains("failed to get git timestamp"))
   }
 
   @Test
@@ -133,33 +135,10 @@ class SourceDateEpochValueSourceTest {
 
     val result = obtain(project) {
       gitExecutable.set("/usr/bin/git")
-      repoDir.set(project.projectDir)
+      repoDirs.from(project.projectDir)
     }
 
     assertEquals(expectedTimestamp, result)
-  }
-
-  @Test
-  fun `returns current time when timestamp is invalid after parsing`() {
-    val project = newProject()
-
-    mockkObject(ProcessRunner)
-    every {
-      ProcessRunner.execute(any(), any(), any(), any())
-    } returns ProcessRunner.Result(
-      exitCode = 0,
-      stdout = "123abc456\n",
-      stderr = ""
-    )
-
-    val before = Instant.now().epochSecond
-    val result = obtain(project) {
-      gitExecutable.set("/usr/bin/git")
-      repoDir.set(project.projectDir)
-    }
-    val after = Instant.now().epochSecond
-
-    assertTrue(result >= before && result <= after + 1, "Expected $result to be between $before and $after")
   }
 
   @Test
@@ -183,7 +162,7 @@ class SourceDateEpochValueSourceTest {
 
     val result = obtain(project) {
       gitExecutable.set("/usr/bin/git")
-      repoDir.set(customRepoDir)
+      repoDirs.from(customRepoDir)
     }
 
     assertEquals(1234567890L, result)
@@ -196,6 +175,133 @@ class SourceDateEpochValueSourceTest {
         environment = any()
       )
     }
+  }
+
+  @Test
+  fun `returns maximum timestamp from multiple repos`() {
+    val project = newProject()
+    val repoDir1 = Files.createTempDirectory("repo1").toFile()
+    val repoDir2 = Files.createTempDirectory("repo2").toFile()
+
+    val olderTimestamp = 1000000000L
+    val newerTimestamp = 2000000000L
+
+    mockkObject(ProcessRunner)
+    every {
+      ProcessRunner.execute(
+        command = any(),
+        workingDir = repoDir1,
+        timeoutSeconds = any(),
+        environment = any()
+      )
+    } returns ProcessRunner.Result(
+      exitCode = 0,
+      stdout = "$olderTimestamp\n",
+      stderr = ""
+    )
+    every {
+      ProcessRunner.execute(
+        command = any(),
+        workingDir = repoDir2,
+        timeoutSeconds = any(),
+        environment = any()
+      )
+    } returns ProcessRunner.Result(
+      exitCode = 0,
+      stdout = "$newerTimestamp\n",
+      stderr = ""
+    )
+
+    val result = obtain(project) {
+      gitExecutable.set("/usr/bin/git")
+      repoDirs.from(repoDir1, repoDir2)
+    }
+
+    assertEquals(newerTimestamp, result)
+  }
+
+  @Test
+  fun `throws exception when one repo fails`() {
+    val project = newProject()
+    val validRepoDir = Files.createTempDirectory("valid-repo").toFile()
+    val invalidRepoDir = Files.createTempDirectory("invalid-repo").toFile()
+
+    val validTimestamp = 1234567890L
+
+    mockkObject(ProcessRunner)
+    every {
+      ProcessRunner.execute(
+        command = any(),
+        workingDir = validRepoDir,
+        timeoutSeconds = any(),
+        environment = any()
+      )
+    } returns ProcessRunner.Result(
+      exitCode = 0,
+      stdout = "$validTimestamp\n",
+      stderr = ""
+    )
+    every {
+      ProcessRunner.execute(
+        command = any(),
+        workingDir = invalidRepoDir,
+        timeoutSeconds = any(),
+        environment = any()
+      )
+    } returns ProcessRunner.Result(
+      exitCode = 128,
+      stdout = "",
+      stderr = "fatal: not a git repository"
+    )
+
+    val exception = assertFailsWith<GradleException> {
+      obtain(project) {
+        gitExecutable.set("/usr/bin/git")
+        repoDirs.from(validRepoDir, invalidRepoDir)
+      }
+    }
+
+    assertTrue(exception.message!!.contains("some repositories failed"))
+    assertTrue(exception.message!!.contains(validRepoDir.absolutePath))
+    assertTrue(exception.message!!.contains(invalidRepoDir.absolutePath))
+  }
+
+  @Test
+  fun `throws exception when no repoDirs specified`() {
+    val project = newProject()
+
+    val exception = assertFailsWith<GradleException> {
+      obtain(project) {
+        gitExecutable.set("/usr/bin/git")
+      }
+    }
+
+    assertTrue(exception.message!!.contains("no repositories were provided"))
+    assertTrue(exception.message!!.contains("harmony.build.epoch"))
+  }
+
+  @Test
+  fun `error message includes checked directories`() {
+    val project = newProject()
+    val repoDir = Files.createTempDirectory("test-repo").toFile()
+
+    mockkObject(ProcessRunner)
+    every {
+      ProcessRunner.execute(any(), any(), any(), any())
+    } returns ProcessRunner.Result(
+      exitCode = 128,
+      stdout = "",
+      stderr = "fatal: not a git repository"
+    )
+
+    val exception = assertFailsWith<GradleException> {
+      obtain(project) {
+        gitExecutable.set("/usr/bin/git")
+        repoDirs.from(repoDir)
+      }
+    }
+
+    assertTrue(exception.message!!.contains(repoDir.absolutePath))
   }
 
   private fun newProject(): Project {
