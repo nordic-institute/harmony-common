@@ -1,6 +1,6 @@
 # Harmony eDelivery Access - Access Point Installation Guide <!-- omit in toc -->
 
-Version: 1.19  
+Version: 1.20  
 Doc. ID: IG-AP
 
 ---
@@ -29,6 +29,7 @@ Doc. ID: IG-AP
 | 13.01.2025 | 1.17    | Update links to external documents                                                                                                                          | Diego Martin     |
 | 17.01.2025 | 1.18    | Support for Ubuntu 24.04                                                                                                                                    | Diego Martin     |
 | 08.08.2025 | 1.19    | Update links to external documents                                                                                                                          | Diego Martin     |
+| 05.12.2025 | 1.20    | Removed Ubuntu 20.04 from supported platforms as it has reached end of life                                                                                 | Diego Martin     |
 
 ## License <!-- omit in toc -->
 

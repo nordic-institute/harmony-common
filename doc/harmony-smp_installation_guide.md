@@ -1,6 +1,6 @@
 # Harmony eDelivery Access - Service Metadata Publisher Installation Guide <!-- omit in toc -->
 
-Version: 1.17  
+Version: 1.18  
 Doc. ID: IG-SMP
 ---
 
@@ -26,6 +26,7 @@ Doc. ID: IG-SMP
 | 21.02.2024 | 1.15    | Update supported operating systems                                                                      | Diego Martin     |
 | 05.02.2025 | 1.16    | Update links to external documents                                                                      | Diego Martin     |
 | 06.02.2025 | 1.17    | Support for Ubuntu 24.04                                                                                | Diego Martin     |
+| 05.12.2025 | 1.18    | Removed Ubuntu 20.04 from supported platforms as it has reached end of life                             | Diego Martin     |
 
 ## License <!-- omit in toc -->
 
