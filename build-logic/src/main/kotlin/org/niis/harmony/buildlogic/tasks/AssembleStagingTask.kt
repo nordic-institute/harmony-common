@@ -2,6 +2,7 @@ package org.niis.harmony.buildlogic.tasks
 
 import org.gradle.api.Action
 import org.gradle.api.DefaultTask
+import org.gradle.api.GradleException
 import org.gradle.api.file.ArchiveOperations
 import org.gradle.api.file.CopySpec
 import org.gradle.api.file.DirectoryProperty
@@ -36,6 +37,7 @@ import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
 import java.nio.file.attribute.FileTime
+import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 
 @CacheableTask
@@ -108,7 +110,7 @@ abstract class AssembleStagingTask @Inject constructor(
 
     val manifest = ManifestParser.parse(manifestFile.get().asFile)
     val sourceIndexes = buildSourceIndexes()
-    val epochMillis = sourceDateEpoch.get()
+    val epochSeconds = sourceDateEpoch.get()
 
     logger.lifecycle(
       "Assembling staging for component='{}', scope='{}'{} output='{}'",
@@ -118,7 +120,7 @@ abstract class AssembleStagingTask @Inject constructor(
       outputDirectory.toAbsolutePath()
     )
 
-    processManifestSteps(manifest, sourceIndexes, outputDirectory, epochMillis)
+    processManifestSteps(manifest, sourceIndexes, outputDirectory, epochSeconds)
   }
 
   private fun prepareOutputDirectory(dir: Path) {
@@ -132,7 +134,7 @@ abstract class AssembleStagingTask @Inject constructor(
     manifest: Manifest,
     sourceIndexes: SourceIndexes,
     outputDirectory: Path,
-    epochMillis: Long
+    epochSeconds: Long
   ) {
     manifest.inputs.forEach { step ->
       if (!ManifestParser.applies(step.`when`, scope.get(), distro.orNull)) {
@@ -143,13 +145,13 @@ abstract class AssembleStagingTask @Inject constructor(
       val destinationPath = outputDirectory.resolve(normalizeAndValidatePath(step.into))
 
       when (step) {
-        is Manifest.Copy -> handleCopy(step, sourceFiles, destinationPath, epochMillis)
-        is Manifest.Unpack -> handleUnpack(step, sourceFiles, destinationPath, epochMillis)
+        is Manifest.Copy -> handleCopy(step, sourceFiles, destinationPath, epochSeconds)
+        is Manifest.Unpack -> handleUnpack(step, sourceFiles, destinationPath, epochSeconds)
       }
     }
   }
 
-  private fun handleCopy(step: Manifest.Copy, sources: List<File>, destination: Path, epochMillis: Long) {
+  private fun handleCopy(step: Manifest.Copy, sources: List<File>, destination: Path, epochSeconds: Long) {
     logger.info("COPY from='{}' into='{}' preserveTop={}", step.from, step.into, step.preserveTop == true)
 
     val preserveTop = step.preserveTop == true
@@ -176,10 +178,10 @@ abstract class AssembleStagingTask @Inject constructor(
       }
     }
 
-    timestampTargets.forEach { setTimestamps(it, epochMillis) }
+    timestampTargets.forEach { setTimestamps(it, epochSeconds) }
   }
 
-  private fun handleUnpack(step: Manifest.Unpack, sources: List<File>, destination: Path, epochMillis: Long) {
+  private fun handleUnpack(step: Manifest.Unpack, sources: List<File>, destination: Path, epochSeconds: Long) {
     val stripComponents = step.strip ?: 0
     val (includes, excludes) = step.getFilters()
 
@@ -204,13 +206,13 @@ abstract class AssembleStagingTask @Inject constructor(
       }
     }
 
-    setTimestamps(baseDestination, epochMillis)
+    setTimestamps(baseDestination, epochSeconds)
 
     if (hasRoutes) {
       try {
         routes.forEach { route ->
           val routeDest = destination.resolve(normalizeAndValidatePath(route.into))
-          copyRoutedContent(baseDestination, routeDest, route, epochMillis)
+          copyRoutedContent(baseDestination, routeDest, route, epochSeconds)
         }
       } finally {
         baseDestination.toFile().deleteRecursively()
@@ -222,7 +224,7 @@ abstract class AssembleStagingTask @Inject constructor(
     sourceDir: Path,
     destinationDir: Path,
     route: Manifest.Route,
-    epochMillis: Long
+    epochSeconds: Long
   ) {
     val (includes, excludes) = route.getFilters()
     val commonPrefixSegments = computeCommonPrefixSegments(includes)
@@ -237,7 +239,7 @@ abstract class AssembleStagingTask @Inject constructor(
       includeEmptyDirs = false
     }
 
-    setTimestamps(destinationDir, epochMillis)
+    setTimestamps(destinationDir, epochSeconds)
   }
 
   private fun buildSourceIndexes(): SourceIndexes {
@@ -258,19 +260,19 @@ abstract class AssembleStagingTask @Inject constructor(
     return when (val reference = ManifestReference.fromString(from)) {
       is ArtifactReference -> {
         val file = indexes.artifacts[reference.alias]
-          ?: error("Unknown artifact alias '${reference.alias}'. " +
+          ?: throw GradleException("Unknown artifact alias '${reference.alias}'. " +
                    "Available aliases: ${availableList(indexes.artifacts)}")
         listOf(file)
       }
       is VendorReference -> {
         val file = indexes.vendors[reference.alias]
-          ?: error("Unknown vendor alias '${reference.alias}'. " +
+          ?: throw GradleException("Unknown vendor alias '${reference.alias}'. " +
                    "Available aliases: ${availableList(indexes.vendors)}")
         listOf(file)
       }
       is ProjectReference -> {
         val files = indexes.projectPaths[reference.path]
-          ?: error("Unknown project path '${reference.path}'. " +
+          ?: throw GradleException("Unknown project path '${reference.path}'. " +
                    "Available project paths: ${availableList(indexes.projectPaths)}")
         require(files.all { it.exists() }) {
           "Project path '${reference.path}' not found (required for this step/scope)."
@@ -335,7 +337,7 @@ abstract class AssembleStagingTask @Inject constructor(
         archiveOperations.tarTree(archive)
       name.endsWith(".zip") || name.endsWith(".war") || name.endsWith(".jar") ->
         archiveOperations.zipTree(archive)
-      else -> error("Unsupported archive format: ${archive.name}")
+      else -> throw GradleException("Unsupported archive format: ${archive.name}")
     }
   }
 
@@ -388,10 +390,10 @@ abstract class AssembleStagingTask @Inject constructor(
     })
   }
 
-  private fun setTimestamps(path: Path, epochMillis: Long) {
+  private fun setTimestamps(path: Path, epochSeconds: Long) {
     if (!Files.exists(path)) return
 
-    val timestamp = FileTime.fromMillis(epochMillis)
+    val timestamp = FileTime.from(epochSeconds, TimeUnit.SECONDS)
 
     runSafely(path,
       action = {
