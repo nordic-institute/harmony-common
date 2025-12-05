@@ -27,7 +27,6 @@ internal fun Project.registerDebWorkflows(
       this.version.set(component.version)
       this.distro.set(distro)
       this.packageName.set(component.deb.packageName)
-      this.serviceName.set(component.deb.packageName)
       this.stagingDeb.set(assembleDebTasksByDistro.getValue(distro).flatMap { it.stagingDir })
 
       this.debSign.set(component.deb.sign)

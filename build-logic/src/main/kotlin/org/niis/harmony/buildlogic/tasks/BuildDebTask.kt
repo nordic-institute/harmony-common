@@ -1,6 +1,7 @@
 package org.niis.harmony.buildlogic.tasks
 
 import org.gradle.api.DefaultTask
+import org.gradle.api.GradleException
 import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.file.FileSystemOperations
 import org.gradle.api.file.ProjectLayout
@@ -61,10 +62,6 @@ abstract class BuildDebTask @Inject constructor(
   @get:Input
   @get:Optional
   abstract val debKeyId: Property<String>
-
-  @get:Input
-  @get:Optional
-  abstract val serviceName: Property<String>
 
   @get:Input
   @get:Optional
@@ -155,7 +152,7 @@ abstract class BuildDebTask @Inject constructor(
     val debSource = stagingRoot.resolve("deb")
 
     require(debSource.isDirectory) {
-      "Debian control directory is missing at '${debSource.absolutePath}' for component='${component.get()}', distro='${distro.get()}'" +
+      "Debian control directory is missing at '${debSource.absolutePath}' for component='${component.get()}', distro='${distro.get()}'. " +
       "Ensure the manifest copies control files into '/deb' for scope=deb and the current distro."
     }
 
@@ -166,9 +163,10 @@ abstract class BuildDebTask @Inject constructor(
 
     val serviceNamePlaceholder = workspace.debianDir.resolve("service")
     if (serviceNamePlaceholder.isFile) {
-      val finalServiceName = serviceName.orNull?.takeIf { it.isNotBlank() } ?: packageName.get()
-      val finalServiceFile = workspace.debianDir.resolve("$finalServiceName.service")
-      serviceNamePlaceholder.renameTo(finalServiceFile)
+      val finalServiceFile = workspace.debianDir.resolve("${packageName.get()}.service")
+      check(serviceNamePlaceholder.renameTo(finalServiceFile)) {
+        "Failed to rename service placeholder '${serviceNamePlaceholder.name}' to '${finalServiceFile.name}'."
+      }
     }
 
     validateInstallFile(workspace, stagingRoot)
@@ -249,7 +247,7 @@ abstract class BuildDebTask @Inject constructor(
 
     val keyId = requireSigningKeyId()
     val configuredHome = gpgHome.orNull?.takeIf { it.isNotBlank() }
-      ?: error(
+      ?: throw GradleException(
         "Signing is enabled for component='${component.get()}' but no GnuPG home was configured. " +
           "Set 'harmony.${component.get()}.deb.gpgHome' or 'harmony.deb.gpgHome'."
       )
@@ -291,9 +289,9 @@ abstract class BuildDebTask @Inject constructor(
 
   private fun executeInDocker(workspace: Workspace, dpkgArgs: List<String>, signing: SigningSetup?) {
     val image = builderImage.get().takeIf { it.isNotBlank() }
-      ?: error("Debian builder image repository is required (set harmony.deb.builder.image).")
+      ?: throw GradleException("Debian builder image repository is required (set harmony.deb.builder.image).")
     val tag = builderImageTag.get().takeIf { it.isNotBlank() }
-      ?: error("Debian builder image tag is required (set harmony.deb.builder.tag).")
+      ?: throw GradleException("Debian builder image tag is required (set harmony.deb.builder.tag).")
     val builderImageRef = "$image:$tag"
 
     refreshBuilderImage(builderImageRef)
@@ -387,7 +385,7 @@ abstract class BuildDebTask @Inject constructor(
 
   private fun requireSigningKeyId(): String {
     return debKeyId.orNull?.takeIf { it.isNotBlank() }
-      ?: error(
+      ?: throw GradleException(
         "Signing is enabled for component='${component.get()}' but 'harmony.${component.get()}.deb.keyId' was not provided."
       )
   }
