@@ -22,6 +22,7 @@ import org.niis.harmony.buildlogic.internal.Constants
 import org.niis.harmony.buildlogic.internal.Mappers
 import org.niis.harmony.buildlogic.internal.utils.ProcessRunner
 import org.niis.harmony.buildlogic.models.DebBuildMarker
+import org.apache.commons.codec.digest.DigestUtils
 import java.io.File
 import java.nio.file.Files
 import java.nio.file.StandardCopyOption
@@ -299,6 +300,7 @@ abstract class BuildDebTask @Inject constructor(
     val command = buildList {
       add(dockerExecutable.get())
       addAll(listOf("run", "--rm"))
+      add("--network"); add("none")
       add("--user"); add(resolveUidGid())
       add("--env"); add("TZ=UTC")
       add("--env"); add("SOURCE_DATE_EPOCH=${sourceDateEpoch.get()}")
@@ -392,23 +394,42 @@ abstract class BuildDebTask @Inject constructor(
 
   private fun resolveUidGid(): String {
     return try {
-      val uid = ProcessRunner.execute(listOf("id", "-u")).stdout.trim()
-      val gid = ProcessRunner.execute(listOf("id", "-g")).stdout.trim()
-      if (uid.isNotBlank() && gid.isNotBlank()) "$uid:$gid" else "0:0"
+      val uidResult = ProcessRunner.execute(listOf("id", "-u"))
+      val gidResult = ProcessRunner.execute(listOf("id", "-g"))
+
+      val uid = uidResult.stdout.trim()
+      val gid = gidResult.stdout.trim()
+
+      require(uid.isNotBlank() && gid.isNotBlank()) {
+        "Could not determine local UID/GID: 'id' returned blank values (uid='$uid', gid='$gid'). " +
+        "Make sure the 'id' command is available and working."
+      }
+
+      require(uid.all { it.isDigit() } && gid.all { it.isDigit() }) {
+        "Could not determine local UID/GID: 'id' returned invalid values (uid='$uid', gid='$gid'). " +
+        "Make sure the 'id' command is available and working."
+      }
+
+      "$uid:$gid"
     } catch (e: Exception) {
-      logger.debug("Could not resolve local UID/GID using 'id' command, falling back to '0:0'. Error: ${e.message}")
-      "0:0"
+      throw GradleException(
+        "Failed to resolve local UID/GID to run the Debian builder container. " +
+        "Ensure the 'id' command is available in PATH and functional.",
+        e
+      )
     }
   }
 
   private fun writeDeterministicMarker(publishedArtifacts: List<File>) {
     val projectRoot = layout.projectDirectory.asFile.toPath()
 
-    val artifactPaths = publishedArtifacts
+    val artifacts = publishedArtifacts
       .sortedBy { it.absolutePath }
-      .map { file ->
-        runCatching { projectRoot.relativize(file.toPath()).toString() }
+      .associate { file ->
+        val relPath = runCatching { projectRoot.relativize(file.toPath()).toString() }
           .getOrElse { file.absolutePath }
+        val sha = file.inputStream().use { DigestUtils.sha256Hex(it) }
+        relPath to "sha256:${sha}"
       }
 
     val marker = DebBuildMarker(
@@ -421,7 +442,7 @@ abstract class BuildDebTask @Inject constructor(
       builderImage = builderImage.get(),
       builderImageTag = builderImageTag.get(),
       sourceDateEpoch = sourceDateEpoch.get(),
-      artifacts = artifactPaths,
+      artifacts = artifacts,
       timestamp = System.currentTimeMillis()
     )
 

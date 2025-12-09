@@ -31,6 +31,7 @@ data class DockerBuildMarker(
   val pullAlways: Boolean,
   val outputMode: String,
   val sourceDateEpoch: Long,
+  val archiveDigest: String?,
   val timestamp: Long
 )
 
@@ -44,6 +45,6 @@ data class DebBuildMarker(
   val builderImage: String,
   val builderImageTag: String,
   val sourceDateEpoch: Long,
-  val artifacts: List<String>,
+  val artifacts: Map<String, String>,
   val timestamp: Long
 )

@@ -23,6 +23,7 @@ import org.gradle.process.ExecOperations
 import org.niis.harmony.buildlogic.internal.Mappers
 import org.niis.harmony.buildlogic.models.DockerBuildMarker
 import org.niis.harmony.buildlogic.models.DockerOutputMode
+import org.apache.commons.codec.digest.DigestUtils
 import java.io.File
 import javax.inject.Inject
 
@@ -361,6 +362,7 @@ abstract class BuildDockerTask @Inject constructor(
       pullAlways = pullAlways.getOrElse(true),
       outputMode = outputMode.get().name.lowercase(),
       sourceDateEpoch = sourceDateEpoch.get(),
+      archiveDigest = archiveDigest(outputMode.get()),
       timestamp = System.currentTimeMillis()
     )
 
@@ -368,5 +370,21 @@ abstract class BuildDockerTask @Inject constructor(
     out.parentFile.mkdirs()
     out.writeText(Mappers.json.writerWithDefaultPrettyPrinter().writeValueAsString(marker))
     logger.lifecycle("Successfully wrote Docker marker to: {}", out.absolutePath)
+  }
+
+  private fun archiveDigest(mode: DockerOutputMode): String? {
+    val file = when (mode) {
+      DockerOutputMode.TAR -> tarOutput.orNull?.asFile
+      DockerOutputMode.OCI_TAR -> ociTarOutput.orNull?.asFile
+      else -> null
+    } ?: return null
+
+    if (!file.isFile) {
+      logger.warn("Expected Docker archive not found for checksum: {}", file.absolutePath)
+      return null
+    }
+
+    val sha = file.inputStream().use { DigestUtils.sha256Hex(it) }
+    return "sha256:$sha"
   }
 }
