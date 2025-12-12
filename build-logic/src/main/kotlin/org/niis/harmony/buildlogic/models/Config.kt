@@ -9,6 +9,7 @@ data class BuildConfig(
   val components: Provider<List<String>>,
   val debBuilderImage: Provider<String>,
   val debBuilderTag: Provider<String>,
+  val debBuilderPullPolicy: Provider<PullPolicy>,
   val cache: CacheConfig
 )
 
@@ -54,8 +55,8 @@ data class DockerTargetConfig(
   val platforms: Provider<String>,
   val outputMode: Provider<DockerOutputMode>,
   val trackBase: Provider<Boolean>,
-  val pullAlways: Provider<Boolean>,
-  val provenanceDisabled: Provider<Boolean>,
+  val pullPolicy: Provider<PullPolicy>,
+  val provenanceEnabled: Provider<Boolean>,
   val baseImageDigests: Provider<Map<String, String?>>
 )
 

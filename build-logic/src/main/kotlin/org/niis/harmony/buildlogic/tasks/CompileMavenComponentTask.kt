@@ -90,7 +90,7 @@ abstract class CompileMavenComponentTask @Inject constructor(
 
   @TaskAction
   fun execute() {
-    check(!(cacheRestoreOnly.getOrElse(false))) {
+    check(!(cacheRestoreOnly.get())) {
       """
       Build cache miss: This task requires cached artifacts but none were found.
 
@@ -129,7 +129,7 @@ abstract class CompileMavenComponentTask @Inject constructor(
 
   private fun findMavenWrapper(repositoryDir: File): File {
     val os = HostInfoService.detectOs()
-    val wrapperName = if (os == HostOs.WINDOWS) Constants.MavenBuild.WRAPPER_WINDOWS else Constants.MavenBuild.WRAPPER_UNIX
+    val wrapperName = if (os == HostOs.WINDOWS) Constants.MavenBuild.WRAPPER_SCRIPT_WINDOWS else Constants.MavenBuild.WRAPPER_SCRIPT_UNIX
 
     return repositoryDir.resolve(wrapperName).also {
       require(it.isFile) { "Maven wrapper not found at: ${it.absolutePath}" }
@@ -144,16 +144,16 @@ abstract class CompileMavenComponentTask @Inject constructor(
   private fun buildMavenArguments(): List<String> {
     return buildList {
       addAll(Constants.MavenBuild.DEFAULT_ARGS)
-      add("${Constants.MavenBuild.PROP_LOCAL_REPO}=${temporaryDir.resolve("m2").absolutePath}")
+      add("${Constants.MavenBuild.LOCAL_REPO_PROPERTY}=${temporaryDir.resolve("m2").absolutePath}")
 
       val profiles = mavenProfiles.get().filter { it.isNotBlank() }
       if (profiles.isNotEmpty()) {
         add("-P" + profiles.joinToString(","))
       }
 
-      if (skipTests.getOrElse(false)) {
+      if (skipTests.get()) {
         logger.info("Maven tests are skipped for this compilation.")
-        addAll(Constants.MavenBuild.SKIP_TESTS_ARGS)
+        addAll(Constants.MavenBuild.SKIP_TESTS_PROPERTIES)
       }
 
       addAll(mavenGoals.get())
@@ -202,7 +202,7 @@ abstract class CompileMavenComponentTask @Inject constructor(
       javaRuntimeId = javaRuntimeId,
       mavenGoals = mavenGoals.get(),
       mavenProfiles = mavenProfiles.get(),
-      skipTests = skipTests.getOrElse(false),
+      skipTests = skipTests.get(),
       sourceDateEpoch = sourceDateEpoch.get(),
       artifacts = artifactPaths,
       timestamp = System.currentTimeMillis()

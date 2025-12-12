@@ -41,8 +41,8 @@ internal fun Project.registerDockerWorkflowForTarget(
     this.dockerExecutable.set(tools.docker)
 
     this.outputMode.set(target.outputMode)
-    this.pullAlways.set(target.pullAlways)
-    this.provenanceDisabled.set(target.provenanceDisabled)
+    this.pullPolicy.set(target.pullPolicy)
+    this.provenanceEnabled.set(target.provenanceEnabled)
 
     this.sourceDateEpoch.set(epoch)
     this.version.set(version)

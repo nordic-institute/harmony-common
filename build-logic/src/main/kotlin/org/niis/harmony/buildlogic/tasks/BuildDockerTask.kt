@@ -1,5 +1,6 @@
 package org.niis.harmony.buildlogic.tasks
 
+import org.apache.commons.codec.digest.DigestUtils
 import org.gradle.api.DefaultTask
 import org.gradle.api.file.DirectoryProperty
 import org.gradle.api.file.ProjectLayout
@@ -23,7 +24,7 @@ import org.gradle.process.ExecOperations
 import org.niis.harmony.buildlogic.internal.Mappers
 import org.niis.harmony.buildlogic.models.DockerBuildMarker
 import org.niis.harmony.buildlogic.models.DockerOutputMode
-import org.apache.commons.codec.digest.DigestUtils
+import org.niis.harmony.buildlogic.models.PullPolicy
 import java.io.File
 import javax.inject.Inject
 
@@ -67,10 +68,10 @@ abstract class BuildDockerTask @Inject constructor(
   abstract val outputMode: Property<DockerOutputMode>
 
   @get:Input
-  abstract val provenanceDisabled: Property<Boolean>
+  abstract val provenanceEnabled: Property<Boolean>
 
   @get:Input
-  abstract val pullAlways: Property<Boolean>
+  abstract val pullPolicy: Property<PullPolicy>
 
   @get:Input
   abstract val vcsRevision: Property<String>
@@ -112,8 +113,8 @@ abstract class BuildDockerTask @Inject constructor(
     val metadataFile: File,
     val buildArgs: Map<String, String>,
     val sourceDateEpoch: Long,
-    val provenanceDisabled: Boolean,
-    val pullAlways: Boolean
+    val provenanceEnabled: Boolean,
+    val pullPolicy: PullPolicy
   )
 
   private data class DockerBuildResult(
@@ -123,7 +124,7 @@ abstract class BuildDockerTask @Inject constructor(
 
   @TaskAction
   fun execute() {
-    check(!(cacheRestoreOnly.getOrElse(false))) {
+    check(!(cacheRestoreOnly.get())) {
       """
       Build cache miss: This task requires cached artifacts but none were found.
 
@@ -242,8 +243,12 @@ abstract class BuildDockerTask @Inject constructor(
       spec.platformsCsv?.trim()?.takeIf { it.isNotEmpty() }?.let {
         addAll(listOf("--platform", it))
       }
-      if (spec.provenanceDisabled) add("--provenance=false")
-      if (spec.pullAlways) add("--pull")
+      if (!spec.provenanceEnabled) add("--provenance=false")
+      when (spec.pullPolicy) {
+        PullPolicy.ALWAYS -> add("--pull")
+        PullPolicy.IF_NOT_PRESENT -> { /* buildx default behavior */ }
+        PullPolicy.NEVER -> add("--pull=false")
+      }
 
       when (spec.outputMode) {
         DockerOutputMode.LOAD -> add("--load")
@@ -310,8 +315,8 @@ abstract class BuildDockerTask @Inject constructor(
         "BUILD_NUMBER" to buildNumber.get().toString()
       ),
       sourceDateEpoch = sourceDateEpoch.get(),
-      provenanceDisabled = provenanceDisabled.getOrElse(true),
-      pullAlways = pullAlways.getOrElse(true)
+      provenanceEnabled = provenanceEnabled.get(),
+      pullPolicy = pullPolicy.get()
     )
   }
 
@@ -358,8 +363,8 @@ abstract class BuildDockerTask @Inject constructor(
       contextRel = contextRel,
       imageDigest = result.imageDigest ?: "",
       primaryTag = result.primaryRef,
-      provenanceDisabled = provenanceDisabled.getOrElse(true),
-      pullAlways = pullAlways.getOrElse(true),
+      provenanceEnabled = provenanceEnabled.get(),
+      pullPolicy = pullPolicy.get().value,
       outputMode = outputMode.get().name.lowercase(),
       sourceDateEpoch = sourceDateEpoch.get(),
       archiveDigest = archiveDigest(outputMode.get()),

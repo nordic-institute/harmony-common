@@ -89,7 +89,7 @@ abstract class AssembleStagingTask @Inject constructor(
 
   @TaskAction
   fun execute() {
-    check(!(cacheRestoreOnly.getOrElse(false))) {
+    check(!(cacheRestoreOnly.get())) {
       """
       Build cache miss: This task requires cached artifacts but none were found.
 

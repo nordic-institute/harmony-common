@@ -159,8 +159,8 @@ harmony.ap.deb.distros=jammy
 harmony.smp.deb.distros=noble
 
 # Debian builder image
-harmony.deb.builder.image=ghcr.io/nordic-institute/harmony-deb-builder
-harmony.deb.builder.tag=latest
+harmony.deb.builder.image=artifactory.niis.org/harmony-release-docker/niis/harmony-deb-builder
+harmony.deb.builder.tag=1.0.0
 ```
 
 #### Docker Images
@@ -205,14 +205,12 @@ Properties are organized by category. **Global or per-component** means you can 
 
 #### Global Configuration
 
-| Property                    | Description                               | Default                                        |
-|-----------------------------|-------------------------------------------|------------------------------------------------|
-| `harmony.components`        | Components to build (CSV)                 | `ap,smp`                                       |
-| `harmony.exec.docker`       | Docker CLI path                           | `docker`                                       |
-| `harmony.exec.git`          | Git CLI path                              | `git`                                          |
-| `harmony.exec.timeoutSec`   | External command timeout (seconds)        | `120`                                          |
-| `harmony.deb.builder.image` | Docker image for building `.deb` packages | `ghcr.io/nordic-institute/harmony-deb-builder` |
-| `harmony.deb.builder.tag`   | Debian builder image tag                  | `1.0.0`                                        |
+| Property                    | Description                               | Default                                                                |
+|-----------------------------|-------------------------------------------|------------------------------------------------------------------------|
+| `harmony.components`        | Components to build (CSV)                 | `ap,smp`                                                               |
+| `harmony.exec.docker`       | Docker CLI path                           | `docker`                                                               |
+| `harmony.exec.git`          | Git CLI path                              | `git`                                                                  |
+| `harmony.exec.timeoutSec`   | External command timeout (seconds)        | `120`                                                                  |
 
 #### Component Version (Required, Per-Component)
 
@@ -233,26 +231,39 @@ Properties are organized by category. **Global or per-component** means you can 
 
 #### Debian Packaging (Global or Per-Component)
 
-| Property                  | Description                                          | Default                    |
-|---------------------------|------------------------------------------------------|----------------------------|
-| `harmony.deb.distros`     | Ubuntu/Debian distributions to build (CSV)           | `jammy,noble`              |
-| `harmony.deb.sign`        | Sign packages with GPG                               | `false`                    |
-| `harmony.deb.keyId`       | GPG key ID for signing (**required if `sign=true`**) | (none)                     |
-| `harmony.deb.gpgHome`     | Path to GnuPG home directory                         | `$GNUPGHOME` or `~/.gnupg` |
-| `harmony.deb.packageName` | Debian package name                                  | `harmony-<component>`      |
+| Property                         | Description                                                       | Default                                                                |
+|----------------------------------|-------------------------------------------------------------------|------------------------------------------------------------------------|
+| `harmony.deb.distros`            | Ubuntu/Debian distributions to build (CSV)                        | `jammy,noble`                                                          |
+| `harmony.deb.sign`               | Sign packages with GPG                                            | `false`                                                                |
+| `harmony.deb.keyId`              | GPG key ID for signing (**required if `sign=true`**)              | (none)                                                                 |
+| `harmony.deb.gpgHome`            | Path to GnuPG home directory                                      | `$GNUPGHOME` or `~/.gnupg`                                             |
+| `harmony.deb.packageName`        | Debian package name                                               | `harmony-<component>`                                                  |
+| `harmony.deb.builder.image`      | Docker image for building .deb packages                           | `artifactory.niis.org/harmony-release-docker/niis/harmony-deb-builder` |
+| `harmony.deb.builder.tag`        | Tag of the deb builder image                                      | `1.0.0`                                                                |
+| `harmony.deb.builder.pullPolicy` | When to pull the builder image: `always`, `ifNotPresent`, `never` | `ifNotPresent`                                                         |
 
 #### Docker Images (Global or Per-Component)
 
-| Property                            | Description                                                        | Default                     |
-|-------------------------------------|--------------------------------------------------------------------|-----------------------------|
-| `harmony.docker.imageName`          | Docker image repository                                            | `niis/harmony-<component>`  |
-| `harmony.docker.tags`               | Image tags (CSV)                                                   | Component version           |
-| `harmony.docker.platforms`          | Build platforms (CSV)                                              | (empty = host architecture) |
-| `harmony.docker.outputMode`         | Output destination: `load`, `push`, `tar`, `oci-dir`, or `oci-tar` | `load`                      |
-| `harmony.docker.pullAlways`         | Always pull base images during build                               | `true`                      |
-| `harmony.docker.provenanceDisabled` | Disable provenance attestation generation                          | `true`                      |
-| `harmony.docker.trackBase`          | Track base image digests for reproducibility                       | `true`                      |
-| `harmony.docker.baseImageDigests`   | Pre-computed base image digests (JSON)                             | (auto-resolved)             |
+| Property                           | Description                                                               | Default                     |
+|------------------------------------|---------------------------------------------------------------------------|-----------------------------|
+| `harmony.docker.imageName`         | Docker image repository                                                   | `niis/harmony-<component>`  |
+| `harmony.docker.tags`              | Image tags (CSV)                                                          | Component version           |
+| `harmony.docker.platforms`         | Build platforms (CSV)                                                     | (empty = host architecture) |
+| `harmony.docker.outputMode`        | Output destination: `load`, `push`, `tar`, `oci-dir`, or `oci-tar`        | `load`                      |
+| `harmony.docker.pullPolicy`        | When to pull base images in Dockerfile: `always`, `ifNotPresent`, `never` | `ifNotPresent`              |
+| `harmony.docker.provenanceEnabled` | Enable provenance attestation generation                                  | `false`                     |
+| `harmony.docker.trackBase`         | Track base image digests for reproducibility                              | `true`                      |
+| `harmony.docker.baseImageDigests`  | Pre-computed base image digests (JSON)                                    | (auto-resolved)             |
+
+##### Pull Policies
+
+The `pullPolicy` property controls when Docker images are pulled:
+
+| Policy         | Behavior                                                                     |
+|----------------|------------------------------------------------------------------------------|
+| `always`       | Always pull before build. Fails if pull fails. Recommended for CI.           |
+| `ifNotPresent` | Pull only if image doesn't exist locally. Recommended for local development. |
+| `never`        | Never pull. Fails if image doesn't exist locally.                            |
 
 #### Build Reproducibility (Global or Per-Component)
 

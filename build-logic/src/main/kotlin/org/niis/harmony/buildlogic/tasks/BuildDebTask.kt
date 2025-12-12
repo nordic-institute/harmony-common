@@ -1,5 +1,6 @@
 package org.niis.harmony.buildlogic.tasks
 
+import org.apache.commons.codec.digest.DigestUtils
 import org.gradle.api.DefaultTask
 import org.gradle.api.GradleException
 import org.gradle.api.file.DirectoryProperty
@@ -22,7 +23,7 @@ import org.niis.harmony.buildlogic.internal.Constants
 import org.niis.harmony.buildlogic.internal.Mappers
 import org.niis.harmony.buildlogic.internal.utils.ProcessRunner
 import org.niis.harmony.buildlogic.models.DebBuildMarker
-import org.apache.commons.codec.digest.DigestUtils
+import org.niis.harmony.buildlogic.models.PullPolicy
 import java.io.File
 import java.nio.file.Files
 import java.nio.file.StandardCopyOption
@@ -77,6 +78,9 @@ abstract class BuildDebTask @Inject constructor(
   @get:Input
   abstract val builderImageTag: Property<String>
 
+  @get:Input
+  abstract val builderPullPolicy: Property<PullPolicy>
+
   @get:OutputDirectory
   abstract val debOutDir: DirectoryProperty
 
@@ -85,7 +89,7 @@ abstract class BuildDebTask @Inject constructor(
 
   init {
     outputs.cacheIf("Signing makes artifacts host-dependent") {
-      !debSign.getOrElse(false)
+      !debSign.get()
     }
   }
 
@@ -102,7 +106,7 @@ abstract class BuildDebTask @Inject constructor(
 
   @TaskAction
   fun execute() {
-    check(!(cacheRestoreOnly.getOrElse(false))) {
+    check(!(cacheRestoreOnly.get())) {
       """
       Build cache miss: This task requires cached artifacts but none were found.
 
@@ -121,7 +125,7 @@ abstract class BuildDebTask @Inject constructor(
       "Building Debian package for component='{}', distro='{}', sign={}, dockerImage='{}:{}'",
       component.get(),
       distro.get(),
-      debSign.getOrElse(false),
+      debSign.get(),
       builderImage.get(),
       builderImageTag.get()
     )
@@ -231,18 +235,18 @@ abstract class BuildDebTask @Inject constructor(
       Constants.DebianPackaging.FLAG_BINARY_ONLY,
       Constants.DebianPackaging.FLAG_FAKEROOT
     )
-    if (debSign.getOrElse(false)) {
+    if (debSign.get()) {
       val key = requireSigningKeyId()
       command.add("${Constants.DebianPackaging.FLAG_SIGN_KEY}$key")
     } else {
-      command.addAll(Constants.DebianPackaging.FLAGS_UNSIGNED)
+      command.addAll(Constants.DebianPackaging.UNSIGNED_FLAGS)
     }
 
     return command
   }
 
   private fun prepareSigningSetup(workspace: Workspace): SigningSetup? {
-    if (!debSign.getOrElse(false)) {
+    if (!debSign.get()) {
       return null
     }
 
@@ -295,7 +299,7 @@ abstract class BuildDebTask @Inject constructor(
       ?: throw GradleException("Debian builder image tag is required (set harmony.deb.builder.tag).")
     val builderImageRef = "$image:$tag"
 
-    refreshBuilderImage(builderImageRef)
+    ensureBuilderImage(builderImageRef)
 
     val command = buildList {
       add(dockerExecutable.get())
@@ -322,17 +326,62 @@ abstract class BuildDebTask @Inject constructor(
     }
   }
 
-  private fun refreshBuilderImage(builderImageRef: String) {
-    val result = ProcessRunner.execute(listOf(dockerExecutable.get(), "pull", builderImageRef))
-    if (!result.isSuccess) {
-      logger.warn(
-        "Could not pull builder image '{}'. Assuming it is available locally. Exit code={}, stderr={}",
-        builderImageRef,
-        result.exitCode,
-        result.stderr
-      )
-    } else {
-      logger.lifecycle("Using builder image '{}'. Digest: {}", builderImageRef, result.stdout.lineSequence().lastOrNull())
+  private fun ensureBuilderImage(builderImageRef: String) {
+    val policy = builderPullPolicy.get()
+
+    when (policy) {
+      PullPolicy.ALWAYS -> {
+        val result = ProcessRunner.execute(listOf(dockerExecutable.get(), "pull", builderImageRef))
+        if (!result.isSuccess) {
+          throw GradleException(
+            "Failed to pull builder image '$builderImageRef' (pullPolicy=always). " +
+            "Exit code=${result.exitCode}, stderr=${result.stderr}"
+          )
+        }
+        logger.lifecycle(
+          "Pulled builder image '{}'. Digest: {}",
+          builderImageRef,
+          result.stdout.lineSequence().lastOrNull()
+        )
+      }
+
+      PullPolicy.IF_NOT_PRESENT -> {
+        val inspectResult = ProcessRunner.execute(
+          listOf(dockerExecutable.get(), "image", "inspect", builderImageRef)
+        )
+
+        if (inspectResult.isSuccess) {
+          logger.lifecycle("Using existing local builder image '{}'", builderImageRef)
+          return
+        }
+
+        val pullResult = ProcessRunner.execute(listOf(dockerExecutable.get(), "pull", builderImageRef))
+        if (!pullResult.isSuccess) {
+          throw GradleException(
+            "Builder image '$builderImageRef' not found locally and pull failed (pullPolicy=ifNotPresent). " +
+            "Exit code=${pullResult.exitCode}, stderr=${pullResult.stderr}"
+          )
+        }
+        logger.lifecycle(
+          "Pulled builder image '{}'. Digest: {}",
+          builderImageRef,
+          pullResult.stdout.lineSequence().lastOrNull()
+        )
+      }
+
+      PullPolicy.NEVER -> {
+        val inspectResult = ProcessRunner.execute(
+          listOf(dockerExecutable.get(), "image", "inspect", builderImageRef)
+        )
+
+        if (!inspectResult.isSuccess) {
+          throw GradleException(
+            "Builder image '$builderImageRef' not found locally (pullPolicy=never). " +
+            "The image must be available locally when using pullPolicy=never."
+          )
+        }
+        logger.lifecycle("Using local builder image '{}' (pullPolicy=never)", builderImageRef)
+      }
     }
   }
 
@@ -437,10 +486,11 @@ abstract class BuildDebTask @Inject constructor(
       version = version.get(),
       distro = distro.get(),
       packageName = packageName.get(),
-      signed = debSign.getOrElse(false),
-      keyId = if (debSign.getOrElse(false)) debKeyId.orNull else null,
+      signed = debSign.get(),
+      keyId = if (debSign.get()) debKeyId.orNull else null,
       builderImage = builderImage.get(),
       builderImageTag = builderImageTag.get(),
+      builderPullPolicy = builderPullPolicy.get().value,
       sourceDateEpoch = sourceDateEpoch.get(),
       artifacts = artifacts,
       timestamp = System.currentTimeMillis()

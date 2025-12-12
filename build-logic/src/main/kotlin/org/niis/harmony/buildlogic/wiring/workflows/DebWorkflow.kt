@@ -37,6 +37,7 @@ internal fun Project.registerDebWorkflows(
       this.dockerExecutable.set(ctx.tools.docker)
       this.builderImage.set(ctx.build.debBuilderImage)
       this.builderImageTag.set(ctx.build.debBuilderTag)
+      this.builderPullPolicy.set(ctx.build.debBuilderPullPolicy)
       this.cacheRestoreOnly.set(ctx.build.cache.restoreOnly)
 
       this.debOutDir.set(
