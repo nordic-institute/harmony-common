@@ -12,10 +12,17 @@ source /usr/lib/harmony-cluster
 : "${SECURITY_TRUSTSTORE_PATH:=${HARMONY_BASE}/etc/ap-truststore.p12}"
 : "${SECURITY_KEYSTORE_B64:=${SECURITY_KEYSTORE_B64:-}}"
 : "${SECURITY_TRUSTSTORE_B64:=${SECURITY_TRUSTSTORE_B64:-}}"
+: "${EXTRA_POLICIES_PATH:=}"
 
 readonly DEFAULT_DYNAMIC_DISCOVERY="false"
 
-copy_policies_if_missing() {
+copy_extra_policies_if_missing() {
+  if [ -n "$EXTRA_POLICIES_PATH" ] && [ -d "$EXTRA_POLICIES_PATH" ]; then
+    copy_directory_contents_if_missing "$EXTRA_POLICIES_PATH" "$HARMONY_BASE/etc/policies"
+  fi
+}
+
+copy_default_policies_if_missing() {
   copy_directory_contents_if_missing "$HARMONY_HOME/policies" "$HARMONY_BASE/etc/policies"
 }
 
@@ -109,9 +116,12 @@ persist_domibus_configuration() {
   USE_DYNAMIC_DISCOVERY="${USE_DYNAMIC_DISCOVERY:-$(get_property 'domibus.dynamicdiscovery.useDynamicDiscovery' "$DEFAULT_DYNAMIC_DISCOVERY")}"
   set_property 'domibus.dynamicdiscovery.useDynamicDiscovery' "$USE_DYNAMIC_DISCOVERY"
 
-  set_property 'domibus.security.keystore.password' "$SECURITY_KEYSTORE_PASSWORD" --quiet
   set_property 'domibus.security.key.private.password' "$SECURITY_KEYSTORE_PASSWORD" --quiet
+  set_property 'domibus.security.keystore.password' "$SECURITY_KEYSTORE_PASSWORD" --quiet
   set_property 'domibus.security.truststore.password' "$SECURITY_TRUSTSTORE_PASSWORD" --quiet
+
+  set_property 'domibus.security.keystore.location' "$SECURITY_KEYSTORE_PATH"
+  set_property 'domibus.security.truststore.location' "$SECURITY_TRUSTSTORE_PATH"
 }
 
 process_domibus_environment_variables() {
@@ -152,7 +162,8 @@ publish_environment_variables() {
 init_domibus() {
   log DEBUG "Started"
 
-  copy_policies_if_missing
+  copy_extra_policies_if_missing
+  copy_default_policies_if_missing
 
   load_security_stores_from_secrets
   manage_security_certificates

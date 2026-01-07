@@ -1242,6 +1242,7 @@ Below is a reference table of common environment variables supported by the Harm
 | `SML_ZONE`                  | SML zone that you want to use; if unsure, please contact the domain authority of the policy.          | —                                     | No       |
 | `PRESERVE_BACKUP_FILE_DATE` | Controls whether backup tries to preserve file modification data. Some filesystems do not allow this. | *calculated*                          | No       |
 | `APPLICATION_CONFIG_PATH`   | Path to the `domibus.properties` file.                                                                | `HARMONY_BASE/etc/domibus.properties` | No       |
+| `EXTRA_POLICIES_PATH`       | Path to a directory with additional AS4 policy files to copy into the container policies directory.   | —                                     | No       |
 
 #### 13.1.3 Clustering and HA
 
