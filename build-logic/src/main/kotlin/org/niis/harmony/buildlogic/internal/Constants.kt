@@ -22,13 +22,13 @@ internal object Constants {
     const val DEFAULT_DEB_BUILDER_IMAGE: String =
       "artifactory.niis.org/harmony-release-docker/niis/harmony-deb-builder"
     const val DEFAULT_DEB_BUILDER_TAG: String = "1.0.0"
-    const val DEFAULT_DEB_BUILDER_PULL_POLICY: String = "ifNotPresent"
+    const val DEFAULT_DEB_BUILDER_PULL_POLICY: String = "if-not-present"
 
     // Docker
     const val DEFAULT_DOCKER_PLATFORMS: String = ""
     const val DEFAULT_DOCKER_OUTPUT_MODE: String = "load"
     const val DEFAULT_DOCKER_TRACK_BASE_ENABLED: Boolean = true
-    const val DEFAULT_DOCKER_PULL_POLICY: String = "ifNotPresent"
+    const val DEFAULT_DOCKER_PULL_POLICY: String = "if-not-present"
     const val DEFAULT_DOCKER_PROVENANCE_ENABLED: Boolean = false
   }
 

@@ -358,7 +358,7 @@ abstract class BuildDebTask @Inject constructor(
         val pullResult = ProcessRunner.execute(listOf(dockerExecutable.get(), "pull", builderImageRef))
         if (!pullResult.isSuccess) {
           throw GradleException(
-            "Builder image '$builderImageRef' not found locally and pull failed (pullPolicy=ifNotPresent). " +
+            "Builder image '$builderImageRef' not found locally and pull failed (pullPolicy=${PullPolicy.IF_NOT_PRESENT.rawValue}). " +
             "Exit code=${pullResult.exitCode}, stderr=${pullResult.stderr}"
           )
         }
@@ -490,7 +490,7 @@ abstract class BuildDebTask @Inject constructor(
       keyId = if (debSign.get()) debKeyId.orNull else null,
       builderImage = builderImage.get(),
       builderImageTag = builderImageTag.get(),
-      builderPullPolicy = builderPullPolicy.get().value,
+      builderPullPolicy = builderPullPolicy.get().rawValue,
       sourceDateEpoch = sourceDateEpoch.get(),
       artifacts = artifacts,
       timestamp = System.currentTimeMillis()

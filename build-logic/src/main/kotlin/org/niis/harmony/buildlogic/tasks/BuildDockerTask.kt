@@ -131,7 +131,7 @@ abstract class BuildDockerTask @Inject constructor(
       Build number: #${project.providers.gradleProperty("harmony.${component.get()}.build.number").orNull ?: "unknown"}
       Component:    ${component.get()}
       Version:      ${version.get()}
-      Output mode:  ${outputMode.get().name.lowercase()}
+      Output mode:  ${outputMode.get().rawValue}
       """.trimIndent()
     }
 
@@ -364,8 +364,8 @@ abstract class BuildDockerTask @Inject constructor(
       imageDigest = result.imageDigest ?: "",
       primaryTag = result.primaryRef,
       provenanceEnabled = provenanceEnabled.get(),
-      pullPolicy = pullPolicy.get().value,
-      outputMode = outputMode.get().name.lowercase(),
+      pullPolicy = pullPolicy.get().rawValue,
+      outputMode = outputMode.get().rawValue,
       sourceDateEpoch = sourceDateEpoch.get(),
       archiveDigest = archiveDigest(outputMode.get()),
       timestamp = System.currentTimeMillis()

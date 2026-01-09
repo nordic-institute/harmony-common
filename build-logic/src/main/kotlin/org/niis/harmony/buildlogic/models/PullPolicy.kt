@@ -1,17 +1,21 @@
 package org.niis.harmony.buildlogic.models
 
-enum class PullPolicy(val value: String) {
+enum class PullPolicy(val rawValue: String) {
   ALWAYS("always"),
-  IF_NOT_PRESENT("ifNotPresent"),
+  IF_NOT_PRESENT("if-not-present"),
   NEVER("never");
 
   companion object {
-    fun fromString(input: String): PullPolicy {
-      val normalized = input.lowercase().trim().replace("_", "").replace("-", "")
-      return entries.find { it.value.lowercase() == normalized }
-        ?: throw IllegalArgumentException(
-          "Invalid pull policy '$input'. Valid values: ${entries.joinToString { it.value }}"
-        )
-    }
+    private fun normalize(input: String) = input.lowercase()
+      .trim()
+      .replace("_", "")
+      .replace("-", "")
+
+    private val byNormalized = entries.associateBy { normalize(it.rawValue) }
+
+    fun fromString(input: String): PullPolicy = byNormalized[normalize(input)]
+      ?: throw IllegalArgumentException(
+        "Invalid pull policy '$input'. Valid values: ${entries.joinToString { it.rawValue }}"
+      )
   }
 }
