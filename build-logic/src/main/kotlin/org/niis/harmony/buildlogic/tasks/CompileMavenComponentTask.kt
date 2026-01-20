@@ -43,6 +43,18 @@ abstract class CompileMavenComponentTask @Inject constructor(
   @get:Internal
   abstract val cacheRestoreOnly: Property<Boolean>
 
+  @get:Internal
+  abstract val buildNumber: Property<Int>
+
+  @get:Internal
+  val javaRuntimeId: String
+    get() {
+      val launcherMetadata = toolchains.launcherFor {
+        languageVersion.set(JavaLanguageVersion.of(javaVersion.get()))
+      }.get().metadata
+      return "${launcherMetadata.vendor}:${launcherMetadata.javaRuntimeVersion}"
+    }
+
   @get:Input
   abstract val version: Property<String>
 
@@ -60,15 +72,6 @@ abstract class CompileMavenComponentTask @Inject constructor(
 
   @get:Input
   abstract val javaVersion: Property<Int>
-
-  @get:Input
-  val javaRuntimeId: String
-    get() {
-      val launcherMetadata = toolchains.launcherFor {
-        languageVersion.set(JavaLanguageVersion.of(javaVersion.get()))
-      }.get().metadata
-      return "${launcherMetadata.vendor}:${launcherMetadata.javaRuntimeVersion}"
-    }
 
   @get:InputFiles
   @get:PathSensitive(PathSensitivity.RELATIVE)
@@ -94,7 +97,7 @@ abstract class CompileMavenComponentTask @Inject constructor(
       """
       Build cache miss: This task requires cached artifacts but none were found.
 
-      Build number: #${project.providers.gradleProperty("harmony.${component.get()}.build.number").orNull ?: "unknown"}
+      Build number: #${buildNumber.orNull ?: "unknown"}
       Component:    ${component.get()}
       Version:      ${version.get()}
       """.trimIndent()

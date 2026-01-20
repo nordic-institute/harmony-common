@@ -178,6 +178,7 @@ private fun Project.registerAssembleStagingTask(
     this.scope.set(scope)
     this.distro.set(distro)
     this.sourceDateEpoch.set(component.buildInfo.epoch)
+    this.buildNumber.set(component.buildInfo.buildNumber)
     this.manifestFile.set(component.staging.manifestFile)
     this.manifestFingerprint.set(providers.of(ManifestFingerprintValueSource::class.java) {
       parameters.manifestFile.set(component.staging.manifestFile)

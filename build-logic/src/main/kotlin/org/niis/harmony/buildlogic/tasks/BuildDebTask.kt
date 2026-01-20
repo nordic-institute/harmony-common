@@ -42,6 +42,12 @@ abstract class BuildDebTask @Inject constructor(
   @get:Internal
   abstract val cacheRestoreOnly: Property<Boolean>
 
+  @get:Internal
+  abstract val buildNumber: Property<Int>
+
+  @get:Internal
+  abstract val dockerExecutable: Property<String>
+
   @get:Input
   abstract val version: Property<String>
 
@@ -68,9 +74,6 @@ abstract class BuildDebTask @Inject constructor(
   @get:Input
   @get:Optional
   abstract val gpgHome: Property<String>
-
-  @get:Input
-  abstract val dockerExecutable: Property<String>
 
   @get:Input
   abstract val builderImage: Property<String>
@@ -110,7 +113,7 @@ abstract class BuildDebTask @Inject constructor(
       """
       Build cache miss: This task requires cached artifacts but none were found.
 
-      Build number: #${project.providers.gradleProperty("harmony.${component.get()}.build.number").orNull ?: "unknown"}
+      Build number: #${buildNumber.orNull ?: "unknown"}
       Component:    ${component.get()}
       Version:      ${version.get()}
       Distro:       ${distro.get()}

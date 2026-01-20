@@ -56,6 +56,9 @@ abstract class AssembleStagingTask @Inject constructor(
   @get:Internal
   abstract val cacheRestoreOnly: Property<Boolean>
 
+  @get:Internal
+  abstract val buildNumber: Property<Int>
+
   @get:Input
   abstract val scope: Property<Scope>
 
@@ -93,7 +96,7 @@ abstract class AssembleStagingTask @Inject constructor(
       """
       Build cache miss: This task requires cached artifacts but none were found.
 
-      Build number: #${project.providers.gradleProperty("harmony.${component.get()}.build.number").orNull ?: "unknown"}
+      Build number: #${buildNumber.orNull ?: "unknown"}
       Component:    ${component.get()}
       Scope:        ${scope.get().name.lowercase()}
       Distro:       ${distro.orNull ?: "N/A"}

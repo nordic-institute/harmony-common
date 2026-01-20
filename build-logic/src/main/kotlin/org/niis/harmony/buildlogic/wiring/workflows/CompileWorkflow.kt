@@ -41,6 +41,7 @@ internal fun Project.registerCompileWorkflow(
     this.skipTests.set(component.compile.skipTests)
     this.javaVersion.set(component.compile.javaVersion)
     this.sourceDateEpoch.set(component.buildInfo.epoch)
+    this.buildNumber.set(component.buildInfo.buildNumber)
 
     this.sources.from(
       providers.provider {

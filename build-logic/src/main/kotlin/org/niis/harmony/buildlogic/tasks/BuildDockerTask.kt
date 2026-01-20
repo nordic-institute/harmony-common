@@ -43,6 +43,9 @@ abstract class BuildDockerTask @Inject constructor(
   @get:Internal
   lateinit var baseImageDigestsForMarker: Provider<Map<String, String?>>
 
+  @get:Internal
+  abstract val dockerExecutable: Property<String>
+
   @get:Input
   abstract val version: Property<String>
 
@@ -54,9 +57,6 @@ abstract class BuildDockerTask @Inject constructor(
 
   @get:Input
   abstract val imageName: Property<String>
-
-  @get:Input
-  abstract val dockerExecutable: Property<String>
 
   @get:Input
   abstract val tags: ListProperty<String>
@@ -128,7 +128,7 @@ abstract class BuildDockerTask @Inject constructor(
       """
       Build cache miss: This task requires cached artifacts but none were found.
 
-      Build number: #${project.providers.gradleProperty("harmony.${component.get()}.build.number").orNull ?: "unknown"}
+      Build number: #${buildNumber.orNull ?: "unknown"}
       Component:    ${component.get()}
       Version:      ${version.get()}
       Output mode:  ${outputMode.get().rawValue}

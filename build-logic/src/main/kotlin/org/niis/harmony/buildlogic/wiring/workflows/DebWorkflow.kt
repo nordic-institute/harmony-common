@@ -33,6 +33,7 @@ internal fun Project.registerDebWorkflows(
       this.debKeyId.set(component.deb.keyId)
       this.gpgHome.set(component.deb.gpgHome)
       this.sourceDateEpoch.set(component.buildInfo.epoch)
+      this.buildNumber.set(component.buildInfo.buildNumber)
 
       this.dockerExecutable.set(ctx.tools.docker)
       this.builderImage.set(ctx.build.debBuilderImage)
