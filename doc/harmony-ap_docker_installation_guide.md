@@ -1,6 +1,6 @@
 # Harmony eDelivery Access - Access Point Docker Installation Guide
 
-Version: 2.0  
+Version: 2.1  
 Doc. ID: IG-AP-D
 
 ---
@@ -18,6 +18,7 @@ Doc. ID: IG-AP-D
 | 13.12.2024 | 1.6     | Add reference to the Logging Guide \[UG-AP-L\]            | Diego Martin     |
 | 13.01.2025 | 1.7     | Update links to external documents                        | Diego Martin     |
 | 23.07.2025 | 2.0     | Rewrite documentation to cover the new options introduced | Diego Martin     |
+| 05.12.2025 | 2.1     | Added section describing tagging strategy                 | Diego Martin     |
 
 ## License
 
@@ -187,7 +188,7 @@ Let's break down this command:
   - **DB_HOST:** The hostname or IP address of your MySQL server (in this example, `db.example.com`; for local testing it might be `localhost`).
   - **DB_PASSWORD:** The password for the database user. Replace `<YourDBPassword>` with the actual password or use an environment file to avoid putting secrets in the command line.
 - **-e ADMIN_PASSWORD=...:** The initial password for the admin user. Replace `<YourAdminPassword>` with a strong password of your choice. This is the password you will use to log into Access Point's web interface. This is optional; if not set, Access Point will generate a random password on first run and log it to the console, but we set it here for convenience.
-- **Image name niis/harmony-ap:<version>:** Specifies the Harmony Access Point Docker image from Docker Hub. Here we use the placeholder `<version>` tag for simplicity, but you should replace it with the actual version you want to run (e.g., `niis/harmony-ap:2.6.0`).
+- **Image name niis/harmony-ap:<version>:** Specifies the Harmony Access Point Docker image from Docker Hub. Here we use the placeholder `<version>` tag for simplicity, but you should replace it with the actual version you want to run. For production, use an immutable tag like `niis/harmony-ap:1.0.0` for exact version control. For staging/QA environments that should receive automatic security updates, you can use a rolling tag like `niis/harmony-ap:1.0`. See section [12.1.1 Understanding Docker Image Tags](#1211-understanding-docker-image-tags) for details on the tagging strategy.
 
 For more details on the `docker run` command and its options, refer to the [Docker run documentation](https://docs.docker.com/engine/reference/run/).
 
@@ -1074,6 +1075,79 @@ Harmony Access Point periodically releases new versions with improvements, secur
    - Also note down the current image version for reference.
 3. **Maintenance Window:** Plan for a maintenance window or at least a brief downtime. In a cluster, you might do rolling upgrades, but as a safe measure, it's often simpler to stop all nodes, upgrade, then start them (especially if DB schema changes are not backward compatible).
 
+### 12.1.1 Understanding Docker Image Tags
+
+Harmony Access Point Docker images follow a specific tagging strategy to provide flexibility in how you manage updates and security patches:
+
+#### Immutable Tags (Recommended for Production)
+
+These tags never change once created. They always point to the same image digest, providing maximum reproducibility:
+
+- **`<version>`** - Full version number (e.g., `1.0.0`)
+  - Points to the original build of that version
+  - **Example:** `niis/harmony-ap:1.0.0`
+  - **Use case:** Production environments requiring exact version control and reproducibility
+
+- **`<version>-<date>`** - Full version with build date (e.g., `1.0.0-20301231`)
+  - Created only for security refreshes (base image updates)
+  - Date format: YYYYMMDD (UTC)
+  - **Example:** `niis/harmony-ap:1.0.0-20301231`
+  - **Use case:** Audit requirements, compliance, or when you need to pin to a specific security refresh
+
+#### Mutable Tags (Rolling Updates)
+
+These tags are updated to point to newer images as security patches and updates are released:
+
+- **`<majorMinor>`** - Major and minor version (e.g., `1.0`)
+  - Automatically updated to the latest patch version within that minor release
+  - Includes security refreshes (base image updates) with same application code
+  - **Example:** `niis/harmony-ap:1.0`
+  - **Use case:** Staging/QA environments, or when you want automatic security updates within a minor version series
+
+#### Tag Behavior Examples
+
+**Scenario 1: Initial Release**
+```bash
+# First publication of version 1.0.0
+niis/harmony-ap:1.0.0               # Immutable - original build
+niis/harmony-ap:1.0                 # Mutable - points to 1.0.0
+```
+
+**Scenario 2: Security Refresh (Base Image Update)**
+```bash
+# Security refresh of version 1.0.0 (same application code, updated base)
+niis/harmony-ap:1.0.0               # Unchanged - still points to original
+niis/harmony-ap:1.0.0-20301231      # NEW immutable tag for the refresh
+niis/harmony-ap:1.0                 # Updated to point to 1.0.0-20301231
+```
+
+**Scenario 3: New Patch Release**
+```bash
+# New version 1.0.1
+niis/harmony-ap:1.0.1               # NEW immutable tag
+niis/harmony-ap:1.0                 # Updated to point to 1.0.1
+```
+
+#### Choosing the Right Tag
+
+| Your Requirement                                      | Recommended Tag  | Update Behavior                    |
+|-------------------------------------------------------|------------------|------------------------------------|
+| **Maximum stability** - exact version lock            | `1.0.0`          | Never changes                      |
+| **Specific build** - for audit/compliance             | `1.0.0-20301231` | Never changes                      |
+| **Automatic security updates** - within minor version | `1.0`            | Updates with patches and refreshes |
+| **Testing/Staging** - latest in series                | `1.0`            | Updates with patches and refreshes |
+
+#### Best Practices
+
+1. **Production:** Use immutable tags (`1.0.0`) for maximum control and reproducibility
+2. **Staging/QA:** Use mutable tags (`1.0`) to automatically receive security updates for testing before production
+3. **Updating:** When ready to update production:
+   - Test the specific version in staging first
+   - Update your production deployment to use the tested immutable tag
+   - Document the version change in your change log
+
+**Note:** Security refreshes update only the base operating system and system libraries. The Harmony Access Point application code remains identical. If you're using an immutable tag like `2.6.0`, you won't automatically receive these security updates. Review release notes or security bulletins to determine when to update to a newer tag with security patches.
+
 ### 12.2 Upgrade Procedure
 
 For a non-clustered environment (single instance):
@@ -1168,6 +1242,7 @@ Below is a reference table of common environment variables supported by the Harm
 | `SML_ZONE`                  | SML zone that you want to use; if unsure, please contact the domain authority of the policy.          | —                                     | No       |
 | `PRESERVE_BACKUP_FILE_DATE` | Controls whether backup tries to preserve file modification data. Some filesystems do not allow this. | *calculated*                          | No       |
 | `APPLICATION_CONFIG_PATH`   | Path to the `domibus.properties` file.                                                                | `HARMONY_BASE/etc/domibus.properties` | No       |
+| `EXTRA_POLICIES_PATH`       | Path to a directory with additional AS4 policy files to copy into the container policies directory.   | —                                     | No       |
 
 #### 13.1.3 Clustering and HA
 

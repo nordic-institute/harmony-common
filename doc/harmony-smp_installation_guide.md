@@ -1,6 +1,6 @@
 # Harmony eDelivery Access - Service Metadata Publisher Installation Guide <!-- omit in toc -->
 
-Version: 1.17  
+Version: 1.18  
 Doc. ID: IG-SMP
 ---
 
@@ -26,6 +26,7 @@ Doc. ID: IG-SMP
 | 21.02.2024 | 1.15    | Update supported operating systems                                                                      | Diego Martin     |
 | 05.02.2025 | 1.16    | Update links to external documents                                                                      | Diego Martin     |
 | 06.02.2025 | 1.17    | Support for Ubuntu 24.04                                                                                | Diego Martin     |
+| 05.12.2025 | 1.18    | Removed Ubuntu 20.04 from supported platforms as it has reached end of life                             | Diego Martin     |
 
 ## License <!-- omit in toc -->
 
@@ -89,7 +90,6 @@ See eDelivery documentation \[[TERMS](#Ref_TERMS)\].
 
 The SMP is officially supported on the following operating systems (x86-64, arm64):
 
-* Ubuntu Server 20.04 Long-Term Support (LTS).
 * Ubuntu Server 22.04 Long-Term Support (LTS).
 * Ubuntu Server 24.04 Long-Term Support (LTS).
 
@@ -138,7 +138,7 @@ Minimum recommended hardware parameters:
 
 Requirements to software and settings:
 
-* an installed and configured Ubuntu 20.04, 22.04, or 24.04 LTS x86-64 or arm64 operating system;
+* an installed and configured 22.04, or 24.04 LTS x86-64 or arm64 operating system;
 * if the SMP is separated from other networks by a firewall and/or NAT, the necessary connections to and from the SMP are allowed;
 * if the SMP has a private IP address, a corresponding NAT record must be created in the firewall;
 * enabling auxiliary services which are necessary for the functioning and management of the operating system (such as DNS, NTP, and SSH) stay outside the scope of this guide.

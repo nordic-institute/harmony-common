@@ -1,0 +1,12 @@
+[versions]
+jackson = "3.0.2"
+commons-compress = "1.28.0"
+commons-codec = "1.20.0"
+mockk = "1.14.6"
+
+[libraries]
+jackson-dataformat-yaml = { module = "tools.jackson.dataformat:jackson-dataformat-yaml", version.ref = "jackson" }
+jackson-module-kotlin   = { module = "tools.jackson.module:jackson-module-kotlin",       version.ref = "jackson" }
+commons-compress        = { module = "org.apache.commons:commons-compress",              version.ref = "commons-compress" }
+commons-codec           = { module = "commons-codec:commons-codec",                      version.ref = "commons-codec" }
+mockk                   = { module = "io.mockk:mockk",                                   version.ref = "mockk" }

@@ -1,0 +1,71 @@
+#!/command/with-contenv bash
+set -euo pipefail
+
+# shellcheck disable=SC2034 # Used in sourced scripts
+readonly STAGE="config-structure"
+
+source /usr/lib/harmony-common
+
+verify_permissions() {
+  local HAS_PERMISSION_ISSUE=0
+
+  [[ -r "$HARMONY_HOME" ]] || {
+    log WARN "HARMONY_HOME='$HARMONY_HOME' is not readable"
+    HAS_PERMISSION_ISSUE=1
+  }
+
+  [[ -w "$HARMONY_BASE" ]] || {
+    log WARN "HARMONY_BASE='$HARMONY_BASE' is not writable"
+    HAS_PERMISSION_ISSUE=1
+  }
+
+  if (( HAS_PERMISSION_ISSUE )); then
+    log WARN "Potential file permission issues detected. See documentation:"
+    log WARN "    https://github.com/nordic-institute/harmony-common/blob/main/doc/harmony-ap_docker_installation_guide.md#3211-distributed-file-systems#33-file-permissions-and-user-considerations"
+  fi
+}
+
+log INFO "Configuring access point"
+
+create_required_directories() {
+  local DIRECTORIES=(
+    "$HARMONY_BASE/etc"
+    "$HARMONY_BASE/etc/certs"
+    "$HARMONY_BASE/etc/plugins"
+    "$HARMONY_BASE/etc/plugins/config"
+    "$HARMONY_BASE/log"
+    "$HARMONY_BASE/work"
+    "$TEMP_DIR"
+  )
+
+  for dir in "${DIRECTORIES[@]}"; do
+    mkdir -p "$dir"
+    chmod 0770 "$dir"
+  done
+}
+
+copy_configuration_file() {
+  cp --update=none "$HARMONY_HOME/setup/domibus.properties.template"  "$APPLICATION_CONFIG_PATH"
+  chmod 600 "$APPLICATION_CONFIG_PATH"
+}
+
+# Copy the configuration file to a temporary location before applying modifications.
+# This ensures that on network file systems (e.g., NFS), intermediate edits happen on a local copy
+# and the final file is moved atomically to its destination, preventing partial updates,
+# stale data, and file locking issues on distributed mounts.
+copy_temp_config() {
+  cp "$APPLICATION_CONFIG_PATH" "$APPLICATION_CONFIG_PATH_TEMP"
+}
+
+config_structure() {
+  log DEBUG "Started"
+
+  verify_permissions
+  create_required_directories
+  copy_configuration_file
+  copy_temp_config
+
+  log DEBUG "Done"
+}
+
+config_structure

@@ -1,6 +1,6 @@
 # Harmony eDelivery Access - Access Point Installation Guide <!-- omit in toc -->
 
-Version: 1.19  
+Version: 1.20  
 Doc. ID: IG-AP
 
 ---
@@ -29,6 +29,7 @@ Doc. ID: IG-AP
 | 13.01.2025 | 1.17    | Update links to external documents                                                                                                                          | Diego Martin     |
 | 17.01.2025 | 1.18    | Support for Ubuntu 24.04                                                                                                                                    | Diego Martin     |
 | 08.08.2025 | 1.19    | Update links to external documents                                                                                                                          | Diego Martin     |
+| 05.12.2025 | 1.20    | Removed Ubuntu 20.04 from supported platforms as it has reached end of life                                                                                 | Diego Martin     |
 
 ## License <!-- omit in toc -->
 
@@ -89,7 +90,6 @@ See eDelivery documentation \[[TERMS](#Ref_TERMS)\].
 
 The Access Point is officially supported on the following operating systems (x86-64, arm64):
 
-* Ubuntu Server 20.04 Long-Term Support (LTS).
 * Ubuntu Server 22.04 Long-Term Support (LTS).
 * Ubuntu Server 24.04 Long-Term Support (LTS).
 
@@ -140,7 +140,7 @@ Minimum recommended hardware parameters:
 
 Requirements to software and settings:
 
-* an installed and configured Ubuntu 20.04, 22.04, or 24.04 LTS x86-64 or arm64 operating system;
+* an installed and configured 22.04, or 24.04 LTS x86-64 or arm64 operating system;
 * if the Access Point is separated from other networks by a firewall and/or NAT, the necessary connections to and from the Access Point are allowed;
 * if the Access Point has a private IP address, a corresponding NAT record must be created in the firewall;
 * enabling auxiliary services which are necessary for the functioning and management of the operating system (such as DNS, NTP, and SSH) stay outside the scope of this guide.

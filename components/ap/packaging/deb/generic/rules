@@ -1,0 +1,19 @@
+#!/usr/bin/make -f
+
+DH_VERBOSE ?= 1
+export DH_VERBOSE
+
+STAGING_DIR ?= $(STAGING_DIR)
+export STAGING_DIR
+
+%:
+	dh $@
+
+override_dh_install:
+	dh_install --sourcedir=$(STAGING_DIR)
+
+override_dh_missing:
+	dh_missing --fail-missing
+
+override_dh_strip_nondeterminism:
+	dh_strip_nondeterminism --exclude=.jar --exclude=.war
