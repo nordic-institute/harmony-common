@@ -220,14 +220,15 @@ Properties are organized by category. **Global or per-component** means you can 
 
 #### Maven Compilation (Global or Per-Component)
 
-| Property                                       | Description                                           | Default         |
-|------------------------------------------------|-------------------------------------------------------|-----------------|
-| `harmony.compile.skipTests`                    | Skip Maven tests                                      | `false`         |
-| `harmony.compile.maven.goals`                  | Maven goals to execute (CSV)                          | `clean,package` |
-| `harmony.compile.maven.profiles`               | Maven profiles to activate (CSV)                      | (empty)         |
-| `harmony.compile.javaVersion`                  | Java toolchain version                                | `8`             |
-| `harmony.<component>.compile.repo`             | **Required**. Path to Maven project                   | (none)          |
-| `harmony.<component>.compile.artifact.<alias>` | Per-component only. Path template for build artifacts | (none)          |
+| Property                                       | Description                                           | Default                      |
+|------------------------------------------------|-------------------------------------------------------|------------------------------|
+| `harmony.compile.skipTests`                    | Skip Maven tests                                      | `false`                      |
+| `harmony.compile.maven.goals`                  | Maven goals to execute (CSV)                          | `clean,package`              |
+| `harmony.compile.maven.profiles`               | Maven profiles to activate (CSV)                      | (empty)                      |
+| `harmony.compile.maven.localRepo`              | Path to a Maven local repo to reuse                   | (empty = isolated temp repo) |
+| `harmony.compile.javaVersion`                  | Java toolchain version                                | `8`                          |
+| `harmony.<component>.compile.repo`             | **Required**. Path to Maven project                   | (none)                       |
+| `harmony.<component>.compile.artifact.<alias>` | Per-component only. Path template for build artifacts | (none)                       |
 
 #### Debian Packaging (Global or Per-Component)
 
