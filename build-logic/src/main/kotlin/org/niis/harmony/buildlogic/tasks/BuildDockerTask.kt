@@ -371,8 +371,7 @@ abstract class BuildDockerTask @Inject constructor(
       pullPolicy = pullPolicy.get().rawValue,
       outputMode = outputMode.get().rawValue,
       sourceDateEpoch = sourceDateEpoch.get(),
-      archiveDigest = archiveDigest(outputMode.get()),
-      timestamp = System.currentTimeMillis()
+      archiveDigest = archiveDigest(outputMode.get())
     )
 
     val out = markerFile.get().asFile

@@ -213,8 +213,7 @@ abstract class CompileMavenComponentTask @Inject constructor(
       mavenProfiles = mavenProfiles.get(),
       skipTests = skipTests.get(),
       sourceDateEpoch = sourceDateEpoch.get(),
-      artifacts = artifactPaths,
-      timestamp = System.currentTimeMillis()
+      artifacts = artifactPaths
     )
 
     val out = markerFile.get().asFile

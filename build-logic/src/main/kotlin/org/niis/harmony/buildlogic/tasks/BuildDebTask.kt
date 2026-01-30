@@ -500,8 +500,7 @@ abstract class BuildDebTask @Inject constructor(
       builderImageTag = builderImageTag.get(),
       builderPullPolicy = builderPullPolicy.get().rawValue,
       sourceDateEpoch = sourceDateEpoch.get(),
-      artifacts = artifacts,
-      timestamp = System.currentTimeMillis()
+      artifacts = artifacts
     )
 
     val out = markerFile.get().asFile
