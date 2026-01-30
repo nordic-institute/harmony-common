@@ -11,6 +11,7 @@ import org.gradle.api.provider.Property
 import org.gradle.api.tasks.CacheableTask
 import org.gradle.api.tasks.Input
 import org.gradle.api.tasks.InputDirectory
+import org.gradle.api.tasks.InputFile
 import org.gradle.api.tasks.Internal
 import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.OutputDirectory
@@ -66,6 +67,10 @@ abstract class BuildDebTask @Inject constructor(
   @get:InputDirectory
   @get:PathSensitive(PathSensitivity.RELATIVE)
   abstract val stagingDeb: DirectoryProperty
+
+  @get:InputFile
+  @get:PathSensitive(PathSensitivity.NONE)
+  abstract val stagingFingerprint: RegularFileProperty
 
   @get:Input
   @get:Optional

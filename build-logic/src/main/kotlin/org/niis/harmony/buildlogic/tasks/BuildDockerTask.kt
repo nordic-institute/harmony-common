@@ -87,6 +87,10 @@ abstract class BuildDockerTask @Inject constructor(
   @get:PathSensitive(PathSensitivity.RELATIVE)
   abstract val dockerContext: DirectoryProperty
 
+  @get:InputFile
+  @get:PathSensitive(PathSensitivity.NONE)
+  abstract val stagingFingerprint: RegularFileProperty
+
   @get:OutputFile
   abstract val markerFile: RegularFileProperty
 

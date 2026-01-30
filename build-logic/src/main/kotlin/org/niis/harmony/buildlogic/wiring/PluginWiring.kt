@@ -82,6 +82,7 @@ object PluginWiring {
       dependsOnTask = stagingTasks.docker,
       contextDirProvider = stagingTasks.docker.flatMap { it.stagingDir },
       dockerfileProvider = dockerfileProvider,
+      stagingFingerprintProvider = stagingTasks.docker.flatMap { it.stagingFingerprint },
       cacheRestoreOnly = context.build.cache.restoreOnly
     )
 

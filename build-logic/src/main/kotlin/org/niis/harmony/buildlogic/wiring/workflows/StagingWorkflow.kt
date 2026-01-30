@@ -3,6 +3,7 @@ package org.niis.harmony.buildlogic.wiring.workflows
 import org.gradle.api.GradleException
 import org.gradle.api.Project
 import org.gradle.api.file.Directory
+import org.gradle.api.file.RegularFile
 import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.TaskProvider
 import org.niis.harmony.buildlogic.internal.Mappers
@@ -52,6 +53,7 @@ internal fun Project.registerStagingWorkflows(
     contentProviders = allInputs.docker,
     taskNameSuffix = "Docker",
     outputDir = BuildOutputPaths.dockerStagingDir(project, component.name),
+    fingerprintFile = BuildOutputPaths.stagingFingerprint(project, component.name, Scope.DOCKER),
     cacheRestoreOnly = context.build.cache.restoreOnly
   ).also { it.configure { dependsOn(dependsOn) } }
 
@@ -63,6 +65,7 @@ internal fun Project.registerStagingWorkflows(
       contentProviders = allInputs.debByDistro.getValue(distro),
       taskNameSuffix = "Deb${distro.toTaskName()}",
       outputDir = BuildOutputPaths.debStagingDir(project, component.name, distro),
+      fingerprintFile = BuildOutputPaths.stagingFingerprint(project, component.name, Scope.DEB, distro),
       cacheRestoreOnly = context.build.cache.restoreOnly
     ).also { it.configure { dependsOn(dependsOn) } }
   }
@@ -167,6 +170,7 @@ private fun Project.registerAssembleStagingTask(
   contentProviders: ContentProviders,
   taskNameSuffix: String,
   outputDir: Provider<Directory>,
+  fingerprintFile: Provider<RegularFile>,
   cacheRestoreOnly: Provider<Boolean>
 ): TaskProvider<AssembleStagingTask> {
   val taskName = "assembleStaging${component.name.toTaskName()}$taskNameSuffix"
@@ -191,6 +195,7 @@ private fun Project.registerAssembleStagingTask(
     this.projectPaths.set(contentProviders.projectPaths)
 
     this.stagingDir.set(outputDir)
+    this.stagingFingerprint.set(fingerprintFile)
     this.cacheRestoreOnly.set(cacheRestoreOnly)
   }
 }

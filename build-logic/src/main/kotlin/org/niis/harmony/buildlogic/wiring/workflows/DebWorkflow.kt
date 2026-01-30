@@ -28,6 +28,7 @@ internal fun Project.registerDebWorkflows(
       this.distro.set(distro)
       this.packageName.set(component.deb.packageName)
       this.stagingDeb.set(assembleDebTasksByDistro.getValue(distro).flatMap { it.stagingDir })
+      this.stagingFingerprint.set(assembleDebTasksByDistro.getValue(distro).flatMap { it.stagingFingerprint })
 
       this.debSign.set(component.deb.sign)
       this.debKeyId.set(component.deb.keyId)

@@ -20,6 +20,7 @@ import org.gradle.api.tasks.Internal
 import org.gradle.api.tasks.Nested
 import org.gradle.api.tasks.Optional
 import org.gradle.api.tasks.OutputDirectory
+import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.TaskAction
 import org.niis.harmony.buildlogic.internal.utils.ManifestParser
 import org.niis.harmony.buildlogic.models.ArtifactReference
@@ -33,12 +34,20 @@ import org.niis.harmony.buildlogic.tasks.inputs.AliasedFileInput
 import org.niis.harmony.buildlogic.tasks.inputs.AliasedPathInput
 import java.io.File
 import java.io.IOException
+import java.io.InputStream
 import java.nio.file.Files
+import java.nio.file.LinkOption
 import java.nio.file.Path
 import java.nio.file.Paths
+import java.nio.file.StandardCopyOption
 import java.nio.file.attribute.FileTime
+import java.security.MessageDigest
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
+import kotlin.io.path.createDirectories
+import kotlin.io.path.invariantSeparatorsPathString
+import kotlin.io.path.isRegularFile
+import kotlin.io.path.isSymbolicLink
 
 @CacheableTask
 abstract class AssembleStagingTask @Inject constructor(
@@ -80,6 +89,9 @@ abstract class AssembleStagingTask @Inject constructor(
   @get:Input
   @get:Optional
   abstract val distro: Property<String>
+
+  @get:OutputFile
+  abstract val stagingFingerprint: RegularFileProperty
 
   @get:OutputDirectory
   abstract val stagingDir: DirectoryProperty
@@ -124,6 +136,8 @@ abstract class AssembleStagingTask @Inject constructor(
     )
 
     processManifestSteps(manifest, sourceIndexes, outputDirectory, epochSeconds)
+
+    writeStagingFingerprint(outputDirectory, stagingFingerprint.get().asFile.toPath())
   }
 
   private fun prepareOutputDirectory(dir: Path) {
@@ -445,4 +459,81 @@ abstract class AssembleStagingTask @Inject constructor(
 
   private fun String.isDirectoryHint(): Boolean =
     endsWith("/") || endsWith("\\") || this == "." || this == "./" || this == "/"
+
+  private fun writeStagingFingerprint(stagingRoot: Path, outFile: Path) {
+    val parentDir = outFile.parent
+      ?: throw GradleException("Fingerprint output path has no parent directory: $outFile")
+
+    try {
+      parentDir.createDirectories()
+      if (!Files.isDirectory(parentDir)) {
+        throw GradleException("Fingerprint output parent is not a directory: $parentDir")
+      }
+    } catch (e: Exception) {
+      throw GradleException("Failed to create staging fingerprint directory: $parentDir", e)
+    }
+
+    val sha256 = MessageDigest.getInstance("SHA-256")
+    val chunkBuffer = ByteArray(DEFAULT_BUFFER_SIZE)
+    val longBuffer = ByteArray(8)
+
+    fun updateWithString(value: String) {
+      sha256.update(value.toByteArray(Charsets.UTF_8))
+      sha256.update(0)
+    }
+
+    fun updateWithLong(value: Long) {
+      for (i in 7 downTo 0) {
+        longBuffer[7 - i] = ((value ushr (i * 8)) and 0xFF).toByte()
+      }
+      sha256.update(longBuffer)
+      sha256.update(0)
+    }
+
+    try {
+      val entries = ArrayList<Pair<String, Path>>(1024)
+
+      Files.walk(stagingRoot).use { stream ->
+        stream.forEach { path ->
+          if (path.isSymbolicLink()) {
+            val rel = stagingRoot.relativize(path).invariantSeparatorsPathString
+            throw GradleException("Symlink detected in staging directory (not allowed): $rel")
+          }
+          if (path.isRegularFile(LinkOption.NOFOLLOW_LINKS)) {
+            val rel = stagingRoot.relativize(path).invariantSeparatorsPathString
+            entries.add(rel to path)
+          }
+        }
+      }
+
+      entries.sortBy { it.first }
+
+      for ((rel, file) in entries) {
+        updateWithString(rel)
+
+        updateWithLong(Files.size(file))
+
+        Files.newInputStream(file).use { input: InputStream ->
+          while (true) {
+            val read = input.read(chunkBuffer)
+            if (read < 0) break
+            if (read > 0) sha256.update(chunkBuffer, 0, read)
+          }
+        }
+
+        sha256.update(0)
+      }
+    } catch (e: Exception) {
+      throw GradleException("Failed to compute staging fingerprint for: $stagingRoot", e)
+    }
+
+    val fingerprintHex = sha256.digest().joinToString("") { "%02x".format(it) }
+    try {
+      val tmp = Files.createTempFile(parentDir, "fingerprint-", ".tmp")
+      Files.writeString(tmp, "$fingerprintHex\n")
+      Files.move(tmp, outFile, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE)
+    } catch (e: IOException) {
+      throw GradleException("Failed to write staging fingerprint to: $outFile", e)
+    }
+  }
 }
