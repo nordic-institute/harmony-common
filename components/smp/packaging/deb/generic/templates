@@ -27,6 +27,8 @@ Description: Initial administator password of this SMP server
 Template: harmony-smp/serverdn
 Type: string
 Description: Distinguished name of generated self-signed server certificate
+  Example: CN=smp.example.com, O=Example Org, C=FI
+  If left blank, CN=<hostname> will be used.
 
 Template: harmony-smp/tomcatport
 Type: string

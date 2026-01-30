@@ -8,15 +8,15 @@ AmbientCapabilities=CAP_NET_BIND_SERVICE
 TasksMax=infinity
 
 Environment=CATALINA_PID=/run/harmony-smp/harmony-smp.pid
+Environment=CATALINA_TMPDIR=/var/tmp/harmony-smp
 Environment=CATALINA_HOME=/opt/harmony-smp
 Environment=CATALINA_BASE=/var/opt/harmony-smp
-Environment=CATALINA_TMPDIR=/var/tmp/harmony-smp
 Environment=CATALINA_OUT=/var/log/harmony-smp/catalina.out
 Environment='CATALINA_OPTS=-Xms256M -Xmx512M -server -XX:+UseParallelGC'
 Environment='JAVA_OPTS=-Djava.awt.headless=true -Djava.security.egd=file:/dev/./urandom -Dsmp.configuration.file=/etc/harmony-smp/smp.config.properties -Dsmp.init.configuration.file=/etc/harmony-smp/smp.init.properties'
 
 ExecStart=/opt/harmony-smp/bin/startup.sh
-ExecStop=/opt/harmony-smp/bin/shutdown.sh
+ExecStop=/opt/harmony-smp/bin/shutdown.sh 15
 
 User=harmony-smp
 Group=harmony-smp

@@ -22,6 +22,7 @@ inputs:
         exclude:
           - "conf/logging.properties"
           - "conf/server.xml"
+          - "conf/context.xml"
         into: /opt/harmony-smp/setup/tomcat-defaults
 
   # Liquibase

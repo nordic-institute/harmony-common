@@ -6,19 +6,26 @@ set -euo pipefail
 SUCCESS=false
 DROPDBONERROR=false
 
+HARMONY_HOME="/opt/harmony-smp"
+HARMONY_BASE="/etc/harmony-smp"
+
+SERVER_XML="${HARMONY_BASE}/tomcat-conf/server.xml"
+SET_ENV="${HARMONY_HOME}/bin/setenv.sh"
+
 log() { echo "harmony-smp: $*" >&2; }
 warn() { log "WARNING: $*"; }
 error() { log "ERROR: $*"; }
 
+# shellcheck disable=SC2317
 cleanup() {
   db_stop
   if [ ! "$SUCCESS" = true ]; then
+    error "Installation failed"
     if [[ "$DROPDBONERROR" = true && "$DB_HOST" = localhost ]]; then
       mysql -e "DROP SCHEMA $DB_SCHEMA; DROP USER $DB_USER@localhost"
-    fi;
+    fi
   fi
 }
-
 trap cleanup EXIT
 
 case "$1" in
@@ -53,6 +60,55 @@ case "$1" in
 
   AUSER=""
   HASHEDPASSWORD=""
+  HOST_FQDN="$(hostname -f 2>/dev/null || hostname)"
+
+  backup_file() {
+    local file="$1"
+
+    local timestamp
+    timestamp="$(date +%Y%m%d%H%M%S)"
+
+    local backup="${file}.bak.${timestamp}"
+    cp -a "$file" "$backup"
+
+    echo "$backup"
+  }
+
+  normalize_dname() {
+    local dname="$1"
+
+    if [[ -z "${dname// }" ]]; then
+      echo "CN=$HOST_FQDN"
+      return
+    fi
+
+    if [[ "$dname" != *"="* ]]; then
+      echo "CN=$dname"
+      return
+    fi
+
+    echo "$dname"
+  }
+
+  gen_keypair() {
+    local alias="$1"
+    local keystore="$2"
+    local storepass="$3"
+    local keypass="$4"
+    local dname="$5"
+
+    keypair_run_keytool() {
+      local dn="$1"
+      keytool -genkeypair -keyalg RSA -alias "$alias" \
+        -keystore "$keystore" -storetype PKCS12 -storepass "$storepass" \
+        -keypass "$keypass" -validity 333 -keysize 3072 -dname "$dn" 2>/dev/null
+    }
+
+    if ! keypair_run_keytool "$dname"; then
+      warn "Invalid server DN '$dname'. Falling back to CN=$HOST_FQDN"
+      keypair_run_keytool "CN=$HOST_FQDN"
+    fi
+  }
 
   if [[ "$DB_HOST" = localhost ]]; then
     SCHEMA_EXISTS=$(mysql -s -N -e "SELECT SCHEMA_NAME FROM INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME='$DB_SCHEMA'");
@@ -99,8 +155,8 @@ case "$1" in
     "/opt/harmony-smp/liquibase/liquibase" \
       --changelog-file=/opt/harmony-smp/db/db.changelog.xml \
       update \
-      -DADMIN_USERNAME="$AUSER" \
-      -DADMIN_PASSWORD_HASH="$HASHEDPASSWORD" \
+      -DadminUser="$AUSER" \
+      -DadminPassword="$HASHEDPASSWORD" \
       2>&1 | sed 's/^/    /' >&2
 
   mkdir -p /etc/harmony-smp/tomcat-conf
@@ -109,7 +165,7 @@ case "$1" in
   mkdir -p /run/harmony-smp
   mkdir -p /var/tmp/harmony-smp
 
-  if [ ! -f /etc/harmony-smp/tomcat-conf/server.xml ]; then
+  if [ ! -f "$SERVER_XML" ]; then
     cp /opt/harmony-smp/setup/context.xml.template /etc/harmony-smp/tomcat-conf/
 
     for config_file in web.xml catalina.properties logging.properties; do
@@ -121,22 +177,20 @@ case "$1" in
 
     rm -f /etc/harmony-smp/*.p12
 
+    SERVERDN="$(normalize_dname "$SERVERDN")"
+
     KEYSTOREPASS=$(openssl rand -base64 12)
-    keytool -genkeypair -keyalg RSA -alias selfsigned \
-        -keystore /etc/harmony-smp/smp-keystore.p12 -storetype PKCS12 -storepass "$KEYSTOREPASS" \
-        -keypass "$KEYSTOREPASS" -validity 333 -keysize 3072 -dname "$SERVERDN" 2>/dev/null
+    gen_keypair "selfsigned" "/etc/harmony-smp/smp-keystore.p12" "$KEYSTOREPASS" "$KEYSTOREPASS" "$SERVERDN"
 
     TRUSTSTOREPASS=$(openssl rand -base64 12)
-    keytool -genkeypair -alias mock \
+    keytool -genkeypair -keyalg RSA -alias mock \
       -keystore /etc/harmony-smp/smp-truststore.p12 -storetype PKCS12 -storepass "$TRUSTSTOREPASS" \
       -keypass "$TRUSTSTOREPASS" -dname "CN=mock" 2>/dev/null
     keytool -delete -alias mock \
       -keystore /etc/harmony-smp/smp-truststore.p12 -storepass "$TRUSTSTOREPASS" 2>/dev/null
 
     TLSKEYPASS=$(openssl rand -base64 12)
-    keytool -genkeypair -keyalg RSA -alias selfsigned \
-        -keystore /etc/harmony-smp/tls-keystore.p12 -storetype PKCS12 -storepass "$TLSKEYPASS" \
-        -keypass "$TLSKEYPASS" -validity 333 -keysize 3072 -dname "$SERVERDN" 2>/dev/null
+    gen_keypair "selfsigned" "/etc/harmony-smp/tls-keystore.p12" "$TLSKEYPASS" "$TLSKEYPASS" "$SERVERDN"
 
     TLSTRUSTSTOREPASS=$(openssl rand -base64 12)
     keytool -export -alias selfsigned -file /etc/harmony-smp/selfsigned.cer \
@@ -149,16 +203,16 @@ case "$1" in
       tls_keystore_password="$TLSKEYPASS" \
       tls_truststore_password="$TLSTRUSTSTOREPASS" \
       tomcat_port="$TOMCATPORT" \
-      envsubst </opt/harmony-smp/setup/server.xml.template >/etc/harmony-smp/tomcat-conf/server.xml
+      envsubst </opt/harmony-smp/setup/server.xml.template >$SERVER_XML
 
     env -i dbuser="$DB_USER" dbpassword="$DB_PASSWORD" jdbcurl="$JDBC_URL" \
       envsubst </opt/harmony-smp/setup/context.xml.template >/etc/harmony-smp/tomcat-conf/context.xml
 
     env -i \
       tls_truststore_password="$TLSTRUSTSTOREPASS" \
-      envsubst '$tls_truststore_password' </opt/harmony-smp/setup/setenv.sh.template >/opt/harmony-smp/bin/setenv.sh
+      envsubst '$tls_truststore_password' </opt/harmony-smp/setup/setenv.sh.template >$SET_ENV
 
-    chmod +x /opt/harmony-smp/bin/setenv.sh
+    chmod +x $SET_ENV
 
     cat >/etc/harmony-smp/smp.init.properties <<EOF
 # Initial configuration
@@ -186,6 +240,38 @@ bdmsl.integration.tls.serverSubjectRegex=
 EOF
     fi
   else
+    if dpkg --compare-versions "$2" lt "2.3.0"; then
+      backup="$(backup_file "$SERVER_XML")"
+      tmp="$(mktemp)"
+
+      log "Migrating server.xml Tomcat 9 format to Tomcat 10 (backup: $backup)"
+
+      fail_restore() {
+        warn "$1 Restoring backup."
+        cp -a "$backup" "$SERVER_XML" || true
+        rm -f "$tmp" || true
+        return 1
+      }
+
+      XSL_221_TO_230="/opt/harmony-smp/tomcat/migrations/221-to-230-sslhostconfig-and-host.xsl"
+      if ! xmlstarlet tr "$XSL_221_TO_230" "$SERVER_XML" >"$tmp"; then
+        fail_restore "XSLT transform failed."
+      else
+        xmlstarlet fo "$tmp" >"$tmp.fmt" && mv -f "$tmp.fmt" "$tmp" || true
+      fi
+
+      if ! xmlstarlet val "$tmp" >/dev/null; then
+        fail_restore "XML validation failed after migration."
+      fi
+
+      if ! cp -f "$tmp" "$SERVER_XML"; then
+        fail_restore "Failed to write migrated $SERVER_XML."
+      fi
+
+      rm -f "$tmp" || true
+      log "Migration applied successfully"
+    fi
+
     xmlstarlet edit --pf --inplace \
       --update "/Context/Resource/@username" --value "$DB_USER" \
       --update "/Context/Resource/@password" --value "$DB_PASSWORD" \
@@ -194,7 +280,7 @@ EOF
 
     xmlstarlet edit --pf --inplace \
       --update '(//Connector[@SSLEnabled="true"]/@port)[1]' --value "$TOMCATPORT" \
-      /etc/harmony-smp/tomcat-conf/server.xml
+      $SERVER_XML
   fi
 
   HARMONY_HOME=${HARMONY_HOME:-/opt/harmony-smp}
@@ -211,9 +297,23 @@ EOF
   db_reset harmony-smp/database-password
   DB_PASSWORD=
 
-  if dpkg --compare-versions "$2" lt-nl "2.0.0"; then
-    sed -i -E '\|^export CLASSPATH=/etc/harmony-smp.*|d' /opt/harmony-smp/bin/setenv.sh || true
-    echo "JAVA_HOME=$(update-java-alternatives -l | grep java-1.8 | head -n 1 | tr -s \" \" | cut -d \" \" -f 3)" >>/opt/harmony-smp/bin/setenv.sh || true
+  if dpkg --compare-versions "$2" lt-nl "2.3.0"; then
+    sed -i -E '\|^export CLASSPATH=/etc/harmony-smp.*|d' $SET_ENV || true
+    JAVA_HOME_PATH=$(update-java-alternatives -l | grep -m1 java-1.21 | head -n 1 | tr -s " " | cut -d " " -f 3) || true
+
+    if [[ -z "${JAVA_HOME_PATH:-}" ]] && command -v java >/dev/null 2>&1; then
+      JAVA_HOME_PATH="$(dirname "$(dirname "$(readlink -f "$(command -v java)")")")"
+    fi
+
+    if [[ -n "${JAVA_HOME_PATH:-}" ]]; then
+      if grep -q '^export JAVA_HOME=' $SET_ENV; then
+        sed -i -E "s|^export JAVA_HOME=.*|export JAVA_HOME=\"$JAVA_HOME_PATH\"|" $SET_ENV
+      else
+        echo "export JAVA_HOME=\"$JAVA_HOME_PATH\"" >>$SET_ENV
+      fi
+    else
+      warn "Java 21 not found. JAVA_HOME not updated"
+    fi
   fi
 
   # Make sure the administrative user exists
@@ -254,14 +354,14 @@ EOF
   chown -R harmony-smp:harmony-smp /etc/harmony-smp
   chmod -R u=Xrw,g=Xr,o=X /etc/harmony-smp
 
-  systemctl daemon-reload
+  systemctl daemon-reload || warn "systemctl daemon-reload failed"
+
   if [ "$(systemctl is-enabled harmony-smp)" = "enabled" ]; then
-    systemctl start harmony-smp 2>/dev/null || true
+    systemctl start harmony-smp
   fi
 
   SUCCESS=true
  ;;
-
 
  abort-upgrade|abort-remove|abort-deconfigure)
  ;;

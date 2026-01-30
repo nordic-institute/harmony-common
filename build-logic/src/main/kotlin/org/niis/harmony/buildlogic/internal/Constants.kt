@@ -14,7 +14,7 @@ internal object Constants {
     const val DEFAULT_COMPILE_SKIP_TESTS: Boolean = false
     val DEFAULT_COMPILE_MAVEN_PROFILES: List<String> = emptyList()
     val DEFAULT_COMPILE_MAVEN_GOALS: List<String> = listOf("clean", "package")
-    const val DEFAULT_COMPILE_JAVA_VERSION: Int = 8
+    const val DEFAULT_COMPILE_JAVA_VERSION: Int = 21
 
     // Debian packages
     val DEFAULT_DEB_DISTROS: List<String> = listOf("jammy", "noble")

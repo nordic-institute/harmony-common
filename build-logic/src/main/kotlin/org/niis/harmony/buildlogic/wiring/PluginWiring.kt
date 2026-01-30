@@ -139,8 +139,15 @@ object PluginWiring {
         content { includeModule("liquibase", "liquibase") }
       }
       ivy {
-        name = "ApacheTomcatArchives"
+        name = "ApacheTomcatArchives9"
         url = root.uri("https://archive.apache.org/dist/tomcat/tomcat-9")
+        patternLayout { artifact("v[revision]/bin/apache-tomcat-[revision].[ext]") }
+        metadataSources { artifact() }
+        content { includeModule("apache", "tomcat") }
+      }
+      ivy {
+        name = "ApacheTomcatArchives10"
+        url = root.uri("https://archive.apache.org/dist/tomcat/tomcat-10")
         patternLayout { artifact("v[revision]/bin/apache-tomcat-[revision].[ext]") }
         metadataSources { artifact() }
         content { includeModule("apache", "tomcat") }
