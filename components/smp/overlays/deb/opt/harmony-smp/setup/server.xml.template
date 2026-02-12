@@ -36,11 +36,15 @@
                   workDir="/var/opt/harmony-smp/work">
 
                 <Valve className="org.apache.catalina.valves.ErrorReportValve"
-                       showReport="false" showServerInfo="false"/>
+                       showReport="false"
+                       showServerInfo="false"
+                />
+
                 <Valve className="org.apache.catalina.valves.AccessLogValve"
                        directory="/var/log/harmony-smp"
                        prefix="localhost_access_log" suffix=".txt"
-                       pattern="%h %l %u %t &quot;%r&quot; %s %b"/>
+                       pattern="%h %l %u %t &quot;%r&quot; %s %b"
+                />
 
             </Host>
         </Engine>
