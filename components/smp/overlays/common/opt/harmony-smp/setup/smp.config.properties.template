@@ -37,9 +37,13 @@ smp.datasource.jndi = java:comp/env/jdbc/harmony-smp
 spring.jpa.generate-ddl = false
 
 # *********************************
-# security folder
+# Security properties
 # *********************************
-# smp.security.folder = ./smp/
+# security headers
+smp.http.header.security.policy = default-src 'self'; script-src 'self'; connect-src 'self'; img-src 'self' data: https:; style-src 'self' 'unsafe-inline'; frame-ancestors 'none'; form-action 'self'; font-src 'self' data:; object-src 'none'; base-uri 'self'
+
+# secrets location
+smp.security.folder = /etc/harmony-smp
 
 # *********************************
 # Logging properties
@@ -61,9 +65,6 @@ smp.ui.session.secure = true
 # *********************************
 # path where SMP extensions are located. The Folder is loaded by the SMP classloader at startup.
 # smp.libraries.folder = ./ext-lib
-
-# secrets location
-smp.security.folder = /etc/harmony-smp
 
 # *********************************
 # Locale folder
