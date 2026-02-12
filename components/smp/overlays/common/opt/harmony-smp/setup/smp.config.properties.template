@@ -51,6 +51,12 @@ smp.log.folder = /var/log/harmony-smp
 # smp.log.configuration.file = smp-logback.xml
 
 # *********************************
+# UI session
+# *********************************
+# Send session cookie only over HTTPS
+smp.ui.session.secure = true
+
+# *********************************
 # Extension folder
 # *********************************
 # path where SMP extensions are located. The Folder is loaded by the SMP classloader at startup.
