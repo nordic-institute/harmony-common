@@ -210,9 +210,9 @@ case "$1" in
 
     env -i \
       tls_truststore_password="$TLSTRUSTSTOREPASS" \
-      envsubst '$tls_truststore_password' </opt/harmony-smp/setup/setenv.sh.template >$SET_ENV
+      envsubst '$tls_truststore_password' </opt/harmony-smp/setup/setenv.sh.template >"$SET_ENV"
 
-    chmod +x $SET_ENV
+    chmod +x "$SET_ENV"
 
     cat >/etc/harmony-smp/smp.init.properties <<EOF
 # Initial configuration
@@ -280,13 +280,13 @@ EOF
 
     xmlstarlet edit --pf --inplace \
       --update '(//Connector[@SSLEnabled="true"]/@port)[1]' --value "$TOMCATPORT" \
-      $SERVER_XML
+      "$SERVER_XML"
   fi
 
   HARMONY_HOME=${HARMONY_HOME:-/opt/harmony-smp}
   if [[ ! -f /etc/harmony-smp/smp.config.properties ]]; then
     if [[ -f ${HARMONY_HOME}/setup/smp.config.properties.template ]]; then
-      cp ${HARMONY_HOME}/setup/smp.config.properties.template /etc/harmony-smp/smp.config.properties
+      cp "${HARMONY_HOME}"/setup/smp.config.properties.template /etc/harmony-smp/smp.config.properties
       chmod 640 /etc/harmony-smp/smp.config.properties
       log "Created /etc/harmony-smp/smp.config.properties from template"
     fi
@@ -298,7 +298,7 @@ EOF
   DB_PASSWORD=
 
   if dpkg --compare-versions "$2" lt-nl "2.3.0"; then
-    sed -i -E '\|^export CLASSPATH=/etc/harmony-smp.*|d' $SET_ENV || true
+    sed -i -E '\|^export CLASSPATH=/etc/harmony-smp.*|d' "$SET_ENV" || true
     JAVA_HOME_PATH=$(update-java-alternatives -l | grep -m1 java-1.21 | head -n 1 | tr -s " " | cut -d " " -f 3) || true
 
     if [[ -z "${JAVA_HOME_PATH:-}" ]] && command -v java >/dev/null 2>&1; then
@@ -306,10 +306,10 @@ EOF
     fi
 
     if [[ -n "${JAVA_HOME_PATH:-}" ]]; then
-      if grep -q '^export JAVA_HOME=' $SET_ENV; then
-        sed -i -E "s|^export JAVA_HOME=.*|export JAVA_HOME=\"$JAVA_HOME_PATH\"|" $SET_ENV
+      if grep -q '^export JAVA_HOME=' "$SET_ENV"; then
+        sed -i -E "s|^export JAVA_HOME=.*|export JAVA_HOME=\"$JAVA_HOME_PATH\"|" "$SET_ENV"
       else
-        echo "export JAVA_HOME=\"$JAVA_HOME_PATH\"" >>$SET_ENV
+        echo "export JAVA_HOME=\"$JAVA_HOME_PATH\"" >>"$SET_ENV"
       fi
     else
       warn "Java 21 not found. JAVA_HOME not updated"
