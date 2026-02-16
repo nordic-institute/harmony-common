@@ -179,6 +179,7 @@ publish_environment_variables() {
   printf "%s" "$TLS_TRUSTSTORE_PATH"     > /var/run/s6/container_environment/TLS_TRUSTSTORE_PATH
   printf "%s" "$CATALINA_TEMP_DIR"       > /var/run/s6/container_environment/CATALINA_TEMP_DIR
   printf "%s" "$SSL_ENABLED"             > /var/run/s6/container_environment/SSL_ENABLED
+  printf "%s" "$LB_TLS_TERMINATION"      > /var/run/s6/container_environment/LB_TLS_TERMINATION
   printf "%s" "$SERVER_PORT"             > /var/run/s6/container_environment/SERVER_PORT
 }
 

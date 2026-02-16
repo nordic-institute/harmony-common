@@ -87,6 +87,10 @@ abstract class BuildDockerTask @Inject constructor(
   @get:PathSensitive(PathSensitivity.RELATIVE)
   abstract val dockerContext: DirectoryProperty
 
+  @get:InputFile
+  @get:PathSensitive(PathSensitivity.NONE)
+  abstract val stagingFingerprint: RegularFileProperty
+
   @get:OutputFile
   abstract val markerFile: RegularFileProperty
 
@@ -367,8 +371,7 @@ abstract class BuildDockerTask @Inject constructor(
       pullPolicy = pullPolicy.get().rawValue,
       outputMode = outputMode.get().rawValue,
       sourceDateEpoch = sourceDateEpoch.get(),
-      archiveDigest = archiveDigest(outputMode.get()),
-      timestamp = System.currentTimeMillis()
+      archiveDigest = archiveDigest(outputMode.get())
     )
 
     val out = markerFile.get().asFile

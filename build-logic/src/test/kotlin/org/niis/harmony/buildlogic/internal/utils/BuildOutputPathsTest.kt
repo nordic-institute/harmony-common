@@ -1,6 +1,7 @@
 package org.niis.harmony.buildlogic.internal.utils
 
 import org.gradle.testfixtures.ProjectBuilder
+import org.niis.harmony.buildlogic.models.Scope
 import java.nio.file.Files
 import java.nio.file.Path
 import kotlin.io.path.relativeTo
@@ -34,7 +35,7 @@ class BuildOutputPathsTest {
   fun `provides deb marker path`() {
     val marker = BuildOutputPaths.debMarker(project, "ap", project.provider { "1.0.0" }, "jammy").get().asFile.toPath()
     val relative = marker.relativeTo(buildDir).toString().replace('\\', '/')
-    assertEquals("metadata/deb/ap/1.0.0-jammy.json", relative)
+    assertEquals("metadata/deb/ap/jammy/1.0.0.json", relative)
   }
 
   @Test
@@ -77,5 +78,19 @@ class BuildOutputPathsTest {
     val ociTar = BuildOutputPaths.dockerOutputOciTar(project, "ap", project.provider { "1.0.0" }).get().asFile.toPath()
     val relative = ociTar.relativeTo(buildDir).toString().replace('\\', '/')
     assertEquals("docker/ap/1.0.0/image-oci.tar", relative)
+  }
+
+  @Test
+  fun `provides docker staging fingerprint paths`() {
+    val dockerFingerprint = BuildOutputPaths.stagingFingerprint(project, "ap", Scope.DOCKER).get().asFile.toPath()
+    val dockerFingerprintRel = dockerFingerprint.relativeTo(buildDir).toString().replace('\\', '/')
+    assertEquals("metadata/staging/ap/docker/fingerprint.sha256", dockerFingerprintRel)
+  }
+
+  @Test
+  fun `provides deb staging fingerprint paths`() {
+    val debFingerprint = BuildOutputPaths.stagingFingerprint(project, "ap", Scope.DEB, "jammy").get().asFile.toPath()
+    val debFingerprintRel = debFingerprint.relativeTo(buildDir).toString().replace('\\', '/')
+    assertEquals("metadata/staging/ap/deb/jammy/fingerprint.sha256", debFingerprintRel)
   }
 }

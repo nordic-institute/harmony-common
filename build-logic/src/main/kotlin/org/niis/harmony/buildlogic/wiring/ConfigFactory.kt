@@ -124,6 +124,8 @@ object ConfigFactory {
         .orElse(Constants.BuildDefaults.DEFAULT_COMPILE_MAVEN_PROFILES),
       mavenGoals = resolver.stringList("compile.maven.goals")
         .orElse(Constants.BuildDefaults.DEFAULT_COMPILE_MAVEN_GOALS),
+      mavenLocalRepo = resolver.string("compile.maven.localRepo")
+        .orElse(project.provider { "" }),
       javaVersion = resolver.int("compile.javaVersion")
         .orElse(Constants.BuildDefaults.DEFAULT_COMPILE_JAVA_VERSION),
       artifacts = artifacts

@@ -25,6 +25,7 @@ internal fun Project.registerDockerWorkflowForTarget(
   dependsOnTask: TaskProvider<*>,
   contextDirProvider: Provider<Directory>,
   dockerfileProvider: Provider<RegularFile>,
+  stagingFingerprintProvider: Provider<RegularFile>,
   cacheRestoreOnly: Provider<Boolean>
 ): TaskProvider<BuildDockerTask> {
   val taskName = "buildDocker${nameForTask.toTaskName()}"
@@ -49,6 +50,7 @@ internal fun Project.registerDockerWorkflowForTarget(
     this.vcsRevision.set(revision)
     this.dockerfile.set(dockerfileProvider)
     this.dockerContext.set(contextDirProvider)
+    this.stagingFingerprint.set(stagingFingerprintProvider)
     this.buildNumber.set(buildNumber)
     this.cacheRestoreOnly.set(cacheRestoreOnly)
 

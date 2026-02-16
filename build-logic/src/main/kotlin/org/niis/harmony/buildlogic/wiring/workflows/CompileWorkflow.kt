@@ -38,6 +38,7 @@ internal fun Project.registerCompileWorkflow(
     this.repoDir.set(component.compile.repoDir)
     this.mavenProfiles.set(component.compile.mavenProfiles)
     this.mavenGoals.set(component.compile.mavenGoals)
+    this.mavenLocalRepo.set(component.compile.mavenLocalRepo)
     this.skipTests.set(component.compile.skipTests)
     this.javaVersion.set(component.compile.javaVersion)
     this.sourceDateEpoch.set(component.buildInfo.epoch)

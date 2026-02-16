@@ -55,6 +55,9 @@ abstract class CompileMavenComponentTask @Inject constructor(
       return "${launcherMetadata.vendor}:${launcherMetadata.javaRuntimeVersion}"
     }
 
+  @get:Internal
+  abstract val mavenLocalRepo: Property<String>
+
   @get:Input
   abstract val version: Property<String>
 
@@ -145,9 +148,12 @@ abstract class CompileMavenComponentTask @Inject constructor(
   }
 
   private fun buildMavenArguments(): List<String> {
+    val localRepoOverride = mavenLocalRepo.orNull?.trim().orEmpty().takeIf { it.isNotEmpty() }
+    val localRepoPath = localRepoOverride ?: temporaryDir.resolve("m2").absolutePath
+
     return buildList {
       addAll(Constants.MavenBuild.DEFAULT_ARGS)
-      add("${Constants.MavenBuild.LOCAL_REPO_PROPERTY}=${temporaryDir.resolve("m2").absolutePath}")
+      add("${Constants.MavenBuild.LOCAL_REPO_PROPERTY}=$localRepoPath")
 
       val profiles = mavenProfiles.get().filter { it.isNotBlank() }
       if (profiles.isNotEmpty()) {
@@ -207,8 +213,7 @@ abstract class CompileMavenComponentTask @Inject constructor(
       mavenProfiles = mavenProfiles.get(),
       skipTests = skipTests.get(),
       sourceDateEpoch = sourceDateEpoch.get(),
-      artifacts = artifactPaths,
-      timestamp = System.currentTimeMillis()
+      artifacts = artifactPaths
     )
 
     val out = markerFile.get().asFile

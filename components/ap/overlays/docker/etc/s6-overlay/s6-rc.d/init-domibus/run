@@ -106,9 +106,26 @@ store_secrets() {
   fi
 }
 
+resolve_session_cookie_secure() {
+  local ssl_enabled lb_tls_termination
+
+  ssl_enabled="$(ensure_boolean "${SSL_ENABLED:-false}" "false")"
+  lb_tls_termination="$(ensure_boolean "${LB_TLS_TERMINATION:-false}" "false")"
+
+  if [[ "$ssl_enabled" == "true" || "$lb_tls_termination" == "true" ]]; then
+    log DEBUG "Session cookie Secure enabled (SSL_ENABLED=$ssl_enabled, LB_TLS_TERMINATION=$lb_tls_termination)"
+    echo "true"
+  else
+    log WARN "Session cookie Secure disabled (no external TLS detected: SSL_ENABLED=$ssl_enabled, LB_TLS_TERMINATION=$lb_tls_termination)"
+    echo "false"
+  fi
+}
+
 persist_domibus_configuration() {
   set_property "domibus.deployment.clustered" "$DEPLOYMENT_CLUSTERED"
   set_property 'domibus.security.key.private.alias' "$CERT_ALIAS"
+
+  set_property "domibus.ui.session.secure" "$(resolve_session_cookie_secure)"
 
   SML_ZONE="${SML_ZONE:-$(get_property domibus.smlzone)}"
   set_property 'domibus.smlzone' "$SML_ZONE"

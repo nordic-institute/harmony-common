@@ -1,13 +1,13 @@
+###
+# Copyright (C) 2017 - 2025 European Commission | eDelivery | DomiSMP
 #
-# Copyright 2018 European Commission | CEF eDelivery
-#
-# Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent versions of the EUPL (the "Licence");
+# Licensed under the EUPL, Version 1.2 or - as soon they will be approved by the European Commission - subsequent
+# versions of the EUPL (the "Licence");
 # You may not use this work except in compliance with the Licence.
+# You may obtain a copy of the Licence at: https://joinup.ec.europa.eu/collection/eupl/eupl-text-eupl-12
 #
-# You may obtain a copy of the Licence attached in file: LICENCE-EUPL-v1.2.pdf
-#
-# Unless required by applicable law or agreed to in writing, software distributed under the Licence is distributed on an "AS IS" basis,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# Unless required by applicable law or agreed to in writing, software distributed under the Licence is
+# distributed on an "AS IS" basis, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the Licence for the specific language governing permissions and limitations under the Licence.
 #
 
@@ -16,51 +16,58 @@
 # or reusing application server datasource.
 # **************************************************************************
 ## set database hibernate dialect
-smp.jdbc.hibernate.dialect=org.hibernate.dialect.MySQL5InnoDBDialect
+smp.jdbc.hibernate.dialect = org.hibernate.dialect.MySQLDialect
 
 # *********************************
 #  Custom defined datasource
 # *********************************
-# mysql database example
-# smp.jdbc.driver = com.mysql.jdbc.Driver
-# smp.jdbc.url = jdbc:mysql://localhost:3306/smp
-# smp.jdbc.user = smp
-# smp.jdbc.password=secret123
-
-# Oracle database example
-# smp.jdbc.driver = oracle.jdbc.driver.OracleDriver
-# smp.jdbc.url=jdbc:oracle:thin:@localhost:1521/xe
-# smp.jdbc.user=smp
-# smp.jdbc.password=secret123
-
-# *********************************
-# Datasource JNDI configuration alternative
-# *********************************
-# weblogic datasource JNDI example
-# smp.datasource.jndi=jdbc/eDeliverySmpDs
+# mysql database example. Please replace the values with your database configuration and if possible use datasource JNDI configuration
+# to avoid exposing the database credentials in the configuration file. Please see the documentation on how to configure tomcat
+# to use JNDI
 # tomcat datasource JNDI example
-smp.datasource.jndi=java:comp/env/jdbc/harmony-smp
+smp.datasource.jndi = java:comp/env/jdbc/harmony-smp
+
+# *********************************
+# db configuration alternative
+#smp.jdbc.driver = com.mysql.cj.jdbc.Driver
+#smp.jdbc.url = jdbc:mysql://localhost:3306/smp
+#smp.jdbc.user = [username]
+#smp.jdbc.password = [password]
+
+spring.jpa.generate-ddl = false
+
+# *********************************
+# Security properties
+# *********************************
+# security headers
+smp.http.header.security.policy = default-src 'self'; script-src 'self'; connect-src 'self'; img-src 'self' data: https:; style-src 'self' 'unsafe-inline'; frame-ancestors 'none'; form-action 'self'; font-src 'self' data:; object-src 'none'; base-uri 'self'
+
+# secrets location
+smp.security.folder = /etc/harmony-smp
 
 # *********************************
 # Logging properties
 # *********************************
 # smp log folder
-smp.log.folder=/var/log/harmony-smp
+smp.log.folder = /var/log/harmony-smp
 
 # custom logback configuration file
-# smp.log.configuration.file=smp-logback.xml
+# smp.log.configuration.file = smp-logback.xml
+
+# *********************************
+# UI session
+# *********************************
+# Send session cookie only over HTTPS
+smp.ui.session.secure = true
 
 # *********************************
 # Extension folder
 # *********************************
 # path where SMP extensions are located. The Folder is loaded by the SMP classloader at startup.
-# smp.libraries.folder=/cef/test/smp/apache-tomcat-8.5.73/smp/ext-lib
-
-# secrets location
-smp.security.folder=/etc/harmony-smp
+# smp.libraries.folder = ./ext-lib
 
 # *********************************
 # Locale folder
 # *********************************
 # The locale folder contains the translations for the SMP web application.
-smp.locale.folder=/etc/harmony-smp/locales
+smp.locale.folder = /etc/harmony-smp/locales

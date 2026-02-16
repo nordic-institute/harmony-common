@@ -33,6 +33,7 @@ data class CompileConfig(
   val repoDir: Provider<Directory>,
   val mavenProfiles: Provider<List<String>>,
   val mavenGoals: Provider<List<String>>,
+  val mavenLocalRepo: Provider<String>,
   val javaVersion: Provider<Int>,
   val artifacts: Provider<Map<String, Provider<RegularFile>>>
 )

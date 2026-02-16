@@ -39,7 +39,7 @@
 #domibus.ui.pages.messageLogs.search.advanced.enabled=true
 
 #Used to secure the session of admin console; set to true only in conjunction with https protocol
-#domibus.ui.session.secure=false
+domibus.ui.session.secure=true
 
 #Used to set the the session timeout of admin console ( in minutes )
 #domibus.ui.session.timeout=30

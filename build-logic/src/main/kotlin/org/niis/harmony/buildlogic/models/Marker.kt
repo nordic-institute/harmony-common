@@ -10,8 +10,7 @@ data class CompileMarker(
   val mavenProfiles: List<String>,
   val skipTests: Boolean,
   val sourceDateEpoch: Long,
-  val artifacts: List<String>,
-  val timestamp: Long
+  val artifacts: List<String>
 )
 
 data class DockerBuildMarker(
@@ -31,8 +30,7 @@ data class DockerBuildMarker(
   val pullPolicy: String,
   val outputMode: String,
   val sourceDateEpoch: Long,
-  val archiveDigest: String?,
-  val timestamp: Long
+  val archiveDigest: String?
 )
 
 data class DebBuildMarker(
@@ -46,6 +44,5 @@ data class DebBuildMarker(
   val builderImageTag: String,
   val builderPullPolicy: String,
   val sourceDateEpoch: Long,
-  val artifacts: Map<String, String>,
-  val timestamp: Long
+  val artifacts: Map<String, String>
 )

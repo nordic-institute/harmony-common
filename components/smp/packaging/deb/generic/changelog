@@ -1,3 +1,9 @@
+harmony-smp (2.3.0-0) stable; urgency=medium
+
+  * New upstream release DomiSMP 5.2.0
+
+ -- Nordic Institute for Interoperability Solutions (NIIS) <edelivery@niis.org>  Wed, 28 Jan 2026 10:51:09 +0200
+
 harmony-smp (2.2.1-0) stable; urgency=medium
 
   * New upstream release DomiSMP 5.1.1
