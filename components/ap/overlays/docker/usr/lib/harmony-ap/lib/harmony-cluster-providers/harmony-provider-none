@@ -1,0 +1,48 @@
+#!/usr/bin/with-contenv bash
+set -euo pipefail
+
+SECRETS_DIR="${HARMONY_SECURITY}/.secrets"
+
+init_backend() {
+  if [[ "$DEPLOYMENT_CLUSTERED" == "true" ]]; then
+    die "Invalid configuration: CLUSTER_BACKEND='none' not allowed when DEPLOYMENT_CLUSTERED=true"
+  fi
+
+  install -d -m 0700 "$SECRETS_DIR"
+}
+
+acquire_primary() { return 0; }
+is_primary()      { return 0; }
+wait_for_ready()  { return 0; }
+set_ready_flag()  { :; }
+
+store_secret() {
+  local key="$1"
+  local src="$2"
+
+  if [[ -f "$src" ]]; then
+    return 0
+  fi
+
+  printf '%s' "$src" > "$SECRETS_DIR/$key"
+  chmod 0600 "$SECRETS_DIR/$key"
+}
+
+read_secret() {
+  local key="$1"
+  local dest="${2:-}"
+
+  if [[ -n "$dest" ]]; then
+    return 0
+  fi
+
+  local file="$SECRETS_DIR/$key"
+  if [[ -r "$file" ]]; then
+    cat "$file"
+    return 0
+  fi
+
+  return 1
+}
+
+release_primary() { :; }

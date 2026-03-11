@@ -3,18 +3,13 @@ set -euo pipefail
 
 readonly STAGE="init-logback"
 
-source /usr/lib/harmony-common
+source /usr/lib/harmony-ap/lib/harmony-common
 
-readonly LOGBACK_CONFIG_PATH="${LOGBACK_CONFIG_PATH:-$HARMONY_BASE/etc/logback.xml}"
+: "${LOGBACK_CONFIG_PATH:=${HARMONY_CONFIG}/logback.xml}"
 
 decode_from_base64() {
   log DEBUG "Decoding Logback configuration from Base64 using harmony-base64..."
   harmony-base64 --stage "$STAGE" --input "$LOGBACK_CONFIG_B64" --output "$LOGBACK_CONFIG_PATH" --force
-}
-
-use_default_conf() {
-  cp --update=none "$HARMONY_HOME/setup/logback.xml" "$LOGBACK_CONFIG_PATH"
-  log DEBUG "Using default Logback configuration at $LOGBACK_CONFIG_PATH"
 }
 
 init_logback() {
@@ -25,10 +20,10 @@ init_logback() {
   elif [ -f "$LOGBACK_CONFIG_PATH" ]; then
     log DEBUG "Using existing Logback configuration at $LOGBACK_CONFIG_PATH"
   else
-    use_default_conf
+    die "Logback configuration not found at '$LOGBACK_CONFIG_PATH'"
   fi
 
-  printf "%s" "$LOGBACK_CONFIG_PATH" > /var/run/s6/container_environment/LOGBACK_CONFIG_FILE
+  publish_env LOGBACK_CONFIG_FILE "$LOGBACK_CONFIG_PATH"
 
   log INFO "Logback configured at: $LOGBACK_CONFIG_PATH"
   log DEBUG "Done"

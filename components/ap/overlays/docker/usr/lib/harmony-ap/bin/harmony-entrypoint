@@ -1,0 +1,29 @@
+#!/bin/bash
+set -euo pipefail
+
+: "${NODE_ID:=$HOSTNAME}"
+: "${LOG_FILE:=/var/log/harmony.log}"
+: "${LOG_FORMAT:=structured}"
+: "${HARMONY_VERSION:=UNDEFINED}"
+: "${HARMONY_COMPONENT_LABEL:=Component}"
+
+export NODE_ID LOG_LEVEL LOG_OUTPUT LOG_TIMESTAMP_FMT LOG_FILE LOG_FORMAT
+
+source /usr/lib/harmony-ap/lib/harmony-common
+
+# shellcheck disable=SC2034 # Used in sourced scripts
+readonly STAGE="harmony-entrypoint"
+
+log INFO "Starting Harmony $HARMONY_COMPONENT_LABEL version $HARMONY_VERSION"
+log INFO "  User UID: $(id -u)"
+log INFO "  User GID: $(id -g)"
+
+# If the user passes "init" in the CLI, we activate the special mode and
+# remove the argument before calling /init so that s6-overlay starts normally.
+if [[ "${1:-}" == "init" ]]; then
+  log WARN "Init mode activated"
+  export HARMONY_MODE=init
+  shift
+fi
+
+exec /init "$@"

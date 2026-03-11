@@ -13,6 +13,7 @@ import org.gradle.api.file.ProjectLayout
 import org.gradle.api.file.RegularFileProperty
 import org.gradle.api.file.RelativePath
 import org.gradle.api.provider.ListProperty
+import org.gradle.api.provider.MapProperty
 import org.gradle.api.provider.Property
 import org.gradle.api.tasks.CacheableTask
 import org.gradle.api.tasks.Input
@@ -85,6 +86,9 @@ abstract class AssembleStagingTask @Inject constructor(
 
   @get:Nested
   abstract val projectPaths: ListProperty<AliasedPathInput>
+
+  @get:Input
+  abstract val vars: MapProperty<String, String>
 
   @get:Input
   @get:Optional
@@ -174,6 +178,7 @@ abstract class AssembleStagingTask @Inject constructor(
     val preserveTop = step.preserveTop == true
     val destinationIsDirectory = step.into.isDirectoryHint()
     val timestampTargets = LinkedHashSet<Path>()
+    val activeVars = vars.get()
 
     sources.forEach { source ->
       if (source.isDirectory) {
@@ -181,6 +186,8 @@ abstract class AssembleStagingTask @Inject constructor(
         fileSystemOperations.copy {
           from(source)
           into(finalDestDir.toFile())
+          applyVarsToRelativePath(this, activeVars)
+          includeEmptyDirs = false
         }
         timestampTargets.add(finalDestDir)
       } else {
@@ -189,6 +196,7 @@ abstract class AssembleStagingTask @Inject constructor(
           from(source)
           into(finalDestFile.parent.toFile())
           rename { finalDestFile.fileName.toString() }
+          includeEmptyDirs = false
         }
         timestampTargets.add(finalDestFile)
         timestampTargets.add(finalDestFile.parent)
@@ -218,6 +226,7 @@ abstract class AssembleStagingTask @Inject constructor(
         from(fileTree)
         applyFilters(this, includes, excludes)
         applyStripping(this, stripComponents)
+        applyVarsToRelativePath(this, vars.get())
         into(baseDestination.toFile())
         includeEmptyDirs = false
       }
@@ -252,6 +261,7 @@ abstract class AssembleStagingTask @Inject constructor(
       if (!commonPrefixSegments.isNullOrEmpty()) {
         applyPrefixStripping(this, commonPrefixSegments)
       }
+      applyVarsToRelativePath(this, vars.get())
       into(destinationDir.toFile())
       includeEmptyDirs = false
     }
@@ -455,6 +465,29 @@ abstract class AssembleStagingTask @Inject constructor(
       logger.warn(onUnexpectedMsg, path, e)
     }
     return null
+  }
+
+  private fun applyVarsToRelativePath(spec: CopySpec, vars: Map<String, String>) {
+    if (vars.isEmpty()) return
+
+    spec.eachFile(object : Action<FileCopyDetails> {
+      override fun execute(details: FileCopyDetails) {
+        val segments = details.relativePath.segments
+        var changed = false
+        val newSegments = segments.map { segment ->
+          val replacement = vars[segment]
+          if (replacement != null) {
+            changed = true
+            replacement
+          } else {
+            segment
+          }
+        }.toTypedArray()
+        if (changed) {
+          details.relativePath = RelativePath(details.relativePath.isFile, *newSegments)
+        }
+      }
+    })
   }
 
   private fun String.isDirectoryHint(): Boolean =

@@ -1,0 +1,105 @@
+#!/command/with-contenv bash
+set -euo pipefail
+shopt -s nullglob
+
+# shellcheck disable=SC2034 # Used in sourced scripts
+readonly STAGE="config-migrate"
+
+source /usr/lib/harmony-ap/lib/harmony-common
+source /usr/lib/harmony-ap/lib/harmony-cluster
+
+readonly VERSION_FILE="${HARMONY_BASE}/.version"
+readonly MIGRATIONS_DIR="/usr/lib/harmony-ap/migrations"
+
+version_lte() { printf '%s\n%s' "$1" "$2" | sort -V -C; }
+version_lt()  { [[ "$1" != "$2" ]] && version_lte "$1" "$2"; }
+
+detect_volume_version() {
+  if [[ -f "$VERSION_FILE" ]]; then
+    cat "$VERSION_FILE"
+    return
+  fi
+
+  if [[ -f "${HARMONY_BASE}/etc/domibus.properties" ]]; then
+    log INFO "Pre-2.7.0 layout detected (no version marker). Treating as 2.6.0."
+    echo "2.6.0"
+    return
+  fi
+
+  echo "$HARMONY_VERSION"
+}
+
+collect_pending_migrations() {
+  local volume_version="$1"
+  local pending=()
+
+  for script in "$MIGRATIONS_DIR"/migration-to-*; do
+    [[ -x "$script" ]] || die "Migration script is not executable: $script"
+
+    local target_version="${script##*migration-to-}"
+    if version_lt "$volume_version" "$target_version" \
+        && version_lte "$target_version" "$HARMONY_VERSION"; then
+      pending+=("${target_version}:${script}")
+    fi
+  done
+
+  if (( ${#pending[@]} )); then
+    printf '%s\n' "${pending[@]}" | sort -t: -k1 -V
+  fi
+}
+
+run_migrations() {
+  local entry target_version script
+  for entry in "$@"; do
+    target_version="${entry%%:*}"
+    script="${entry#*:}"
+
+    log INFO "Running migration to ${target_version}..."
+    "$script"
+    echo "$target_version" > "$VERSION_FILE"
+  done
+}
+
+config_migrate() {
+  log DEBUG "Started"
+
+  local volume_version
+  volume_version="$(detect_volume_version)"
+
+  if [[ "$volume_version" == "$HARMONY_VERSION" ]]; then
+    log DEBUG "Volume version matches image (${HARMONY_VERSION}). No migrations needed."
+    [[ -f "$VERSION_FILE" ]] || echo "$HARMONY_VERSION" > "$VERSION_FILE"
+    return
+  fi
+
+  if version_lt "$HARMONY_VERSION" "$volume_version"; then
+    die "Volume version ${volume_version} is newer than image ${HARMONY_VERSION}. Downgrades not supported."
+  fi
+
+  local pending=()
+  mapfile -t pending < <(collect_pending_migrations "$volume_version")
+
+  if (( ${#pending[@]} == 0 )); then
+    log DEBUG "No migration scripts for ${volume_version} to ${HARMONY_VERSION}."
+    echo "$HARMONY_VERSION" > "$VERSION_FILE"
+    return
+  fi
+
+  log INFO "Migrating ${volume_version} to ${HARMONY_VERSION} (${#pending[@]} step(s))"
+
+  if [[ "$CLUSTER_BACKEND" == "filesystem" ]] && ! is_primary; then
+    log INFO "Shared volume: deferring migration to primary node."
+    return
+  fi
+
+  run_migrations "${pending[@]}"
+  echo "$HARMONY_VERSION" > "$VERSION_FILE"
+
+  if (( ${#pending[@]} > 1 )); then
+    log INFO "Migration complete (${volume_version} to ${HARMONY_VERSION})."
+  fi
+
+  log DEBUG "Done"
+}
+
+config_migrate

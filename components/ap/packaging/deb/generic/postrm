@@ -1,16 +1,42 @@
 #!/bin/bash
+
+set -eo pipefail
+trap 'db_stop 2>/dev/null || true' EXIT
+
+# Source confmodule before `set -u`. debconf in Jammy is not nounset-safe
+# https://salsa.debian.org/pkg-debconf/debconf/-/merge_requests/12
 . /usr/share/debconf/confmodule
 
-if [[ "$1" == "remove" ]]; then
-  rm -rf /opt/harmony-ap
-elif [[ "$1" == "purge" ]]; then
-  db_purge
-  rm -rf /etc/harmony-ap /var/opt/harmony-ap /var/tmp/harmony-ap /var/log/harmony-ap
-elif [[ "$1" == "abort-install" ]]; then
-  rm -rf /etc/harmony-ap
-  rm -rf /etc/harmony-ap /var/opt/harmony-ap /var/tmp/harmony-ap /var/log/harmony-ap
-fi
+set -u
 
-db_stop
+case "${1:-}" in
+  purge)
+    db_purge
+    rm -rf /etc/harmony-ap /etc/systemd/system/harmony-ap.service.d
+    rm -rf /var/lib/harmony-ap /var/log/harmony-ap
+    rm -rf /usr/local/lib/harmony-ap
+    rm -rf /var/opt/harmony-ap
+    systemctl daemon-reload 2>/dev/null || true
+    ;;
 
-exit 0
+  remove)
+    systemctl daemon-reload 2>/dev/null || true
+    ;;
+
+  abort-install)
+    systemctl stop harmony-ap 2>/dev/null || true
+    systemctl disable harmony-ap 2>/dev/null || true
+    rm -rf /etc/systemd/system/harmony-ap.service.d
+    rm -rf /var/lib/harmony-ap
+    rm -rf /usr/local/lib/harmony-ap
+    systemctl daemon-reload 2>/dev/null || true
+    ;;
+
+  upgrade|failed-upgrade|abort-upgrade|disappear)
+    ;;
+
+  *)
+    echo "harmony-ap postrm: called with unknown argument '${1:-}'" >&2
+    exit 1
+    ;;
+esac

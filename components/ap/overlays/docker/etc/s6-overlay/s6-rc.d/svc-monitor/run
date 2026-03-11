@@ -4,8 +4,8 @@ set -euo pipefail
 # shellcheck disable=SC2034 # Used in sourced scripts
 readonly STAGE="svc-monitor"
 
-source /usr/lib/harmony-common
-source /usr/lib/harmony-cluster
+source /usr/lib/harmony-ap/lib/harmony-common
+source /usr/lib/harmony-ap/lib/harmony-cluster
 
 if [[ "$DEPLOYMENT_CLUSTERED" != "true" || "$CLUSTER_BACKEND" == "none" ]]; then
   log DEBUG "Clustering disabled or not using a cluster backend; exiting svc-monitor"

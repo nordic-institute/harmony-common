@@ -1,3 +1,18 @@
+harmony-ap (2.7.0-0) stable; urgency=medium
+
+  * Reorganize file layout to follow Debian FHS:
+    - Configuration under /etc/harmony-ap (dpkg conffiles)
+    - Application files under /usr/lib/harmony-ap (read-only)
+    - Runtime state under /var/lib/harmony-ap
+    - Keystores and secrets under /var/lib/harmony-ap/security
+  * Manage runtime configuration via systemd drop-ins
+  * Support dpkg-reconfigure for certificate rotation
+  * Hardened systemd service (ProtectSystem=strict, NoNewPrivileges)
+  * Secrets isolated in /var/lib/harmony-smp/security/secrets.env
+  * Dependency changes: Pre-Depends on debconf, dropped xmlstarlet and gettext-base
+
+ -- Nordic Institute for Interoperability Solutions (NIIS) <edelivery@niis.org>  Fri, 13 Feb 2026 13:06:49 +0200
+
 harmony-ap (2.6.0-0) stable; urgency=medium
 
   * New upstream Domibus release 5.1.9

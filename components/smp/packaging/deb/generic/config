@@ -1,104 +1,265 @@
 #!/bin/bash
 
-# during initial install (preconfigure) it is possible that xmlstarlet is not yet available
-if [[ -x /usr/bin/xmlstarlet ]]; then
-  __xmlstarlet() { xmlstarlet "$@" 2>/dev/null; }
-else
-  __xmlstarlet() { return 1; }
-fi
-__get_prop() { __xmlstarlet sel -t -v "$1" "/etc/harmony-smp/tomcat-conf/$2" || echo "${3:-}"; }
-get_ctx_prop() { __get_prop "/Context/Resource/@$1" context.xml "${2:-}"; }
-get_srv_prop() { __get_prop "//Connector[@SSLEnabled=\"true\"]/@$1" server.xml "${2:-}"; }
+set -eo pipefail
 
+# Source confmodule before `set -u`. debconf in Jammy is not nounset-safe
+# https://salsa.debian.org/pkg-debconf/debconf/-/merge_requests/12
 . /usr/share/debconf/confmodule
-trap db_stop EXIT
 
-if [ "$1" = "configure" ] || [ "$1" = "reconfigure" ]; then
+set -u
+trap 'db_stop 2>/dev/null || true' EXIT
 
-  TOMCAT_PORT=$(get_srv_prop port);
-  [[ -n "$TOMCAT_PORT" ]] && db_set harmony_smp/tomcatport "$TOMCAT_PORT"
-  db_input high harmony-smp/tomcatport
-  db_go
+readonly PACKAGE="harmony-smp"
+readonly SECURITY_DIR="/var/lib/${PACKAGE}/security"
+readonly SECRETS_FILE="${SECURITY_DIR}/secrets.env"
 
-  db_get harmony-smp/database-user
-  DB_USER=$(get_ctx_prop username "${RET:-harmony_smp}")
-  DB_PASSWORD=$(get_ctx_prop password)
+die() {
+  echo "${PACKAGE}: ERROR: $1" >&2
+  exit 1
+}
 
-  db_get harmony-smp/jdbc-url
-  JDBC_URL=$(get_ctx_prop url "${RET:-jdbc:mysql://localhost:3306/harmony_smp}")
+check_state_file() {
+  [[ -f "${SECURITY_DIR}/$1" ]]
+}
 
-  DB_HOST="localhost"
-  DB_PORT="3306"
-  DB_SCHEMA="harmony_smp"
-  DB_OPT=""
-  pat='^jdbc:mysql://([^/:]*)(:([0-9]+))?(/([^\?]*)(.*))?$'
-  if [[ "$JDBC_URL" =~ $pat ]]; then
-    DB_HOST=${BASH_REMATCH[1]:-$DB_HOST}
-    DB_PORT=${BASH_REMATCH[3]:-$DB_PORT}
-    DB_SCHEMA=${BASH_REMATCH[5]:-$DB_SCHEMA}
-    DB_OPT=${BASH_REMATCH[6]}
+# =============================================================================
+# Drop-in and secrets readers (duplicated from harmony-deb)
+#
+# The config script runs before package files are unpacked on fresh install,
+# so it cannot source harmony-deb. Keep these functions in sync.
+# =============================================================================
 
-    db_beginblock
+readonly DROPIN_DEFAULTS_DIR="/usr/lib/systemd/system/${PACKAGE}.service.d"
+readonly DROPIN_CONFIGS_DIR="/etc/systemd/system/${PACKAGE}.service.d"
 
-    db_set harmony-smp/database-host "$DB_HOST"
-    db_input high harmony-smp/database-host
+# Keep in sync with harmony-deb:_read_dropin_value
+_read_dropin_value() {
+  local file="$1" key="$2"
+  [[ -f "$file" ]] || return 0
+  grep -Po "^Environment=\"?${key}=\K[^\"]*" "$file" 2>/dev/null | tail -1 || true
+}
 
-    db_set harmony-smp/database-port "$DB_PORT"
-    db_input high harmony-smp/database-port
+# Keep in sync with harmony-deb:get_dropin
+get_dropin() {
+  local key="$1"
 
-    db_set harmony-smp/database-schema "$DB_SCHEMA"
-    db_input high harmony-smp/database-schema
+  local -A by_name=()
+  local dir file name
+  for dir in "$DROPIN_DEFAULTS_DIR" "$DROPIN_CONFIGS_DIR"; do
+    [[ -d "$dir" ]] || continue
+    for file in "$dir"/*.conf; do
+      [[ -f "$file" ]] || continue
+      name="${file##*/}"
+      by_name["$name"]="$file"
+    done
+  done
 
-    db_endblock
-    db_go
+  (( ${#by_name[@]} > 0 )) || return 0
 
-    db_get harmony-smp/database-host
-    DB_HOST="${RET:-localhost}"
-    db_get harmony-smp/database-port
-    DB_PORT="${RET:-3306}"
-    db_get harmony-smp/database-schema
-    DB_SCHEMA="${RET:-harmony_smp}"
+  local value="" sorted_key v
+  while IFS= read -r sorted_key; do
+    v="$(_read_dropin_value "${by_name[$sorted_key]}" "$key")"
+    [[ -z "$v" ]] || value="$v"
+  done < <(printf '%s\n' "${!by_name[@]}" | sort)
 
-    db_set harmony-smp/jdbc-url "jdbc:mysql://$DB_HOST:$DB_PORT/$DB_SCHEMA$DB_OPT"
+  printf '%s' "$value"
+}
+
+# Keep in sync with harmony-deb:get_secret
+get_secret() {
+  local key="$1"
+
+  [[ -f "$SECRETS_FILE" ]] || return 0
+
+  local value
+  value="$(grep -m1 -Po "^${key}=\K.*$" "$SECRETS_FILE" 2>/dev/null || true)"
+
+  if [[ "$value" == \"*\" ]]; then
+    value="${value#\"}"
+    value="${value%\"}"
+    # Unescape in reverse order ($ and " first, backslash last)
+    value="${value//\\\$/\$}"     # \$ → $
+    value="${value//\\\"/\"}"     # \" → "
+    value="${value//\\\\/\\}"     # \\ → \
+  fi
+
+  printf '%s' "$value"
+}
+
+# --- End duplicated functions ---
+
+prompt_debconf_value() {
+  local template="$1" dropin_var="$2" initial="${3:-}"
+
+  local existing
+  existing="$(get_dropin "$dropin_var")"
+
+  if [[ -n "$existing" ]]; then
+    db_set "$template" "$existing"
+  elif [[ -n "$initial" ]]; then
+    db_get "$template"
+    [[ -n "$RET" ]] || db_set "$template" "$initial"
+  fi
+
+  [[ "$is_upgrade" == true && -n "$existing" ]] && return 0
+
+  db_input high "$template" || true
+}
+
+require_debconf_value() {
+  local template="$1" label="$2"
+
+  db_get "$template"
+  [[ -n "$RET" ]] || die "${label} is required. Run 'dpkg-reconfigure harmony-smp' to retry."
+}
+
+require_debconf_number() {
+  local template="$1" label="$2"
+
+  require_debconf_value "$template" "$label"
+  [[ "$RET" =~ ^[0-9]+$ ]] || die "${label} must be a number, got: '${RET}'. Run 'dpkg-reconfigure harmony-smp' to retry."
+}
+
+needs_keystore() {
+  local template="$1" file_prefix="$2"
+
+  if [[ "$is_reconf" == true ]]; then
+    db_get "$template"
+    [[ "$RET" == true ]] && return 0
+  fi
+
+  ! check_state_file "${file_prefix}.p12" && ! check_state_file "${file_prefix}.jks"
+}
+
+configure_debconf() {
+  local action="$1" old_version="${2:-}"
+
+  local is_fresh=false
+  local is_upgrade=false
+  local is_reconf=false
+
+  if [[ "$action" == "reconfigure" ]]; then
+    is_reconf=true
+  elif [[ -z "$old_version" ]]; then
+    is_fresh=true
   else
-    echo "WARN: Unable to parse '$JDBC_URL'" >&2
-    db_set harmony-smp/jdbc-url "$JDBC_URL"
+    is_upgrade=true
   fi
 
-  if [[ -n "$DB_USER" ]]; then
-    db_set harmony-smp/database-user "$DB_USER"
+  # Pre-2.3.0 upgrade: skip prompts. All configuration values will be
+  # extracted from the old config files by the migration script in postinst.
+  if [[ "$is_upgrade" == true ]] && dpkg --compare-versions "$old_version" lt "2.3.0"; then
+    return 0
   fi
-  db_subst harmony-smp/database-user db_schema "$DB_SCHEMA"
-  db_input high harmony-smp/database-user
-  db_go
 
-  db_get harmony-smp/database-user
-  if [[ -n "$DB_PASSWORD" && -n "$DB_USER" && "$DB_USER" = "$RET" ]]; then
-    db_set harmony-smp/database-password "$DB_PASSWORD"
-  fi
-  db_input high harmony-smp/database-password
-  db_go
+  if [[ "$is_reconf" == true ]]; then
+    db_title "Harmony SMP - Reconfiguration"
+    db_input high harmony-smp/reconfigure-notice || true
+    db_go
 
-  db_input high harmony-smp/serverdn
-  db_input high harmony-smp/integratewithsml
-  db_go
-
-  db_get harmony-smp/integratewithsml
-  USESML="$RET"
-
-  if [ "$USESML" = true ]; then
-    db_beginblock
-    db_input high harmony-smp/smlurl
-    db_input high harmony-smp/smpurl
-    db_input high harmony-smp/smpip
-    db_endblock
+    db_title "Harmony SMP - Certificate Rotation"
+    db_input high harmony-smp/rotate_tls_keystore || true
+    db_input high harmony-smp/rotate_signing_keystore || true
     db_go
   fi
 
-  db_input high harmony-smp/adminuser
-  db_input high harmony-smp/adminpassword
+  if [[ "$is_fresh" == true ]]; then
+    db_title "Harmony SMP - Administrator"
+    db_beginblock
+    db_input high harmony-smp/adminuser || true
+    db_input high harmony-smp/adminpassword || true
+    db_endblock
+    db_go
+
+    require_debconf_value harmony-smp/adminuser "Administrator username"
+
+    # SML integration (fresh install only, DB is authoritative afterward)
+    db_title "Harmony SMP - SML Integration"
+    db_input high harmony-smp/integratewithsml || true
+    db_go
+
+    db_get harmony-smp/integratewithsml
+    if [[ "${RET:-false}" == true ]]; then
+      db_beginblock
+      db_input high harmony-smp/smlurl || true
+      db_input high harmony-smp/smpurl || true
+      db_input high harmony-smp/smpip || true
+      db_endblock
+      db_go
+    fi
+  fi
+
+  # Certificates
+  db_title "Harmony SMP - Certificates"
+
+  local needs_tls=false needs_signing=false
+  needs_keystore harmony-smp/rotate_tls_keystore tls-keystore && needs_tls=true
+  needs_keystore harmony-smp/rotate_signing_keystore smp-keystore && needs_signing=true
+
+  if [[ "$needs_tls" == true || "$needs_signing" == true ]]; then
+    local fqdn
+    fqdn="$(hostname -f 2>/dev/null || hostname)"
+    prompt_debconf_value harmony-smp/serverdn SERVER_DN "CN=$fqdn"
+
+    if [[ "$needs_tls" == true ]]; then
+      prompt_debconf_value harmony-smp/serversan TLS_SERVER_SAN "DNS:$fqdn"
+    fi
+    db_go
+
+    require_debconf_value harmony-smp/serverdn "Server certificate DN"
+    if [[ "$needs_tls" == true ]]; then
+      require_debconf_value harmony-smp/serversan "TLS certificate SAN"
+    fi
+  fi
+
+  # Network
+  db_title "Harmony SMP - Network"
+  prompt_debconf_value harmony-smp/tomcatport TOMCAT_PORT
   db_go
 
-  db_stop
-fi
+  require_debconf_number harmony-smp/tomcatport "Tomcat port"
 
+  # Database
+  db_title "Harmony SMP - Database"
+  prompt_debconf_value harmony-smp/database-host SMP_DATABASE_SERVERNAME
+  db_go
+
+  require_debconf_value harmony-smp/database-host "Database host"
+  db_get harmony-smp/database-host
+
+  # Remote database
+  if [[ "$RET" != "localhost" ]]; then
+    db_beginblock
+    prompt_debconf_value harmony-smp/database-port SMP_DATABASE_PORT
+    prompt_debconf_value harmony-smp/database-schema SMP_DATABASE_SCHEMA
+    db_endblock
+    db_go
+
+    require_debconf_number harmony-smp/database-port "Database port"
+    require_debconf_value harmony-smp/database-schema "Database schema"
+    db_get harmony-smp/database-schema
+    local db_schema="$RET"
+
+    db_subst harmony-smp/database-user db_schema "$db_schema"
+    db_beginblock
+    prompt_debconf_value harmony-smp/database-user SMP_JDBC_USER
+
+    if [[ "$is_upgrade" != true ]] || [[ -z "$(get_secret SMP_JDBC_PASSWORD)" ]]; then
+      db_input high harmony-smp/database-password || true
+    fi
+    db_endblock
+    db_go
+
+    require_debconf_value harmony-smp/database-user "Database user"
+  fi
+}
+
+case "${1:-}" in
+  configure|reconfigure)
+    configure_debconf "$1" "${2:-}"
+    ;;
+
+  *)
+    die "config called with unknown argument '${1:-}'"
+    ;;
+esac

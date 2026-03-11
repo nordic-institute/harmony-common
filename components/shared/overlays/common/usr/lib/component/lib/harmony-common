@@ -1,0 +1,72 @@
+#!/bin/bash
+set -euo pipefail
+
+[[ -n "${__HARMONY_COMMON_INCLUDED:-}" ]] && return
+readonly __HARMONY_COMMON_INCLUDED=1
+
+_HARMONY_LIB_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+_HARMONY_PKG_DIR="$(cd "$_HARMONY_LIB_DIR/.." && pwd)"
+export PATH="${_HARMONY_PKG_DIR}/bin:${PATH}"
+
+log() {
+  local lvl="${1:-INFO}" msg="${2:-}"; shift 2 || true
+  local stg="${STAGE:-}"
+  local nid="${NODE_ID:-}"
+
+  if command -v harmony-log &>/dev/null; then
+    harmony-log "$lvl" "$nid" "$stg" "$msg"
+  else
+    echo "[$lvl] [$nid] [$stg] $msg" >&2
+  fi
+}
+
+die() {
+  log ERROR "$1";
+  exit 1;
+}
+
+ensure_boolean() {
+  case "$1" in
+    true|false) echo "$1" ;;
+    *)
+      log WARN "Invalid boolean value '$1', defaulting to '$2'";
+      echo "$2"
+      ;;
+  esac
+}
+
+publish_env() {
+  printf "%s" "$2" > "/var/run/s6/container_environment/$1"
+}
+
+link_directory_defaults() {
+  local source_dir="$1" dest_dir="$2" label="${3:-defaults}"
+
+  if [[ ! -d "$source_dir" ]]; then
+    log DEBUG "Source directory '$source_dir' does not exist, skipping ${label} linking"
+    return 0
+  fi
+
+  if [[ ! -d "$dest_dir" ]]; then
+    log WARN "Destination directory '$dest_dir' does not exist, skipping ${label} linking"
+    return 0
+  fi
+
+  local src name
+  for src in "$source_dir"/*; do
+    [ -e "$src" ] || continue
+    name="$(basename "$src")"
+
+    if [ -L "$dest_dir/$name" ] && [ ! -e "$dest_dir/$name" ]; then
+      rm "$dest_dir/$name"
+      log DEBUG "Removed stale ${label} symlink: ${name}"
+    fi
+
+    if [ ! -e "$dest_dir/$name" ]; then
+      ln -s "$src" "$dest_dir/$name"
+      log DEBUG "Linked ${label}: ${name}"
+    else
+      log DEBUG "Already present, skipping ${label}: ${name}"
+    fi
+  done
+}

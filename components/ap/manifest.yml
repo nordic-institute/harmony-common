@@ -1,3 +1,6 @@
+vars:
+  component: harmony-ap
+
 inputs:
   # Tomcat
   - from: vendor:tomcat
@@ -13,14 +16,14 @@ inputs:
       - include:
           - "bin/*.sh"
           - "bin/*.jar"
-        into: /opt/harmony-ap/bin
+        into: /usr/lib/harmony-ap/tomcat/bin
       - include:
           - "lib/**"
-        into: /opt/harmony-ap/lib
+        into: /usr/lib/harmony-ap/tomcat/lib
       - include:
           - "conf/web.xml"
           - "conf/catalina.properties"
-        into: /opt/harmony-ap/setup/tomcat-defaults
+        into: /usr/lib/harmony-ap/tomcat/conf
 
   # Liquibase
   - from: vendor:liquibase
@@ -36,15 +39,15 @@ inputs:
       - "internal/lib/opencsv.jar"
       - "internal/lib/picocli.jar"
       - "internal/lib/snakeyaml.jar"
-    into: /opt/harmony-ap/liquibase
+    into: /usr/lib/harmony-ap/liquibase
 
   # JDBC drivers
   - from: vendor:mysqlj
     do: copy
-    into: /opt/harmony-ap/lib/mysql-connector-j.jar
+    into: /usr/lib/harmony-ap/tomcat/lib/mysql-connector-j.jar
   - from: vendor:mariadbj
     do: copy
-    into: /opt/harmony-ap/lib/mariadb-java-client.jar
+    into: /usr/lib/harmony-ap/tomcat/lib/mariadb-java-client.jar
 
   # s6-overlay
   - from: vendor:s6overlay:noarch
@@ -64,17 +67,21 @@ inputs:
   - from: artifact:war
     do: unpack
     strip: 0
-    into: /opt/harmony-ap/webapps/ROOT/
+    into: /usr/lib/harmony-ap/webapps/ROOT/
 
   # WS plugin
   - from: artifact:ws-plugin
     do: copy
-    into: /etc/harmony-ap/plugins/lib/ws-plugin.jar
-    when: { scopes: [deb] }
-  - from: artifact:ws-plugin
+    into: /usr/share/harmony-ap/plugins/lib/ws-plugin.jar
+
+  # Shared libraries
+  - from: project:components/shared/overlays/common
     do: copy
-    into: /opt/harmony-ap/plugins/lib/ws-plugin.jar
-    when: { scopes: [docker] }
+    into: /
+  - from: project:components/shared/overlays/deb
+    do: copy
+    into: /
+    when: { scopes: [deb] }
 
   # Overlays
   - from: project:components/ap/overlays/common
@@ -93,7 +100,7 @@ inputs:
   - from: project:components/ap/packaging/deb/generic
     do: copy
     into: /deb
-    when: { scopes: [ deb ] }
+    when: { scopes: [deb] }
 
   # Docker
   - from: project:components/ap/packaging/docker

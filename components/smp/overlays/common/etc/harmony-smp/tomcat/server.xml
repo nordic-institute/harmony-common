@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<Server port="-1" shutdown="SHUTDOWN">
+    <Listener className="org.apache.catalina.startup.VersionLoggerListener" logArgs="false"/>
+    <Listener className="org.apache.catalina.core.JreMemoryLeakPreventionListener"/>
+    <Listener className="org.apache.catalina.mbeans.GlobalResourcesLifecycleListener"/>
+    <Listener className="org.apache.catalina.core.ThreadLocalLeakPreventionListener"/>
+
+    <Service name="Catalina">
+
+        <Connector SSLEnabled="${TOMCAT_SSL_ENABLED}"
+                   protocol="org.apache.coyote.http11.Http11NioProtocol"
+                   port="${TOMCAT_PORT}"
+                   maxThreads="200"
+                   scheme="${TOMCAT_SCHEME}"
+                   secure="${TOMCAT_SECURE}"
+                   clientAuth="false"
+                   sslProtocol="TLS">
+            <SSLHostConfig hostName="_default_"
+                           truststoreFile="${TLS_TRUSTSTORE_PATH}"
+                           truststorePassword="${TLS_TRUSTSTORE_PASSWORD}"
+                           truststoreType="${TLS_TRUSTSTORE_TYPE}">
+                <Certificate certificateKeystoreFile="${TLS_KEYSTORE_PATH}"
+                             certificateKeystorePassword="${TLS_KEYSTORE_PASSWORD}"
+                             certificateKeystoreType="${TLS_KEYSTORE_TYPE}"/>
+            </SSLHostConfig>
+        </Connector>
+
+        <Engine name="Catalina" defaultHost="localhost">
+
+            <Host name="localhost"
+                  appBase="/usr/lib/harmony-smp/webapps"
+                  createDirs="false"
+                  unpackWARs="false"
+                  autoDeploy="false"
+                  workDir="${TOMCAT_WORK_DIR}">
+
+                <Valve className="org.apache.catalina.valves.ErrorReportValve"
+                       showReport="false"
+                       showServerInfo="false"
+                />
+
+                <Valve className="org.apache.catalina.valves.AccessLogValve"
+                       directory="${TOMCAT_ACCESS_LOG_DIR}"
+                       prefix="localhost_access_log" suffix=".txt"
+                       pattern="%h %l %u %t &quot;%r&quot; %s %b"
+                       maxDays="90"
+                />
+
+                <Context path="">
+                    <Manager pathname=""/>
+                    <JarScanner>
+                        <JarScanFilter defaultTldScan="false"/>
+                    </JarScanner>
+                </Context>
+
+            </Host>
+        </Engine>
+    </Service>
+</Server>

@@ -1,0 +1,952 @@
+#!/bin/bash
+# Script sourced by postinst during upgrade from pre-2.3.0
+
+_M230__MIGRATION_MARKER="/var/lib/harmony-smp/.migration-2.3.0-backup-path"
+
+_M230__DROPIN_OVERRIDE_FILE="${DROPIN_CONFIGS_DIR}/90-override.conf"
+_M230__DROPIN_OVERRIDE_HEADER=$'[Service]\n# User customizations migrated from pre-2.3.0 installation.\n# Edit or remove entries as needed. After changes run: systemctl daemon-reload\n'
+
+# Set by _m230__load_backup()
+_M230__BACKUP_DIR=""
+_M230__OLD_INIT_PROPS=""
+_M230__OLD_SERVER_XML=""
+_M230__OLD_CONTEXT_XML=""
+_M230__OLD_SETENV=""
+_M230__OLD_CONFIG_PROPS=""
+
+# Properties managed via dropin/secrets. Skip during customization detection
+declare -A _M230__MANAGED_MAP=(
+  [smp.jdbc.hibernate.dialect]=1
+  [smp.datasource.jndi]=1
+  [smp.log.folder]=1
+  [smp.security.folder]=1
+  [smp.locale.folder]=1
+)
+
+# =============================================================================
+# Utilities
+# =============================================================================
+
+_m230__log() {
+  log INFO "[migration-2.3.0] $1"
+}
+
+_m230__is_managed() {
+  [[ -n "${_M230__MANAGED_MAP[$1]+x}" ]]
+}
+
+# Read a property value from a Java .properties file (raw value after first '=')
+_m230__read_old_prop() {
+  local file="$1" key="$2"
+
+  local escaped_key="${key//./\\.}"
+  grep -m1 -Po "^\s*${escaped_key}\s*=\s*\K.*$" "$file" 2>/dev/null || true
+}
+
+# Read an attribute from the first Connector element in a server.xml file
+_m230__read_connector_attr() {
+  local server_xml="$1" attr="$2"
+
+  local escaped_attr="${attr//./\\.}"
+  tr '\n' ' ' < "$server_xml" | grep -oP "Connector[^>]*${escaped_attr}=\"\\K[^\"]*" 2>/dev/null | head -1 || true
+}
+
+# Read an attribute from the first <Resource> element in a context.xml file
+_m230__read_context_attr() {
+  local context_xml="$1" attr="$2"
+
+  local escaped_attr="${attr//./\\.}"
+  tr '\n' ' ' < "$context_xml" | grep -oP "Resource[^>]*${escaped_attr}=\"\\K[^\"]*" 2>/dev/null | head -1 || true
+}
+
+# Read a value from old config and write it using the given writer function
+_m230__transfer_prop() {
+  local file="$1" key="$2" writer="$3" target_key="$4"
+
+  local value
+  value="$(_m230__read_old_prop "$file" "$key")"
+
+  [[ -z "$value" ]] || "$writer" "$target_key" "$value"
+}
+
+# Read a server.xml connector attribute and write it using the given writer
+_m230__transfer_attr() {
+  local server_xml="$1" attr="$2" writer="$3" target_key="$4"
+
+  local value
+  value="$(_m230__read_connector_attr "$server_xml" "$attr")"
+
+  [[ -z "$value" ]] || "$writer" "$target_key" "$value"
+}
+
+# Read a context.xml Resource attribute and write it using the given writer
+_m230__transfer_context_attr() {
+  local context_xml="$1" attr="$2" writer="$3" target_key="$4"
+
+  local value
+  value="$(_m230__read_context_attr "$context_xml" "$attr")"
+
+  [[ -z "$value" ]] || "$writer" "$target_key" "$value"
+}
+
+# Read all key=value pairs from a .properties file into an associative array
+_m230__read_properties() {
+  local file="$1"
+  local -n _props="$2"
+
+  local line key value
+  while IFS= read -r line; do
+    [[ "$line" =~ ^[[:space:]]*# ]] && continue
+    [[ "$line" =~ ^[[:space:]]*$ ]] && continue
+    [[ "$line" == *=* ]] || continue
+    key="${line%%=*}"
+    key="${key#"${key%%[![:space:]]*}"}"
+    key="${key%"${key##*[![:space:]]}"}"
+    value="${line#*=}"
+    value="${value#"${value%%[![:space:]]*}"}"
+    _props["$key"]="$value"
+  done < "$file"
+}
+
+# Convert Java property name to environment variable name
+# smp.libraries.folder → SMP_LIBRARIES_FOLDER
+_m230__prop_name_to_env() {
+  printf '%s' "$1" | tr '[:lower:].-' '[:upper:]__'
+}
+
+_m230__copy_file() {
+  local src="$1" dst="$2"
+  if ! cp -p "$src" "$dst"; then
+    _m230__log "Failed to copy ${src} to ${dst}"
+    return 1
+  fi
+}
+
+_m230__copy_tree() {
+  local src="$1" dst="$2"
+  if ! cp -a "$src" "$dst"; then
+    _m230__log "Failed to copy ${src} to ${dst}"
+    return 1
+  fi
+}
+
+# Move a file, falling back to copy+remove for cross-device moves
+_m230__move_file() {
+  local src="$1" dst="$2"
+  if mv "$src" "$dst" 2>/dev/null; then
+    return 0
+  fi
+  _m230__copy_file "$src" "$dst"
+  rm -f "$src"
+}
+
+_m230__move_dir() {
+  local src="$1" dst="$2"
+  [[ ! -d "$dst" ]] || rmdir "$dst" 2>/dev/null || true
+  if [[ ! -e "$dst" ]] && mv "$src" "$dst" 2>/dev/null; then
+    return 0
+  fi
+  [[ -d "$dst" ]] || mkdir -p "$dst"
+  _m230__copy_tree "$src/." "$dst/"
+  rm -rf "$src"
+}
+
+# Write an environment variable to 90-override.conf
+_m230__set_override() {
+  local env_key="$1" value="$2"
+
+  if [[ ! -f "$_M230__DROPIN_OVERRIDE_FILE" ]]; then
+    ensure_file "$_M230__DROPIN_OVERRIDE_FILE" root:root 0644 true 022 "$_M230__DROPIN_OVERRIDE_HEADER"
+  fi
+  upsert_keyvalue "$_M230__DROPIN_OVERRIDE_FILE" dropin "$env_key" "$value"
+}
+
+# Apply a list of key=value customizations to 90-override.conf and log a summary
+_m230__apply_overrides() {
+  local label="$1"; shift
+
+  local -a entries=("$@")
+  (( ${#entries[@]} > 0 )) || return 0
+
+  local entry key value env_key
+  for entry in "${entries[@]}"; do
+    key="${entry%%=*}"; value="${entry#*=}"
+    env_key="$(_m230__prop_name_to_env "$key")"
+    _m230__set_override "$env_key" "$value"
+  done
+
+  _m230__log "  ${label}: ${#entries[@]} customization(s) migrated to 90-override.conf."
+  for entry in "${entries[@]}"; do
+    key="${entry%%=*}"
+    env_key="$(_m230__prop_name_to_env "$key")"
+    _m230__log "    ${key} → ${env_key}"
+  done
+}
+
+# Check if a file's sha256 matches any of the provided known hashes
+_m230__has_known_hash() {
+  local file="$1"; shift
+
+  local hash known
+  hash="$(sha256sum "$file" 2>/dev/null | cut -d' ' -f1)"
+  for known in "$@"; do
+    [[ "$hash" != "$known" ]] || return 0
+  done
+  return 1
+}
+
+# Hash-based config change detection. Logs customization status
+_m230__detect_config_changes() {
+  local label="$1" old_file="$2" new_file="$3" detail="$4"; shift 4
+
+  [[ -f "$old_file" ]] || return 0
+
+  if _m230__has_known_hash "$old_file" "$@"; then
+    _m230__log "  ${label}: no customizations detected."
+    return 0
+  fi
+
+  if [[ -n "$detail" ]]; then
+    _m230__log "  ${label}: customizations detected. ${detail}"
+  else
+    _m230__log "  ${label}: customizations detected, might require manual migration."
+  fi
+  _m230__log "    Old: ${old_file}"
+  _m230__log "    New: ${new_file}"
+}
+
+_m230__ext_to_type() {
+  case "$1" in
+    p12|pfx) echo "pkcs12" ;;
+    jks)     echo "jks" ;;
+    *)       die "Unknown store extension: $1" ;;
+  esac
+}
+
+# Extract store extension from old config files
+_m230__ext_from_config() {
+  local store_name="$1"
+
+  local location=""
+  case "$store_name" in
+    smp-keystore)
+      if [[ -f "$_M230__OLD_INIT_PROPS" ]]; then
+        location="$(_m230__read_old_prop "$_M230__OLD_INIT_PROPS" "smp.keystore.filename")"
+      fi
+      ;;
+    smp-truststore)
+      if [[ -f "$_M230__OLD_INIT_PROPS" ]]; then
+        location="$(_m230__read_old_prop "$_M230__OLD_INIT_PROPS" "smp.truststore.filename")"
+      fi
+      ;;
+    tls-keystore)
+      if [[ -f "$_M230__OLD_SERVER_XML" ]]; then
+        location="$(_m230__read_connector_attr "$_M230__OLD_SERVER_XML" "keystoreFile")"
+      fi
+      ;;
+    tls-truststore)
+      if [[ -f "$_M230__OLD_SERVER_XML" ]]; then
+        location="$(_m230__read_connector_attr "$_M230__OLD_SERVER_XML" "truststoreFile")"
+      fi
+      ;;
+  esac
+
+  if [[ -n "$location" ]]; then
+    local ext="${location##*.}"
+    ext="${ext,,}"
+    case "$ext" in
+      p12|pfx|jks) echo "$ext" ;;
+    esac
+  fi
+}
+
+# Detect store extension from backup: config-based first, then file scan, then default
+_m230__detect_store_ext() {
+  local store_name="$1"
+  local old_sec="${_M230__BACKUP_DIR}/etc/harmony-smp"
+
+  local config_ext
+  config_ext="$(_m230__ext_from_config "$store_name")"
+  if [[ -n "$config_ext" && -f "${old_sec}/${store_name}.${config_ext}" ]]; then
+    echo "$config_ext"
+    return
+  fi
+
+  local ext
+  for ext in p12 pfx jks; do
+    if [[ -f "${old_sec}/${store_name}.${ext}" ]]; then
+      echo "$ext"
+      return
+    fi
+  done
+
+  _m230__log "Could not detect existing store file for ${store_name} in backup. Defaulting to .p12 extension for new store."
+  echo "p12"
+}
+
+# Warn if the old JDBC URL contains non-standard query parameters
+_m230__check_custom_jdbc_params() {
+  local context_xml="$1"
+
+  local url
+  url="$(_m230__read_context_attr "$context_xml" "url")"
+  [[ -n "$url" ]] || return 0
+
+  local query_string="${url#*\?}"
+  [[ "$query_string" != "$url" ]] || return 0  # no '?' found
+
+  local -A standard=(
+    [useSSL]=1 [sslMode]=1 [allowPublicKeyRetrieval]=1
+    [useLegacyDatetimeCode]=1 [serverTimezone]=1
+  )
+
+  local extra=()
+  local param key
+  IFS='&' read -ra params <<< "$query_string"
+  for param in "${params[@]}"; do
+    key="${param%%=*}"
+    [[ -n "${standard[$key]+x}" ]] || extra+=("$param")
+  done
+
+  if (( ${#extra[@]} > 0 )); then
+    _m230__log "Custom JDBC URL parameters detected that will not be migrated automatically:"
+    local entry
+    for entry in "${extra[@]}"; do
+      _m230__log "  $entry"
+    done
+    _m230__log "Re-apply these to SMP_JDBC_URL in ${_M230__DROPIN_OVERRIDE_FILE} after migration."
+  fi
+}
+
+# =============================================================================
+# Migration steps
+# =============================================================================
+
+_m230__load_backup() {
+  [[ -f "$_M230__MIGRATION_MARKER" ]] || die "Migration marker not found. Was preinst run?"
+
+  _M230__BACKUP_DIR="$(cat "$_M230__MIGRATION_MARKER")"
+  [[ -d "$_M230__BACKUP_DIR" ]] || die "Backup directory not found: $_M230__BACKUP_DIR"
+
+  _m230__log "Using backup: ${_M230__BACKUP_DIR}"
+
+  _M230__OLD_INIT_PROPS="${_M230__BACKUP_DIR}/etc/harmony-smp/smp.init.properties"
+  _M230__OLD_SERVER_XML="${_M230__BACKUP_DIR}/etc/harmony-smp/tomcat-conf/server.xml"
+  _M230__OLD_CONTEXT_XML="${_M230__BACKUP_DIR}/etc/harmony-smp/tomcat-conf/context.xml"
+  _M230__OLD_SETENV="${_M230__BACKUP_DIR}/opt/harmony-smp/bin/setenv.sh"
+  _M230__OLD_CONFIG_PROPS="${_M230__BACKUP_DIR}/etc/harmony-smp/smp.config.properties"
+}
+
+# =============================================================================
+# Extract managed properties to dropin and secrets
+# =============================================================================
+
+# Strip {DEC}{value} wrapping used by SMP for passwords
+_m230__unwrap_dec() {
+  local value="$1"
+
+  if [[ "$value" == '{DEC}{'*'}' ]]; then
+    value="${value#\{DEC\}\{}"
+    value="${value%\}}"
+  fi
+
+  printf '%s' "$value"
+}
+
+_m230__migrate_managed_props() {
+  # SMP signing store passwords from smp.init.properties
+  # v1.0.0 did not have smp.init.properties
+  if [[ -f "$_M230__OLD_INIT_PROPS" ]]; then
+    local raw_ks_pw raw_ts_pw
+    raw_ks_pw="$(_m230__read_old_prop "$_M230__OLD_INIT_PROPS" "smp.keystore.password")"
+    raw_ts_pw="$(_m230__read_old_prop "$_M230__OLD_INIT_PROPS" "smp.truststore.password")"
+
+    if [[ -n "$raw_ks_pw" ]]; then
+      local plain_ks_pw
+      plain_ks_pw="$(_m230__unwrap_dec "$raw_ks_pw")"
+      set_secret SMP_KEYSTORE_PASSWORD "$(smp_wrap_secret "$plain_ks_pw")"
+    fi
+    if [[ -n "$raw_ts_pw" ]]; then
+      local plain_ts_pw
+      plain_ts_pw="$(_m230__unwrap_dec "$raw_ts_pw")"
+      set_secret SMP_TRUSTSTORE_PASSWORD "$(smp_wrap_secret "$plain_ts_pw")"
+    fi
+  else
+    _m230__log "smp.init.properties not found (v1.0.0 installation). Signing store passwords not migrated."
+    _m230__log "  The postinst store validation may fail if stores exist without passwords."
+    _m230__log "  Manual intervention may be required to start the service."
+  fi
+
+  # TLS secrets from server.xml
+  if [[ -f "$_M230__OLD_SERVER_XML" ]]; then
+    _m230__transfer_attr "$_M230__OLD_SERVER_XML" keystorePass   set_secret TLS_KEYSTORE_PASSWORD
+    _m230__transfer_attr "$_M230__OLD_SERVER_XML" truststorePass set_secret TLS_TRUSTSTORE_PASSWORD
+  fi
+
+  # Database password from context.xml
+  if [[ -f "$_M230__OLD_CONTEXT_XML" ]]; then
+    _m230__transfer_context_attr "$_M230__OLD_CONTEXT_XML" password set_secret SMP_JDBC_PASSWORD
+    _m230__check_custom_jdbc_params "$_M230__OLD_CONTEXT_XML"
+  fi
+
+  _m230__log "Migrated secrets from old configuration."
+}
+
+# =============================================================================
+# Update debconf values from actual config
+# =============================================================================
+
+# Parse a JDBC URL: jdbc:mysql://host:port/schema?opts
+# Sets variables: _jdbc_host _jdbc_port _jdbc_schema
+_m230__parse_jdbc_url() {
+  local url="$1"
+
+  _jdbc_host="" _jdbc_port="" _jdbc_schema=""
+
+  # Strip jdbc:mysql:// prefix
+  local remainder="${url#jdbc:*://}"
+  [[ "$remainder" != "$url" ]] || return 0
+
+  # Strip query string
+  local hostportschema="${remainder%%\?*}"
+
+  # Extract host:port and schema
+  local hostport="${hostportschema%%/*}"
+  _jdbc_schema="${hostportschema#*/}"
+
+  if [[ "$hostport" == *:* ]]; then
+    _jdbc_host="${hostport%%:*}"
+    _jdbc_port="${hostport#*:}"
+  else
+    _jdbc_host="$hostport"
+    _jdbc_port="3306"
+  fi
+}
+
+_m230__update_debconf_from_config() {
+  # Parse JDBC URL from context.xml
+  if [[ -f "$_M230__OLD_CONTEXT_XML" ]]; then
+    local jdbc_url
+    jdbc_url="$(_m230__read_context_attr "$_M230__OLD_CONTEXT_XML" "url")"
+    if [[ -n "$jdbc_url" ]]; then
+      local _jdbc_host _jdbc_port _jdbc_schema
+      _m230__parse_jdbc_url "$jdbc_url"
+      [[ -z "$_jdbc_host" ]]   || db_set harmony-smp/database-host   "$_jdbc_host"
+      [[ -z "$_jdbc_port" ]]   || db_set harmony-smp/database-port   "$_jdbc_port"
+      [[ -z "$_jdbc_schema" ]] || db_set harmony-smp/database-schema "$_jdbc_schema"
+    fi
+
+    local db_user
+    db_user="$(_m230__read_context_attr "$_M230__OLD_CONTEXT_XML" "username")"
+    [[ -z "$db_user" ]] || db_set harmony-smp/database-user "$db_user"
+
+    local db_password
+    db_password="$(_m230__read_context_attr "$_M230__OLD_CONTEXT_XML" "password")"
+    [[ -z "$db_password" ]] || db_set harmony-smp/database-password "$db_password"
+  fi
+
+  # Tomcat port from server.xml
+  if [[ -f "$_M230__OLD_SERVER_XML" ]]; then
+    _m230__transfer_attr "$_M230__OLD_SERVER_XML" port db_set harmony-smp/tomcatport
+  fi
+
+  # SML settings from smp.init.properties
+  if [[ -f "$_M230__OLD_INIT_PROPS" ]]; then
+    _m230__transfer_prop "$_M230__OLD_INIT_PROPS" "bdmsl.integration.enabled"          db_set harmony-smp/integratewithsml
+    _m230__transfer_prop "$_M230__OLD_INIT_PROPS" "bdmsl.integration.url"              db_set harmony-smp/smlurl
+    _m230__transfer_prop "$_M230__OLD_INIT_PROPS" "bdmsl.integration.logical.address"  db_set harmony-smp/smpurl
+    _m230__transfer_prop "$_M230__OLD_INIT_PROPS" "bdmsl.integration.physical.address" db_set harmony-smp/smpip
+  fi
+
+  _m230__log "Database and SML configuration loaded from old config."
+}
+
+# =============================================================================
+# Seed certificate DN defaults
+# =============================================================================
+
+_m230__seed_certificate_defaults() {
+  local fqdn
+  fqdn="$(hostname -f 2>/dev/null || hostname)"
+
+  db_get harmony-smp/serverdn
+  [[ -n "$RET" ]] || db_set harmony-smp/serverdn "CN=${fqdn}"
+
+  db_get harmony-smp/serversan
+  [[ -n "$RET" ]] || db_set harmony-smp/serversan "DNS:${fqdn}"
+}
+
+# =============================================================================
+# Migrate marker files
+# =============================================================================
+
+_m230__migrate_markers() {
+  # Old postinst loaded tzinfo on every install but never created a marker.
+  # If database is localhost, create the marker to skip re-loading on next configure.
+  db_get harmony-smp/database-host
+  if [[ "${RET:-localhost}" == "localhost" ]]; then
+    touch "${MARKER_DIR}/.mysql_tzinfo_loaded"
+    _m230__log "Created MySQL timezone marker (localhost database detected)."
+  fi
+}
+
+# =============================================================================
+# Move keystores and certificates + set dropin paths
+# =============================================================================
+
+_m230__migrate_keystores() {
+  local live_sec="/etc/harmony-smp"
+  local new_sec="$SECURITY_DIR"
+
+  local -A store_ext=(
+    [smp-keystore]="$(_m230__detect_store_ext smp-keystore)"
+    [smp-truststore]="$(_m230__detect_store_ext smp-truststore)"
+    [tls-keystore]="$(_m230__detect_store_ext tls-keystore)"
+    [tls-truststore]="$(_m230__detect_store_ext tls-truststore)"
+  )
+
+  # Move stores from live location to new security directory
+  local migrated=()
+  local store_base ext store
+  for store_base in smp-keystore smp-truststore tls-keystore tls-truststore; do
+    ext="${store_ext[$store_base]}"
+    store="${store_base}.${ext}"
+    if [[ -f "${live_sec}/${store}" && ! -e "${new_sec}/${store}" ]]; then
+      _m230__move_file "${live_sec}/${store}" "${new_sec}/${store}"
+      chown harmony-smp:harmony-smp "${new_sec}/${store}"
+      chmod 0640 "${new_sec}/${store}"
+      migrated+=("$store")
+    fi
+  done
+
+  # Certificates
+  if [[ -d "${live_sec}/certs" && ! -d "${new_sec}/certs" ]]; then
+    _m230__move_dir "${live_sec}/certs" "${new_sec}/certs"
+    chown -R harmony-smp:harmony-smp "${new_sec}/certs/"
+    chmod 0750 "${new_sec}/certs/"
+    find "${new_sec}/certs/" -type f -exec chmod 0640 {} +
+    migrated+=("certs/")
+  fi
+
+  # Encryption private key (used to decrypt passwords in database)
+  local enc_key="encryptionPrivateKey.private"
+  if [[ -f "${live_sec}/${enc_key}" && ! -e "${new_sec}/${enc_key}" ]]; then
+    _m230__move_file "${live_sec}/${enc_key}" "${new_sec}/${enc_key}"
+    chown harmony-smp:harmony-smp "${new_sec}/${enc_key}"
+    chmod 0640 "${new_sec}/${enc_key}"
+    migrated+=("$enc_key")
+  fi
+
+  if (( ${#migrated[@]} > 0 )); then
+    _m230__log "Keystores migrated to ${new_sec}/:"
+    local item
+    for item in "${migrated[@]}"; do
+      _m230__log "  ${item}"
+    done
+  else
+    _m230__log "No existing keystores found. New stores will be created during configuration."
+  fi
+
+  # Set dropin paths and types
+  set_dropin SMP_KEYSTORE_PATH    "${SECURITY_DIR}/smp-keystore.${store_ext[smp-keystore]}"
+  set_dropin SMP_TRUSTSTORE_PATH  "${SECURITY_DIR}/smp-truststore.${store_ext[smp-truststore]}"
+  set_dropin TLS_KEYSTORE_PATH    "${SECURITY_DIR}/tls-keystore.${store_ext[tls-keystore]}"
+  set_dropin TLS_TRUSTSTORE_PATH  "${SECURITY_DIR}/tls-truststore.${store_ext[tls-truststore]}"
+
+  set_dropin SMP_KEYSTORE_TYPE   "$(_m230__ext_to_type "${store_ext[smp-keystore]}")"
+  set_dropin SMP_TRUSTSTORE_TYPE "$(_m230__ext_to_type "${store_ext[smp-truststore]}")"
+  set_dropin TLS_KEYSTORE_TYPE   "$(_m230__ext_to_type "${store_ext[tls-keystore]}")"
+  set_dropin TLS_TRUSTSTORE_TYPE "$(_m230__ext_to_type "${store_ext[tls-truststore]}")"
+
+  if [[ "${store_ext[smp-keystore]}" == "jks" || "${store_ext[smp-truststore]}" == "jks" || \
+        "${store_ext[tls-keystore]}" == "jks" || "${store_ext[tls-truststore]}" == "jks" ]]; then
+    _m230__log "JKS store format detected. Per-store type overrides configured."
+  fi
+}
+
+# =============================================================================
+# Migrate locale files
+# =============================================================================
+
+_m230__migrate_locales() {
+  local old_locales="/etc/harmony-smp/locales"
+  local new_locales="/var/lib/harmony-smp/locales"
+
+  [[ -d "$old_locales" ]] || return 0
+
+  local count=0 file
+  for file in "$old_locales"/*; do
+    [[ -f "$file" ]] || continue
+    (( ++count ))
+  done
+
+  (( count > 0 )) || return 0
+
+  _m230__move_dir "$old_locales" "$new_locales"
+  chown -R harmony-smp:harmony-smp "$new_locales"
+  _m230__log "Migrated ${count} locale file(s) to ${new_locales}."
+}
+
+# =============================================================================
+# Detect and apply user customizations
+# =============================================================================
+
+_m230__migrate_config_customizations() {
+  [[ -f "$_M230__OLD_CONFIG_PROPS" ]] || return 0
+
+  # Known shipped hashes for smp.config.properties
+  local -a config_hashes=(
+    "605acc98d0d7f2cc5dfc1310fdf93c7019618b4d0620e72a005ee900a61329a6"  # 1.0.0-1.3.1
+    "49b6c181b622a0f9296b52c778ab91758cf51d8d5844c80f1dc71338e7e87271"  # 1.4.0
+    "14f16567e61f663de56353f557a8e52081844dd2723a365b2e5508b70db77992"  # 2.0.0-2.1.1
+    "3144dbfec758b9f7bd91a93669243c9f93d83ab1118ceb47855164b4c1d3e241"  # 2.2.0-2.2.1
+  )
+
+  if _m230__has_known_hash "$_M230__OLD_CONFIG_PROPS" "${config_hashes[@]}"; then
+    _m230__log "  smp.config.properties: no customizations detected."
+    return 0
+  fi
+
+  # Load old properties and collect customizations
+  local -A old_props=()
+  _m230__read_properties "$_M230__OLD_CONFIG_PROPS" old_props
+
+  local customizations=()
+  local key value
+  for key in "${!old_props[@]}"; do
+    _m230__is_managed "$key" && continue
+    value="${old_props[$key]}"
+    customizations+=("${key}=${value}")
+  done
+
+  if (( ${#customizations[@]} == 0 )); then
+    _m230__log "  smp.config.properties: no customizations detected."
+    return 0
+  fi
+
+  _m230__apply_overrides "smp.config.properties" "${customizations[@]}"
+  _m230__log "    Old: ${_M230__OLD_CONFIG_PROPS}"
+  _m230__log "    New: ${_M230__DROPIN_OVERRIDE_FILE}"
+}
+
+_m230__migrate_logback() {
+  local old_logback="${_M230__BACKUP_DIR}/opt/harmony-smp/webapps/ROOT/WEB-INF/classes/logback.xml"
+  local new_logback="/etc/harmony-smp/logback.xml"
+
+  [[ -f "$old_logback" ]] || return 0
+
+  local -a logback_hashes=(
+    "e79128234abf36716080231ac2f25ec36ca0942f28f4051a2a72b5ca6f4537a5"  # 1.4.0-2.2.1
+  )
+
+  if _m230__has_known_hash "$old_logback" "${logback_hashes[@]}"; then
+    _m230__log "  logback.xml: no customizations detected."
+    return 0
+  fi
+
+  _m230__copy_file "$old_logback" "$new_logback"
+  chown root:harmony-smp "$new_logback"
+  chmod 0640 "$new_logback"
+  _m230__log "  logback.xml: customizations detected, copied to ${new_logback}."
+  _m230__log "    Old: ${old_logback}"
+  _m230__log "    New: ${new_logback}"
+}
+
+# Normalize a setenv.sh for comparison: mask truststore path and password
+# so envsubst differences don't matter
+_m230__normalize_setenv() {
+  # shellcheck disable=SC2016 # ${tls_truststore_password} should be masked, not expanded
+  sed -e 's|/etc/harmony-smp/tls-truststore\.\(p12\|jks\)|TRUSTSTORE_PATH|g' \
+    -e 's|\${tls_truststore_password}|MASKED|g' \
+    -e 's|trustStorePassword=[^"]*|trustStorePassword=MASKED|' \
+    "$1"
+}
+
+_m230__detect_setenv() {
+  [[ -f "$_M230__OLD_SETENV" ]] || return 0
+
+  local old_setenv_template="${_M230__BACKUP_DIR}/opt/harmony-smp/setup/setenv.sh.template"
+  local is_custom="unknown"
+
+  if [[ -f "$old_setenv_template" ]]; then
+    local norm_old norm_ref
+    norm_old="$(_m230__normalize_setenv "$_M230__OLD_SETENV")"
+    norm_ref="$(_m230__normalize_setenv "$old_setenv_template")"
+    [[ "$norm_old" != "$norm_ref" ]] && is_custom="yes" || is_custom="no"
+  fi
+
+  if [[ "$is_custom" == "no" ]]; then
+    _m230__log "  setenv.sh: no customizations detected."
+    return 0
+  fi
+
+  if [[ "$is_custom" == "yes" ]]; then
+    _m230__log "  setenv.sh: customizations detected, might require manual migration."
+  else
+    _m230__log "  setenv.sh: could not determine customization (no template in old package), might require manual migration."
+  fi
+  _m230__log "    JVM options now managed via systemd drop-ins and /usr/lib/harmony-smp/tomcat/bin/setenv.sh"
+  _m230__log "    Old: ${_M230__OLD_SETENV}"
+  _m230__log "    New: ${DROPIN_DEFAULTS_DIR}/10-defaults.conf"
+}
+
+_m230__detect_tomcat_conf() {
+  local old_webxml="${_M230__BACKUP_DIR}/etc/harmony-smp/tomcat-conf/web.xml"
+  local old_catprops="${_M230__BACKUP_DIR}/etc/harmony-smp/tomcat-conf/catalina.properties"
+
+  [[ -f "$old_webxml" || -f "$old_catprops" ]] || return 0
+
+  local backed=()
+  [[ ! -f "$old_webxml" ]]   || backed+=("web.xml")
+  [[ ! -f "$old_catprops" ]] || backed+=("catalina.properties")
+  _m230__log "  ${backed[*]}: Package uses Tomcat defaults from /usr/lib/harmony-smp/tomcat/conf/"
+  _m230__log "    To customize, place your version in /etc/harmony-smp/tomcat/"
+}
+
+_m230__migrate_extensions() {
+  # Determine old extensions path
+  local old_ext_dir="/opt/harmony-smp/ext-lib"
+  if [[ -f "$_M230__OLD_CONFIG_PROPS" ]]; then
+    local custom_dir
+    custom_dir="$(_m230__read_old_prop "$_M230__OLD_CONFIG_PROPS" "smp.libraries.folder")"
+    if [[ -n "$custom_dir" ]]; then
+      # Resolve relative paths against old CATALINA_HOME
+      if [[ "$custom_dir" != /* ]]; then
+        custom_dir="/opt/harmony-smp/${custom_dir}"
+      fi
+      old_ext_dir="$custom_dir"
+    fi
+  fi
+
+  local new_ext_dir="/usr/local/lib/harmony-smp/extensions/lib"
+  local count=0
+
+  if [[ -d "$old_ext_dir" ]]; then
+    local file fname
+    for file in "$old_ext_dir"/*.jar; do
+      [[ -f "$file" ]] || continue
+      fname="${file##*/}"
+      if [[ ! -e "${new_ext_dir}/${fname}" ]]; then
+        mkdir -p "$new_ext_dir"
+        _m230__copy_file "$file" "${new_ext_dir}/${fname}"
+        chown root:harmony-smp "${new_ext_dir}/${fname}"
+        chmod 0644 "${new_ext_dir}/${fname}"
+        (( ++count ))
+      fi
+    done
+  fi
+
+  if (( count > 0 )); then
+    _m230__log "Extensions: ${count} extension(s) migrated to ${new_ext_dir}."
+  fi
+
+  if [[ -n "${custom_dir:-}" && "$old_ext_dir" != /opt/harmony-smp/* ]]; then
+    _m230__log "  Custom extension path outside package directory: ${old_ext_dir}"
+    _m230__log "    JARs have been copied to ${new_ext_dir}."
+    _m230__log "    To continue using the old path, set:"
+    _m230__log "    SMP_LIBRARIES_FOLDER=${old_ext_dir} in ${_M230__DROPIN_OVERRIDE_FILE}"
+  fi
+}
+
+_m230__detect_and_migrate_customizations() {
+  _m230__log "Configuration files:"
+
+  _m230__migrate_config_customizations
+  _m230__migrate_logback
+
+  local -a logging_hashes=(
+    "3619542ba2e1ab136fdcda66c0b11be2a3785a764711a82a02e877bb484b9b28"  # all versions (1.0.0-2.2.1)
+  )
+  _m230__detect_config_changes "logging.properties" \
+    "${_M230__BACKUP_DIR}/etc/harmony-smp/tomcat-conf/logging.properties" \
+    "/etc/harmony-smp/tomcat/logging.properties" \
+    "" \
+    "${logging_hashes[@]}"
+
+  _m230__detect_setenv
+  _m230__detect_tomcat_conf
+  _m230__migrate_extensions
+}
+
+# =============================================================================
+# Fix Liquibase changelog paths in DATABASECHANGELOG
+# =============================================================================
+
+_m230__fix_changelog_paths() {
+  local db_host db_port db_schema db_user db_password
+  db_get harmony-smp/database-host;     db_host="${RET:-}"
+  db_get harmony-smp/database-port;     db_port="${RET:-}"
+  db_get harmony-smp/database-schema;   db_schema="${RET:-}"
+  db_get harmony-smp/database-user;     db_user="${RET:-}"
+  db_get harmony-smp/database-password; db_password="${RET:-}"
+
+  if [[ -z "$db_host" || -z "$db_user" || -z "$db_password" ]]; then
+    _m230__log "Cannot determine DB credentials. Skipping changelog path fix."
+    _m230__log "  If Liquibase fails during upgrade, manually run:"
+    _m230__log "  UPDATE DATABASECHANGELOG SET FILENAME='db.changelog.xml' WHERE FILENAME IN ('/opt/harmony-smp/db/db.changelog.xml', 'opt/harmony-smp/db/db.changelog.xml');"
+    return 0
+  fi
+
+  local db_url db_driver
+  read -r db_url db_driver _ < <(get_database_connection "$db_host" "$db_port" "$db_schema")
+
+  _m230__log "Updating Liquibase changelog paths in database..."
+
+  if DB_PASSWORD="$db_password" \
+    harmony-database \
+      --mode liquibase \
+      --stage "$STAGE" \
+      --indent-output \
+      --db-url "$db_url" \
+      --db-driver-class "$db_driver" \
+      --db-user "$db_user" \
+      -- execute-sql \
+      --sql="UPDATE DATABASECHANGELOG SET FILENAME = 'db.changelog.xml' WHERE FILENAME IN ('/opt/harmony-smp/db/db.changelog.xml', 'opt/harmony-smp/db/db.changelog.xml')" \
+      >&2; then
+    _m230__log "Changelog paths updated successfully."
+  else
+    _m230__log "WARNING: Could not update changelog paths. If Liquibase fails, manually run:"
+    _m230__log "  UPDATE DATABASECHANGELOG SET FILENAME='db.changelog.xml' WHERE FILENAME IN ('/opt/harmony-smp/db/db.changelog.xml', 'opt/harmony-smp/db/db.changelog.xml');"
+  fi
+}
+
+# =============================================================================
+# Clean up orphan files and directories
+# =============================================================================
+
+_m230__cleanup_orphans() {
+  # Remove old tomcat-conf files (already backed up and checked for customizations)
+  local orphan
+  for orphan in \
+    /etc/harmony-smp/tomcat-conf/context.xml \
+    /etc/harmony-smp/tomcat-conf/logging.properties \
+    /etc/harmony-smp/tomcat-conf/web.xml \
+    /etc/harmony-smp/tomcat-conf/catalina.policy \
+    /etc/harmony-smp/tomcat-conf/catalina.properties \
+    /etc/harmony-smp/tomcat-conf/context.xml.template \
+    /etc/harmony-smp/tomcat-conf/jaspic-providers.xml \
+    /etc/harmony-smp/tomcat-conf/jaspic-providers.xsd \
+    /etc/harmony-smp/tomcat-conf/tomcat-users.xml \
+    /etc/harmony-smp/tomcat-conf/tomcat-users.xsd \
+    /etc/harmony-smp/tomcat-conf/server.xml; do
+    rm -f "$orphan"
+  done
+
+  # Tomcat runtime directory (auto-created on context deployment)
+  rm -rf /etc/harmony-smp/tomcat-conf/Catalina
+
+  rmdir /etc/harmony-smp/tomcat-conf 2>/dev/null \
+    || _m230__log "  /etc/harmony-smp/tomcat-conf/ not empty. Review remaining files."
+
+  # Old secrets/config files
+  rm -f /etc/harmony-smp/smp.init.properties
+  rm -f /etc/harmony-smp/smp-log4j.properties
+  rm -f /etc/harmony-smp/encryptionPrivateKey.private
+
+  # Old generated setenv.sh
+  rm -f /opt/harmony-smp/bin/setenv.sh
+  rmdir /opt/harmony-smp/bin 2>/dev/null || true
+
+  # Old conf symlink
+  rm -f /opt/harmony-smp/conf
+
+  # Old runtime directories
+  rm -rf /opt/harmony-smp/temp
+
+  if [[ -d /opt/harmony-smp/logs ]]; then
+    rmdir /opt/harmony-smp/logs 2>/dev/null \
+      || _m230__log "Old log files at /opt/harmony-smp/logs/ Review and remove manually if not needed."
+  fi
+
+  # Old setup directory (if dpkg left it)
+  if [[ -d /opt/harmony-smp/setup ]]; then
+    rm -rf /opt/harmony-smp/setup
+  fi
+
+  # Remove /opt/harmony-smp if completely empty after all cleanup
+  rmdir /opt/harmony-smp 2>/dev/null \
+    || _m230__log "  /opt/harmony-smp/ not empty. Review remaining files."
+
+  # Old /var/opt/harmony-smp/ tree
+  if [[ -d /var/opt/harmony-smp ]]; then
+    rm -rf /var/opt/harmony-smp/work /var/opt/harmony-smp/conf
+    rmdir /var/opt/harmony-smp 2>/dev/null \
+      || _m230__log "  /var/opt/harmony-smp/ not empty. Review remaining files."
+  fi
+
+  # Old CATALINA_TMPDIR
+  rm -rf /var/tmp/harmony-smp
+
+  # Warn about .dpkg-old files left behind after conffile transitions
+  local dpkg_old
+  while IFS= read -r -d '' dpkg_old; do
+    _m230__log "  Leftover conffile backup: ${dpkg_old} Review and remove if not needed."
+  done < <(find /etc/harmony-smp/ -name '*.dpkg-old' -print0 2>/dev/null)
+
+  _m230__log "Cleanup complete. All original files preserved in backup: ${_M230__BACKUP_DIR}"
+
+  # Remove migration marker
+  rm -f "$_M230__MIGRATION_MARKER"
+}
+
+# =============================================================================
+# Log migration summary
+# =============================================================================
+
+_m230__log_summary() {
+  _m230__log ""
+  _m230__log "Migration to 2.3.0 complete."
+  _m230__log "  Backup preserved at: ${_M230__BACKUP_DIR}"
+  _m230__log "  Configuration drop-ins:"
+  _m230__log "    Defaults: ${DROPIN_DEFAULTS_DIR}/10-defaults.conf"
+  _m230__log "    Managed by package: ${DROPIN_HARMONY_FILE}"
+  if [[ -f "${_M230__DROPIN_OVERRIDE_FILE}" ]]; then
+    _m230__log "    Customizations: ${_M230__DROPIN_OVERRIDE_FILE}"
+  fi
+}
+
+# =============================================================================
+# Namespace cleanup
+# =============================================================================
+
+_m230__cleanup_namespace() {
+  local fn var
+
+  while IFS= read -r fn; do
+    unset -f "$fn"
+  done < <(compgen -A function | grep '^_m230__')
+
+  while IFS= read -r var; do
+    unset "$var"
+  done < <(compgen -A variable | grep '^_M230__')
+
+  unset -f migrate_to_230
+}
+
+# =============================================================================
+# Main migration function
+# =============================================================================
+
+migrate_to_230() {
+  local old_version="$1"
+
+  _m230__load_backup
+  _m230__log "Starting migration from ${old_version} to 2.3.0"
+
+  ensure_file "$DROPIN_HARMONY_FILE" root:root       0644 true 022 "$DROPIN_HARMONY_HEADER"
+  ensure_file "$SECRETS_FILE"        root:harmony-smp 0640 true 027 "$SECRETS_HEADER"
+
+  _m230__migrate_managed_props
+  _m230__update_debconf_from_config
+  _m230__seed_certificate_defaults
+  _m230__migrate_markers
+  _m230__migrate_keystores
+  _m230__migrate_locales
+  _m230__detect_and_migrate_customizations
+  _m230__fix_changelog_paths
+  _m230__cleanup_orphans
+
+  require_manual_start
+  _m230__log_summary
+  _m230__cleanup_namespace
+}

@@ -1,61 +1,69 @@
 #!/command/with-contenv bash
 set -euo pipefail
 
+# shellcheck disable=SC2034 # Used in sourced scripts
 readonly STAGE="config-environment"
 
-source /usr/lib/harmony-common
-
-get_property() {
-  local cfg_path="$1"
-  local property="$2"
-  local default_value="$3"
-
-  harmony-property -s "$STAGE" -n "$NODE_ID" -a GET -c "$cfg_path" -p "$property" -v "$default_value" --allow-missing-paths
-}
+source /usr/lib/harmony-ap/lib/harmony-common
 
 log DEBUG "Started"
+
+normalize_path() {
+  local path="${1%/}"
+  printf '%s' "${path:-/}"
+}
 
 # -------------------------------
 # Load parameters from file (if defined)
 # -------------------------------
 if [[ -n "${HARMONY_PARAM_FILE:-}" && -f "$HARMONY_PARAM_FILE" ]]; then
-  log INFO "Reading parameters from $HARMONY_PARAM_FILE..."
-  while IFS='=' read -r key value || [[ -n "$key" ]]; do
-    value=${value%$'\r'}
+  harmony-paramfile --path "$HARMONY_PARAM_FILE" --stage "$STAGE"
 
-    # Ignore comments, empty keys, already defined variables, or empty values
-    [[ "$key" =~ ^#.*$ || -z "$key" || -n "${!key:-}" || -z "$value" ]] && continue
-    declare "$key=$value"
-    printf "%s" "$value" > "/var/run/s6/container_environment/$key"
-    log DEBUG "Added environment variable: $key"
-  done < "$HARMONY_PARAM_FILE"
+  for env_var in /var/run/s6/container_environment/*; do
+    [ -f "$env_var" ] || continue
+    name="$(basename "$env_var")"
+    [[ -n "${!name:-}" ]] || declare "$name=$(cat "$env_var")"
+  done
 fi
 
 # -------------------------------
 # Default directories
 # -------------------------------
-harmony_base="${HARMONY_BASE:-/var/opt/harmony-ap}" # Runtime state
-harmony_home="${HARMONY_HOME:-/opt/harmony-ap}"     # Static and read-only
-temp_dir="${TEMP_DIR:-/tmp/harmony-ap}"
+harmony_base="$(normalize_path "${HARMONY_BASE:-/var/lib/harmony-ap}")" # Runtime state
+harmony_home="$(normalize_path "${HARMONY_HOME:-/usr/lib/harmony-ap}")" # Static and read-only
+harmony_config="$(normalize_path "${HARMONY_CONFIG:-/etc/harmony-ap}")" # Configs
+harmony_addons="$(normalize_path "${HARMONY_ADDONS:-/usr/local/lib/harmony-ap}")" # Operator plugins/extensions
 
-printf "%s" "$harmony_base" > /var/run/s6/container_environment/HARMONY_BASE
-printf "%s" "$harmony_home" > /var/run/s6/container_environment/HARMONY_HOME
-printf "%s" "$temp_dir" > /var/run/s6/container_environment/TEMP_DIR
+if [[ "$harmony_config" != "/etc/harmony-ap" ]]; then
+  log WARN "Non-standard HARMONY_CONFIG='${harmony_config}'."
+  log WARN "  Ensure config files (domibus.properties, logback.xml, etc.) exist at this path."
+fi
 
-# -------------------------------
-# Config file paths
-# -------------------------------
-application_config_path="${APPLICATION_CONFIG_PATH:-${harmony_base}/etc/domibus.properties}"
-application_config_path_temp="${temp_dir}/domibus.properties"
+# Auto-detect legacy volume at /var/opt/harmony-ap
+if [[ -z "${HARMONY_BASE:-}" ]] && [[ -d "/var/opt/harmony-ap" ]] \
+   && [[ -n "$(ls -A /var/opt/harmony-ap 2>/dev/null)" ]]; then
+  harmony_base="/var/opt/harmony-ap"
+  log WARN "Detected data at legacy path /var/opt/harmony-ap. Using it as HARMONY_BASE."
+  log WARN "  To suppress this warning, set HARMONY_BASE=/var/opt/harmony-ap explicitly,"
+  log WARN "  or migrate your data to /var/lib/harmony-ap."
+fi
 
-printf "%s" "$application_config_path" > /var/run/s6/container_environment/APPLICATION_CONFIG_PATH
-printf "%s" "$application_config_path_temp" > /var/run/s6/container_environment/APPLICATION_CONFIG_PATH_TEMP
+harmony_security="$(normalize_path "${HARMONY_SECURITY:-${harmony_base}/security}")"
+tomcat_temp_dir="$(normalize_path "${TOMCAT_TEMP_DIR:-/var/tmp/harmony-ap}")"
+log_dir="$(normalize_path "${LOG_DIR:-${harmony_base}/log}")"
+
+publish_env HARMONY_BASE "$harmony_base"
+publish_env HARMONY_HOME "$harmony_home"
+publish_env HARMONY_CONFIG "$harmony_config"
+publish_env HARMONY_ADDONS "$harmony_addons"
+publish_env HARMONY_SECURITY "$harmony_security"
+publish_env TOMCAT_TEMP_DIR "$tomcat_temp_dir"
+publish_env LOG_DIR "$log_dir"
 
 # -------------------------------
 # Clustering options
 # -------------------------------
-deployment_clustered_raw="${DEPLOYMENT_CLUSTERED:-$(get_property "$application_config_path" 'domibus.deployment.clustered' 'false')}"
-deployment_clustered="$(ensure_boolean "$deployment_clustered_raw" "false")"
+deployment_clustered="$(ensure_boolean "${DEPLOYMENT_CLUSTERED:-false}" "false")"
 
 if [[ "$deployment_clustered" == "true" ]]; then
   cluster_backend="${CLUSTER_BACKEND:-filesystem}"
@@ -63,22 +71,35 @@ else
   cluster_backend="${CLUSTER_BACKEND:-none}"
 fi
 
-cluster_secret_backup_raw="${CLUSTER_SECRET_BACKUP:-true}"
-cluster_secret_backup="$(ensure_boolean "$cluster_secret_backup_raw" "true")"
+cluster_secret_backup="$(ensure_boolean "${CLUSTER_SECRET_BACKUP:-true}" "true")"
 
-printf "%s" "$deployment_clustered" > /var/run/s6/container_environment/DEPLOYMENT_CLUSTERED
-printf "%s" "$cluster_backend" > /var/run/s6/container_environment/CLUSTER_BACKEND
-printf "%s" "$cluster_secret_backup" > /var/run/s6/container_environment/CLUSTER_SECRET_BACKUP
+publish_env DEPLOYMENT_CLUSTERED "$deployment_clustered"
+publish_env CLUSTER_BACKEND "$cluster_backend"
+publish_env CLUSTER_SECRET_BACKUP "$cluster_secret_backup"
+
+# -------------------------------
+# Work directories
+# -------------------------------
+tomcat_work_dir="$(normalize_path "${TOMCAT_WORK_DIR:-${harmony_base}/tomcat/work}")"
+activemq_work_dir="$(normalize_path "${ACTIVEMQ_WORK_DIR:-${harmony_base}/broker}")"
+
+if [[ "$deployment_clustered" == "true" ]]; then
+  tomcat_work_dir="${tomcat_work_dir}/${NODE_ID}"
+  activemq_work_dir="${activemq_work_dir}/${NODE_ID}"
+fi
+
+publish_env TOMCAT_WORK_DIR "$tomcat_work_dir"
+publish_env ACTIVEMQ_WORK_DIR "$activemq_work_dir"
 
 # -------------------------------
 # Common cert options
 # -------------------------------
-party_name="${PARTY_NAME:-$(get_property "$application_config_path" 'domibus.security.key.private.alias' 'selfsigned')}"
+party_name="${PARTY_NAME:-selfsigned}"
 cert_alias="${CERT_ALIAS:-$party_name}"
-cert_dir="${CERT_DIR:=${harmony_base}/etc/certs}"
+cert_dir="$(normalize_path "${CERT_DIR:-${harmony_security}/certs}")"
 
-printf "%s" "$party_name" > /var/run/s6/container_environment/PARTY_NAME
-printf "%s" "$cert_alias" > /var/run/s6/container_environment/CERT_ALIAS
-printf "%s" "$cert_dir" > /var/run/s6/container_environment/CERT_DIR
+publish_env PARTY_NAME "$party_name"
+publish_env CERT_ALIAS "$cert_alias"
+publish_env CERT_DIR "$cert_dir"
 
 log DEBUG "Done"

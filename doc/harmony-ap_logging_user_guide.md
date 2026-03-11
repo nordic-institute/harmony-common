@@ -169,7 +169,7 @@ Since Docker handles log files, Logback does not save logs to the file system.
 To customize the Logback settings in the Harmony AP Docker image, you can choose one of the following methods:
 
 - Using the `LOGBACK_CONFIG_B64` environment variable by providing a custom Logback configuration file encoded in Base64 using this variable.
-- Mounting a custom configuration file into the container at the location specified by the `LOGBACK_CONFIG_PATH` environment variable. By default, this path is: `/var/opt/harmony-ap/etc/logback.xml`
+- Mounting a custom configuration file into the container at the location specified by the `LOGBACK_CONFIG_PATH` environment variable. By default, this path is: `/etc/harmony-ap/logback.xml`
 
 For detailed instructions, refer to the _Adjusting Log Levels and Configuration_ section in the Access Point Docker Installation Guide [IG-AP-D](#Ref_IG-AP-D).
 
@@ -188,7 +188,7 @@ The following steps describe how to enable logging of full messages in Harmony A
      <appender-ref ref="stdout"/>
    </logger>
    ```
-4. Restart the service if required by the *Modifying the Logback configuration* instructions for the deployment environment. 
+4. Restart the service if required by the *Modifying the Logback configuration* instructions for the deployment environment.
 
 ## 5. Centralized logging
 
@@ -305,7 +305,7 @@ input {
 }
 ```
 
-Here, we specify the log file's path, the codec for parsing log messages, the starting position when reading a file for the first time, the type of log messages for further processing, and the `sincedb` file path for tracking the log file's position. 
+Here, we specify the log file's path, the codec for parsing log messages, the starting position when reading a file for the first time, the type of log messages for further processing, and the `sincedb` file path for tracking the log file's position.
 
 In more complex setups, integrating Filebeat into the system can be beneficial. Filebeat can read logs from files and either forward them to Logstash for advanced processing or send them directly to Elasticsearch when advanced log content processing is unnecessary. For more information, refer to the [Filebeat documentation](https://www.elastic.co/guide/en/beats/filebeat/current/index.html).
 

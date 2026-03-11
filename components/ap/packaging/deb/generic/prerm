@@ -1,0 +1,22 @@
+#!/bin/bash
+
+set -euo pipefail
+
+case "${1:-}" in
+  remove)
+    systemctl stop harmony-ap 2>/dev/null || true
+    systemctl disable harmony-ap 2>/dev/null || true
+    ;;
+
+  upgrade|deconfigure)
+    systemctl stop harmony-ap 2>/dev/null || true
+    ;;
+
+  failed-upgrade)
+    ;;
+
+  *)
+    echo "harmony-ap prerm: called with unknown argument '${1:-}'" >&2
+    exit 1
+    ;;
+esac

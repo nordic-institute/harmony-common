@@ -3,36 +3,36 @@ set -euo pipefail
 
 readonly STAGE="config-database"
 
-source /usr/lib/harmony-common
+source /usr/lib/harmony-ap/lib/harmony-common
 
-readonly DEFAULT_DB_USER="harmony_ap"
+: "${DB_USER:=harmony_ap}"
+: "${DB_SCHEMA:=harmony_ap}"
+: "${DB_TYPE:=mysql}"
+: "${DB_PORT:=3306}"
 
 get_database_connection_details() {
   local user password
-
-  user="${DB_USER:-$(get_property 'domibus.datasource.user' "$DEFAULT_DB_USER")}"
-  password="${DB_PASSWORD:-$(get_property 'domibus.datasource.password' "")}"
+  user="$DB_USER"
+  password="${DB_PASSWORD:-}"
 
   if [[ -z "$password" ]]; then
     die "Database password (DB_PASSWORD) is required. Exiting."
   fi
 
-  local url driver host port schema
-  read -r url driver host port schema < <(
+  local url driver dialect host port schema
+  read -r url driver dialect host port schema < <(
     harmony-database \
       --mode get-connection-details \
       --stage "$STAGE" \
-      --config-path "$APPLICATION_CONFIG_PATH_TEMP" \
-      --property-prefix "domibus.datasource" \
+      --db-type "$DB_TYPE" \
       --db-url "${DB_URL:-}" \
       --db-driver-class "${DB_DRIVER_CLASS:-}" \
       --db-host "${DB_HOST:-}" \
-      --db-port "${DB_PORT:-}" \
-      --db-schema "${DB_SCHEMA:-}"
+      --db-port "$DB_PORT" \
+      --db-schema "$DB_SCHEMA"
   )
 
-  printf '%s %s %s %s %s %s %s\n' \
-    "$user" "$password" "$url" "$driver" "$host" "$port" "$schema"
+  printf '%s\n' "$user" "$password" "$url" "$driver" "$dialect" "$host" "$port" "$schema"
 }
 
 validate_database_parameters() {
@@ -46,34 +46,51 @@ validate_database_parameters() {
 wait_for_database() {
   local host="$1" port="$2" user="$3" pass="$4"
 
+  DB_PASSWORD="$pass" \
   harmony-database \
     --mode wait-for-db \
     --stage "$STAGE" \
     --db-host "$host" \
     --db-port "$port" \
-    --db-user "$user" \
-    --db-password "$pass"
+    --db-user "$user"
 }
 
-save_database_connection_environment() {
-  local url="$1" driver="$2" schema="$3" host="$4" port="$5" user="$6" pass="$7"
+publish_database_env() {
+  local url="$1" driver="$2" dialect="$3" schema="$4" host="$5" port="$6" user="$7" pass="$8"
 
-  printf "%s" "$url" > /var/run/s6/container_environment/DB_URL
-  printf "%s" "$driver" > /var/run/s6/container_environment/DB_DRIVER_CLASS
-  printf "%s" "$schema" > /var/run/s6/container_environment/DB_SCHEMA
-  printf "%s" "$host" > /var/run/s6/container_environment/DB_HOST
-  printf "%s" "$port" > /var/run/s6/container_environment/DB_PORT
-  printf "%s" "$user" > /var/run/s6/container_environment/DB_USER
-  printf "%s" "$pass" > /var/run/s6/container_environment/DB_PASSWORD
+  publish_env DB_URL "$url"
+  publish_env DB_DRIVER_CLASS "$driver"
+  publish_env DB_HIBERNATE_DIALECT "$dialect"
+  publish_env DB_SCHEMA "$schema"
+  publish_env DB_HOST "$host"
+  publish_env DB_PORT "$port"
+  publish_env DB_USER "$user"
+  publish_env DB_PASSWORD "$pass"
 }
 
 config_database() {
-  read -r DB_USER DB_PASSWORD DB_URL DB_DRIVER_CLASS DB_HOST DB_PORT DB_SCHEMA \
-    < <(get_database_connection_details)
+  log DEBUG "Started"
+
+  local _db_output
+  _db_output="$(get_database_connection_details)"
+
+  local _db_vals
+  readarray -t _db_vals <<< "$_db_output"
+
+  DB_USER="${_db_vals[0]}"
+  DB_PASSWORD="${_db_vals[1]}"
+  DB_URL="${_db_vals[2]}"
+  DB_DRIVER_CLASS="${_db_vals[3]}"
+  DB_HIBERNATE_DIALECT="${_db_vals[4]}"
+  DB_HOST="${_db_vals[5]}"
+  DB_PORT="${_db_vals[6]}"
+  DB_SCHEMA="${_db_vals[7]}"
 
   validate_database_parameters "$DB_HOST" "$DB_PASSWORD"
   wait_for_database "$DB_HOST" "$DB_PORT" "$DB_USER" "$DB_PASSWORD"
-  save_database_connection_environment "$DB_URL" "$DB_DRIVER_CLASS" "$DB_SCHEMA" "$DB_HOST" "$DB_PORT" "$DB_USER" "$DB_PASSWORD"
+  publish_database_env "$DB_URL" "$DB_DRIVER_CLASS" "$DB_HIBERNATE_DIALECT" "$DB_SCHEMA" "$DB_HOST" "$DB_PORT" "$DB_USER" "$DB_PASSWORD"
+
+  log DEBUG "Done"
 }
 
 config_database

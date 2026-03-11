@@ -1,0 +1,256 @@
+#!/usr/bin/with-contenv bash
+set -euo pipefail
+
+database_args() {
+  local args=( -h"${DB_HOST}" -P"${DB_PORT}" -u"${DB_USER}" -D"${DB_SCHEMA}" )
+  echo "${args[@]}"
+}
+
+database_exec() {
+  local query="$1"
+
+  local args
+  read -r -a args <<< "$(database_args)"
+  MYSQL_PWD="${DB_PASSWORD:-}" mysql "${args[@]}" -e "${query}"
+}
+
+database_query() {
+  local query="$1"
+
+  local args
+  read -r -a args <<< "$(database_args)"
+  MYSQL_PWD="${DB_PASSWORD:-}" mysql "${args[@]}" -N -s -e "${query}"
+}
+
+encrypt_value() {
+  local src="$1"
+
+  local cipher
+  if [[ -f "$src" ]]; then
+    cipher=$(openssl enc -aes-256-cbc -pbkdf2 -salt -base64 -A -pass pass:"$CLUSTER_SECRET_KEY" -in "$src")
+  else
+    cipher=$(printf '%s' "$src" | openssl enc -aes-256-cbc -pbkdf2 -salt -base64 -A -pass pass:"$CLUSTER_SECRET_KEY")
+  fi || {
+    log ERROR "OpenSSL encryption failed"
+    return 1
+  }
+
+  echo "$cipher"
+}
+
+compute_hash() {
+  local src="$1"
+
+  if [[ -f "$src" ]]; then
+    openssl dgst -sha256 "$src" | awk '{print $2}'
+  else
+    printf '%s' "$src" | openssl dgst -sha256 | awk '{print $2}'
+  fi
+}
+
+decrypt_value() {
+  local cipher="$1"
+  local dest="${2:-}"
+
+  if [[ -n "$dest" ]]; then
+    printf '%s' "$cipher" | openssl enc -aes-256-cbc -d -pbkdf2 -salt -base64 -A -pass pass:"$CLUSTER_SECRET_KEY" -out "$dest"
+  else
+    printf '%s' "$cipher" | openssl enc -aes-256-cbc -d -pbkdf2 -salt -base64 -A -pass pass:"$CLUSTER_SECRET_KEY"
+  fi || {
+    log ERROR "OpenSSL decryption failed"
+    return 1
+  }
+}
+
+validate_node_id() {
+  if [[ ! "${NODE_ID:-}" =~ ^[A-Za-z0-9._-]+$ ]]; then
+    die "NODE_ID contains invalid characters (must match ^[A-Za-z0-9._-]+\$): '${NODE_ID:-}'"
+  fi
+}
+
+init_backend() {
+  log DEBUG "Initializing database backend for cluster"
+
+  validate_node_id
+
+  if [[ -z "${CLUSTER_SECRET_KEY:-}" ]]; then
+    die "The environment variable CLUSTER_SECRET_KEY must be defined for the database cluster backend."
+  fi
+
+  database_exec "
+    CREATE TABLE IF NOT EXISTS HARMONY_CLUSTER_STATE (
+      ID INT PRIMARY KEY,
+      PRIMARY_NODE VARCHAR(100),
+      READY TINYINT(1) NOT NULL DEFAULT 0,
+      LAST_HEARTBEAT DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+    ) ENGINE=InnoDB;
+  "
+
+  database_exec "
+    CREATE TABLE IF NOT EXISTS HARMONY_CLUSTER_SECRETS (
+      \`KEY\` VARCHAR(100) PRIMARY KEY,
+      \`VALUE\` TEXT NOT NULL,
+      HASH CHAR(64) NOT NULL,
+      LAST_MODIFIED DATETIME NOT NULL
+    ) ENGINE=InnoDB;
+  "
+
+  if [[ "${CLUSTER_SECRET_BACKUP:-}" == "true" ]]; then
+    database_exec "
+      CREATE TABLE IF NOT EXISTS HARMONY_CLUSTER_SECRETS_BACKUP (
+        \`KEY\` VARCHAR(100),
+        \`VALUE\` TEXT NOT NULL,
+        HASH CHAR(64) NOT NULL,
+        LAST_MODIFIED DATETIME NOT NULL,
+        BACKUP_TIME DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+      ) ENGINE=InnoDB;
+    "
+  fi
+
+  log INFO "Database backend initialized for cluster management"
+}
+
+acquire_primary() {
+  local max_ttl="${2:-60}"
+
+  # Ensure a single state row exists (ignore if already present)
+  database_exec "INSERT IGNORE INTO HARMONY_CLUSTER_STATE (ID, READY, LAST_HEARTBEAT) VALUES (1,0,NOW());"
+
+  local rows
+  rows=$(database_query "UPDATE HARMONY_CLUSTER_STATE \
+      SET PRIMARY_NODE='${NODE_ID}', LAST_HEARTBEAT=NOW() \
+      WHERE ID=1 AND (PRIMARY_NODE IS NULL OR PRIMARY_NODE='${NODE_ID}' OR LAST_HEARTBEAT < DATE_SUB(NOW(), INTERVAL ${max_ttl} SECOND)); \
+      SELECT ROW_COUNT();" | sed 's/\r$//')
+
+  if [[ "$rows" -gt 0 ]]; then
+    if [[ "${CLUSTER_ROLE:-}" != "primary" ]]; then
+      log DEBUG "Assigning primary role to node '${NODE_ID}', previous role was: '${CLUSTER_ROLE:-}'"
+      CLUSTER_ROLE="primary"
+      export CLUSTER_ROLE
+      printf "%s" "$CLUSTER_ROLE" > /var/run/s6/container_environment/CLUSTER_ROLE
+      renew_lease
+    fi
+
+    return 0
+  else
+    log DEBUG "Another node holds the primary role"
+
+    if [[ "${CLUSTER_ROLE:-}" != "replica" ]]; then
+      log DEBUG "Assigning replica role to node '${NODE_ID}', previous role was: '${CLUSTER_ROLE:-}'"
+      CLUSTER_ROLE="replica"
+      export CLUSTER_ROLE
+      printf "%s" "$CLUSTER_ROLE" > /var/run/s6/container_environment/CLUSTER_ROLE
+    fi
+
+    return 1
+  fi
+}
+
+renew_lease() {
+  if ! database_exec "UPDATE HARMONY_CLUSTER_STATE SET LAST_HEARTBEAT=NOW() WHERE ID=1 AND PRIMARY_NODE='${NODE_ID}';"; then
+    log ERROR "Failed to renew lease"
+    return 1
+  fi
+
+  log DEBUG "Lease renewed for node: $NODE_ID"
+}
+
+is_primary() {
+  local current_primary
+  current_primary=$(database_query "SELECT PRIMARY_NODE FROM HARMONY_CLUSTER_STATE WHERE ID=1;" | sed 's/\r$//')
+
+  [[ "$current_primary" == "$NODE_ID" ]]
+}
+
+set_ready_flag() {
+  database_exec "UPDATE HARMONY_CLUSTER_STATE SET READY=1 WHERE ID=1;"
+  log INFO "Cluster initialized"
+}
+
+wait_for_ready() {
+  local timeout=60
+  local elapsed=0
+  local sleep=3
+
+  log INFO "Waiting for cluster ready signal..."
+
+  while true; do
+    local ready_flag
+    ready_flag=$(database_query "SELECT READY FROM HARMONY_CLUSTER_STATE WHERE ID=1;" | sed 's/\r$//')
+
+    if [[ "$ready_flag" == "1" ]]; then
+      break
+    fi
+
+    if (( elapsed >= timeout )); then
+      log ERROR "Timeout waiting for cluster ready signal"
+      return 1
+    fi
+
+    sleep "$sleep"
+    elapsed=$((elapsed + sleep))
+  done
+
+  log INFO "Primary node has completed initialization, starting replica startup"
+}
+
+store_secret() {
+  local key="$1"
+  local src="$2"
+
+  local cipher
+  cipher=$(encrypt_value "$src") || return 1
+
+  local new_hash
+  new_hash=$(compute_hash "$src")
+
+  local existing_hash
+  existing_hash=$(database_query "SELECT HASH FROM HARMONY_CLUSTER_SECRETS WHERE \`KEY\`='${key}';")
+  if [[ -n "$existing_hash" && "$existing_hash" == "$new_hash" ]]; then
+    log INFO "No content change; skipping backup/update. [secret=$key]"
+    return 0
+  fi
+
+  local existing_cipher
+  existing_cipher=$(database_query "SELECT \`VALUE\` FROM HARMONY_CLUSTER_SECRETS WHERE \`KEY\`='${key}';")
+  if [[ -n "$existing_cipher" && "${CLUSTER_SECRET_BACKUP:-}" == "true" ]]; then
+    database_exec "INSERT INTO HARMONY_CLUSTER_SECRETS_BACKUP(\`KEY\`,\`VALUE\`,HASH,LAST_MODIFIED,BACKUP_TIME)
+                SELECT \`KEY\`,\`VALUE\`,HASH,LAST_MODIFIED,NOW() FROM HARMONY_CLUSTER_SECRETS WHERE \`KEY\`='${key}';"
+
+    log DEBUG "Existing secret backed up. [secret=$key]"
+  else
+    log DEBUG "Creating new secret. [secret=$key]"
+  fi
+
+  if [[ -n "$existing_cipher" ]]; then
+    database_exec "UPDATE HARMONY_CLUSTER_SECRETS SET \`VALUE\`='${cipher}', HASH='${new_hash}', LAST_MODIFIED=NOW() WHERE \`KEY\`='${key}';"
+    log INFO "Secret updated. [secret=$key]"
+  else
+    database_exec "INSERT INTO HARMONY_CLUSTER_SECRETS(\`KEY\`,\`VALUE\`,HASH,LAST_MODIFIED) VALUES('${key}','${cipher}','${new_hash}',NOW());"
+    log INFO "Secret created. [secret=$key]"
+  fi
+}
+
+read_secret() {
+  local key="$1"
+  local dest="${2:-}"
+
+  local cipher
+  cipher=$(database_query "SELECT \`VALUE\` FROM HARMONY_CLUSTER_SECRETS WHERE \`KEY\`='${key}';")
+  cipher=$(printf '%s' "$cipher" | sed 's/\r\n//g')
+
+  if [[ -z "$cipher" ]]; then
+    log DEBUG "No secret found. [secret=$key]"
+    return 1
+  fi
+
+  decrypt_value "$cipher" "$dest" || return 1
+
+  log DEBUG "Decryption successful. [secret=$key]"
+}
+
+release_primary() {
+  database_exec "UPDATE HARMONY_CLUSTER_STATE SET PRIMARY_NODE = NULL, READY = 0 WHERE PRIMARY_NODE='${NODE_ID}';"
+
+  log INFO "Released primary role."
+}

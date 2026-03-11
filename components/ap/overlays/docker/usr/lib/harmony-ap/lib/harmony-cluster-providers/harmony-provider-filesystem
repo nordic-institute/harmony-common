@@ -1,0 +1,264 @@
+#!/usr/bin/with-contenv bash
+set -euo pipefail
+
+: "${CLUSTER_FILESYSTEM_SHARED:=${HARMONY_BASE}/cluster}"
+: "${CLUSTER_FILESYSTEM_SECRETS:=${CLUSTER_FILESYSTEM_SHARED}/secrets}"
+
+CLUSTER_FILESYSTEM_SHARED="${CLUSTER_FILESYSTEM_SHARED%/}"
+CLUSTER_FILESYSTEM_SECRETS="${CLUSTER_FILESYSTEM_SECRETS%/}"
+LOCK_FILE="$CLUSTER_FILESYSTEM_SHARED/cluster.lock"
+READY_FILE="$CLUSTER_FILESYSTEM_SHARED/cluster.ready"
+LEASE_FILE="$CLUSTER_FILESYSTEM_SHARED/cluster.lease"
+
+compute_hash() {
+  local src="$1"
+
+  if [[ -f "$src" ]]; then
+    openssl dgst -sha256 "$src" | awk '{print $2}'
+  else
+    printf '%s' "$src" | openssl dgst -sha256 | awk '{print $2}'
+  fi
+}
+
+encrypt_value() {
+  local src="$1"
+
+  local cipher
+  if [[ -f "$src" ]]; then
+    cipher=$(openssl enc -aes-256-cbc -pbkdf2 -salt -base64 -A -pass pass:"$CLUSTER_SECRET_KEY" -in "$src")
+  else
+    cipher=$(printf '%s' "$src" | openssl enc -aes-256-cbc -pbkdf2 -salt -base64 -A -pass pass:"$CLUSTER_SECRET_KEY")
+  fi || {
+    log ERROR "OpenSSL encryption failed"
+    return 1
+  }
+
+  printf '%s' "$cipher"
+}
+
+decrypt_value() {
+  local cipher="$1"
+  local dest="${2:-}"
+
+  if [[ -n "$dest" ]]; then
+    printf '%s' "$cipher" \
+      | openssl enc -aes-256-cbc -d -pbkdf2 -salt -base64 -A -pass pass:"$CLUSTER_SECRET_KEY" -out "$dest" 2>/dev/null \
+      || { log ERROR "OpenSSL decryption failed"; return 1; }
+  else
+    printf '%s' "$cipher" \
+      | openssl enc -aes-256-cbc -d -pbkdf2 -salt -base64 -A -pass pass:"$CLUSTER_SECRET_KEY" 2>/dev/null \
+      || { log ERROR "OpenSSL decryption failed"; return 1; }
+  fi
+}
+
+init_backend() {
+  log DEBUG "Initializing filesystem backend for cluster"
+
+  if [[ -z "${CLUSTER_SECRET_KEY:-}" ]]; then
+    die "The environment variable CLUSTER_SECRET_KEY must be defined for the filesystem cluster backend."
+  fi
+
+  local DIRECTORIES=(
+    "$CLUSTER_FILESYSTEM_SHARED"
+    "$CLUSTER_FILESYSTEM_SECRETS"
+  )
+
+  for dir in "${DIRECTORIES[@]}"; do
+    if ! install -d -m 0750 "$dir"; then
+      log WARN "Unable to create or set permissions of '$dir', skipping."
+    fi
+  done
+
+  log INFO "Cluster directories initialized"
+}
+
+acquire_primary() {
+  local max_ttl="${2:-60}"
+
+  if [[ -f "$LEASE_FILE" ]]; then
+    lease_age=$(( $(date +%s) - $(cat "$LEASE_FILE" 2>/dev/null || echo 0) ))
+    if (( lease_age < max_ttl )); then
+      log DEBUG "Another active primary node (age=${lease_age}s)"
+
+      if [[ "${CLUSTER_ROLE:-}" != "replica" ]]; then
+        log DEBUG "Assigning REPLICA role to node '${NODE_ID}', previous role was: '${CLUSTER_ROLE:-}'"
+        CLUSTER_ROLE="replica"
+        export CLUSTER_ROLE
+        printf "%s" "$CLUSTER_ROLE" > /var/run/s6/container_environment/CLUSTER_ROLE
+      fi
+
+      return 1
+    fi
+  fi
+
+  if [ -L "$LOCK_FILE" ]; then
+    log ERROR "Lock file $LOCK_FILE is a symlink, aborting."
+    return 1
+  fi
+
+  exec {LOCKFD}> "$LOCK_FILE" || {
+    log ERROR "Failed to open $LOCK_FILE for locking."
+    return 1
+  }
+
+  flock -xn "$LOCKFD"
+  local flock_return=$?
+
+  if [ $flock_return -eq 0 ]; then
+    {
+      printf "PRIMARY: node=%s pid=%d\n" "$NODE_ID" "$$"
+      printf '%s' "$LOCKFD" > /var/run/s6/container_environment/PRIMARY_LOCK_FD
+    } >&$LOCKFD || log WARN "Could not write audit info into $LOCK_FILE."
+
+    if [[ "${CLUSTER_ROLE:-}" != "primary" ]]; then
+      log DEBUG "Assigning primary role to node '${NODE_ID}', previous role was: '${CLUSTER_ROLE:-}'"
+      CLUSTER_ROLE="primary"
+      export CLUSTER_ROLE
+      printf "%s" "$CLUSTER_ROLE" > /var/run/s6/container_environment/CLUSTER_ROLE
+      renew_lease
+    fi
+
+    return 0
+  elif [ $flock_return -eq 1 ]; then
+    log DEBUG "Another node holds the lock"
+    exec {LOCKFD}>&-
+
+    if [[ "${CLUSTER_ROLE:-}" != "replica" ]]; then
+      log DEBUG "Assigning replica role to node '${NODE_ID}', previous role was: '${CLUSTER_ROLE:-}'"
+      CLUSTER_ROLE="replica"
+      export CLUSTER_ROLE
+      printf "%s" "$CLUSTER_ROLE" > /var/run/s6/container_environment/CLUSTER_ROLE
+    fi
+
+    return 1
+  else
+    # Unexpected flock error
+    log ERROR "flock failed with exit code $flock_return."
+    exec {LOCKFD}>&-
+    return 1
+  fi
+}
+
+renew_lease() {
+  if ! date +%s > "$LEASE_FILE"; then
+    log ERROR "Could not write to $LEASE_FILE"
+    return 1
+  fi
+
+  log DEBUG "Lease renewed for node: $NODE_ID"
+  return 0
+}
+
+is_primary() {
+  grep -q '^primary$' /var/run/s6/container_environment/CLUSTER_ROLE
+}
+
+set_ready_flag() {
+  echo "ready" > "$READY_FILE"
+  log INFO "Cluster initialized"
+}
+
+wait_for_ready() {
+  local timeout=60
+  local elapsed=0
+  local sleep=3
+
+  log INFO "Waiting for cluster ready signal (${READY_FILE})..."
+
+  until [ -f "$READY_FILE" ]; do
+    sleep "$sleep"
+    elapsed=$((elapsed + sleep))
+    if ((elapsed >= timeout)); then
+      log ERROR "Timeout waiting for cluster signal (${READY_FILE})"
+      return 1
+    fi
+  done
+
+  log INFO "Primary node has completed initialization, starting replica startup"
+  return 0
+}
+
+store_secret() {
+  local key="$1"
+  local src="$2"
+  local file="$CLUSTER_FILESYSTEM_SECRETS/$key"
+
+  # If source is an existing, do nothing
+  # Assumes it already exists on the shared filesystem and is not considered a secret
+  if [[ -f "$src" ]]; then
+    log DEBUG "Detected file-based secret storage; skipping. [secret=$key]"
+    return 0
+  fi
+
+  local new_hash
+  new_hash=$(compute_hash "$src")
+
+  if [[ -f "$file" ]]; then
+    local cipher_content
+    cipher_content=$(cat "$file")
+
+    local existing_hash
+    existing_hash=$(compute_hash <(decrypt_value "$cipher_content"))
+
+    if [[ "$new_hash" == "$existing_hash" ]]; then
+      log INFO "No content change; skipping backup/update. [secret=$key]"
+      return 0
+    fi
+
+    log INFO "Existing secret will be overwritten due to updated content. [secret=$key]"
+
+    if [[ "${CLUSTER_SECRET_BACKUP:-}" == "true" ]]; then
+      local backup_file
+      backup_file="$file.bak_$(date +%s)"
+
+      cp "$file" "$backup_file"
+
+      log DEBUG "Existing secret backed up to: '$backup_file'. [secret=$key]"
+    fi
+  else
+    log DEBUG "Creating new secret. [secret=$key]"
+  fi
+
+  encrypt_value "$src" > "$file" || return 1
+
+  log INFO "Secret created/updated. [secret=$key]"
+}
+
+read_secret() {
+  local key="$1"
+  local dest="${2:-}"
+
+  # If a destination file is provided, do nothing
+  # Assumes it already exists on the shared filesystem and is not considered a secret
+  if [[ -n "$dest" ]]; then
+    log DEBUG "Detected file-based secret retrieval; skipping. [secret=$key]"
+    return 0
+  fi
+
+  local file="$CLUSTER_FILESYSTEM_SECRETS/$key"
+
+  if [[ ! -r "$file" ]]; then
+    log DEBUG "Secret file not found or unreadable at '$file'; returning empty value. [secret=$key]"
+    return 1
+  fi
+
+  cipher_content=$(cat "$file")
+  if [[ -n "$dest" ]]; then
+    decrypt_value "$cipher_content" "$dest" || return 1
+  else
+    decrypt_value "$cipher_content" || return 1
+  fi
+
+  log DEBUG "Secret read and decrypted. [secret=$key]"
+}
+
+release_primary() {
+  if [[ -n ${PRIMARY_LOCK_FD:-} ]]; then
+    exec {PRIMARY_LOCK_FD}>&-
+  fi
+
+  rm -f "$READY_FILE" 2>/dev/null || true
+  rm -f "$LEASE_FILE" 2>/dev/null || true
+
+  log INFO "Released primary role and cleaned up resources."
+}

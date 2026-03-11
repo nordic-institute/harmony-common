@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonSubTypes
 import com.fasterxml.jackson.annotation.JsonTypeInfo
 
 data class Manifest(
+  val vars: Map<String, String> = emptyMap(),
   val inputs: List<Input> = emptyList()
 ) {
   @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, property = "do")

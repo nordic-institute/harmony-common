@@ -1,0 +1,89 @@
+#!/bin/bash
+set -euo pipefail
+
+basedir="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)"
+includedir="$basedir/harmony-store-includes"
+
+source "$includedir/harmony-store-common"
+source "$includedir/harmony-store-keystore"
+source "$includedir/harmony-store-truststore"
+
+parse_cli_args() {
+  # shellcheck disable=SC2034 # Used in sourced scripts
+  while [[ $# -gt 0 ]]; do
+    key="$1"
+    case $key in
+      --stage) STAGE="${2:+$2-}crtcli"; shift 2 ;;
+      --node-id) NODE_ID="$2"; shift 2 ;;
+      --keystore-path) keystore_path="$2"; shift 2 ;;
+      --keystore-base64) keystore_base64="$2"; shift 2 ;;
+      --keystore-type) keystore_type="$2"; shift 2 ;;
+      --truststore-path) truststore_path="$2"; shift 2 ;;
+      --truststore-base64) truststore_base64="$2"; shift 2 ;;
+      --truststore-type) truststore_type="$2"; shift 2 ;;
+      --should-add-certificate-to-truststore) should_add_certificate_to_truststore="$2"; shift 2 ;;
+      --alias) cert_alias="$2"; shift 2 ;;
+      --public-cert-path) public_cert_path="$2"; shift 2 ;;
+      --san) san="$2"; shift 2 ;;
+      --dname) dname="$2"; shift 2 ;;
+      --label) label="$2"; shift 2 ;;
+      *) die "Unknown option: $1" ;;
+    esac
+  done
+}
+
+validate_and_prepare() {
+  require_commands keytool openssl harmony-log
+  validate_mandatory_parameters \
+    keystore_path \
+    truststore_path \
+    public_cert_path \
+    should_add_certificate_to_truststore \
+    cert_alias \
+    dname
+  normalize_optional_parameters
+  validate_parameters
+
+  if [[ -n "$keystore_base64" || -n "$truststore_base64" ]]; then
+    require_commands harmony-base64
+  fi
+}
+
+process_stores() {
+  build_store_config input_keystore_config keystore
+  keystore_output=$(process_keystore input_keystore_config)
+  readarray -t keystore_vals <<< "$keystore_output"
+  KEYSTORE_PASSWORD="${keystore_vals[0]}"
+  KEYSTORE_GENERATED="${keystore_vals[1]}"
+  KEYSTORE_PASSWORD_GENERATED="${keystore_vals[2]}"
+
+  build_store_config input_truststore_config truststore
+  truststore_output=$(process_truststore input_truststore_config)
+  readarray -t truststore_vals <<< "$truststore_output"
+  TRUSTSTORE_PASSWORD="${truststore_vals[0]}"
+  TRUSTSTORE_GENERATED="${truststore_vals[1]}"
+  TRUSTSTORE_PASSWORD_GENERATED="${truststore_vals[2]}"
+
+  if [[ "$KEYSTORE_GENERATED" == "false" && "$TRUSTSTORE_GENERATED" == "false" ]]; then
+    log INFO "${label:+${label} }stores validated."
+  elif [[ "$KEYSTORE_GENERATED" == "false" ]]; then
+    log INFO "${label:+${label} }keystore validated."
+  elif [[ "$TRUSTSTORE_GENERATED" == "false" ]]; then
+    log INFO "${label:+${label} }truststore validated."
+  fi
+}
+
+main() {
+  parse_cli_args "$@"
+  validate_and_prepare
+
+  process_stores
+
+  printf 'KEYSTORE_PASSWORD=%s\nKEYSTORE_GENERATED=%s\nKEYSTORE_PASSWORD_GENERATED=%s\nTRUSTSTORE_PASSWORD=%s\nTRUSTSTORE_GENERATED=%s\nTRUSTSTORE_PASSWORD_GENERATED=%s\n' \
+    "$KEYSTORE_PASSWORD" "$KEYSTORE_GENERATED" "$KEYSTORE_PASSWORD_GENERATED" \
+    "$TRUSTSTORE_PASSWORD" "$TRUSTSTORE_GENERATED" "$TRUSTSTORE_PASSWORD_GENERATED"
+}
+
+if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
+  main "$@"
+fi

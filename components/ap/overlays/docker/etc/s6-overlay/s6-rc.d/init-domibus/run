@@ -1,30 +1,26 @@
 #!/command/with-contenv bash
 set -euo pipefail
+umask 0027
 
 readonly STAGE="init-domibus"
 
-source /usr/lib/harmony-common
-source /usr/lib/harmony-cluster
+source /usr/lib/harmony-ap/lib/harmony-common
+source /usr/lib/harmony-ap/lib/harmony-cluster
 
 : "${SECURITY_PUBLIC_CERT_NAME:=security}"
-: "${SECURITY_PUBLIC_CERT_PATH:=${CERT_DIR%/}/$SECURITY_PUBLIC_CERT_NAME-$CERT_ALIAS.cer}"
-: "${SECURITY_KEYSTORE_PATH:=${HARMONY_BASE}/etc/ap-keystore.p12}"
-: "${SECURITY_TRUSTSTORE_PATH:=${HARMONY_BASE}/etc/ap-truststore.p12}"
-: "${SECURITY_KEYSTORE_B64:=${SECURITY_KEYSTORE_B64:-}}"
-: "${SECURITY_TRUSTSTORE_B64:=${SECURITY_TRUSTSTORE_B64:-}}"
-: "${EXTRA_POLICIES_PATH:=}"
+: "${SECURITY_PUBLIC_CERT_PATH:=${CERT_DIR}/$SECURITY_PUBLIC_CERT_NAME-$CERT_ALIAS.cer}"
+: "${SECURITY_KEYSTORE_PATH:=${HARMONY_SECURITY}/ap-keystore.p12}"
+: "${SECURITY_KEYSTORE_TYPE:=pkcs12}"
+: "${SECURITY_KEYSTORE_B64:=}"
+: "${SECURITY_TRUSTSTORE_PATH:=${HARMONY_SECURITY}/ap-truststore.p12}"
+: "${SECURITY_TRUSTSTORE_B64:=}"
+: "${SECURITY_TRUSTSTORE_TYPE:=pkcs12}"
+: "${SECURITY_DNAME:=CN=$PARTY_NAME}"
 
-readonly DEFAULT_DYNAMIC_DISCOVERY="false"
-
-copy_extra_policies_if_missing() {
-  if [ -n "$EXTRA_POLICIES_PATH" ] && [ -d "$EXTRA_POLICIES_PATH" ]; then
-    copy_directory_contents_if_missing "$EXTRA_POLICIES_PATH" "$HARMONY_BASE/etc/policies"
-  fi
-}
-
-copy_default_policies_if_missing() {
-  copy_directory_contents_if_missing "$HARMONY_HOME/policies" "$HARMONY_BASE/etc/policies"
-}
+: "${UI_SESSION_SECURE:=}"
+: "${USE_DYNAMIC_DISCOVERY:=false}"
+: "${SML_ZONE:=}"
+: "${PRESERVE_BACKUP_FILE_DATE:=}"
 
 load_security_stores_from_secrets() {
   if [ -z "$SECURITY_KEYSTORE_B64" ] && [ ! -f "$SECURITY_KEYSTORE_PATH" ]; then
@@ -38,54 +34,50 @@ load_security_stores_from_secrets() {
   fi
 }
 
-get_current_password() {
-  local property_name="$1"
-  local secret_name="$2"
-
-  local current_password
-  current_password=$(get_property "$property_name")
-
-  if [ -z "$current_password" ]; then
-    current_password=$(read_secret "$secret_name" || true)
-  fi
-
-  echo "$current_password"
-}
-
 manage_security_certificates() {
   log DEBUG "Processing security certificates"
 
   # Determine current keystore and truststore passwords
   local keystore_current
-  keystore_current=$(get_current_password "domibus.security.keystore.password" "SECURITY-KEYSTORE-PASSWORD")
+  keystore_current=$(read_secret "SECURITY-KEYSTORE-PASSWORD" || true)
   local truststore_current
-  truststore_current=$(get_current_password "domibus.security.truststore.password" "SECURITY-TRUSTSTORE-PASSWORD")
-
-  SECURITY_DNAME="${SECURITY_DNAME:-CN=$PARTY_NAME}"
+  truststore_current=$(read_secret "SECURITY-TRUSTSTORE-PASSWORD" || true)
 
   security_store_output=$(
+    KEYSTORE_PASSWORD="${SECURITY_KEYSTORE_PASSWORD:-$keystore_current}" \
+    TRUSTSTORE_PASSWORD="${SECURITY_TRUSTSTORE_PASSWORD:-$truststore_current}" \
     harmony-store \
       --stage "$STAGE" \
       --keystore-path "$SECURITY_KEYSTORE_PATH" \
-      --keystore-password "${SECURITY_KEYSTORE_PASSWORD:-$keystore_current}" \
       --keystore-base64 "$SECURITY_KEYSTORE_B64" \
+      --keystore-type "$SECURITY_KEYSTORE_TYPE" \
       --truststore-path "$SECURITY_TRUSTSTORE_PATH" \
-      --truststore-password "${SECURITY_TRUSTSTORE_PASSWORD:-$truststore_current}" \
       --truststore-base64 "$SECURITY_TRUSTSTORE_B64" \
+      --truststore-type "$SECURITY_TRUSTSTORE_TYPE" \
       --should-add-certificate-to-truststore "false" \
       --alias "$CERT_ALIAS" \
       --public-cert-path "$SECURITY_PUBLIC_CERT_PATH" \
-      --dname "$SECURITY_DNAME"
+      --dname "$SECURITY_DNAME" \
+      --label "AP security"
   )
 
-  readarray -t security_vals <<< "$security_store_output"
+  declare -A security_vals=()
+  while IFS= read -r line; do
+    [[ "$line" == *=* ]] || continue
+    security_vals["${line%%=*}"]="${line#*=}"
+  done <<< "$security_store_output"
 
-  SECURITY_KEYSTORE_PASSWORD="${security_vals[0]}"
-  SECURITY_KEYSTORE_GENERATED="${security_vals[1]}"
-  SECURITY_KEYSTORE_PASSWORD_GENERATED="${security_vals[2]}"
-  SECURITY_TRUSTSTORE_PASSWORD="${security_vals[3]}"
-  SECURITY_TRUSTSTORE_GENERATED="${security_vals[4]}"
-  SECURITY_TRUSTSTORE_PASSWORD_GENERATED="${security_vals[5]}"
+  SECURITY_KEYSTORE_PASSWORD="${security_vals[KEYSTORE_PASSWORD]}"
+  SECURITY_KEYSTORE_GENERATED="${security_vals[KEYSTORE_GENERATED]}"
+  SECURITY_KEYSTORE_PASSWORD_GENERATED="${security_vals[KEYSTORE_PASSWORD_GENERATED]}"
+  SECURITY_TRUSTSTORE_PASSWORD="${security_vals[TRUSTSTORE_PASSWORD]}"
+  SECURITY_TRUSTSTORE_GENERATED="${security_vals[TRUSTSTORE_GENERATED]}"
+  SECURITY_TRUSTSTORE_PASSWORD_GENERATED="${security_vals[TRUSTSTORE_PASSWORD_GENERATED]}"
+
+  if [[ -z "${SECURITY_KEY_PRIVATE_PASSWORD:-}" ]]; then
+    SECURITY_KEY_PRIVATE_PASSWORD=$(read_secret "SECURITY-KEY-PRIVATE-PASSWORD" || true)
+  fi
+  SECURITY_KEY_PRIVATE_PASSWORD="${SECURITY_KEY_PRIVATE_PASSWORD:-$SECURITY_KEYSTORE_PASSWORD}"
 }
 
 store_secrets() {
@@ -121,43 +113,12 @@ resolve_session_cookie_secure() {
   fi
 }
 
-persist_domibus_configuration() {
-  set_property "domibus.deployment.clustered" "$DEPLOYMENT_CLUSTERED"
-  set_property 'domibus.security.key.private.alias' "$CERT_ALIAS"
-
-  set_property "domibus.ui.session.secure" "$(resolve_session_cookie_secure)"
-
-  SML_ZONE="${SML_ZONE:-$(get_property domibus.smlzone)}"
-  set_property 'domibus.smlzone' "$SML_ZONE"
-
-  USE_DYNAMIC_DISCOVERY="${USE_DYNAMIC_DISCOVERY:-$(get_property 'domibus.dynamicdiscovery.useDynamicDiscovery' "$DEFAULT_DYNAMIC_DISCOVERY")}"
-  set_property 'domibus.dynamicdiscovery.useDynamicDiscovery' "$USE_DYNAMIC_DISCOVERY"
-
-  set_property 'domibus.security.key.private.password' "$SECURITY_KEYSTORE_PASSWORD" --quiet
-  set_property 'domibus.security.keystore.password' "$SECURITY_KEYSTORE_PASSWORD" --quiet
-  set_property 'domibus.security.truststore.password' "$SECURITY_TRUSTSTORE_PASSWORD" --quiet
-
-  set_property 'domibus.security.keystore.location' "$SECURITY_KEYSTORE_PATH"
-  set_property 'domibus.security.truststore.location' "$SECURITY_TRUSTSTORE_PATH"
-}
-
-process_domibus_environment_variables() {
-  env | while IFS='=' read -r name value; do
-    if [[ "$name" =~ ^domibus_ ]]; then
-      log DEBUG "Processing environment variable: $name"
-      prop=${name//_/.}
-
-      set_property "$prop" "$value"
-    fi
-  done
-}
-
 detect_network_filesystem() {
   local fs_type
-  fs_type=$(stat -f "${HARMONY_BASE}/etc" --format "%T")
+  fs_type=$(stat -f "${HARMONY_CONFIG}" --format "%T")
   case "$fs_type" in
     cifs*|smb*|nfs*)
-      log WARN "${HARMONY_BASE}/etc is on a network filesystem ($fs_type)"
+      log WARN "${HARMONY_CONFIG} is on a network filesystem ($fs_type)"
       return 1
       ;;
     *)
@@ -166,21 +127,35 @@ detect_network_filesystem() {
   esac
 }
 
-publish_environment_variables() {
+publish_domibus_env() {
   log DEBUG "Setting environment"
 
-  if [ -z "${PRESERVE_BACKUP_FILE_DATE:-}" ]; then
+  publish_env SECURITY_KEYSTORE_PATH "$SECURITY_KEYSTORE_PATH"
+  publish_env SECURITY_KEYSTORE_PASSWORD "$SECURITY_KEYSTORE_PASSWORD"
+  publish_env SECURITY_KEYSTORE_TYPE "$SECURITY_KEYSTORE_TYPE"
+
+  publish_env SECURITY_TRUSTSTORE_PATH "$SECURITY_TRUSTSTORE_PATH"
+  publish_env SECURITY_TRUSTSTORE_PASSWORD "$SECURITY_TRUSTSTORE_PASSWORD"
+  publish_env SECURITY_TRUSTSTORE_TYPE "$SECURITY_TRUSTSTORE_TYPE"
+  publish_env SECURITY_KEY_PRIVATE_PASSWORD "$SECURITY_KEY_PRIVATE_PASSWORD"
+
+  if [ -z "$PRESERVE_BACKUP_FILE_DATE" ]; then
     PRESERVE_BACKUP_FILE_DATE=$(detect_network_filesystem && echo true || echo false)
   fi
+  publish_env PRESERVE_BACKUP_FILE_DATE "$PRESERVE_BACKUP_FILE_DATE"
 
-  printf "%s" "$PRESERVE_BACKUP_FILE_DATE" > /var/run/s6/container_environment/PRESERVE_BACKUP_FILE_DATE
+  if [ -z "$UI_SESSION_SECURE" ]; then
+    UI_SESSION_SECURE="$(resolve_session_cookie_secure)"
+  fi
+  publish_env UI_SESSION_SECURE "$UI_SESSION_SECURE"
+
+  publish_env SML_ZONE "${SML_ZONE:-}"
+
+  publish_env USE_DYNAMIC_DISCOVERY "$USE_DYNAMIC_DISCOVERY"
 }
 
 init_domibus() {
   log DEBUG "Started"
-
-  copy_extra_policies_if_missing
-  copy_default_policies_if_missing
 
   load_security_stores_from_secrets
   manage_security_certificates
@@ -189,9 +164,7 @@ init_domibus() {
     store_secrets
   fi
 
-  persist_domibus_configuration
-  process_domibus_environment_variables
-  publish_environment_variables
+  publish_domibus_env
 
   log DEBUG "Done"
 }
