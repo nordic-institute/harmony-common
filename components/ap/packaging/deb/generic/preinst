@@ -89,6 +89,8 @@ prepare_migration_to_270() {
   echo "$backup_dir" > /var/lib/harmony-ap/.migration-2.7.0-backup-path
 }
 
+#DEBHELPER#
+
 case "${1:-}" in
   install)
     ensure_service_user

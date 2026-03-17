@@ -92,12 +92,6 @@ validate_required_config() {
 # System setup
 # =============================================================================
 
-create_tmpfiles() {
-  if command -v systemd-tmpfiles >/dev/null 2>&1; then
-    systemd-tmpfiles --create /usr/lib/tmpfiles.d/harmony-smp.conf || true
-  fi
-}
-
 restrict_sensitive_conffiles() {
   local -a files=(
     /etc/harmony-smp/smp.config.properties
@@ -540,7 +534,6 @@ configure_package() {
     log INFO "Starting upgrade from version ${old_version}."
   fi
 
-  create_tmpfiles
   run_migrations "$old_version"
 
   ensure_file "$SECRETS_FILE"        root:harmony-smp 0640 "$is_fresh" 027 "$SECRETS_HEADER"
@@ -573,6 +566,8 @@ configure_package() {
 # =============================================================================
 # Entry point
 # =============================================================================
+
+#DEBHELPER#
 
 case "${1:-}" in
   configure)

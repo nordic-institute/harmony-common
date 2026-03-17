@@ -897,8 +897,7 @@ _m270__fix_changelog_paths() {
 # =============================================================================
 
 _m270__cleanup_orphans() {
-  # These files are not removed by dpkg during the upgrade.
-  # They are already backed up and checked for customizations.
+  # Old tracked config files automatically during the upgrade. The rm -f calls below act as a fallback
   local orphan
   for orphan in \
     /etc/harmony-ap/tomcat-conf/server.xml \
@@ -914,12 +913,23 @@ _m270__cleanup_orphans() {
     rm -f "$orphan"
   done
 
+  # Clean leftover backup files (.dpkg-bak/.dpkg-old) from config file transitions
+  while IFS= read -r -d '' dpkg_remnant; do
+    _m270__log "  Removing obsolete conffile backup: ${dpkg_remnant}"
+    rm -f "$dpkg_remnant"
+  done < <(find /etc/harmony-ap/tomcat-conf -maxdepth 1 \( -name '*.dpkg-bak' -o -name '*.dpkg-old' \) -type f -print0 2>/dev/null)
+
   rmdir /etc/harmony-ap/tomcat-conf 2>/dev/null \
     || _m270__log "  /etc/harmony-ap/tomcat-conf/ not empty. Review remaining files."
 
   # Old activemq.xml location (relocated to /etc/harmony-ap/activemq.xml)
   rm -f /etc/harmony-ap/internal/activemq.xml
-  rm -f /etc/harmony-ap/internal/activemq.xml.dpkg-old
+
+  while IFS= read -r -d '' dpkg_remnant; do
+    _m270__log "  Removing obsolete conffile backup: ${dpkg_remnant}"
+    rm -f "$dpkg_remnant"
+  done < <(find /etc/harmony-ap/internal -maxdepth 1 \( -name '*.dpkg-bak' -o -name '*.dpkg-old' \) -type f -print0 2>/dev/null)
+
   rmdir /etc/harmony-ap/internal 2>/dev/null \
     || _m270__log "  /etc/harmony-ap/internal/ not empty. Review remaining files."
 
@@ -961,11 +971,11 @@ _m270__cleanup_orphans() {
   rmdir /opt/harmony-ap 2>/dev/null \
     || _m270__log "  /opt/harmony-ap/ not empty. Review remaining files."
 
-  # Warn about .dpkg-old files left behind after conffile transitions
+  # Warn about .dpkg-old/.dpkg-bak backup files left behind after config file transitions
   local dpkg_old
   while IFS= read -r -d '' dpkg_old; do
     _m270__log "  Leftover conffile backup: ${dpkg_old} Review and remove if not needed."
-  done < <(find /etc/harmony-ap/ -name '*.dpkg-old' -print0 2>/dev/null)
+  done < <(find /etc/harmony-ap/ \( -name '*.dpkg-old' -o -name '*.dpkg-bak' \) -print0 2>/dev/null)
 
   _m270__log "Cleanup complete. All original files preserved in backup: ${_M270__BACKUP_DIR}"
 

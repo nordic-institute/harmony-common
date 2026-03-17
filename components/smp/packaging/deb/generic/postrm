@@ -9,6 +9,8 @@ trap 'db_stop 2>/dev/null || true' EXIT
 
 set -u
 
+#DEBHELPER#
+
 case "${1:-}" in
   purge)
     db_purge

@@ -99,12 +99,6 @@ validate_required_config() {
 # System setup
 # =============================================================================
 
-create_tmpfiles() {
-  if command -v systemd-tmpfiles >/dev/null 2>&1; then
-    systemd-tmpfiles --create /usr/lib/tmpfiles.d/harmony-ap.conf || true
-  fi
-}
-
 restrict_sensitive_conffiles() {
   local -a files=(
     /etc/harmony-ap/domibus.properties
@@ -543,7 +537,6 @@ configure_package() {
     log INFO "Starting upgrade from version ${old_version}."
   fi
 
-  create_tmpfiles
   run_migrations "$old_version"
 
   ensure_file "$DROPIN_HARMONY_FILE" root:root       0644 "$is_fresh" 022 "$DROPIN_HARMONY_HEADER"
@@ -578,6 +571,8 @@ configure_package() {
 # =============================================================================
 # Entry point
 # =============================================================================
+
+#DEBHELPER#
 
 case "${1:-}" in
   configure)

@@ -12,7 +12,7 @@ override_dh_install:
 	dh_install --sourcedir=$(STAGING_DIR)
 
 override_dh_installsystemd:
-	dh_installsystemd --no-enable --no-start
+	# Service unit installed via dh_install (overlay)
 
 override_dh_missing:
 	dh_missing --fail-missing

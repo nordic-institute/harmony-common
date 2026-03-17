@@ -815,7 +815,7 @@ _m230__fix_changelog_paths() {
 # =============================================================================
 
 _m230__cleanup_orphans() {
-  # Remove old tomcat-conf files (already backed up and checked for customizations)
+  # Old tracked config files automatically during the upgrade. The rm -f calls below act as a fallback
   local orphan
   for orphan in \
     /etc/harmony-smp/tomcat-conf/context.xml \
@@ -834,6 +834,12 @@ _m230__cleanup_orphans() {
 
   # Tomcat runtime directory (auto-created on context deployment)
   rm -rf /etc/harmony-smp/tomcat-conf/Catalina
+
+  # Clean leftover backup files (.dpkg-bak/.dpkg-old) from config file transitions
+  while IFS= read -r -d '' dpkg_remnant; do
+    _m230__log "  Removing obsolete conffile backup: ${dpkg_remnant}"
+    rm -f "$dpkg_remnant"
+  done < <(find /etc/harmony-smp/tomcat-conf -maxdepth 1 \( -name '*.dpkg-bak' -o -name '*.dpkg-old' \) -type f -print0 2>/dev/null)
 
   rmdir /etc/harmony-smp/tomcat-conf 2>/dev/null \
     || _m230__log "  /etc/harmony-smp/tomcat-conf/ not empty. Review remaining files."
@@ -877,11 +883,11 @@ _m230__cleanup_orphans() {
   # Old CATALINA_TMPDIR
   rm -rf /var/tmp/harmony-smp
 
-  # Warn about .dpkg-old files left behind after conffile transitions
+  # Warn about .dpkg-old/.dpkg-bak backup files left behind after config file transitions
   local dpkg_old
   while IFS= read -r -d '' dpkg_old; do
     _m230__log "  Leftover conffile backup: ${dpkg_old} Review and remove if not needed."
-  done < <(find /etc/harmony-smp/ -name '*.dpkg-old' -print0 2>/dev/null)
+  done < <(find /etc/harmony-smp/ \( -name '*.dpkg-old' -o -name '*.dpkg-bak' \) -print0 2>/dev/null)
 
   _m230__log "Cleanup complete. All original files preserved in backup: ${_M230__BACKUP_DIR}"
 
