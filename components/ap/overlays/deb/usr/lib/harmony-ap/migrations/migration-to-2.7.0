@@ -554,7 +554,7 @@ _m270__migrate_keystores() {
   done
 
   # Certificates
-  if [[ -d "${live_sec}/certs" && ! -d "${new_sec}/certs" ]]; then
+  if [[ -d "${live_sec}/certs" ]]; then
     _m270__move_dir "${live_sec}/certs" "${new_sec}/certs"
     chown -R root:harmony-ap "${new_sec}/certs/"
     chmod 0750 "${new_sec}/certs/"

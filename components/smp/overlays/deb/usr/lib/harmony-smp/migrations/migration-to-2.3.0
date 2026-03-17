@@ -530,7 +530,7 @@ _m230__migrate_keystores() {
   done
 
   # Certificates
-  if [[ -d "${live_sec}/certs" && ! -d "${new_sec}/certs" ]]; then
+  if [[ -d "${live_sec}/certs" ]]; then
     _m230__move_dir "${live_sec}/certs" "${new_sec}/certs"
     chown -R harmony-smp:harmony-smp "${new_sec}/certs/"
     chmod 0750 "${new_sec}/certs/"

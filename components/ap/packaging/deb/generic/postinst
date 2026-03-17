@@ -178,7 +178,7 @@ rotate_keystore() {
     log WARN "Keystore not found for backup: ${ks_path}. A new one will be created."
   fi
 
-  rm -f "${SECURITY_DIR}/certs/${cert_name}.cer"
+  rm -f "${SECURITY_DIR}/certs/${cert_name}-"*.cer
   clear_secret "${secret_prefix}_KEYSTORE_PASSWORD"
 }
 
@@ -191,7 +191,7 @@ create_or_validate_stores() {
   local ks_path ts_path
   ks_path="$(resolve_store_path "$store_prefix" keystore)"
   ts_path="$(resolve_store_path "$store_prefix" truststore)"
-  local cert_path="${SECURITY_DIR}/certs/${cert_name}.cer"
+  local cert_path="${SECURITY_DIR}/certs/${cert_name}-${alias}.cer"
 
   # On upgrades, verify stores exist before proceeding
   if [[ "$can_create" != true ]]; then
@@ -294,7 +294,7 @@ apply_stores() {
   local alias dname san=""
   alias="$(get_dropin DOMIBUS_SECURITY_KEY_PRIVATE_ALIAS)"
   dname="$(get_dropin "$dname_key")"
-  [[ -z "$san_key" ]] || san="$(get_dropin "$san_key")"
+  [[ -z "${san_key:-}" ]] || san="$(get_dropin "$san_key")"
 
   create_or_validate_stores "$secret_prefix" "$store_prefix" "$cert_name" \
     "$alias" "$dname" "$can_create" "$add_to_truststore" "$san" "$label"

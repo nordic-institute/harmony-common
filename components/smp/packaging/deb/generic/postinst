@@ -174,7 +174,7 @@ rotate_keystore() {
     log WARN "Keystore not found for backup: ${ks_path}. A new one will be created."
   fi
 
-  rm -f "${SECURITY_DIR}/certs/${cert_name}.cer"
+  rm -f "${SECURITY_DIR}/certs/${cert_name}-"*.cer
   clear_secret "${secret_prefix}_KEYSTORE_PASSWORD"
 }
 
@@ -187,7 +187,7 @@ create_or_validate_stores() {
   local ks_path ts_path
   ks_path="$(resolve_store_path "$store_prefix" keystore)"
   ts_path="$(resolve_store_path "$store_prefix" truststore)"
-  local cert_path="${SECURITY_DIR}/certs/${cert_name}.cer"
+  local cert_path="${SECURITY_DIR}/certs/${cert_name}-${alias}.cer"
 
   # On upgrades, verify stores exist before proceeding
   if [[ "$can_create" != true ]]; then
