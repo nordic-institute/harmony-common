@@ -951,11 +951,8 @@ _m270__cleanup_orphans() {
   # Old mysql_tzinfo marker
   rm -f /etc/harmony-ap/.mysql_tzinfo
 
-  # Old plugins/lib already moved by migration; clean up if empty or has only ws-plugin remnants
-  if [[ -d /etc/harmony-ap/plugins/lib ]]; then
-    rmdir /etc/harmony-ap/plugins/lib 2>/dev/null \
-      || _m270__log "  /etc/harmony-ap/plugins/lib/ not empty. Review remaining files."
-  fi
+  # Old plugins/lib already moved by migration; remove all remnants (backup has originals)
+  rm -rf /etc/harmony-ap/plugins/lib
 
   # Old conf symlink from 2.0.0-2.1.0 (points to /etc/harmony-ap)
   rm -f /opt/harmony-ap/conf
