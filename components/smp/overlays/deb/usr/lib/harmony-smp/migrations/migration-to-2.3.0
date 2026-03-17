@@ -206,6 +206,16 @@ _m230__detect_config_changes() {
     return 0
   fi
 
+  if [[ -f "$new_file" ]]; then
+    local _old_hash _new_hash
+    _old_hash="$(sha256sum "$old_file" | cut -d' ' -f1)"
+    _new_hash="$(sha256sum "$new_file" | cut -d' ' -f1)"
+    if [[ "$_old_hash" == "$_new_hash" ]]; then
+      _m230__log "  ${label}: user customizations preserved."
+      return 0
+    fi
+  fi
+
   if [[ -n "$detail" ]]; then
     _m230__log "  ${label}: customizations detected. ${detail}"
   else
