@@ -5,7 +5,7 @@ set -euo pipefail
 # Version of Harmony Access Point
 APVERSION=2.6.1
 # Version of Harmony SMP
-SMPVERSION=2.2.0
+SMPVERSION=2.2.2
 
 TOMCAT_VERSION=9.0.118
 MYSQLJ_VERSION=8.4.0
