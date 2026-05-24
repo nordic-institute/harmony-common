@@ -13,6 +13,7 @@ RUN apt-get -qq update \
     fakeroot \
     libdistro-info-perl \
     openjdk-8-jdk-headless \
+    openjdk-11-jdk-headless \
     unzip \
   && apt-get -qq autoremove \
   && apt-get -qq clean \
