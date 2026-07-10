@@ -1,5 +1,10 @@
 # Changelog
 
+## Access Point 2.6.2 - 2026-07-09
+
+- NEDS-258: Merge Domibus 5.1.10.3 into Harmony Access Point
+- NEDS-258: Update dependencies with known vulnerabilities
+
 ## SMP - 2.2.2 - 2026-05-22
 
 - NEDS-257: Merge DomiSMP 5.1.2 into Harmony SMP code base
