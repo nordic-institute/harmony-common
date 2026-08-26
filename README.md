@@ -35,6 +35,8 @@ Harmony eDelivery Access release notes and additional support material are avail
 
 The [open-source community of Harmony eDelivery Access](https://edelivery.digital/harmony-edelivery-access-community) is for anyone interested in Harmony. It's about learning from others and sharing skills and experiences. You are welcome to join the Harmony eDelivery Access Community Slack!
 
+Harmony operators can register their Harmony instance with NIIS. More information about Harmony Product Registration is available on the [Harmony website](https://edelivery.digital/product-registration).
+
 ## Installation
 
 The easiest way to install Harmony is to use the installation packages or Docker image provided by NIIS. The installation guides for Access Point and SMP are available here:
