@@ -12,7 +12,9 @@ Vcs-Browser: https://github.com/nordic-institute/harmony-smp
 Package: harmony-smp
 Architecture: all
 Multi-Arch: foreign
-Depends: ${misc:Depends}, openjdk-21-jre-headless | java21-runtime-headless | java21-runtime, mysql-server, mysql-client, xmlstarlet, gettext-base
+Pre-Depends: debconf | debconf-2.0
+Depends: ${misc:Depends}, openjdk-21-jre-headless | java21-runtime-headless | java21-runtime, mysql-client, openssl, grep, tzdata
+Recommends: mysql-server
 Description: Harmony eDelivery Access - Service Metadata Publisher (SMP)
  A packaged SMP service for Harmony eDelivery. Installs Tomcat runtime,
  webapp and utilities. Service unit provided for systemd.

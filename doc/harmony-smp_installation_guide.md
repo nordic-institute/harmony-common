@@ -1,6 +1,6 @@
 # Harmony eDelivery Access - Service Metadata Publisher Installation Guide <!-- omit in toc -->
 
-Version: 1.18  
+Version: 1.19  
 Doc. ID: IG-SMP
 ---
 
@@ -27,12 +27,13 @@ Doc. ID: IG-SMP
 | 05.02.2025 | 1.16    | Update links to external documents                                                                      | Diego Martin     |
 | 06.02.2025 | 1.17    | Support for Ubuntu 24.04                                                                                | Diego Martin     |
 | 05.12.2025 | 1.18    | Removed Ubuntu 20.04 from supported platforms as it has reached end of life                             | Diego Martin     |
+| 10.03.2026 | 1.19    | Update for 2.3.0 packaging redesign                                                                     | Diego Martin     |
 
 ## License <!-- omit in toc -->
 
 This document is licensed under the Creative Commons Attribution-ShareAlike 4.0 International License.
 To view a copy of this license, visit <https://creativecommons.org/licenses/by-sa/4.0/>
- 
+
 ## Table of Contents <!-- omit in toc -->
 
 <!-- vim-markdown-toc GFM -->
@@ -152,7 +153,7 @@ check the level of available entropy before the installation. It can be done by 
 cat /proc/sys/kernel/random/entropy_avail
 ```
 
-If the number returned by the command is less than 200, it indicates that there's not enough entropy available for 
+If the number returned by the command is less than 200, it indicates that there's not enough entropy available for
 the key generation. In that case, it's strongly recommended to install the `rng-tools` package before installing SMP:
 
 ```bash
@@ -186,7 +187,7 @@ sudo apt update
 
 #### External MySQL 8 database setup (optional)
 
-When using an _external_ database (MySQL 8 required), it is necessary to create the database schema and user before installing the SMP. 
+When using an _external_ database (MySQL 8 required), it is necessary to create the database schema and user before installing the SMP.
 Please also make sure that the external database accepts connections from the SMP host.
 
 The schema and user can be created using the following SQL DDL statements (adjust user and schema name as needed; the default _harmony_smp_ is used in the example):
@@ -225,8 +226,8 @@ Upon the first installation of the SMP, the system asks for the following inform
       ```
   - The `Distinguished Name` (`DN`) uniquely identifies an entity in an X.509 certificate \[[RFC5280](#Ref_RFC5280)\]. The following attribute types are commonly found in the `DN`: `CN = Common name, O = Organization name, C = Country code`. It's recommended to use PrintableString characters \[[PS](#Ref_PS)\] in the attribute type values;
   - *Note:* different eDelivery policy domains may have different requirements for the `Distinguished Name`. If you're not sure about the requirements, please contact the domain authority of the policy domain where the SMP is registered.
-- Do you want the SMP installation to publish information to some Service Metadata Locator (SML);  
-  - if yes then: 
+- Do you want the SMP installation to publish information to some Service Metadata Locator (SML);
+  - if yes then:
     - full URL of the SML server, including protocol and port, e.g., `https://<HOST>:8443`;
     - full URL of this SMP server as seen from public Internet, including protocol and port, e.g., `https://<HOST>:8443`;
     - public IP address of this SMP server (reachable from public Internet), e.g., `172.2.3.14`;
@@ -237,12 +238,12 @@ See the Dynamic Discovery Configuration Guide \[[UG-DDCG](dynamic_discovery_conf
 
 ### 2.7 Starting harmony-smp Service and Enabling Automatic Startup
 
-To start `harmony-smp` service issue the following command:
+The installer installs the `harmony-smp` systemd service but does not start it. After the first installation, start the service manually:
 ```bash
 sudo systemctl start harmony-smp
 ```
 
-If you want `harmony-smp` service start at system startup issue the following command:
+To enable automatic startup at boot:
 ```bash
 sudo systemctl enable harmony-smp
 ```
@@ -266,25 +267,40 @@ In addition to installing required dependencies, the installation process comple
 - creates linux user `harmony-smp` that is used to run the SMP service;
 - creates MySQL database user `harmony_smp` and generates random password for it;
 - creates MySQL database schema `harmony_smp` and populates it with needed metadata;
-- creates initial configuration (`/etc/harmony-smp/smp.init.properties`)
 - generates self-signed certificates for content encryption and for transport encryption;
-- installs `systemd` service `harmony-smp` but does not enable or start it.
+- installs the `harmony-smp` systemd service but does not enable or start it.
 
 ### 2.10 Location of Configuration and Generated Passwords
 
-All SMP configuration files are located in the `/etc/harmony-smp` directory. See the SMP Administration Guide \[[SMP_ADMIN_GUIDE](#Ref_SMP_ADMIN_GUIDE])\] for more details.
+SMP configuration files are located in the `/etc/harmony-smp` directory. Keystores and security material are located in `/var/lib/harmony-smp/security`. See the SMP Administration Guide \[[SMP_ADMIN_GUIDE](#Ref_SMP_ADMIN_GUIDE)\] for more details.
 
-During the installation process, multiple random passwords are generated.
+During the installation process, multiple random passwords are generated. All generated passwords are stored in `/var/lib/harmony-smp/security/secrets.env`.
 
-| **Password purpose**                                                           | **Password location**                                                                                                                                                                                       |
-|--------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Password for `harmony-smp` MySQL user                                          | Configuration file: `/etc/harmony-smp/tomcat-conf/context.xml`                                                                                                                                              |
-| Content encryption keystore (`/etc/harmony-smp/smp-keystore.p12`) password     | File /etc/harmony-smp/smp.init.properties, property `smp.keystore.password`. The format is `{DEC}{$PASSWORD}` where `$PASSWORD` is the keystore password. Content of this keystore can be changed using UI. |
-| Content encryption truststore (`/etc/harmony-smp/smp-truststore.p12`) password | File /etc/harmony-smp/smp.init.properties, property `smp.truststore.password`. The format is `{DEC}{$PASSWORD}` where `$PASSWORD` is the truststore password.                                               |
-| TLS keystore (`/etc/harmony-smp/tls-keystore.p12`) password                    | Configuration file: `/etc/harmony-smp/tomcat-conf/server.xml`<br /><br />Property: `keystorePass`                                                                                                           |
-| TLS truststore (`/etc/harmony-smp/tls-truststore.p12`) password                | Configuration file: `/etc/harmony-smp/tomcat-conf/server.xml`<br /><br />Property: `truststorePass`<br /><br />Also, the password is stored in: `/opt/harmony-smp/bin/setenv.sh`                            |
+| **Password purpose**                                                                        | **Variable**              |
+|---------------------------------------------------------------------------------------------|---------------------------|
+| Password for `harmony_smp` MySQL user                                                       | `SMP_JDBC_PASSWORD`       |
+| Content encryption keystore (`/var/lib/harmony-smp/security/smp-keystore.p12`) password     | `SMP_KEYSTORE_PASSWORD`   |
+| Content encryption truststore (`/var/lib/harmony-smp/security/smp-truststore.p12`) password | `SMP_TRUSTSTORE_PASSWORD` |
+| TLS keystore (`/var/lib/harmony-smp/security/tls-keystore.p12`) password                    | `TLS_KEYSTORE_PASSWORD`   |
+| TLS truststore (`/var/lib/harmony-smp/security/tls-truststore.p12`) password                | `TLS_TRUSTSTORE_PASSWORD` |
 
-Part of the SMP configuration is stored in MySQL database. The following properties are stored in the `SMP_CONFIGURATION` 
+#### Service configuration
+
+The `harmony-smp` systemd service is configured through environment variables using a layered drop-in mechanism. Drop-in files are loaded in alphabetical order; variables defined in later files override earlier ones:
+
+| **Drop-in file**                                                 | **Purpose**                                                                                                                                 |
+|------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------|
+| `/usr/lib/systemd/system/harmony-smp.service.d/10-defaults.conf` | Package defaults. Managed by the package, may be overwritten on upgrade.                                                                    |
+| `/etc/systemd/system/harmony-smp.service.d/50-harmony.conf`      | Instance configuration generated by the installer (e.g., database host, discovery settings). Regenerated by `dpkg-reconfigure harmony-smp`. |
+| `/etc/systemd/system/harmony-smp.service.d/90-override.conf`     | User overrides. Create or edit this file to customise any setting without risk of it being overwritten on upgrade.                          |
+
+After modifying a drop-in file, reload the service configuration and restart:
+```bash
+sudo systemctl daemon-reload
+sudo systemctl restart harmony-smp
+```
+
+Part of the SMP configuration is stored in MySQL database. The following properties are stored in the `SMP_CONFIGURATION`
 table. The values are configured when the SMP is installed for the first time.
 
 | **Property**                         | **Default** | **Description**                                                                        |
@@ -308,11 +324,11 @@ use the port `8443`, an application level firewall or proxy is needed.
 
 To better protect SMP, a reverse proxy can be deployed between SMP and internet. For dynamic discovery purposes only
 the endpoint for reading service metadata must be publicly accessible. SMP publishes service metadata from request path
-`/{serviceGroupId}/services/{serviceMetadataId}`. Note that only `GET` requests should be publicly accessible. Instead, 
+`/{serviceGroupId}/services/{serviceMetadataId}`. Note that only `GET` requests should be publicly accessible. Instead,
 `PUT` and `DELETE` requests to the same path should be protected.
 
-Here's an example configuration excerpt for NGINX HTTP server. The example assumes that `192.168.0.1` is address of SMP 
-server behind reverse proxy: 
+Here's an example configuration excerpt for NGINX HTTP server. The example assumes that `192.168.0.1` is address of SMP
+server behind reverse proxy:
 
 ```
 location ~ [^\/]*\/services\/[^\/]*$
@@ -328,7 +344,7 @@ location ~ [^\/]*\/services\/[^\/]*$
 ```
 
 When SMP is behind a reverse proxy SSL connections have to be terminated at proxy and SMP reconfigured to accept plain
-HTTP connections. Edit `/etc/harmony-smp/tomcat-conf/server.xml` and add additional connector for plain http connections:
+HTTP connections. Edit `/etc/harmony-smp/tomcat/server.xml` and add additional connector for plain http connections:
 
 ```xml
 <Connector port="8080" protocol="org.apache.coyote.http11.Http11AprProtocol"
@@ -356,6 +372,8 @@ The SMP application log files are located in the `/var/log/harmony-smp/` directo
 
 ## 3 Version Upgrade
 
+It is recommended to take a backup of the system (database and configuration in `/etc/harmony-smp`) before the upgrade.
+
 The `harmony-smp` service is automatically stopped for the upgrade and automatically restarted after the upgrade if
 the service has been enabled. Otherwise, the service must be manually restarted after the upgrade.
 
@@ -368,6 +386,8 @@ Issue the following command to run the upgrade:
 ```bash
 sudo apt upgrade
 ```
+
+If the installer asks for database configuration, accept the existing values. Leaving the database password blank uses the existing password from the current configuration.
 
 If starting the service at system startup hasn't been enabled, the `harmony-smp` service must be started manually after
 the upgrade:

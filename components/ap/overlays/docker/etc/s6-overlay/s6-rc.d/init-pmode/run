@@ -3,14 +3,14 @@ set -euo pipefail
 
 readonly STAGE="init-pmode"
 
-source /usr/lib/harmony-common
-source /usr/lib/harmony-cluster
+source /usr/lib/harmony-ap/lib/harmony-common
+source /usr/lib/harmony-ap/lib/harmony-cluster
 
 : "${PMODE_MAX_RETRIES:=60}"
 : "${PMODE_RETRY_INTERVAL:=5}"
 : "${PMODE_ADMIN_USER:=pmode_uploader}"
 : "${PMODE_ADMIN_PASSWORD:=}"
-: "${PMODE_CONFIG_PATH:=$HARMONY_BASE/etc/pmode.xml}"
+: "${PMODE_CONFIG_PATH:=${HARMONY_CONFIG}/pmode.xml}"
 
 decode_from_base64() {
   log DEBUG "Decoding PMode configuration from Base64 using harmony-base64..."
@@ -127,7 +127,7 @@ check_pmode_api_user_exists() {
   http_code="${response: -3}"
   response="${response::-3}"
 
-  if [ "$http_code" != "200" ]; then
+  if [[ "$http_code" != "200" ]]; then
     die "Failed to check if PMode API user exists"
   fi
 
@@ -163,7 +163,7 @@ create_pmode_api_user() {
     -o /dev/null -w "%{http_code}" \
     -X PUT "$base_url/rest/plugin/users")
 
-  if [ "$http_code" != "204" ]; then
+  if [[ "$http_code" != "204" ]]; then
     die "Failed to create API user"
   fi
 
@@ -304,7 +304,7 @@ with_temp_api_user() {
 
   "$action" "$base_url" "${action_args[@]}"
 
-  if [ "$cleanup_user" = true ]; then
+  if [[ "$cleanup_user" == true ]]; then
     delete_pmode_api_user "$base_url" "$xsrf_token"
   fi
 }

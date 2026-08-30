@@ -1,0 +1,601 @@
+#!/command/with-contenv bash
+set -euo pipefail
+shopt -s nullglob
+
+# shellcheck disable=SC2034 # Used in sourced scripts
+readonly STAGE="migration-2.7.0"
+
+source /usr/lib/harmony-ap/lib/harmony-common
+
+readonly _BACKUP_DIR="${HARMONY_BASE}/.backups/2.7.0"
+
+# Properties managed by the old init scripts. Always skip
+declare -A _MANAGED_KEYS=(
+  # Set by old init-domibus
+  [domibus.deployment.clustered]=1
+  [domibus.security.key.private.alias]=1
+  [domibus.security.key.private.password]=1
+  [domibus.security.keystore.location]=1
+  [domibus.security.keystore.password]=1
+  [domibus.security.keystore.type]=1
+  [domibus.security.truststore.location]=1
+  [domibus.security.truststore.password]=1
+  [domibus.security.truststore.type]=1
+  [domibus.smlzone]=1
+  [domibus.dynamicdiscovery.useDynamicDiscovery]=1
+  # Set by old init-database
+  [domibus.datasource.url]=1
+  [domibus.datasource.user]=1
+  [domibus.datasource.password]=1
+  [domibus.datasource.driverClassName]=1
+  [domibus.entityManagerFactory.jpaProperty.hibernate.connection.driver_class]=1
+  [domibus.entityManagerFactory.jpaProperty.hibernate.dialect]=1
+  [domibus.database.serverName]=1
+  [domibus.database.port]=1
+  [domibus.database.schema]=1
+  [domibus.passwordPolicy.defaultUser.create]=1
+  [domibus.payload.decompression.validation.active]=1
+  # Set by old init-messagebroker
+  [activeMQ.brokerName]=1
+  [activeMQ.transportConnector.uri]=1
+  [activeMQ.JMXURL]=1
+  [activeMQ.embedded.configurationFile]=1
+  [activeMQ.broker.host]=1
+  [activeMQ.username]=1
+  [activeMQ.password]=1
+)
+
+# Properties that were uncommented in the old domibus.properties template with
+# fixed default values. If the value matches the default, skip (not customized).
+# If different, warn (the user tuned this and needs a DOMIBUS_* env var).
+declare -A _TEMPLATE_DEFAULTS=(
+  [domibus.datasource.maxLifetime]=1800
+  [domibus.datasource.idleTimeout]=600
+  [domibus.datasource.maxPoolSize]=100
+  [domibus.datasource.minimumIdle]=5
+  [domibus.entityManagerFactory.jpaProperty.hibernate.id.new_generator_mappings]=false
+  [domibus.auth.unsecureLoginAllowed]=false
+  [domibus.sendMessage.messageIdPattern]='^(?!.*[=])[\\x20-\\x7E]*$'
+)
+
+# =============================================================================
+# Utilities
+# =============================================================================
+
+_prop_name_to_env() {
+  printf '%s' "$1" | tr '[:lower:].-' '[:upper:]__'
+}
+
+_copy_file() {
+  local src="$1" dst="$2"
+  if ! cp -p "$src" "$dst"; then
+    log ERROR "Failed to copy ${src} to ${dst}"
+    return 1
+  fi
+}
+
+_copy_tree() {
+  local src="$1" dst="$2"
+  if ! cp -a "$src" "$dst"; then
+    log ERROR "Failed to copy ${src} to ${dst}"
+    return 1
+  fi
+}
+
+_has_known_hash() {
+  local file="$1"; shift
+  [[ -f "$file" ]] || return 1
+
+  local hash known
+  hash="$(sha256sum "$file" | cut -d' ' -f1)"
+  for known in "$@"; do
+    [[ "$hash" != "$known" ]] || return 0
+  done
+  return 1
+}
+
+_move_file() {
+  local src="$1" dst="$2"
+
+  if mv "$src" "$dst" 2>/dev/null; then
+    return 0
+  fi
+
+  _copy_file "$src" "$dst"
+  rm -f "$src" 2>/dev/null \
+    || log WARN "Could not remove original after copying: ${src}"
+}
+
+_move_dir() {
+  local src="$1" dst="$2"
+
+  # Remove empty target so mv can replace it
+  [[ ! -d "$dst" ]] || rmdir "$dst" 2>/dev/null || true
+
+  if [[ ! -e "$dst" ]] && mv "$src" "$dst" 2>/dev/null; then
+    return 0
+  fi
+
+  # Fall back to copy+remove (e.g. cross-device, non-empty target)
+  [[ -d "$dst" ]] || mkdir -p "$dst"
+  _copy_tree "$src/." "$dst/"
+  rm -rf "$src" 2>/dev/null \
+    || log WARN "Could not remove original directory after copying: ${src}"
+}
+
+_detect_config_changes() {
+  local label="$1" old_file="$2" new_file="$3" detail="$4"; shift 4
+
+  [[ -f "$old_file" ]] || return 0
+
+  if _has_known_hash "$old_file" "$@"; then
+    log INFO "  ${label}: no customizations detected."
+    return 0
+  fi
+
+  if [[ -n "$detail" ]]; then
+    log WARN "  ${label}: customizations detected. ${detail}"
+  else
+    log WARN "  ${label}: customizations detected, might require manual migration."
+  fi
+  log WARN "    Old: ${old_file}"
+  log WARN "    New: ${new_file}"
+}
+
+# =============================================================================
+# Backup
+# =============================================================================
+
+create_backup() {
+  if [[ -d "${_BACKUP_DIR}/etc" || -d "${_BACKUP_DIR}/conf" ]]; then
+    log WARN "Backup already exists at ${_BACKUP_DIR}. Keeping existing backup."
+    return 0
+  fi
+
+  log INFO "Creating backup at ${_BACKUP_DIR}"
+  install -d -m 0750 "$_BACKUP_DIR"
+
+  if [[ -d "${HARMONY_BASE}/etc" ]]; then
+    mkdir -p "${_BACKUP_DIR}/etc"
+    _copy_tree "${HARMONY_BASE}/etc/." "${_BACKUP_DIR}/etc/"
+  fi
+  if [[ -d "${HARMONY_BASE}/conf" ]]; then
+    mkdir -p "${_BACKUP_DIR}/conf"
+    _copy_tree "${HARMONY_BASE}/conf/." "${_BACKUP_DIR}/conf/"
+  fi
+}
+
+# =============================================================================
+# Migrate cluster state from shared/ to cluster/
+# =============================================================================
+
+migrate_cluster_state() {
+  [[ -d "${HARMONY_BASE}/shared" ]] || return 0
+
+  if [[ -z "$(ls -A "${HARMONY_BASE}/shared" 2>/dev/null)" ]]; then
+    rm -rf "${HARMONY_BASE}/shared"
+    return 0
+  fi
+
+  log INFO "Migrating cluster state..."
+  _move_dir "${HARMONY_BASE}/shared" "${HARMONY_BASE}/cluster"
+  log INFO "  Moved shared/ to cluster/"
+}
+
+# =============================================================================
+# Migrate custom plugins
+# =============================================================================
+
+migrate_plugins() {
+  local src_dir="${HARMONY_BASE}/etc/plugins"
+  [[ -d "$src_dir" ]] || return 0
+
+  local jar_count=0 config_count=0 file name
+
+  # Migrate custom plugin JARs (ws-plugin is bundled, skip it)
+  for file in "${src_dir}/lib/"*; do
+    [[ -f "$file" ]] || continue
+    name="${file##*/}"
+    [[ "$name" != *ws-plugin* ]] || continue
+
+    if [[ ! -e "${HARMONY_ADDONS}/plugins/lib/${name}" ]]; then
+      _move_file "$file" "${HARMONY_ADDONS}/plugins/lib/${name}"
+      log INFO "  Migrated custom plugin: ${name}"
+      (( ++jar_count ))
+    fi
+  done
+
+  # Migrate custom plugin configs (ws-plugin config is shipped, skip it)
+  for file in "${src_dir}/config/"*; do
+    [[ -f "$file" ]] || continue
+    name="${file##*/}"
+    [[ "$name" != *ws-plugin* ]] || continue
+
+    if [[ ! -e "${HARMONY_CONFIG}/plugins/config/${name}" ]]; then
+      _move_file "$file" "${HARMONY_CONFIG}/plugins/config/${name}"
+      log INFO "  Migrated plugin config: ${name}"
+      (( ++config_count ))
+    fi
+  done
+
+  if (( jar_count + config_count > 0 )); then
+    log WARN "Custom plugins were migrated:"
+    (( jar_count == 0 ))    || log WARN "  JARs: ${HARMONY_ADDONS}/plugins/lib/"
+    (( config_count == 0 )) || log WARN "  Configs: ${HARMONY_CONFIG}/plugins/config/"
+    log WARN "  These paths are NOT persistent and will be lost when the container is recreated."
+    log WARN "  To preserve custom plugins, either:"
+    log WARN "    - Mount a volume at ${HARMONY_ADDONS}, or"
+    log WARN "    - Set HARMONY_ADDONS to a path on the persistent volume (e.g. ${HARMONY_BASE}/addons)"
+    log WARN "  Backup: ${_BACKUP_DIR}/etc/plugins/"
+  fi
+}
+
+# =============================================================================
+# Migrate custom policies
+# =============================================================================
+
+migrate_policies() {
+  local src_dir="${HARMONY_BASE}/etc/policies"
+  local default_dir="/usr/share/harmony-ap/policies"
+  [[ -d "$src_dir" ]] || return 0
+
+  local count=0 skipped=0 policy name old_hash new_hash dest
+  for policy in "$src_dir"/*.xml; do
+    name="${policy##*/}"
+
+    # Skip policies identical to new defaults. config-structure already
+    # created symlinks for these.
+    if [[ -f "${default_dir}/${name}" ]]; then
+      old_hash="$(sha256sum "$policy" | cut -d' ' -f1)"
+      new_hash="$(sha256sum "${default_dir}/${name}" | cut -d' ' -f1)"
+      if [[ "$old_hash" == "$new_hash" ]]; then
+        (( ++skipped ))
+        continue
+      fi
+    fi
+
+    # Replace default symlink (from config-structure) with user's custom file.
+    # If a real file already exists, skip.
+    dest="${HARMONY_CONFIG}/policies/${name}"
+    if [[ -L "$dest" ]]; then
+      rm -f "$dest"
+    elif [[ -e "$dest" ]]; then
+      continue
+    fi
+
+    _move_file "$policy" "$dest"
+    log INFO "  Moved custom policy: ${name}"
+    (( ++count ))
+  done
+
+  if (( count > 0 || skipped > 0 )); then
+    log INFO "Policies: ${count} customized, ${skipped} default(s) skipped."
+  fi
+
+  if (( count > 0 )); then
+    log WARN "Custom policies migrated to ${HARMONY_CONFIG}/policies/"
+    log WARN "  This path is NOT persistent and will be lost when the container is recreated."
+    log WARN "  To preserve, mount custom policies into ${HARMONY_CONFIG}/policies/"
+    log WARN "  Backup of original policies: ${_BACKUP_DIR}/etc/policies/"
+  fi
+}
+
+# =============================================================================
+# Migrate keystores from etc/ to security/
+# =============================================================================
+
+migrate_keystores() {
+  log INFO "Migrating keystores..."
+
+  local count=0 store ext src dst
+  for store in ap-keystore ap-truststore tls-keystore tls-truststore; do
+    for ext in p12 pfx jks; do
+      src="${HARMONY_BASE}/etc/${store}.${ext}"
+      dst="${HARMONY_SECURITY}/${store}.${ext}"
+
+      if [[ -f "$src" && ! -f "$dst" ]]; then
+        _move_file "$src" "$dst"
+        log INFO "  Moved ${store}.${ext}"
+        (( ++count ))
+      fi
+    done
+  done
+
+  if (( count == 0 )); then
+    log INFO "  No keystores found to migrate."
+  fi
+}
+
+# =============================================================================
+# Migrate certificates from etc/certs/ to security/certs/
+# =============================================================================
+
+migrate_certificates() {
+  [[ -d "${HARMONY_BASE}/etc/certs" ]] || return 0
+
+  if [[ -z "$(ls -A "${HARMONY_BASE}/etc/certs" 2>/dev/null)" ]]; then
+    rm -rf "${HARMONY_BASE}/etc/certs"
+    return 0
+  fi
+
+  log INFO "Migrating certificates..."
+  _move_dir "${HARMONY_BASE}/etc/certs" "$CERT_DIR"
+  log INFO "  Moved certs/ to ${CERT_DIR}/"
+}
+
+# =============================================================================
+# Migrate ActiveMQ data from work/ to broker/
+# =============================================================================
+
+migrate_broker_data() {
+  [[ -d "${HARMONY_BASE}/work" ]] || return 0
+
+  if [[ -z "$(ls -A "${HARMONY_BASE}/work" 2>/dev/null)" ]]; then
+    rm -rf "${HARMONY_BASE}/work"
+    return 0
+  fi
+
+  log INFO "Migrating ActiveMQ data..."
+  _move_dir "${HARMONY_BASE}/work" "$ACTIVEMQ_WORK_DIR"
+  log INFO "  Moved work/ to ${ACTIVEMQ_WORK_DIR}"
+}
+
+# =============================================================================
+# Detect configuration customizations
+# =============================================================================
+
+detect_domibus_customizations() {
+  local old_props="${_BACKUP_DIR}/etc/domibus.properties"
+  [[ -f "$old_props" ]] || return 0
+
+  local custom_count=0 line key value
+  while IFS= read -r line; do
+    [[ ! "$line" =~ ^[[:space:]]*# ]] || continue
+    [[ ! "$line" =~ ^[[:space:]]*$ ]] || continue
+    [[ "$line" == *=* ]] || continue
+
+    key="${line%%=*}"
+    key="${key#"${key%%[![:space:]]*}"}"    # trim leading whitespace
+    key="${key%"${key##*[![:space:]]}"}"    # trim trailing whitespace
+
+    # Init-script-managed → always skip
+    [[ -z "${_MANAGED_KEYS[$key]+x}" ]] || continue
+
+    # Template default → skip only if value matches known default
+    if [[ -n "${_TEMPLATE_DEFAULTS[$key]+x}" ]]; then
+      value="${line#*=}"
+      [[ "$value" != "${_TEMPLATE_DEFAULTS[$key]}" ]] || continue
+    fi
+
+    if (( custom_count == 0 )); then
+      log WARN "  domibus.properties: custom properties detected."
+      log WARN "    These must be set as environment variables in the new configuration:"
+    fi
+    log WARN "      ${key} -> $(_prop_name_to_env "$key")"
+    (( ++custom_count ))
+  done < "$old_props"
+
+  if (( custom_count == 0 )); then
+    log INFO "  domibus.properties: no custom properties detected."
+  else
+    log WARN "    Backup: ${old_props}"
+  fi
+}
+
+detect_ws_plugin() {
+  local src="${_BACKUP_DIR}/etc/plugins/config/ws-plugin.properties"
+  [[ -f "$src" ]] || return 0
+
+  local -a known_hashes=(
+    "22f9561105ab56ada6fbd2d6872d7c6585c7e16ccec7c62d66393d86d6fe5006"  # all Docker releases
+  )
+
+  if _has_known_hash "$src" "${known_hashes[@]}"; then
+    return 0
+  fi
+
+  log WARN "  ws-plugin.properties: customizations detected."
+  log WARN "    Backup: ${src}"
+  log WARN "    New: ${HARMONY_CONFIG}/plugins/config/ws-plugin.properties"
+  log WARN "    Properties should be set as WSPLUGIN_* env vars."
+  log WARN "    Example: wsplugin.mtom.enabled -> WSPLUGIN_MTOM_ENABLED"
+}
+
+detect_logging_properties() {
+  local -a known_hashes=(
+    "517d51eb47b4e974886d2fb711b26c1f9d5f60a38ce9ed3e094c4ed66d9946cc"  # all Docker releases
+  )
+
+  _detect_config_changes "logging.properties" \
+    "${_BACKUP_DIR}/conf/logging.properties" "${HARMONY_CONFIG}/tomcat/logging.properties" \
+    "To preserve, mount a custom file at ${HARMONY_CONFIG}/tomcat/logging.properties" \
+    "${known_hashes[@]}"
+}
+
+detect_activemq() {
+  local -a known_hashes=(
+    "5e2f12cc3e3e49eaf915bf289af1919e31366f3f28c16a441a46d621650d8903"  # 1.0.0-1.4.0
+    "48454a3b7424b0f22c0d4ee886f5a4c59b9bd30463c5b7b9aca109413da6cc61"  # 2.0.0-2.2.2
+    "009b5f9b806ff987b93675cdba60fd58c05951f5ae1aef6a58db247bbc769484"  # 2.3.0-2.5.0
+    "d54e47db57ea2467317b5d317e12a695323570b04ce76cdb74ac66244df2a8ae"  # 2.6.0
+  )
+
+  _detect_config_changes "activemq.xml" \
+    "${_BACKUP_DIR}/etc/internal/activemq.xml" "${HARMONY_CONFIG}/activemq.xml" \
+    "Relocated from internal/. To preserve, mount a custom file or use ACTIVEMQ_EMBEDDED_CONFIG_B64." \
+    "${known_hashes[@]}"
+}
+
+detect_logback() {
+  local -a known_hashes=(
+    "d2603c5bf264fea1c11459846d6b783558e184614ba044045230edf94ff59611"  # early Docker releases
+    "664c8684b7811348d3c1eea6ad21c6b0b9594bf07fda1c840894669e5541f859"  # recent Docker releases
+  )
+
+  _detect_config_changes "logback.xml" \
+    "${_BACKUP_DIR}/etc/logback.xml" "${HARMONY_CONFIG}/logback.xml" \
+    "To preserve, mount a custom file or use LOGBACK_CONFIG_B64." \
+    "${known_hashes[@]}"
+}
+
+detect_server_xml() {
+  [[ -f "${_BACKUP_DIR}/conf/server.xml" ]] || return 0
+
+  log WARN "  server.xml: the new file uses environment variable placeholders."
+  log WARN "    Old: ${_BACKUP_DIR}/conf/server.xml"
+  log WARN "    New: ${HARMONY_CONFIG}/tomcat/server.xml"
+  log WARN "    Common settings (ports, TLS) are configured via environment variables."
+  log WARN "    For structural changes (connectors, valves, etc.),"
+  log WARN "    mount a custom file to ${HARMONY_CONFIG}/tomcat/server.xml"
+}
+
+detect_clientauth() {
+  [[ -f "${_BACKUP_DIR}/etc/clientauthentication.xml" ]] || return 0
+
+  log WARN "  clientauthentication.xml: now uses environment variable placeholders."
+  log WARN "    Old: ${_BACKUP_DIR}/etc/clientauthentication.xml"
+  log WARN "    New: ${HARMONY_CONFIG}/clientauthentication.xml"
+}
+
+detect_customizations() {
+  log INFO "Configuration migration notes:"
+
+  detect_domibus_customizations
+  detect_ws_plugin
+  detect_logging_properties
+  detect_activemq
+  detect_logback
+  detect_server_xml
+  detect_clientauth
+}
+
+# =============================================================================
+# Migrate secrets (auto-generated passwords) to new local store
+# =============================================================================
+
+# Undo the escaping applied by the old harmony-property/set_prop():
+#   \\ -> \     ${:$}{ -> ${
+_unescape_old_prop() {
+  local value="$1"
+  value="${value/\$\{:\$\}\{/\$\{}"
+  value="${value//\\\\/\\}"
+  printf '%s' "$value"
+}
+
+# Read a property value from a Java .properties file (tolerates whitespace around '=')
+_read_old_prop() {
+  local file="$1" key="$2"
+  local escaped_key="${key//./\\.}"
+  local raw
+  raw="$(grep -m1 -Po "^\s*${escaped_key}\s*=\s*\K.*$" "$file" 2>/dev/null || true)"
+  [[ -z "$raw" ]] || _unescape_old_prop "$raw"
+}
+
+# Read an attribute from the first Connector element in a server.xml file
+_read_connector_attr() {
+  local server_xml="$1" attr="$2"
+  local escaped_attr="${attr//./\\.}"
+  tr '\n' ' ' < "$server_xml" | grep -oP "Connector[^>]*${escaped_attr}=\"\\K[^\"]*" 2>/dev/null | head -1 || true
+}
+
+# Read a value and store it as a secret if non-empty
+_transfer_to_secret() {
+  local value="$1" secret_name="$2"
+  [[ -n "$value" ]] || return 0
+  store_secret "$secret_name" "$value"
+  log INFO "  Recovered ${secret_name}"
+}
+
+migrate_secrets() {
+  local old_props="${_BACKUP_DIR}/etc/domibus.properties"
+  local old_server="${_BACKUP_DIR}/conf/server.xml"
+
+  # Security keystore/truststore passwords (from domibus.properties)
+  if [[ -f "$old_props" ]]; then
+    _transfer_to_secret "$(_read_old_prop "$old_props" "domibus.security.keystore.password")" \
+      "SECURITY-KEYSTORE-PASSWORD"
+    _transfer_to_secret "$(_read_old_prop "$old_props" "domibus.security.truststore.password")" \
+      "SECURITY-TRUSTSTORE-PASSWORD"
+
+    # Migrate key.private.password only if it differs from keystore.password
+    local ks_pass key_pass
+    ks_pass="$(_read_old_prop "$old_props" "domibus.security.keystore.password")"
+    key_pass="$(_read_old_prop "$old_props" "domibus.security.key.private.password")"
+
+    # shellcheck disable=SC2016 # ${domibus.security.keystore.password} is a literal reference
+    if [[ -n "$key_pass" && "$key_pass" != "$ks_pass" && "$key_pass" != '${domibus.security.keystore.password}' ]]; then
+      store_secret "SECURITY-KEY-PRIVATE-PASSWORD" "$key_pass"
+      log INFO "  domibus.security.key.private.password differs from keystore password. Migrated separately."
+    fi
+  fi
+
+  # TLS keystore/truststore passwords (from server.xml Connector attributes)
+  if [[ -f "$old_server" ]]; then
+    _transfer_to_secret "$(_read_connector_attr "$old_server" "keystorePass")" \
+      "TLS-KEYSTORE-PASSWORD"
+    _transfer_to_secret "$(_read_connector_attr "$old_server" "truststorePass")" \
+      "TLS-TRUSTSTORE-PASSWORD"
+  fi
+
+  log INFO "Secret migration complete."
+}
+
+# =============================================================================
+# Clean up old directory structure
+# =============================================================================
+
+cleanup_old_layout() {
+  log INFO "Cleaning up old directory structure..."
+
+  # Remove migrated keystores
+  rm -f "${HARMONY_BASE}/etc/"*.p12 "${HARMONY_BASE}/etc/"*.pfx "${HARMONY_BASE}/etc/"*.jks
+
+  # Remove migrated directories
+  rm -rf "${HARMONY_BASE}/etc/certs"
+  rm -rf "${HARMONY_BASE}/etc/plugins"
+  rm -rf "${HARMONY_BASE}/etc/policies"
+  rm -rf "${HARMONY_BASE}/etc/internal"
+
+  # Remove incompatible config files (backed up)
+  rm -f "${HARMONY_BASE}/etc/domibus.properties"
+  rm -f "${HARMONY_BASE}/etc/logback.xml"
+  rm -f "${HARMONY_BASE}/etc/clientauthentication.xml"
+
+  # Remove old conf directory (backed up)
+  rm -rf "${HARMONY_BASE}/conf"
+
+  # Remove etc/ only if empty
+  if [[ -d "${HARMONY_BASE}/etc" ]]; then
+    if ! rmdir "${HARMONY_BASE}/etc" 2>/dev/null; then
+      log WARN "  ${HARMONY_BASE}/etc/ still contains files. Review manually:"
+      for f in "${HARMONY_BASE}/etc/"*; do
+        log WARN "    ${f##*/}"
+      done
+    fi
+  fi
+}
+
+# =============================================================================
+# Main
+# =============================================================================
+
+main() {
+  log INFO "Starting migration to 2.7.0"
+
+  create_backup
+
+  migrate_cluster_state
+  migrate_plugins
+  migrate_policies
+  migrate_keystores
+  migrate_certificates
+  migrate_broker_data
+  migrate_secrets
+
+  detect_customizations
+  cleanup_old_layout
+
+  log INFO "Migration to 2.7.0 complete. Backup preserved at: ${_BACKUP_DIR}"
+}
+
+main

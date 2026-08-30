@@ -1,6 +1,6 @@
 # Harmony eDelivery Access - Access Point Docker Installation Guide
 
-Version: 2.1  
+Version: 2.2  
 Doc. ID: IG-AP-D
 
 ---
@@ -19,6 +19,7 @@ Doc. ID: IG-AP-D
 | 13.01.2025 | 1.7     | Update links to external documents                        | Diego Martin     |
 | 23.07.2025 | 2.0     | Rewrite documentation to cover the new options introduced | Diego Martin     |
 | 05.12.2025 | 2.1     | Added section describing tagging strategy                 | Diego Martin     |
+| 10.03.2026 | 2.2     | Update for 2.7.0 packaging redesign                       | Diego Martin     |
 
 ## License
 
@@ -170,7 +171,7 @@ To start Access Point quickly, you can use a single `docker run` command. For ex
 ```bash
 docker run -d --name harmony-ap \
   -p 8443:8443 \
-  -v harmony-ap-data:/var/opt/harmony-ap \
+  -v harmony-ap-data:/var/lib/harmony-ap \
   -e DB_HOST=db.example.com \
   -e DB_PASSWORD=<YourDBPassword> \
   -e ADMIN_PASSWORD=<YourAdminPassword> \
@@ -183,7 +184,7 @@ Let's break down this command:
 - **--name harmony-ap:** Assigns a recognizable name to the container (optional but helps with management).
 - **-p 8443:8443:** Publishes the container's HTTPS port to the host. Access Point listens on 8443 for HTTPS by default. After starting, the service will be accessible at `https://<YourHost>:8443/`.
   - _Note:_ If you want the service on the standard HTTPS port 443, you can map `-p 443:8443`. This requires running Docker with a user with appropriate privileges. Alternatively, you can configure AP to listen on 443 internally, see the [Appendix](#13-appendix) or how-to guides for changing ports.
-- **-v harmony-ap-data:/var/opt/harmony-ap:** Mounts a Docker named volume called "harmony-ap-data" to the container's data directory. The path `/var/opt/harmony-ap` is where Access Point stores its configuration, keystores, and other mutable state inside the container by default. Using a volume ensures this data persists across container restarts or upgrades. You can substitute a host directory, e.g. `-v /path/on/host:/var/opt/harmony-ap`, but ensure permissions as described in the [File Permissions and User Considerations](#33-file-permissions-and-user-considerations) section.
+- **-v harmony-ap-data:/var/lib/harmony-ap:** Mounts a Docker named volume called "harmony-ap-data" to the container's data directory. The path `/var/lib/harmony-ap` is where Access Point stores its configuration, keystores, and other mutable state inside the container by default. Using a volume ensures this data persists across container restarts or upgrades. You can substitute a host directory, e.g. `-v /path/on/host:/var/lib/harmony-ap`, but ensure permissions as described in the [File Permissions and User Considerations](#33-file-permissions-and-user-considerations) section.
 - **Database connection settings (-e DB_...):** These environment variables tell Access Point how to connect to MySQL. There are other variables you can set, like `DB_PORT`, `DB_SCHEMA`, or `DB_USER`, but we will use their default values. These are the minimum required for a quick start:
   - **DB_HOST:** The hostname or IP address of your MySQL server (in this example, `db.example.com`; for local testing it might be `localhost`).
   - **DB_PASSWORD:** The password for the database user. Replace `<YourDBPassword>` with the actual password or use an environment file to avoid putting secrets in the command line.
@@ -204,12 +205,11 @@ services:
       - "8443:8443"
     environment:
       - DB_HOST=harmony-db
-      - DB_PASSWORD=changeme
-      - DB_PASSWORD=<YourDBPassword> \
-      - ADMIN_PASSWORD=<YourAdminPassword> \
+      - DB_PASSWORD=<YourDBPassword>
+      - ADMIN_PASSWORD=<YourAdminPassword>
     restart: unless-stopped
     volumes:
-      - harmony-ap-data:/var/opt/harmony-ap
+      - harmony-ap-data:/var/lib/harmony-ap
 
   harmony-db:
     image: mysql:8
@@ -236,7 +236,7 @@ volumes:
 
 On the first startup, the container will perform an initialization sequence:
 
-- If the mounted volume is empty (first run), Access Point will generate default configuration files and security materials. This includes generating **self-signed certificates** for TLS and for message signing/encryption. It's possible to provide your own certificates, as explained later in the [Supplying and Updating Certificates](#72-supplying-and-updating-certificates) section. These are placed in the `/var/opt/harmony-ap/etc` directory (symlinked from `/etc/harmony-ap` inside the container). The self-signed certificate allows the service to run immediately with TLS and secure messaging capabilities, though it will not be trusted by clients until you replace it with a CA-signed cert (see [Certificate Trust and Exchange](#74-certificate-trust-and-exchange) section).
+- If the mounted volume is empty (first run), Access Point will generate default configuration files and security materials. This includes generating **self-signed certificates** for TLS and for message signing/encryption. It's possible to provide your own certificates, as explained later in the [Supplying and Updating Certificates](#72-supplying-and-updating-certificates) section. These are placed in the `/var/lib/harmony-ap/security` directory inside the container. The self-signed certificate allows the service to run immediately with TLS and secure messaging capabilities, though it will not be trusted by clients until you replace it with a CA-signed cert (see [Certificate Trust and Exchange](#74-certificate-trust-and-exchange) section).
 - The container will connect to MySQL using the provided environment variables. If the database schema is empty (first time setup), it will create the necessary tables and initial data. This includes default settings and an **administrator user account** for the admin UI.
   - **Admin Credentials:** The admin account (used to log into Access Point's web interface) is created at first startup. The username is "harmony" by default (unless changed in configuration). For the initial password, if you did not specify one via environment, the system will generate a random password and log it. In that case, check the container logs for a message on first startup that displays the generated admin password. For security, as the password was logged to the console, you should change it via the admin UI. As a best practice, consider setting a strong password via the `ADMIN_PASSWORD` environment variable on first run so you know the credential upfront (the container will then use that instead of generating one, and it will not be logged).
 - Once initialization is complete, Access Point will deploy its web application and start listening on port 8443. At this point, the container should be "Up" and healthy.
@@ -274,12 +274,12 @@ Running Access Point in Docker requires careful handling of persistent data. Acc
 
 Docker containers are ephemeral by default; any changes to the container's filesystem are lost when the container is stopped. The Harmony Access Point, however, is a stateful application:
 
-- **Configuration files:** These include `domibus.properties` (the main configuration), XML files for plugins, keystore files for certificates (TLS and signing keys), truststore files, and Tomcat configuration (`server.xml`). These are generated or populated on first startup in the container's `/var/opt/harmony-ap/etc` directory.
-- **Security material:** The private keys and certificates are stored in keystore files on disk (e.g., `tls-keystore.p12`, `ap-keystore.p12`, and their corresponding truststores). Losing these would invalidate your node's identity and ability to decrypt messages.
+- **Configuration files:** These include `domibus.properties` (the main configuration), XML files for plugins, and Tomcat configuration (`server.xml`). Configuration files are located in `/etc/harmony-ap` inside the container.
+- **Security material:** The private keys and certificates are stored in keystore files on disk (e.g., `tls-keystore.p12`, `ap-keystore.p12`, and their corresponding truststores) under `/var/lib/harmony-ap/security`. Losing these would invalidate your node's identity and ability to decrypt messages.
 - **Message payloads and working files:** Harmony AP may store incoming message attachments (database only by default) or certain working data on disk (especially if not configured to use database storage for large objects). As message attachments could be written under the data directory if enabled, if those files disappear, you might lose the ability to resend or recover messages.
-- **JMS data (ActiveMQ):** The embedded ActiveMQ broker uses a file-based storage (KahaDB) to persist messages and transactions. This by default resides on the container's filesystem under the `/var/opt/harmony-ap/work` directory. If not persisted, a container restart could wipe in-transit messages or subscription info. Persisting the JMS store is important for reliability, particularly in production.
+- **JMS data (ActiveMQ):** The embedded ActiveMQ broker uses a file-based storage (KahaDB) to persist messages and transactions. This by default resides on the container's filesystem under the `/var/lib/harmony-ap/broker` directory. If not persisted, a container restart could wipe in-transit messages or subscription info. Persisting the JMS store is important for reliability, particularly in production.
 
-In summary, without using volumes, each restart would act like a fresh installation: new keys, empty config, etc., which is not acceptable in production. Therefore, **using Docker volumes or bind mounts for `/var/opt/harmony-ap` or configuring the container to use the database for persistence is essential for a stable deployment**. This ensures that all configuration, security material, and message state are retained across container restarts or upgrades.
+In summary, without using volumes, each restart would act like a fresh installation: new keys, empty config, etc., which is not acceptable in production. Therefore, **using Docker volumes or bind mounts for `/var/lib/harmony-ap` or configuring the container to use the database for persistence is essential for a stable deployment**. This ensures that all configuration, security material, and message state are retained across container restarts or upgrades.
 
 > **Note:** While this document focuses on the Access Point itself, any other critical service used in the environment, such as the database or a potential ActiveMQ external broker, must also be configured with its own appropriate data persistence strategy.
 
@@ -287,8 +287,8 @@ In summary, without using volumes, each restart would act like a fresh installat
 
 For a single-instance deployment, you can use either:
 
-- **A Docker named volume (recommended for simplicity):** This is a volume managed by Docker. If you ran the quick start command with `-v harmony-ap-data:/var/opt/harmony-ap`, Docker created a volume named harmony-ap-data. All the state (configs, keystores, etc.) is now stored there. You can list volumes with `docker volume ls` and examine it with `docker volume inspect harmony-ap-data`. The advantage of a named volume is Docker will maintain it even if the container is removed. On container upgrades, you simply attach the same volume to the new container, and all prior state is present.
-- **A bind mount to a host directory** Alternatively, you might want the files directly accessible on the host (for backup or editing). In that case, create a directory on the host (e.g., `/srv/harmony-ap`) and mount it: `-v /srv/harmony-ap:/var/opt/harmony-ap`. Ensure that this directory has correct ownership and permissions as covered in the [File Permissions and User Considerations](#33-file-permissions-and-user-considerations) section below. The container will write its configuration and data files there, and you can inspect or modify them directly on the host.
+- **A Docker named volume (recommended for simplicity):** This is a volume managed by Docker. If you ran the quick start command with `-v harmony-ap-data:/var/lib/harmony-ap`, Docker created a volume named harmony-ap-data. All the state (configs, keystores, etc.) is now stored there. You can list volumes with `docker volume ls` and examine it with `docker volume inspect harmony-ap-data`. The advantage of a named volume is Docker will maintain it even if the container is removed. On container upgrades, you simply attach the same volume to the new container, and all prior state is present.
+- **A bind mount to a host directory** Alternatively, you might want the files directly accessible on the host (for backup or editing). In that case, create a directory on the host (e.g., `/srv/harmony-ap`) and mount it: `-v /srv/harmony-ap:/var/lib/harmony-ap`. Ensure that this directory has correct ownership and permissions as covered in the [File Permissions and User Considerations](#33-file-permissions-and-user-considerations) section below. The container will write its configuration and data files there, and you can inspect or modify them directly on the host.
 
 For more details on Docker storage options, see the [Docker Storage documentation](https://docs.docker.com/engine/storage/).
 
@@ -296,24 +296,25 @@ For more details on Docker storage options, see the [Docker Storage documentatio
 
 ```
 /srv/harmony-ap (or in volume)
-├── conf
-│   ├── server.xml (Tomcat configuration)
-│   ├── web.xml (web application configuration)
-│   └── ... (other config files)
-├── etc
-│   ├── domibus.properties
+├── tomcat
+│   ├── conf → /etc/harmony-ap/tomcat (symlink)
+│   └── work
+├── security
 │   ├── tls-keystore.p12
 │   ├── tls-truststore.p12
 │   ├── ap-keystore.p12
 │   ├── ap-truststore.p12
-│   ├── logback.xml (logging configuration)
-│   └── ... (other config files)
-├── work (ActiveMQ broker data directory, e.g., KahaDB files)
+│   └── certs
+├── broker (ActiveMQ data directory, e.g., KahaDB files)
+├── plugins
+│   └── lib (custom plugins)
+├── extensions
+│   └── lib
 ├── log (if file logging is enabled, log files might appear here)
-└── shared (if using shared storage in clustered setups)
+└── cluster (if using shared storage in clustered setups)
 ```
 
-All these reside under the `/var/opt/harmony-ap` inside the container, which is what you mounted to a volume or host directory.
+All these reside under the `/var/lib/harmony-ap` inside the container, which is what you mounted to a volume or host directory.
 
 By persisting this, you ensure that:
 
@@ -332,7 +333,7 @@ It's also possible to run the container under a custom user ID (for example, to 
 docker run -d --name harmony-ap \
   -u 1000:1000 \
   -p 8443:8443 \
-  -v /srv/harmony-ap:/var/opt/harmony-ap \
+  -v /srv/harmony-ap:/var/lib/harmony-ap \
   -e DB_HOST=... \
   niis/harmony-ap:<version>
 ```
@@ -345,7 +346,7 @@ When using **NFS or other distributed filesystems** for the volume (common in [c
 In a clustered setup (multiple Access Point containers working together), data persistence has an extra dimension. All nodes in the cluster must share certain data to stay in sync. Specifically, if using a file-based storage for messages or JMS, that storage must be accessible by all nodes. In practice, this means using a shared volume (network file system) for critical directories, or switching to database-backed storage to avoid file sharing.
 
 We will cover two clustering approaches in the [Clustering](#5-clustering-and-high-availability) section:
-  1. **Shared File System Mode:** All AP instances mount the same volume or network file system path at `/var/opt/harmony-ap`. This way, they literally share the same configuration and data files. This ensures they use identical configurations and can see each other's files (attachments, etc.). It's simple but requires a reliable NFS/SMB or similar setup. In this mode, you might run containers on different hosts but point them to the same NFS server path. Be cautious with file locking and performance on NFS.
+  1. **Shared File System Mode:** All AP instances mount the same volume or network file system path at `/var/lib/harmony-ap`. This way, they literally share the same configuration and data files. This ensures they use identical configurations and can see each other's files (attachments, etc.). It's simple but requires a reliable NFS/SMB or similar setup. In this mode, you might run containers on different hosts but point them to the same NFS server path. Be cautious with file locking and performance on NFS.
   2. **Database Storage Mode:** Harmony supports storing more data in the database (including certificates, secrets, etc.), which reduces the need for a shared filesystem. In this scenario, you could run multiple AP nodes with only the DB as the single source of truth. Harmony AP will share files like keystores and configuration files via the database, and each node can have its own local storage for temporary files. You also need to handle the JMS broker either via a shared persistent store or an external broker (discussed later). This mode can simplify deployment in cloud environments where a shared filesystem is not available, but it requires enabling the appropriate configuration for DB-based storage, for example, setting `CLUSTER_BACKEND=database` in the environment variables, as explained in the [Clustering](#5-clustering-and-high-availability) section.
 
 In either cluster scenario, **the database is always shared** among the nodes; that's how they share state about messages, users, etc. Each node will connect to the same DB schema.
@@ -363,7 +364,7 @@ Harmony Access Point is highly configurable. You can tweak settings via configur
 
 ### 4.1 Configuration Methods: Environment Variables vs. Parameter file
 
-**1. Environment Variables:** The Docker image accepts various environment variables to configure common settings (database connection, passwords, clustering flags, etc.). This is the Docker-friendly way to inject config at runtime without editing files inside the container. On startup, the container's entrypoint script reads these variables and apply them. For example, by writing `DB_HOST` and `DB_PASSWORD` into `domibus.properties` or by setting system properties for the JVM. Environment variables are easy to set via `docker run -e` flags or in a Docker Compose file. A list of supported variables and their meanings is provided in the [Environment Variable Reference](#131-environment-variable-reference) section later in this document.
+**1. Environment Variables:** The Docker image accepts various environment variables to configure common settings (database connection, passwords, clustering flags, etc.). This is the Docker-friendly way to inject config at runtime without editing files inside the container. On startup, the container's entrypoint script reads these variables and translates them into the corresponding application properties. Environment variables are easy to set via `docker run -e` flags or in a Docker Compose file. A list of supported variables and their meanings is provided in the [Environment Variable Reference](#131-environment-variable-reference) section later in this document.
 
 **2. Parameter File:** The Docker container also supports a parameter file that contains key-value pairs for configuration, as an alternative to passing environment variables. You can create a text file with entries in `VAR=value` format and mount it into the container, then use the `HARMONY_PARAM_FILE` environment variable to tell the container to read from it. Lines starting with `#` are comments and ignored.
 
@@ -379,7 +380,7 @@ Then run the container with:
 ```bash
 docker run -d --name harmony-ap \
   -p 8443:8443 \
-  -v harmony-ap-data:/var/opt/harmony-ap \
+  -v harmony-ap-data:/var/lib/harmony-ap \
   -v /path/to/harmony.properties:/etc/harmony.properties \
   -e HARMONY_PARAM_FILE=/etc/harmony.properties \
   niis/harmony-ap:<version>
@@ -416,25 +417,28 @@ Some of the most common parameters you'll configure (via env or file) include:
 
 Understanding the container's filesystem layout helps in locating and mounting the right files:
 
-- **/var/opt/harmony-ap:** The persistent working directory of the container (we often refer to this as `HARMONY_BASE`). This is where all runtime data resides. Key subdirectories:
-  - **conf/**: Tomcat server configuration files:
-    - `server.xml`: Defines connectors (HTTPS on 8443, etc.) and references to Keystore/Truststore paths and passwords. After installation, you can find the TLS keystore and truststore settings here.
-    - `web.xml`: Web application configuration (for example, session timeouts).
-    - `catalina.properties` and `logging.properties`: Tomcat properties and logging configuration.
-  - **etc/**: Harmony Access Point specific configuration:
-    - `domibus.properties`: The main configuration file for Access Point, containing numerous settings including database, JMS, clustering, features toggles, etc.
-    - `tls-keystore.p12`/`ap-keystore.p12`: The TLS keystore and truststore (for HTTPS).
-    - `tls-truststore.p12`/`ap-truststore.p12`: The AS4 message-level signing/encryption keystore and truststore.
-    - `logback.xml`: The logging configuration file for Harmony AP (Logback configuration).
-    - `policies/`: Directory for policy files, which define security policies for Access Point.
-    - `certs/`: Directory for public certificates.
-    - `internal/`: Directory for internal configuration files used by Access Point, such as the ActiveMQ embedded broker configuration.
-    - Other files/folders like client authentication for mTLS, web service plugin config, etc. (these come with defaults; advanced users may tweak them).
-  - **work/**: ActiveMQ broker's data directory (persistent message queue storage, if using embedded broker).
+- **/var/lib/harmony-ap:** The persistent working directory of the container (we often refer to this as `HARMONY_BASE`). This is where all runtime data resides. Key subdirectories:
+  - **tomcat/**: Tomcat runtime directory:
+    - `conf/`: Symlink to `/etc/harmony-ap/tomcat`, containing `server.xml` (connectors, TLS settings) and `logging.properties`.
+    - `work/`: Tomcat work directory.
+  - **security/**: Security material:
+    - `tls-keystore.p12`/`tls-truststore.p12`: The TLS keystore and truststore (for HTTPS).
+    - `ap-keystore.p12`/`ap-truststore.p12`: The AS4 message-level signing/encryption keystore and truststore.
+    - `certs/`: Directory for exported public certificates.
+  - **broker/**: ActiveMQ broker's data directory (persistent message queue storage, if using embedded broker).
+  - **plugins/lib/**: Directory for custom plugin JAR files.
+  - **extensions/lib/**: Directory for extension JAR files.
   - **log/**: Default directory for log files _if_ file-based logging is enabled. By default, the container logs to stdout only, so this may remain mostly empty unless you configure a file appender in Logback.
-  - **shared/**: In cluster mode with `filesystem` backend, this directory is used to share certain data among nodes (e.g., cluster state, the shared/secrets subfolder for encrypted secrets).
+  - **cluster/**: In cluster mode with `filesystem` backend, this directory is used to share certain data among nodes (e.g., cluster state, secrets).
+- **/etc/harmony-ap:** Configuration files directory (we often refer to this as `HARMONY_CONFIG`). Key files:
+  - `domibus.properties`: The main configuration file for Access Point.
+  - `logback.xml`: The logging configuration file (Logback configuration).
+  - `policies/`: Directory for security policy files.
+  - `activemq.xml`: Embedded ActiveMQ broker configuration.
+  - `tomcat/server.xml`: Tomcat server configuration (referenced via symlink from `HARMONY_BASE/tomcat/conf`).
+  - Other files like `clientauthentication.xml` for mTLS, `plugins/config/ws-plugin.properties`, etc.
 
-In summary, the main directory to care about is `/var/opt/harmony-ap` (persist it, back it up). The configuration can be done via environment for most high-level items, but for fine-grained settings you can either exec into the container to edit them (not recommended for long-term, since you'll likely redeploy containers) or mount replacements from the host for certain paths (for example, providing your own server.xml or logback.xml).
+In summary, the main directory to care about is `/var/lib/harmony-ap` (persist it, back it up). The configuration can be done via environment for most high-level items, but for fine-grained settings you can either exec into the container to edit them (not recommended for long-term, since you'll likely redeploy containers) or mount replacements from the host for certain paths (for example, providing your own logback.xml).
 
 ## 5 Clustering and High Availability
 
@@ -462,15 +466,15 @@ To enable clustering, you need to configure each container instance appropriatel
 - **Identify uniquely each node in the cluster**. Set a distinct `NODE_ID` environment variable for each instance (e.g., `NODE_ID=ap-node1`, `NODE_ID=ap-node2`, etc.). If not set, it will default to the container's hostname (which can change on each restart, making logs harder to follow). A consistent node ID helps in log analysis and in certain clustering decisions (the node with the lowest name runs may take certain roles).
 - **Choose a shared secret key**: Define `CLUSTER_SECRET_KEY=<some strong random string>` and use the same value on all nodes. This key is used to encrypt any secrets that need to be shared via the database or file system.
 - **Decide on filesystem vs database for files:** Choose how you'll handle file-based data:
-  - If using a **shared filesystem**, mount the same volume(s)/path(s) on all nodes. Usually the entire `/var/opt/harmony-ap` is shared, depending on needs. This ensures consistency, all nodes use identical config and keystores and see the same files. This is the simplest way to guarantee they won't diverge. However, it introduces a single point of failure (the volume or NFS server) and requires that changes are writing to a place accessible by all.
-  - If using **database storage for payloads and config** (like certificates, generated passwords, etc.)y, each node can operate independently with its own local storage for temporary files. To enable this, you would set the `CLUSTER_BACKEND` environment variable to `database` (the default is `filesystem`). This allows Access Point to store more data in the database rather than on disk, reducing the need for a shared filesystem. However, you still need to ensure that all nodes have access to the same database and share `/var/opt/harmony-ap/work` directory among all the nodes for ActiveMQ data if using embedded broker.
+  - If using a **shared filesystem**, mount the same volume(s)/path(s) on all nodes. Usually the entire `/var/lib/harmony-ap` is shared, depending on needs. This ensures consistency, all nodes use identical config and keystores and see the same files. This is the simplest way to guarantee they won't diverge. However, it introduces a single point of failure (the volume or NFS server) and requires that changes are writing to a place accessible by all.
+  - If using **database storage for payloads and config** (like certificates, generated passwords, etc.), each node can operate independently with its own local storage for temporary files. To enable this, you would set the `CLUSTER_BACKEND` environment variable to `database` (the default is `filesystem`). This allows Access Point to store more data in the database rather than on disk, reducing the need for a shared filesystem. However, you still need to ensure that all nodes have access to the same database and share `/var/lib/harmony-ap/broker` directory among all the nodes for ActiveMQ data if using embedded broker.
   > **Risk of Split-Brain with Shared Filesystems:** The filesystem clustering backend relies on advisory file locks (`flock`) for leader election. While robust on local filesystems, the consistency of `flock` over network filesystems like NFS can vary depending on the server implementation and configuration.
   >
   > In the event of a network partition, where a primary node is isolated but remains active, it's possible for another node to acquire the lock, leading to a "split-brain" scenario (two active primary nodes). This can cause data inconsistencies or race conditions.
   >
   > To mitigate this risk, ensure your shared storage is highly reliable and provides consistent locking semantics. For environments where this cannot be guaranteed, the `database` backend is recommended, as it uses the shared database for coordination and avoids filesystem locks, preventing split-brain scenarios.
 - **Configure the JMS broker to avoid conflicts:** Choose either the embedded or external.
-  - If embedded, but you haven't mounted `/var/opt/harmony-ap`, mount a **shared volume for ActiveMQ data** to all containers. In Docker Compose, you might define a volume and mount it at, `/var/opt/harmony-ap/work` on all instances. This way, all broker instances use the same KahaDB files and lock.
+  - If embedded, but you haven't mounted `/var/lib/harmony-ap`, mount a **shared volume for ActiveMQ data** to all containers. In Docker Compose, you might define a volume and mount it at `/var/lib/harmony-ap/broker` on all instances. This way, all broker instances use the same KahaDB files and lock.
   - If using an external broker, set `ACTIVEMQ_BROKER_HOST` and related variables so all nodes connect to the same broker service. Also ensure all nodes use the same `ACTIVEMQ_BROKER_USERNAME` and `ACTIVEMQ_BROKER_PASSWORD` if applicable.
 - **Ensure time synchronization**: All nodes should have synchronized clocks (use NTP on hosts). This helps with log correlation and certain time-based features (like message expiration).
 - **Load Balancing:** Deploy a load balancer in front of the nodes to distribute incoming traffic. The load balancer should direct AS4 traffic (the `/services/msh` endpoint) to all nodes (round-robin or any preferred algorithm). For the admin UI, configure the load balancer for sticky sessions (so that once an admin logs in, their subsequent requests go to the same node, or else they would have to log in again on a different node, see the [Load Balancing and Proxy](#8-load-balancing-and-proxy) section for more details on this).
@@ -479,7 +483,7 @@ In summary, to set up clustering:
 
 1. Use a single shared MySQL database for all instances.
 2. Set the cluster-related env vars on each container (or in the parameter file): `DEPLOYMENT_CLUSTERED=true`, `CLUSTER_SECRET_KEY=<secret>`, `NODE_ID=<uniqueName>`, and possibly `CLUSTER_BACKEND=database` if not using a shared volume.
-3. If using a shared volume for config/files, ensure all nodes mount it at `/var/opt/harmony-ap`. If not sharing a volume for config/files, but using embedded broker, ensure all nodes mount the same volume for ActiveMQ data at `/var/opt/harmony-ap/work`.
+3. If using a shared volume for config/files, ensure all nodes mount it at `/var/lib/harmony-ap`. If not sharing a volume for config/files, but using embedded broker, ensure all nodes mount the same volume for ActiveMQ data at `/var/lib/harmony-ap/broker`.
 4. Set up a load balancer to route traffic to the nodes. Verify that an incoming AS4 message (from a partner or test client) can be handled by any node and that the state (message status) is visible from the admin UI regardless of which node you check.
 5. Start the containers. On startup, they will detect cluster mode. The logs on each node should indicate that clustering is enabled and show the node joining the cluster.
 
@@ -499,14 +503,14 @@ By default, when you run the container, it starts an embedded ActiveMQ broker wi
 - The receive queue for incoming message processing tasks (though incoming messages come in via HTTP, certain processing steps might be queued internally)
 - Various internal tasks (e.g., trigger for retries, notifications).
 
-In a **single-node** deployment, the embedded ActiveMQ works out-of-the-box and requires no special configuration. It stores its persistent data (message states, transactions) in the container's work directory (`/var/opt/harmony-ap/work`). If the container restarts, any in-flight JMS messages (like undelivered messages waiting to retry) will be retained on disk and resumed upon startup, as long as the work directory is persisted.
+In a **single-node** deployment, the embedded ActiveMQ works out-of-the-box and requires no special configuration. It stores its persistent data (message states, transactions) in the container's broker directory (`/var/lib/harmony-ap/broker`). If the container restarts, any in-flight JMS messages (like undelivered messages waiting to retry) will be retained on disk and resumed upon startup, as long as the broker directory is persisted.
 
 **How to configure:** Some configuration options for the embedded broker include:
 
 - **Memory and Store Limits:** The ActiveMQ broker has internal memory usage limits for queue storage (beyond which it pages to disk) and a store limit for how much data to keep on disk. The defaults (which are 64 MB memory, and 512 MB store limit) can be adjusted by providing a custom `activemq.xml`. However, unless you expect to queue a large volume of messages or very large payloads, the defaults usually suffice.
 - **JMX Monitoring:** The embedded broker exposes a JMX port (1199 by default, within the container) for management. This allows connecting JConsole or other JMX tools to monitor broker metrics. By default, this port is not exposed outside the container. If you need to monitor it externally, you would have to expose it (e.g., `-p 1199:1199`) and potentially secure it.
 
-To customize the embedded broker, you can provide a base64-encoded `activemq.xml` configuration file via the environment variable `ACTIVEMQ_EMBEDDED_CONFIG_B64` or mount a custom `activemq.xml` file into the container at the location `ACTIVEMQ_EMBEDDED_CONFIG_PATH` (default is `/var/opt/harmony-ap/etc/activemq.xml`). The embedded broker will read this configuration on startup. The XML file should follow the standard ActiveMQ configuration format, allowing you to set parameters like memory limits, persistence options, and JMX settings.
+To customize the embedded broker, you can provide a base64-encoded `activemq.xml` configuration file via the environment variable `ACTIVEMQ_EMBEDDED_CONFIG_B64` or mount a custom `activemq.xml` file into the container at the location `ACTIVEMQ_EMBEDDED_CONFIG_PATH` (default is `/etc/harmony-ap/activemq.xml`). The embedded broker will read this configuration on startup. The XML file should follow the standard ActiveMQ configuration format, allowing you to set parameters like memory limits, persistence options, and JMX settings.
 
 **Using embedded brokers in an AP cluster:** In a cluster of Access Points, it's not recommended to run multiple embedded brokers unless you configure them to share the same data directory. If you do not share the data directory, each node will have its own broker instance, which can lead to message duplication or loss if not handled carefully.
 
@@ -592,12 +596,12 @@ By default, these files are created in format PKCS#12 on first run with placehol
 
 When the container starts it looks for four PKCS#12 files:
 
-| Purpose                                                    | Default Path                                 |
-|------------------------------------------------------------|----------------------------------------------|
-| TLS keystore (HTTPS certificate + key)                     | `/var/opt/harmony-ap/etc/tls-keystore.p12`   |
-| TLS truststore (trusted CAs or client certs for TLS)       | `/var/opt/harmony-ap/etc/tls-truststore.p12` |
-| AS4 message-level keystore (signing/encryption cert + key) | `/var/opt/harmony-ap/etc/ap-keystore.p12`    |
-| AS4 message-level truststore (partner or CA certs for AS4) | `/var/opt/harmony-ap/etc/ap-truststore.p12`  |
+| Purpose                                                    | Default Path                                      |
+|------------------------------------------------------------|---------------------------------------------------|
+| TLS keystore (HTTPS certificate + key)                     | `/var/lib/harmony-ap/security/tls-keystore.p12`   |
+| TLS truststore (trusted CAs or client certs for TLS)       | `/var/lib/harmony-ap/security/tls-truststore.p12` |
+| AS4 message-level keystore (signing/encryption cert + key) | `/var/lib/harmony-ap/security/ap-keystore.p12`    |
+| AS4 message-level truststore (partner or CA certs for AS4) | `/var/lib/harmony-ap/security/ap-truststore.p12`  |
 
 You can do provide/update them by using the four approaches below.
 
@@ -621,16 +625,16 @@ As the keystores/truststores in base64 are provided at runtime, they take the hi
 You can mount your certificate files into the container. For example, if you have `mykeystore.p12` on the host, you could do:
 
 ```bash
--v /path/on/host/mykeystore.p12:/var/opt/harmony-ap/etc/tls-keystore.p12
+-v /path/on/host/mykeystore.p12:/var/lib/harmony-ap/security/tls-keystore.p12
 ```
 
-This will overlay the existing certificate, if any, with your file. However, note that if you mount only specific files into a directory that is already a volume, it might not work as expected (when a directory is volume-mounted, individual file mounts might be overshadowed). Typically, you either volume mount the whole `/var/opt/etc/harmony-ap` (which contains the keystore) or you ensure that directory is not already volume and just mount files. Since we are mounting often `/var/opt/harmony-ap/` as a volume, the contents inside come from there. So a strategy can be:
+This will overlay the existing certificate, if any, with your file. However, note that if you mount only specific files into a directory that is already a volume, it might not work as expected (when a directory is volume-mounted, individual file mounts might be overshadowed). Typically, you either volume mount the whole `/var/lib/harmony-ap` (which contains the security directory) or you ensure that directory is not already volume and just mount files. Since we are mounting often `/var/lib/harmony-ap/` as a volume, the contents inside come from there. So a strategy can be:
 
-- Prepare the volume data in advance (populate the `/var/opt/harmony-ap/` files on host) before first run. Or
+- Prepare the volume data in advance (populate the `/var/lib/harmony-ap/` files on host) before first run. Or
 - Run once to get initial files, stop container, replace files on volume with yours, then start again.
 - Alternatively, you can mount the keystores/truststores at a different path, in that case you would need to set the environment variables to point to them. For example, if you mount your keystore at `/custom/path/tls-keystore.p12`, you would set `TLS_KEYSTORE_PATH=/custom/path/tls-keystore.p12` in the environment variables. Same applies to the other stores (`TLS_TRUSTSTORE_PATH`, `SECURITY_KEYSTORE_PATH`, `SECURITY_TRUSTSTORE_PATH`).
 
-The container always reads the keystore/truststore from the mounted file; therefore, if you add certificates through the admin UI, remember to also update the file on the host so that the changes persist. Modifying the file inside the container using keytool or a similar tool will persist the changes through container restarts as long as the changes are made to the mounted file. For example, using the read only mount option (`:ro`, e.g., `-v /path/on/host/mykeystore.p12:/var/opt/harmony-ap/etc/tls-keystore.p12:ro`) will not work as the container will not be able to write to the file, and thus it will not be able to update the keystore/truststore.
+The container always reads the keystore/truststore from the mounted file; therefore, if you add certificates through the admin UI, remember to also update the file on the host so that the changes persist. Modifying the file inside the container using keytool or a similar tool will persist the changes through container restarts as long as the changes are made to the mounted file. For example, using the read only mount option (`:ro`, e.g., `-v /path/on/host/mykeystore.p12:/var/lib/harmony-ap/security/tls-keystore.p12:ro`) will not work as the container will not be able to write to the file, and thus it will not be able to update the keystore/truststore.
 
 If mounting your own keystore or truststore files, ensure they are owned by the `harmony-ap` user (UID 999) and have appropriate permissions (`chmod 0640`, `chown harmony-ap`). The container will **not** start if it cannot read the keystore due to restrictive permissions. Conversely, if the permissions are too permissive, the security manager may reject the file for security reasons. It is recommended to match the permissions of existing files, generally owner read/write, group read, and no access for others.
 
@@ -640,7 +644,7 @@ You could import certificates into the existing keystores/truststores file using
 
 - For example, to import a new TLS certificate into the existing truststore, you could run:
   ```bash
-  docker exec -it harmony-ap-container-name keytool -importcert -file /path/to/your/cert.crt -keystore /var/opt/harmony-ap/etc/tls-truststore.p12 -storetype PKCS12 -alias your-cert-alias
+  docker exec -it harmony-ap-container-name keytool -importcert -file /path/to/your/cert.crt -keystore /var/lib/harmony-ap/security/tls-truststore.p12 -storetype PKCS12 -alias your-cert-alias
   ```
 - Once the certificate is imported, you need to restart the container for changes to take effect:
   ```bash
@@ -668,8 +672,8 @@ If you let the installer generate the certificates, but do not provide these pas
 
 The keystores/truststores passwords will not be printed to the logs for security reasons, but they can be found in the corresponding configuration files.
 
-- The TLS connector in Tomcat, configured in `server.xml`, uses the password for the TLS keystore and truststore.
-- For the AS4 message-level signing/encryption stores, the keystore and truststore are configured in `domibus.properties`.
+- The TLS keystore and truststore passwords are configured via the `TLS_KEYSTORE_PASSWORD` and `TLS_TRUSTSTORE_PASSWORD` environment variables.
+- The AS4 message-level keystore and truststore passwords are configured via the `SECURITY_KEYSTORE_PASSWORD` and `SECURITY_TRUSTSTORE_PASSWORD` environment variables.
 
 Given that the keystore/truststore passwords are sensitive, you should keep them secret and not hard-code them or share them publicly. If you use environment variables, ensure they are set securely in your deployment scripts or orchestration tools.
 
@@ -830,7 +834,7 @@ When the container starts, you will initially see log lines from the container's
 2025-07-26T22:31:10.916276Z INFO  [37d1834586db] [config-database-dbcli] Waiting for database harmony-db:3306 to become available...
 2025-07-26T22:31:16.965206Z INFO  [37d1834586db] [config-database-dbcli] Database is available
 ...
-2025-07-26T22:31:16.976941Z INFO  [37d1834586db] [init-logback] Logback configured at: /var/opt/harmony-ap/etc/logback.xml
+2025-07-26T22:31:16.976941Z INFO  [37d1834586db] [init-logback] Logback configured at: /etc/harmony-ap/logback.xml
 ```
 
 These lines (as shown in the example above) come from the shell scripts and initialization routines of the container. They cover events like reading configuration, waiting for the database to be available, generating or loading keystores, running database migrations, etc. The prefix `[harmony-entrypoint]`, `[config-...]`, `[init-...]`, `[svc-...]` indicates which part of the initialization is logging.
@@ -872,7 +876,7 @@ For more options, check the Docker image [Logging configuration](#1318-logging-c
 
 ##### 10.3.2 Application logs
 
-The Harmony Access Point uses Logback as the logging framework. The default configuration (located in `logback.xml` in the `/var/opt/harmony-ap/etc` directory) sets logging levels for various packages.
+The Harmony Access Point uses Logback as the logging framework. The default configuration (located in `logback.xml` in the `/etc/harmony-ap` directory) sets logging levels for various packages.
 
 In Logback each logger can have its own log level, which determines the minimum severity of messages that will be logged. The default configuration sets most components to `INFO`, meaning only informational messages will be logged. If you need to troubleshoot an issue, you might temporarily raise the log level to `DEBUG` for certain components.
 
@@ -886,18 +890,18 @@ For example, to log the SOAP messages being sent and received in AS4 exchanges, 
 
 **Ways to adjust logging in the application:** You can mount a custom `logback.xml` or use an environment variable to override it. Specifically, the container supports:
 
-- `LOGBACK_CONFIG_B64`: Base64-encoded custom `logback.xml` content. If you set this, on startup the container will decode it and replace the `/var/opt/harmony-ap/etc/logback.xml`.
-- `LOGBACK_CONFIG_PATH`: Alternatively, you could mount a file and point this variable to it, if not using the default path.
+- `LOGBACK_CONFIG_B64`: Base64-encoded custom `logback.xml` content. If you set this, on startup the container will decode it and place it at the configured logback path.
+- `LOGBACK_CONFIG_PATH`: Alternatively, you could mount a file and point this variable to it, if not using the default path (`/etc/harmony-ap/logback.xml`).
 
 After adjusting logs, you will often not need to leave `DEBUG` on in production as it can generate a lot of output (and sensitive information might appear, like message contents or passwords in debug logs). Use it when needed and revert to `INFO` or `WARN` for normal operations.
 
 ### 10.4 Difference Between Docker Logs and File Logs
 
-By default, the container is configured to log to console (stdout) only, and not to create separate log files on disk (the `/var/opt/harmony-ap/log/` directory remains mostly empty). This is typical for Docker, as the container's stdout is the primary log.
+By default, the container is configured to log to console (stdout) only, and not to create separate log files on disk (the `/var/lib/harmony-ap/log/` directory remains mostly empty). This is typical for Docker, as the container's stdout is the primary log.
 
 However, you can configure file logging if required:
 
-- The `logback.xml` can be modified to add a File appender. For example, you could log `INFO` and above to console, and also append to a rolling file under `/var/opt/harmony-ap/log/`.
+- The `logback.xml` can be modified to add a File appender. For example, you could log `INFO` and above to console, and also append to a rolling file.
 - If you do this, remember to persist the `log/` directory (it's under the main volume already). You might also need to manage rotation (Logback can be configured to rotate files based on size or date).
 
 If using file logs, you would then have to gather them from the container (e.g., via docker cp or mounting the log directory to the host). Many find it easier to stick with console logging and use external tools to collect logs.
@@ -925,11 +929,11 @@ Below is an excerpt of a container startup log showing both entrypoint and appli
 2025-07-26T22:31:10.771Z INFO  [harmony-entrypoint] Starting Harmony Access Point
 2025-07-26T22:31:10.813Z INFO  [config-environment] Set environment variable: DB_PASSWORD
 2025-07-26T22:31:16.965Z INFO  [config-database-dbcli] Database is available
-2025-07-26T22:31:17.000Z INFO  [init-domibus-crtcli] No keystore found and no base64 provided. Creating new keystore. [store=/var/opt/harmony-ap/etc/ap-keystore.p12]
+2025-07-26T22:31:17.000Z INFO  [init-domibus-crtcli] No keystore found and no base64 provided. Creating new keystore. [store=/var/lib/harmony-ap/security/ap-keystore.p12]
 2025-07-26T22:31:19.178Z INFO  [init-database] Database not initialized. Running migrations for the first time
 2025-07-26 22:31:24,509 [main]  INFO org.apache.catalina.startup.VersionLoggerListener.log Server version name:   Apache Tomcat/9.0.107
-2025-07-26 22:31:24,714 [main]  INFO org.apache.tomcat.util.net.AbstractEndpoint.logCertificate Connector [https-jsse-nio-8443], TLS certificate [selfsigned] configured from keystore [/var/opt/harmony-ap/etc/tls-keystore.p12]
-2025-07-26 22:31:26,896 []  INFO e.d.c.l.LogbackLoggingConfigurator:54 - Using the logback configuration file from [/var/opt/harmony-ap/etc/logback.xml]
+2025-07-26 22:31:24,714 [main]  INFO org.apache.tomcat.util.net.AbstractEndpoint.logCertificate Connector [https-jsse-nio-8443], TLS certificate [selfsigned] configured from keystore [/var/lib/harmony-ap/security/tls-keystore.p12]
+2025-07-26 22:31:26,896 []  INFO e.d.c.l.LogbackLoggingConfigurator:54 - Using the logback configuration file from [/etc/harmony-ap/logback.xml]
 2025-07-26 22:31:33,461 [harmony_ap@172.18.0.2]  INFO e.d.c.s.DomibusSessionConfiguration:73 - Session cookie name set to [JSESSIONID].
 2025-07-26 22:31:35.081Z INFO  [main] org.apache.coyote.AbstractProtocol.start Starting ProtocolHandler ["https-jsse-nio-8443"]
 2025-07-26 22:31:35.090Z INFO  [main] org.apache.catalina.startup.Catalina.start Server startup in [10375] milliseconds
@@ -972,19 +976,19 @@ Harmony AP supports plugins to integrate with back-end systems or to customize c
 
 ```dockerfile
 FROM niis/harmony-ap:<version>
-COPY my-custom-plugin.jar /opt/harmony-ap/plugins/lib/
-COPY plugin-config.xml /opt/harmony-ap/plugins/config/
+COPY my-custom-plugin.jar /usr/local/lib/harmony-ap/plugins/lib/
+COPY plugin-config.xml /usr/local/lib/harmony-ap/plugins/config/
 ```
 
 This approach bakes the plugin into the image. You would then deploy using your custom image. It's straightforward and ensures the plugin is always present.
 
-**Mount plugins at runtime:** Alternatively, you could mount a volume or host folder containing the plugin JAR and any config into the container's plugins folder. For example:
+**Mount plugins at runtime:** Alternatively, you could mount a volume or host folder containing the plugin JAR into the container's custom plugins directory. For example:
 
 ```bash
--v /host/plugins:/opt/harmony-ap/plugins
+-v /host/plugins:/usr/local/lib/harmony-ap/plugins/lib
 ```
 
-This would inject your plugin without creating a new image. One challenge here is that the container's `/opt/harmony-ap/plugins/lib` already contains the `ws-plugin.jar`. If you mount a directory onto `plugins/lib`, you might override the entire directory. To avoid that, you could mount the individual file (some Docker versions allow mounting a single file) or use a content init container (in Kubernetes, for instance) to inject the file onto a volume that is shared with the AP container. In Docker Compose, a named volume for plugins could be populated by one container and then used by the AP container.
+This would inject your plugin without creating a new image. The container keeps default plugins (like `ws-plugin.jar`) in `/usr/lib/harmony-ap/plugins/lib` and links them into the runtime directory. Custom plugins placed in `/usr/local/lib/harmony-ap/plugins/lib` are loaded alongside the defaults. You could also mount individual JAR files or use a content init container (in Kubernetes, for instance) to inject files onto a volume that is shared with the AP container. In Docker Compose, a named volume for plugins could be populated by one container and then used by the AP container.
 
 **Activation:** Ensure that any plugin configuration (e.g., enabling it in `domibus.properties` or providing necessary properties) is done. For example, a plugin might require certain properties like URLs or credentials for a backend. You can set them via environment variables (using the `domibus_*` [dynamic mapping](#13110-dynamic-mapping-of-environment-variables-to-configuration-parameters), explained below) or by editing the file on the volume.
 
@@ -1017,7 +1021,7 @@ The PMode (Processing Mode) configuration defines the agreements, roles, and mes
 You can manage PMode configurations in several ways:
 
 - Set the environment variable `PMODE_CONFIG_B64` with the base64-encoded content of your custom `pmode.xml`. The container will decode it and place it in the expected location.
-- Mount a custom `pmode.xml` file into the container at `PMODE_CONFIG_PATH` which by default is `/var/opt/harmony-ap/etc/pmode.xml`.
+- Mount a custom `pmode.xml` file into the container at `PMODE_CONFIG_PATH` which by default is `/etc/harmony-ap/pmode.xml`.
 
 This mechanism is mainly for automating deployment. Harmony AP will check if there is any change in the PMode configuration and will reupload it automatically. In clustered deployments, this action will be performed by the primary node, ensure that all nodes have the same PMode configuration to avoid inconsistencies. In order to perform this action, the variables `ADMIN_USER` and `ADMIN_PASSWORD` must be set, as the PMode upload requires admin credentials.
 
@@ -1032,7 +1036,7 @@ In some scenarios, you might want to initialize the container (set up config and
 ```bash
 # Example Docker command for init mode
 docker run -d --name harmony-ap -p 8443:8443 \
-  -v harmony-ap-data:/var/opt/harmony-ap \
+  -v harmony-ap-data:/var/lib/harmony-ap \
   -e DB_HOST=... \
   niis/harmony-ap:<version> init
 ```
@@ -1052,7 +1056,7 @@ This approach can be useful for baking in certain config in a CI/CD pipeline or 
 
 ### 11.5 Recap of Customization Best Practices
 
-**Do not edit container internal files that are not on the volume:** If you want to change something in `/opt/harmony-ap` (the read-only part of the image), consider whether there's an environment variable or volume override for it. Most config is designed to be overridden via the volume (in `/var/opt/harmony-ap`). If you really must change something in `/opt/harmony-ap` (like adding an extension), it's probably better to build a custom image.
+**Do not edit container internal files that are not on the volume:** If you want to change something in `/usr/lib/harmony-ap` (the read-only part of the image), consider whether there's an environment variable or volume override for it. Most config is designed to be overridden via environment variables or through files in `/var/lib/harmony-ap` and `/etc/harmony-ap`. If you really must change something in `/usr/lib/harmony-ap` (like adding an extension), it's probably better to build a custom image.
 
 **Keep customizations documented:** If you change `domibus.properties` or other files, note what was changed, in case you need to reapply it after an upgrade.
 
@@ -1071,7 +1075,7 @@ Harmony Access Point periodically releases new versions with improvements, secur
 1. **Read Release Notes:** Always start by reading the release notes for the new version (available on the NIIS Confluence). Pay attention to any breaking changes or special migration steps. The release notes will instruct you to add or change certain configuration values, or to run additional scripts if needed.
 2. **Backup:** Prior to updating, take backups:
    - **Database Backup:** Perform a SQL dump or snapshot of the database. The update might involve DB schema changes (applied via Liquibase automatically), and having a backup allows you to rollback if needed by restoring the DB.
-   - **Configuration Backup:** Since your config is probably on a volume, you can back up that volume (e.g., tar the `/var/opt/harmony-ap` directory, or if using named volume, use `docker run --rm -v harmony-ap-data:/data alpine tar czf /host/backup.tgz /data` as one approach).
+   - **Configuration Backup:** Since your config is probably on a volume, you can back up that volume (e.g., tar the `/var/lib/harmony-ap` directory, or if using named volume, use `docker run --rm -v harmony-ap-data:/data alpine tar czf /host/backup.tgz /data` as one approach).
    - Also note down the current image version for reference.
 3. **Maintenance Window:** Plan for a maintenance window or at least a brief downtime. In a cluster, you might do rolling upgrades, but as a safe measure, it's often simpler to stop all nodes, upgrade, then start them (especially if DB schema changes are not backward compatible).
 
@@ -1146,7 +1150,7 @@ niis/harmony-ap:1.0                 # Updated to point to 1.0.1
    - Update your production deployment to use the tested immutable tag
    - Document the version change in your change log
 
-**Note:** Security refreshes update only the base operating system and system libraries. The Harmony Access Point application code remains identical. If you're using an immutable tag like `2.6.0`, you won't automatically receive these security updates. Review release notes or security bulletins to determine when to update to a newer tag with security patches.
+**Note:** Security refreshes update only the base operating system and system libraries. The Harmony Access Point application code remains identical. If you're using an immutable tag like `1.0.0`, you won't automatically receive these security updates. Review release notes or security bulletins to determine when to update to a newer tag with security patches.
 
 ### 12.2 Upgrade Procedure
 
@@ -1160,7 +1164,7 @@ For a non-clustered environment (single instance):
   ```bash
   docker run -d --name harmony-ap \
     -p 8443:8443 \
-    -v harmony-ap-data:/var/opt/harmony-ap \
+    -v harmony-ap-data:/var/lib/harmony-ap \
     -e DB_HOST=... -e DB_USER=... -e DB_PASSWORD=... \
     -e (other envs) \
     niis/harmony-ap:<new-version>
@@ -1234,15 +1238,15 @@ Below is a reference table of common environment variables supported by the Harm
 
 #### 13.1.2 Core Access Point settings
 
-| Variable                    | Description                                                                                           | Default Value                         | Required |
-|-----------------------------|-------------------------------------------------------------------------------------------------------|---------------------------------------|----------|
-| `ADMIN_USER`                | Admin user for the Access Point.                                                                      | `harmony`                             | No       |
-| `ADMIN_PASSWORD`            | Admin password for the Access Point. Generated automatically if not set.                              | *generated*                           | No       |
-| `USE_DYNAMIC_DISCOVERY`     | Enables dynamic discovery. See [Dynamic Discovery Configuration Guide](#Ref_UG-DDCG)                  | `false`                               | No       |
-| `SML_ZONE`                  | SML zone that you want to use; if unsure, please contact the domain authority of the policy.          | —                                     | No       |
-| `PRESERVE_BACKUP_FILE_DATE` | Controls whether backup tries to preserve file modification data. Some filesystems do not allow this. | *calculated*                          | No       |
-| `APPLICATION_CONFIG_PATH`   | Path to the `domibus.properties` file.                                                                | `HARMONY_BASE/etc/domibus.properties` | No       |
-| `EXTRA_POLICIES_PATH`       | Path to a directory with additional AS4 policy files to copy into the container policies directory.   | —                                     | No       |
+| Variable                    | Description                                                                                           | Default Value                       | Required |
+|-----------------------------|-------------------------------------------------------------------------------------------------------|-------------------------------------|----------|
+| `ADMIN_USER`                | Admin user for the Access Point.                                                                      | `harmony`                           | No       |
+| `ADMIN_PASSWORD`            | Admin password for the Access Point. Generated automatically if not set.                              | *generated*                         | No       |
+| `USE_DYNAMIC_DISCOVERY`     | Enables dynamic discovery. See [Dynamic Discovery Configuration Guide](#Ref_UG-DDCG)                  | `false`                             | No       |
+| `SML_ZONE`                  | SML zone that you want to use; if unsure, please contact the domain authority of the policy.          | —                                   | No       |
+| `PRESERVE_BACKUP_FILE_DATE` | Controls whether backup tries to preserve file modification data. Some filesystems do not allow this. | *calculated*                        | No       |
+| `APPLICATION_CONFIG_PATH`   | Path to the `domibus.properties` file.                                                                | `HARMONY_CONFIG/domibus.properties` | No       |
+| `EXTRA_POLICIES_PATH`       | Path to a directory with additional AS4 policy files to copy into the container policies directory.   | —                                   | No       |
 
 #### 13.1.3 Clustering and HA
 
@@ -1267,7 +1271,7 @@ Below is a reference table of common environment variables supported by the Harm
 |--------------|----------------------------------------------------|--------------------------|----------|
 | `PARTY_NAME` | Short name of the Access Point owner organisation. | `selfsigned`             | No       |
 | `CERT_ALIAS` | Alias for generated certificates.                  | `PARTY_NAME`             | No       |
-| `CERT_DIR`   | Export location for public certs.                  | `HARMONY_BASE/etc/certs` | No       |
+| `CERT_DIR`   | Export location for public certs.                  | `HARMONY_SECURITY/certs` | No       |
 
 **TLS certificates:**
 
@@ -1277,10 +1281,10 @@ Below is a reference table of common environment variables supported by the Harm
 | `TLS_DNAME`               | Distinguished Name for TLS cert. If omitted, derived from the FQDN.        | `CN=TLS_FQDN`                                  | No       |
 | `TLS_SAN`                 | Subject Alternative Names for TLS cert. If omitted, derived from the FQDN. | `DNS:TLS_FQDN`                                 | No       |
 | `TLS_KEYSTORE_B64`        | Base64-encoded TLS keystore (PKCS#12).                                     | —                                              | No       |
-| `TLS_KEYSTORE_PATH`       | Path to the TLS keystore on the filesystem. Can be mounted.                | `HARMONY_BASE/etc/tls-keystore.p12`            | No       |
+| `TLS_KEYSTORE_PATH`       | Path to the TLS keystore on the filesystem. Can be mounted.                | `HARMONY_SECURITY/tls-keystore.p12`            | No       |
 | `TLS_KEYSTORE_PASSWORD`   | Password for TLS keystore.                                                 | *generated*                                    | No       |
 | `TLS_TRUSTSTORE_B64`      | Base64-encoded TLS truststore (PKCS#12).                                   | —                                              | No       |
-| `TLS_TRUSTSTORE_PATH`     | Path to the TLS truststore on the filesystem. Can be mounted.              | `HARMONY_BASE/etc/tls-truststore.p12`          | No       |
+| `TLS_TRUSTSTORE_PATH`     | Path to the TLS truststore on the filesystem. Can be mounted.              | `HARMONY_SECURITY/tls-truststore.p12`          | No       |
 | `TLS_TRUSTSTORE_PASSWORD` | Password for TLS truststore.                                               | *generated*                                    | No       |
 | `TLS_PUBLIC_CERT_NAME`    | Exported public cert filename prefix.                                      | `tls`                                          | No       |
 | `TLS_PUBLIC_CERT_PATH`    | Path to the exported public certificate.                                   | `CERT_DIR/TLS_PUBLIC_CERT_NAME-CERT_ALIAS.cer` | No       |
@@ -1291,10 +1295,10 @@ Below is a reference table of common environment variables supported by the Harm
 |--------------------------------|---------------------------------------------------------------------------|-----------------------------------------------------|----------|
 | `SECURITY_DNAME`               | Distinguished Name for AS4 cert. If omitted, derived from the party name. | `CN=PARTY_NAME`                                     | No       |
 | `SECURITY_KEYSTORE_B64`        | Base64-encoded AS4 signing/encryption keystore (PKCS#12).                 | —                                                   | No       |
-| `SECURITY_KEYSTORE_PATH`       | Path to AS4 keystore. on the filesystem. Can be mounted.                  | `HARMONY_BASE/etc/ap-keystore.p12`                  | No       |
+| `SECURITY_KEYSTORE_PATH`       | Path to AS4 keystore on the filesystem. Can be mounted.                   | `HARMONY_SECURITY/ap-keystore.p12`                  | No       |
 | `SECURITY_KEYSTORE_PASSWORD`   | Password for AS4 keystore.                                                | *generated*                                         | No       |
 | `SECURITY_TRUSTSTORE_B64`      | Base64-encoded AS4 truststore (PKCS#12).                                  | —                                                   | No       |
-| `SECURITY_TRUSTSTORE_PATH`     | Path to AS4 truststore. Can be mounted.                                   | `HARMONY_BASE/etc/ap-truststore.p12`                | No       |
+| `SECURITY_TRUSTSTORE_PATH`     | Path to AS4 truststore. Can be mounted.                                   | `HARMONY_SECURITY/ap-truststore.p12`                | No       |
 | `SECURITY_TRUSTSTORE_PASSWORD` | Password for AS4 truststore.                                              | *generated*                                         | No       |
 | `SECURITY_PUBLIC_CERT_NAME`    | Exported public cert filename prefix.                                     | `security`                                          | No       |
 | `SECURITY_PUBLIC_CERT_PATH`    | Path to the exported public certificate.                                  | `CERT_DIR/SECURITY_PUBLIC_CERT_NAME-CERT_ALIAS.cer` | No       |
@@ -1312,15 +1316,16 @@ Below is a reference table of common environment variables supported by the Harm
 
 | Variable                 | Description                                                                                       | Default Value       | Required |
 |--------------------------|---------------------------------------------------------------------------------------------------|---------------------|----------|
-| `ACTIVEMQ_JMX_PORT`      | Port used in the ActiveMQ/s JMX monitoring URI.                                                   | `1199`              | No       |
+| `ACTIVEMQ_JMX_ACTIVE`    | Enables or disables JMX monitoring for the embedded ActiveMQ broker.                              | `true`              | No       |
+| `ACTIVEMQ_JMX_PORT`      | Port used in the ActiveMQ's JMX monitoring URI.                                                   | `1199`              | No       |
 
 **Messaging broker with embedded broker:**
 
-| Variable                        | Description                                 | Default Value                            | Required |
-|---------------------------------|---------------------------------------------|------------------------------------------|----------|
-| `ACTIVEMQ_EMBEDDED_CONFIG_B64`  | Base64-encoded embedded broker config file. | —                                        | No       |
-| `ACTIVEMQ_EMBEDDED_CONFIG_PATH` | Template for embedded broker config file.   | `HARMONY_BASE/etc/internal/activemq.xml` | No       |
-| `ACTIVEMQ_WORK_LOCATION`        | Location for the broker data.               | `HARMONY_BASE/work`                      | No       |
+| Variable                        | Description                                 | Default Value                 | Required |
+|---------------------------------|---------------------------------------------|-------------------------------|----------|
+| `ACTIVEMQ_EMBEDDED_CONFIG_B64`  | Base64-encoded embedded broker config file. | —                             | No       |
+| `ACTIVEMQ_EMBEDDED_CONFIG_PATH` | Template for embedded broker config file.   | `HARMONY_CONFIG/activemq.xml` | No       |
+| `ACTIVEMQ_WORK_LOCATION`        | Location for the broker data.               | `HARMONY_BASE/broker`         | No       |
 
 **Messaging broker with external broker:**
 
@@ -1334,23 +1339,23 @@ Below is a reference table of common environment variables supported by the Harm
 
 #### 13.1.7 PMode management
 
-| Variable               | Description                                               | Default Value                | Required |
-|------------------------|-----------------------------------------------------------|------------------------------|----------|
-| `PMODE_CONFIG_B64`     | Base64-encoded PMode XML.                                 | —                            | No       |
-| `PMODE_CONFIG_PATH`    | Path to the PMode file on the filesystem. Can be mounted. | `HARMONY_BASE/etc/pmode.xml` | No       |
-| `PMODE_ADMIN_USER`     | Temporary admin user for PMode upload.                    | `pmode_uploader`             | No       |
-| `PMODE_ADMIN_PASSWORD` | Temporary admin password for PMode upload.                | *generated*                  | No       |
-| `PMODE_MAX_RETRIES`    | How many times to retry PMode upload if AP not ready.     | `60`                         | No       |
-| `PMODE_RETRY_INTERVAL` | Interval between retries for PMode upload in seconds.     | `5`                          | No       |
+| Variable               | Description                                               | Default Value              | Required |
+|------------------------|-----------------------------------------------------------|----------------------------|----------|
+| `PMODE_CONFIG_B64`     | Base64-encoded PMode XML.                                 | —                          | No       |
+| `PMODE_CONFIG_PATH`    | Path to the PMode file on the filesystem. Can be mounted. | `HARMONY_CONFIG/pmode.xml` | No       |
+| `PMODE_ADMIN_USER`     | Temporary admin user for PMode upload.                    | `pmode_uploader`           | No       |
+| `PMODE_ADMIN_PASSWORD` | Temporary admin password for PMode upload.                | *generated*                | No       |
+| `PMODE_MAX_RETRIES`    | How many times to retry PMode upload if AP not ready.     | `60`                       | No       |
+| `PMODE_RETRY_INTERVAL` | Interval between retries for PMode upload in seconds.     | `5`                        | No       |
 
 #### 13.1.8 Logging configuration
 
 **Logback configuration:**
 
-| Variable              | Description                                                 | Default Value                  | Required |
-|-----------------------|-------------------------------------------------------------|--------------------------------|----------|
-| `LOGBACK_CONFIG_B64`  | Base64-encoded custom Logback configuration.                | —                              | No       |
-| `LOGBACK_CONFIG_PATH` | Path to the logback file on the filesystem. Can be mounted. | `HARMONY_BASE/etc/logback.xml` | No       |
+| Variable              | Description                                                 | Default Value                | Required |
+|-----------------------|-------------------------------------------------------------|------------------------------|----------|
+| `LOGBACK_CONFIG_B64`  | Base64-encoded custom Logback configuration.                | —                            | No       |
+| `LOGBACK_CONFIG_PATH` | Path to the logback file on the filesystem. Can be mounted. | `HARMONY_CONFIG/logback.xml` | No       |
 
 **Docker image logging configuration:**
 
@@ -1363,11 +1368,14 @@ Below is a reference table of common environment variables supported by the Harm
 
 Is not recommended to change these, but you can if needed.
 
-| Variable       | Description                                   | Default Value         | Required |
-|----------------|-----------------------------------------------|-----------------------|----------|
-| `HARMONY_BASE` | Base directory for runtime data (persistent). | `/var/opt/harmony-ap` | No       |
-| `HARMONY_HOME` | Installation directory (read-only binaries).  | `/opt/harmony-ap`     | No       |
-| `TEMP_DIR`     | Working directory for entrypoint scripts.     | `/tmp/harmony-ap`     | No       |
+| Variable           | Description                                         | Default Value               | Required |
+|--------------------|-----------------------------------------------------|-----------------------------|----------|
+| `HARMONY_BASE`     | Base directory for runtime data (persistent).       | `/var/lib/harmony-ap`       | No       |
+| `HARMONY_HOME`     | Installation directory (read-only binaries).        | `/usr/lib/harmony-ap`       | No       |
+| `HARMONY_ADDONS`   | Base directory for operator plugins and extensions. | `/usr/local/lib/harmony-ap` | No       |
+| `HARMONY_CONFIG`   | Configuration files directory.                      | `/etc/harmony-ap`           | No       |
+| `HARMONY_SECURITY` | Security material directory (keystores, certs).     | `HARMONY_BASE/security`     | No       |
+| `TEMP_DIR`         | Working directory for entrypoint scripts.           | `/tmp/harmony-ap`           | No       |
 
 #### 13.1.10 Dynamic mapping of environment variables to configuration parameters
 
@@ -1405,14 +1413,14 @@ Here are some useful tips for debugging issues and accessing logs:
 
 Here are some useful tips for debugging issues:
 
-**Container starts then exits quickly:**  Do `docker logs` to see why. Possibly DB connection failed (check network or credentials), or volume permission issue (check the logs for file permission errors). If permission, ensure `/var/opt/harmony-ap` is owned by UID 999 on host. Setting `LOG_LEVEL=DEBUG` can help see more details.
+**Container starts then exits quickly:**  Do `docker logs` to see why. Possibly DB connection failed (check network or credentials), or volume permission issue (check the logs for file permission errors). If permission, ensure `/var/lib/harmony-ap` is owned by UID 999 on host. Setting `LOG_LEVEL=DEBUG` can help see more details.
 
 **Messages failing with security errors:** Likely certificate/trust issues. Check that your truststore contains the partner's certificate or the partner's certificate is valid. The error in logs will say something about signature verification or decryption. Enabling debug on security can help. Ensure your own certs are correct (did you accidentally use wrong key?). Use the Admin UI's certificate section to verify if needed.
 
 **Cannot log in to Admin UI (wrong password):** If you forgot the admin password and there is no other admin that can reset it through the UI, you can reset it by connecting to the DB and updating the `USER_PASSWORD` field the `TB_USER` table (which is hashed). To hash the new password:
   ```bash
   docker exec -it <ap_container> \
-    java -cp "/opt/harmony-ap/webapps/ROOT/WEB-INF/lib/*" \
+    java -cp "/usr/lib/harmony-ap/webapps/ROOT/WEB-INF/lib/*" \
       eu.domibus.api.util.BCryptPasswordHash "new_password"
   ```
 Best is not to lose it: set via env on first install or note the generated one from logs after first run.

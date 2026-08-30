@@ -1,0 +1,71 @@
+#!/bin/bash
+set -euo pipefail
+
+source /usr/lib/harmony-ap/lib/harmony-common
+
+parse_cli_args() {
+  SKIP_EXISTING=true
+  ALLOWLIST=""
+
+  # shellcheck disable=SC2034 # Used in sourced scripts
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      --path) PATH_FILE="$2"; shift 2 ;;
+      --stage) STAGE="${2:+$2-}pfile"; shift 2 ;;
+      --node-id) NODE_ID="$2"; shift 2 ;;
+      --allowlist) ALLOWLIST="$2"; shift 2 ;;
+      --skip-existing) SKIP_EXISTING=true; shift ;;
+      --no-skip-existing) SKIP_EXISTING=false; shift ;;
+      *) die "Unknown option: $1" ;;
+    esac
+  done
+}
+
+is_allowed_key() {
+  local key="$1"
+  if [[ -z "$ALLOWLIST" ]]; then
+    return 0
+  fi
+  IFS=',' read -r -a allowed <<< "$ALLOWLIST"
+  for item in "${allowed[@]}"; do
+    if [[ "$key" == "$item" ]]; then
+      return 0
+    fi
+  done
+  return 1
+}
+
+write_env_file() {
+  local key="$1" value="$2"
+  printf "%s" "$value" > "/var/run/s6/container_environment/$key"
+}
+
+load_param_file() {
+  if [[ -z "${PATH_FILE:-}" || ! -f "$PATH_FILE" ]]; then
+    die "Parameter file not found: $PATH_FILE"
+  fi
+
+  log INFO "Reading parameters from $PATH_FILE..."
+  while IFS='=' read -r key value || [[ -n "$key" ]]; do
+    value=${value%$'\r'}
+
+    [[ "$key" =~ ^#.*$ || -z "$key" || -z "$value" ]] && continue
+    is_allowed_key "$key" || continue
+
+    if [[ "$SKIP_EXISTING" == true && -n "${!key:-}" ]]; then
+      continue
+    fi
+
+    write_env_file "$key" "$value"
+    log DEBUG "Added environment variable: $key"
+  done < "$PATH_FILE"
+}
+
+main() {
+  parse_cli_args "$@"
+  load_param_file
+}
+
+if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
+  main "$@"
+fi

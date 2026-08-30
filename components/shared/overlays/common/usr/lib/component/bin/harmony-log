@@ -1,0 +1,70 @@
+#!/bin/bash
+set -euo pipefail
+
+: "${LOG_LEVEL:=INFO}"
+: "${LOG_OUTPUT:=stderr}"
+: "${LOG_FORMAT:=plain}"
+: "${LOG_TIMESTAMP_FMT:=%Y-%m-%dT%H:%M:%S.%6NZ}"
+
+declare -A LEVEL_NUM=([ERROR]=0 [WARN]=1 [INFO]=2 [DEBUG]=3)
+
+harmony_log() {
+  local level stage message num_level num_threshold
+
+  if (( $# < 4 )); then
+    echo "[ERROR] Usage: harmony_log LEVEL NODE-ID STAGE MESSAGE" >&2
+    return 1
+  fi
+
+  level="${1^^}"; node_id="$2"; stage="$3"; message="$4"
+
+  case "$level" in
+    ERROR|WARN|INFO|DEBUG) ;;
+    *) echo "[ERROR] Invalid log level: '$level'" >&2; return 1 ;;
+  esac
+
+  local threshold="${LOG_LEVEL^^}"
+  if [[ -z "${LEVEL_NUM[$threshold]+_}" ]]; then
+    echo "[ERROR] Invalid LOG_LEVEL: '$threshold'" >&2
+    return 1
+  fi
+
+  num_level=${LEVEL_NUM[$level]}
+  num_threshold=${LEVEL_NUM[$threshold]}
+
+  if (( num_level > num_threshold )); then
+    return 0
+  fi
+
+  local entry
+  case "$LOG_FORMAT" in
+    plain)
+      local prefix="${stage:+${stage}: }"
+      case "$level" in
+        ERROR) printf -v entry "%sERROR: %s" "$prefix" "$message" ;;
+        WARN)  printf -v entry "%sWARNING: %s" "$prefix" "$message" ;;
+        *)     printf -v entry "%s%s" "$prefix" "$message" ;;
+      esac
+      ;;
+    structured)
+      local timestamp
+      timestamp=$(date -u +"$LOG_TIMESTAMP_FMT")
+      printf -v entry "%s %-5s [%s] [%s] %s" "$timestamp" "$level" "$node_id" "$stage" "$message"
+      ;;
+    *)
+      printf -v entry "%s" "$message"
+      ;;
+  esac
+
+  case "$LOG_OUTPUT" in
+    stdout)  echo "$entry";;
+    stderr)  echo "$entry" >&2;;
+    syslog)  logger -t "$stage" -p "user.${level,,}" "$message";;
+    file)    echo "$entry" >>"$LOG_FILE";;
+    *) echo "[ERROR] Unknown LOG_OUTPUT: '$LOG_OUTPUT'" >&2; return 1;;
+  esac
+}
+
+if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
+  harmony_log "$@"
+fi

@@ -24,6 +24,7 @@ ARG AP_GID="999"
 
 ENV PS1="$(whoami)@$(hostname):$(pwd)\\$ " \
     DEBIAN_FRONTEND=noninteractive \
+    HARMONY_COMPONENT_LABEL="Access Point" \
     HARMONY_VERSION=$VERSION \
     S6_VERBOSITY=1
 
@@ -38,32 +39,32 @@ LABEL org.opencontainers.image.vendor="Nordic Institute for Interoperability Sol
 RUN set -eux; \
     apt-get update -qq; \
     apt-get install -qqy --no-install-recommends \
-      crudini \
+      ca-certificates \
       curl \
       grep \
       jq \
       mysql-client \
       openjdk-11-jre-headless \
+      openssl \
       sed \
-      tzdata \
-      xmlstarlet; \
+      tzdata; \
     groupadd --gid "$AP_GID" harmony-ap; \
     useradd --system --uid "$AP_UID" --gid "$AP_GID" harmony-ap; \
-    install -d -m 750 -o harmony-ap -g harmony-ap /var/opt/harmony-ap /var/tmp/harmony-ap; \
     rm -rf /var/lib/apt/lists/* /var/log/* /var/tmp/*
 
 COPY --from=builder /output/ /
-COPY --chown=harmony-ap:harmony-ap opt/ /opt/
-COPY etc/ /etc/
+COPY --chown=harmony-ap:harmony-ap etc/ /etc/
 COPY usr/ /usr/
 
 RUN set -eux; \
-    mkdir -p /run && \
-    chown harmony-ap:harmony-ap /run
+    chmod -R a+rX /usr/lib/harmony-ap/tomcat; \
+    chmod 0644 /usr/share/harmony-ap/plugins/lib/ws-plugin.jar; \
+    install -d -m 0750 -o harmony-ap -g harmony-ap /var/lib/harmony-ap /usr/local/lib/harmony-ap; \
+    install -d -o harmony-ap -g harmony-ap /run
 
 USER harmony-ap
 
-ENTRYPOINT ["/usr/bin/harmony-entrypoint"]
+ENTRYPOINT ["/usr/lib/harmony-ap/bin/harmony-entrypoint"]
 CMD []
 
 EXPOSE 8443

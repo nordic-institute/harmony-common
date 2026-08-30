@@ -1,0 +1,22 @@
+#!/bin/bash
+
+set -euo pipefail
+
+case "${1:-}" in
+  remove)
+    systemctl stop harmony-smp 2>/dev/null || true
+    systemctl disable harmony-smp 2>/dev/null || true
+    ;;
+
+  upgrade|deconfigure)
+    systemctl stop harmony-smp 2>/dev/null || true
+    ;;
+
+  failed-upgrade)
+    ;;
+
+  *)
+    echo "harmony-smp prerm: called with unknown argument '${1:-}'" >&2
+    exit 1
+    ;;
+esac

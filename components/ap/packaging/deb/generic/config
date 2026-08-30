@@ -1,113 +1,271 @@
 #!/bin/bash
-if [[ "$1" = "configure" && -n "$2" ]]; then
-  MIN_VERSION="1.4.0"
-  if dpkg --compare-versions "$MIN_VERSION" gt "$2"; then
-    echo "harmony-ap: ERROR: Upgrade from version $2 not supported." >&2
-    exit 1
-  fi
-fi
 
-get_prop() {
-  local prop="$1";
-  grep -m1 -Po "^${prop}\s*=\s*\K.*$" /etc/harmony-ap/domibus.properties 2>/dev/null || echo ""
-}
+set -eo pipefail
 
+# Source confmodule before `set -u`. debconf in Jammy is not nounset-safe
+# https://salsa.debian.org/pkg-debconf/debconf/-/merge_requests/12
 . /usr/share/debconf/confmodule
 
-if [ "$1" = "configure" ] || [ "$1" = "reconfigure" ]; then
+set -u
+trap 'db_stop 2>/dev/null || true' EXIT
 
-  db_beginblock
-  db_input high harmony-ap/adminuser || true
-  db_input high harmony-ap/adminpassword || true
-  db_endblock
-  db_go
+readonly PACKAGE="harmony-ap"
+readonly SECURITY_DIR="/var/lib/${PACKAGE}/security"
+readonly SECRETS_FILE="${SECURITY_DIR}/secrets.env"
 
-  USEDYNAMIC="$(get_prop domibus.dynamicdiscovery.useDynamicDiscovery)"
-  if [[ -n "$USEDYNAMIC" ]]; then
-    db_set harmony-ap/usedynamicdiscovery "$USEDYNAMIC"
+die() {
+  echo "${PACKAGE}: ERROR: $1" >&2
+  exit 1
+}
+
+check_state_file() {
+  [[ -f "${SECURITY_DIR}/$1" ]]
+}
+
+# =============================================================================
+# Drop-in and secrets readers (duplicated from harmony-deb)
+#
+# The config script runs before package files are unpacked on fresh install,
+# so it cannot source harmony-deb. Keep these functions in sync.
+# =============================================================================
+
+readonly DROPIN_DEFAULTS_DIR="/usr/lib/systemd/system/${PACKAGE}.service.d"
+readonly DROPIN_CONFIGS_DIR="/etc/systemd/system/${PACKAGE}.service.d"
+
+# Keep in sync with harmony-deb:_read_dropin_value
+_read_dropin_value() {
+  local file="$1" key="$2"
+  [[ -f "$file" ]] || return 0
+  grep -Po "^Environment=\"?${key}=\K[^\"]*" "$file" 2>/dev/null | tail -1 || true
+}
+
+# Keep in sync with harmony-deb:get_dropin
+get_dropin() {
+  local key="$1"
+
+  local -A by_name=()
+  local dir file name
+  for dir in "$DROPIN_DEFAULTS_DIR" "$DROPIN_CONFIGS_DIR"; do
+    [[ -d "$dir" ]] || continue
+    for file in "$dir"/*.conf; do
+      [[ -f "$file" ]] || continue
+      name="${file##*/}"
+      by_name["$name"]="$file"
+    done
+  done
+
+  (( ${#by_name[@]} > 0 )) || return 0
+
+  local value="" sorted_key v
+  while IFS= read -r sorted_key; do
+    v="$(_read_dropin_value "${by_name[$sorted_key]}" "$key")"
+    [[ -z "$v" ]] || value="$v"
+  done < <(printf '%s\n' "${!by_name[@]}" | sort)
+
+  printf '%s' "$value"
+}
+
+# Keep in sync with harmony-deb:get_secret
+get_secret() {
+  local key="$1"
+
+  [[ -f "$SECRETS_FILE" ]] || return 0
+
+  local value
+  value="$(grep -m1 -Po "^${key}=\K.*$" "$SECRETS_FILE" 2>/dev/null || true)"
+
+  if [[ "$value" == \"*\" ]]; then
+    value="${value#\"}"
+    value="${value%\"}"
+    # Unescape in reverse order ($ and " first, backslash last)
+    value="${value//\\\$/\$}"     # \$ → $
+    value="${value//\\\"/\"}"     # \" → "
+    value="${value//\\\\/\\}"     # \\ → \
   fi
-  db_input high harmony-ap/usedynamicdiscovery
+
+  printf '%s' "$value"
+}
+
+# --- End duplicated functions ---
+
+prompt_debconf_value() {
+  local template="$1" dropin_var="$2" initial="${3:-}"
+
+  local existing
+  existing="$(get_dropin "$dropin_var")"
+
+  if [[ -n "$existing" ]]; then
+    db_set "$template" "$existing"
+  elif [[ -n "$initial" ]]; then
+    db_get "$template"
+    [[ -n "$RET" ]] || db_set "$template" "$initial"
+  fi
+
+  [[ "$is_upgrade" == true && -n "$existing" ]] && return 0
+
+  db_input high "$template" || true
+}
+
+require_debconf_value() {
+  local template="$1" label="$2"
+
+  db_get "$template"
+  [[ -n "$RET" ]] || die "${label} is required. Run 'dpkg-reconfigure harmony-ap' to retry."
+}
+
+require_debconf_number() {
+  local template="$1" label="$2"
+
+  require_debconf_value "$template" "$label"
+  [[ "$RET" =~ ^[0-9]+$ ]] || die "${label} must be a number, got: '${RET}'. Run 'dpkg-reconfigure harmony-ap' to retry."
+}
+
+needs_keystore() {
+  local template="$1" file_prefix="$2"
+
+  if [[ "$is_reconf" == true ]]; then
+    db_get "$template"
+    [[ "$RET" == true ]] && return 0
+  fi
+
+  ! check_state_file "${file_prefix}.p12" && ! check_state_file "${file_prefix}.jks"
+}
+
+configure_debconf() {
+  local action="$1" old_version="${2:-}"
+
+  local is_fresh=false
+  local is_upgrade=false
+  local is_reconf=false
+
+  if [[ "$action" == "reconfigure" ]]; then
+    is_reconf=true
+  elif [[ -z "$old_version" ]]; then
+    is_fresh=true
+  else
+    is_upgrade=true
+  fi
+
+  # Pre-2.7.0 upgrade: skip prompts. All configuration values will be
+  # extracted from the old config files by the migration script in postinst.
+  if [[ "$is_upgrade" == true ]] && dpkg --compare-versions "$old_version" lt "2.7.0"; then
+    return 0
+  fi
+
+  if [[ "$is_reconf" == true ]]; then
+    db_title "Harmony AP - Reconfiguration"
+    db_input high harmony-ap/reconfigure-notice || true
+    db_go
+
+    db_title "Harmony AP - Certificate Rotation"
+    db_input high harmony-ap/rotate_security_keystore || true
+    db_input high harmony-ap/rotate_tls_keystore || true
+    db_go
+  fi
+
+  if [[ "$is_fresh" == true ]]; then
+    db_title "Harmony AP - Administrator"
+    db_beginblock
+    db_input high harmony-ap/adminuser || true
+    db_input high harmony-ap/adminpassword || true
+    db_endblock
+    db_go
+
+    require_debconf_value harmony-ap/adminuser "Administrator username"
+  fi
+
+  # Discovery
+  db_title "Harmony AP - Discovery"
+  prompt_debconf_value harmony-ap/usedynamicdiscovery DOMIBUS_DYNAMICDISCOVERY_USEDYNAMICDISCOVERY
   db_go
 
   db_get harmony-ap/usedynamicdiscovery
-  USEDYNAMIC="${RET}"
-
-  SML_ZONE="$(get_prop domibus.smlzone)"
-  if [[ -n "$SML_ZONE" ]]; then
-    db_set harmony-ap/smlzone "$SML_ZONE"
-  fi
-  if [ "$USEDYNAMIC" = true ]; then
-    db_input high harmony-ap/smlzone
+  if [[ "$RET" == true ]]; then
+    prompt_debconf_value harmony-ap/smlzone DOMIBUS_SMLZONE
     db_go
+
+    require_debconf_value harmony-ap/smlzone "SML zone"
   fi
 
-  db_input high harmony-ap/partyname || true
+  # Identity
+  db_title "Harmony AP - Identity"
+  prompt_debconf_value harmony-ap/partyname DOMIBUS_SECURITY_KEY_PRIVATE_ALIAS
   db_go
+
+  require_debconf_value harmony-ap/partyname "Party name"
   db_get harmony-ap/partyname
-  PARTY_NAME=$RET
+  local party_name="$RET"
 
-  if [[ ! -f /etc/harmony-ap/ap-keystore.jks && ! -f /etc/harmony-ap/ap-keystore.p12 ]]; then
-    db_get harmony-ap/securitydn
-    if [[ -z $RET ]]; then
-      db_set harmony-ap/securitydn "CN=$PARTY_NAME"
-    fi
-    db_input high harmony-ap/securitydn || true
-    db_go
-  fi
+  # Certificates
+  db_title "Harmony AP - Certificates"
 
-  if [[ ! -f /etc/harmony-ap/tls-keystore.jks && ! -f /etc/harmony-ap/tls-keystore.p12 ]]; then
-    db_get harmony-ap/serverdn
-    if [[ -z $RET ]]; then
-      db_set harmony-ap/serverdn "CN=$(hostname -f)"
-    fi
-    db_input high harmony-ap/serverdn || true
+  if needs_keystore harmony-ap/rotate_security_keystore ap-keystore; then
+    prompt_debconf_value harmony-ap/securitydn SECURITY_DN "CN=$party_name"
     db_go
 
-    db_get harmony-ap/serversan
-    if [[ -z $RET ]]; then
-      db_set harmony-ap/serversan "DNS:$(hostname -f)"
-    fi
-    db_input high harmony-ap/serversan || true
+    require_debconf_value harmony-ap/securitydn "Security certificate DN"
+  fi
+
+  if needs_keystore harmony-ap/rotate_tls_keystore tls-keystore; then
+    local fqdn
+    fqdn="$(hostname -f)"
+    prompt_debconf_value harmony-ap/serverdn TLS_SERVER_DN "CN=$fqdn"
+    prompt_debconf_value harmony-ap/serversan TLS_SERVER_SAN "DNS:$fqdn"
     db_go
+
+    require_debconf_value harmony-ap/serverdn "TLS certificate DN"
+    require_debconf_value harmony-ap/serversan "TLS certificate SAN"
   fi
 
-  db_input high harmony-ap/tomcatport || true
+  # Network
+  db_title "Harmony AP - Network"
+  prompt_debconf_value harmony-ap/tomcatport TOMCAT_PORT
   db_go
 
-  db_beginblock
-  DB_HOST="$(get_prop domibus.database.serverName)"
-  if [[ -n "$DB_HOST" ]]; then
-    db_set harmony-ap/database-host "$DB_HOST"
-  fi
-  db_input high harmony-ap/database-host
-  DB_PORT="$(get_prop domibus.database.port)"
-  if [[ -n "$DB_PORT" ]]; then
-    db_set harmony-ap/database-port "$DB_PORT"
-  fi
-  db_input high harmony-ap/database-port
-  DB_SCHEMA="$(get_prop domibus.database.schema)"
-  if [[ -n "$DB_SCHEMA" ]]; then
-    db_set harmony-ap/database-schema "$DB_SCHEMA"
-  fi
-  db_input high harmony-ap/database-schema
-  db_endblock
+  require_debconf_number harmony-ap/tomcatport "Tomcat port"
+
+  # Database
+  db_title "Harmony AP - Database"
+  prompt_debconf_value harmony-ap/database-host DOMIBUS_DATABASE_SERVERNAME
   db_go
 
-  db_get harmony-ap/database-schema
-  DB_SCHEMA="$RET"
+  require_debconf_value harmony-ap/database-host "Database host"
+  db_get harmony-ap/database-host
+  # Remote database
+  if [[ "$RET" != "localhost" ]]; then
+    prompt_debconf_value harmony-ap/database-type DOMIBUS_DATABASE_TYPE
 
-  db_beginblock
-  DB_USER="$(get_prop domibus.database.user)"
-  if [[ -n "$DB_USER" ]]; then
-    db_set harmony-ap/database-user "$DB_USER"
+    db_beginblock
+    prompt_debconf_value harmony-ap/database-port DOMIBUS_DATABASE_PORT
+    prompt_debconf_value harmony-ap/database-schema DOMIBUS_DATABASE_SCHEMA
+    db_endblock
+    db_go
+
+    require_debconf_number harmony-ap/database-port "Database port"
+    require_debconf_value harmony-ap/database-schema "Database schema"
+    db_get harmony-ap/database-schema
+    local db_schema="$RET"
+
+    db_subst harmony-ap/database-user db_schema "$db_schema"
+    db_beginblock
+    prompt_debconf_value harmony-ap/database-user DOMIBUS_DATASOURCE_USER
+
+    if [[ "$is_upgrade" != true ]] || [[ -z "$(get_secret DOMIBUS_DATASOURCE_PASSWORD)" ]]; then
+      db_input high harmony-ap/database-password || true
+    fi
+    db_endblock
+    db_go
+
+    require_debconf_value harmony-ap/database-user "Database user"
   fi
-  db_subst harmony-ap/database-user db_schema "$DB_SCHEMA"
-  db_input high harmony-ap/database-user
-  db_input high harmony-ap/database-password
-  db_endblock
-  db_go
+}
 
-fi
+case "${1:-}" in
+  configure|reconfigure)
+    configure_debconf "$1" "${2:-}"
+    ;;
 
-# TODO add some checking of values?
-db_stop
+  *)
+    die "config called with unknown argument '${1:-}'"
+    ;;
+esac

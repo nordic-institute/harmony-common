@@ -1,0 +1,1055 @@
+#!/bin/bash
+# Script sourced by postinst during upgrade from pre-2.7.0
+
+_M270__MIGRATION_MARKER="/var/lib/harmony-ap/.migration-2.7.0-backup-path"
+
+_M270__DROPIN_OVERRIDE_FILE="${DROPIN_CONFIGS_DIR}/90-override.conf"
+_M270__DROPIN_OVERRIDE_HEADER=$'[Service]\n# User customizations migrated from pre-2.7.0 installation.\n# Edit or remove entries as needed. After changes run: systemctl daemon-reload\n'
+
+# Set by _m270__load_backup()
+_M270__BACKUP_DIR=""
+_M270__OLD_PROPS=""
+_M270__OLD_TEMPLATE=""
+_M270__OLD_SERVER_XML=""
+
+# Properties managed via dropin/secrets. Skip during customization detection
+declare -A _M270__MANAGED_MAP=(
+  [domibus.database.port]=1
+  [domibus.database.schema]=1
+  [domibus.database.serverName]=1
+  [domibus.datasource.driverClassName]=1
+  [domibus.datasource.password]=1
+  [domibus.datasource.url]=1
+  [domibus.datasource.user]=1
+  [domibus.dynamicdiscovery.useDynamicDiscovery]=1
+  [domibus.entityManagerFactory.jpaProperty.hibernate.connection.driver_class]=1
+  [domibus.entityManagerFactory.jpaProperty.hibernate.dialect]=1
+  [domibus.passwordPolicy.defaultUser.create]=1
+  [domibus.payload.decompression.validation.active]=1
+  [domibus.security.key.private.alias]=1
+  [domibus.security.key.private.password]=1
+  [domibus.security.keystore.location]=1
+  [domibus.security.keystore.password]=1
+  [domibus.security.keystore.type]=1
+  [domibus.security.truststore.location]=1
+  [domibus.security.truststore.password]=1
+  [domibus.security.truststore.type]=1
+  [domibus.smlzone]=1
+)
+
+# =============================================================================
+# Utilities
+# =============================================================================
+
+_m270__log() {
+  log INFO "[migration-2.7.0] $1"
+}
+
+_m270__is_managed() {
+  [[ -n "${_M270__MANAGED_MAP[$1]+x}" ]]
+}
+
+# Undo the escaping applied by the old set_prop() function:
+#   \\ -> \     ${:$}{ -> ${
+_m270__unescape_old_prop() {
+  local value="$1"
+
+  value="${value//\$\{:\$\}\{/\$\{}"
+  value="${value//\\\\/\\}"
+  printf '%s' "$value"
+}
+
+# Read a property value from a Java .properties file (raw value after first '=')
+_m270__read_old_prop() {
+  local file="$1" key="$2"
+
+  local escaped_key="${key//./\\.}"
+  local raw
+  raw="$(grep -m1 -Po "^\s*${escaped_key}\s*=\s*\K.*$" "$file" 2>/dev/null || true)"
+  [[ -z "$raw" ]] || _m270__unescape_old_prop "$raw"
+}
+
+# Read an attribute from the first Connector element in a server.xml file
+_m270__read_connector_attr() {
+  local server_xml="$1" attr="$2"
+
+  local escaped_attr="${attr//./\\.}"
+  tr '\n' ' ' < "$server_xml" | grep -oP "Connector[^>]*${escaped_attr}=\"\\K[^\"]*" 2>/dev/null | head -1 || true
+}
+
+# Read a value from old config and write it using the given writer function
+_m270__transfer_prop() {
+  local file="$1" key="$2" writer="$3" target_key="$4"
+
+  local value
+  value="$(_m270__read_old_prop "$file" "$key")"
+
+  [[ -z "$value" ]] || "$writer" "$target_key" "$value"
+}
+
+# Read a server.xml connector attribute and write it using the given writer
+_m270__transfer_attr() {
+  local server_xml="$1" attr="$2" writer="$3" target_key="$4"
+
+  local value
+  value="$(_m270__read_connector_attr "$server_xml" "$attr")"
+
+  [[ -z "$value" ]] || "$writer" "$target_key" "$value"
+}
+
+# Read all key=value pairs from a .properties file into an associative array
+_m270__read_properties() {
+  local file="$1"
+  local -n _props="$2"
+
+  local line key value
+  while IFS= read -r line; do
+    [[ "$line" =~ ^[[:space:]]*# ]] && continue
+    [[ "$line" =~ ^[[:space:]]*$ ]] && continue
+    [[ "$line" == *=* ]] || continue
+    key="${line%%=*}"
+    key="${key#"${key%%[![:space:]]*}"}"
+    key="${key%"${key##*[![:space:]]}"}"
+    value="${line#*=}"
+    value="${value#"${value%%[![:space:]]*}"}"
+    _props["$key"]="$value"
+  done < "$file"
+}
+
+# Convert Java property name to environment variable name
+# domibus.ui.session.timeout → DOMIBUS_UI_SESSION_TIMEOUT
+_m270__prop_name_to_env() {
+  printf '%s' "$1" | tr '[:lower:].-' '[:upper:]__'
+}
+
+_m270__copy_file() {
+  local src="$1" dst="$2"
+  if ! cp -p "$src" "$dst"; then
+    _m270__log "Failed to copy ${src} to ${dst}"
+    return 1
+  fi
+}
+
+_m270__copy_tree() {
+  local src="$1" dst="$2"
+  if ! cp -a "$src" "$dst"; then
+    _m270__log "Failed to copy ${src} to ${dst}"
+    return 1
+  fi
+}
+
+# Move a file, falling back to copy+remove for cross-device moves
+_m270__move_file() {
+  local src="$1" dst="$2"
+  if mv "$src" "$dst" 2>/dev/null; then
+    return 0
+  fi
+  _m270__copy_file "$src" "$dst"
+  rm -f "$src"
+}
+
+_m270__move_dir() {
+  local src="$1" dst="$2"
+  [[ ! -d "$dst" ]] || rmdir "$dst" 2>/dev/null || true
+  if [[ ! -e "$dst" ]] && mv "$src" "$dst" 2>/dev/null; then
+    return 0
+  fi
+  [[ -d "$dst" ]] || mkdir -p "$dst"
+  _m270__copy_tree "$src/." "$dst/"
+  rm -rf "$src"
+}
+
+# Write an environment variable to 90-override.conf
+_m270__set_override() {
+  local env_key="$1" value="$2"
+
+  if [[ ! -f "$_M270__DROPIN_OVERRIDE_FILE" ]]; then
+    ensure_file "$_M270__DROPIN_OVERRIDE_FILE" root:root 0644 true 022 "$_M270__DROPIN_OVERRIDE_HEADER"
+  fi
+  upsert_keyvalue "$_M270__DROPIN_OVERRIDE_FILE" dropin "$env_key" "$value"
+}
+
+# Apply a list of key=value customizations to 90-override.conf and log a summary
+_m270__apply_overrides() {
+  local label="$1"; shift
+
+  local -a entries=("$@")
+  (( ${#entries[@]} > 0 )) || return 0
+
+  local entry key value env_key
+  for entry in "${entries[@]}"; do
+    key="${entry%%=*}"; value="${entry#*=}"
+    env_key="$(_m270__prop_name_to_env "$key")"
+    _m270__set_override "$env_key" "$value"
+  done
+
+  _m270__log "  ${label}: ${#entries[@]} customization(s) migrated to 90-override.conf."
+  for entry in "${entries[@]}"; do
+    key="${entry%%=*}"
+    env_key="$(_m270__prop_name_to_env "$key")"
+    _m270__log "    ${key} → ${env_key}"
+  done
+}
+
+# Check if a file's sha256 matches any of the provided known hashes
+_m270__has_known_hash() {
+  local file="$1"; shift
+
+  local hash known
+  hash="$(sha256sum "$file" 2>/dev/null | cut -d' ' -f1)"
+  for known in "$@"; do
+    [[ "$hash" != "$known" ]] || return 0
+  done
+  return 1
+}
+
+# Hash-based config change detection. Logs customization status
+_m270__detect_config_changes() {
+  local label="$1" old_file="$2" new_file="$3" detail="$4"; shift 4
+
+  [[ -f "$old_file" ]] || return 0
+
+  if _m270__has_known_hash "$old_file" "$@"; then
+    _m270__log "  ${label}: no customizations detected."
+    return 0
+  fi
+
+  if [[ -f "$new_file" ]]; then
+    local _old_hash _new_hash
+    _old_hash="$(sha256sum "$old_file" | cut -d' ' -f1)"
+    _new_hash="$(sha256sum "$new_file" | cut -d' ' -f1)"
+    if [[ "$_old_hash" == "$_new_hash" ]]; then
+      _m270__log "  ${label}: user customizations preserved."
+      return 0
+    fi
+  fi
+
+  if [[ -n "$detail" ]]; then
+    _m270__log "  ${label}: customizations detected. ${detail}"
+  else
+    _m270__log "  ${label}: customizations detected, might require manual migration."
+  fi
+  _m270__log "    Old: ${old_file}"
+  _m270__log "    New: ${new_file}"
+}
+
+_m270__ext_to_type() {
+  case "$1" in
+    p12|pfx) echo "pkcs12" ;;
+    jks)     echo "jks" ;;
+    *)       die "Unknown store extension: $1" ;;
+  esac
+}
+
+# Extract store extension from old config file
+_m270__ext_from_config() {
+  local store_name="$1" config_file="${2:-}"
+
+  [[ -n "$config_file" && -f "$config_file" ]] || return 0
+
+  local location=""
+  case "$store_name" in
+    ap-keystore)    location="$(_m270__read_old_prop "$config_file" "domibus.security.keystore.location")" ;;
+    ap-truststore)  location="$(_m270__read_old_prop "$config_file" "domibus.security.truststore.location")" ;;
+    tls-keystore)   location="$(_m270__read_connector_attr "$config_file" "keystoreFile")" ;;
+    tls-truststore) location="$(_m270__read_connector_attr "$config_file" "truststoreFile")" ;;
+  esac
+
+  if [[ -n "$location" ]]; then
+    local ext="${location##*.}"
+    ext="${ext,,}"
+    case "$ext" in
+      p12|pfx|jks) echo "$ext" ;;
+    esac
+  fi
+}
+
+# Detect store extension from backup: config-based first, then file scan, then default
+_m270__detect_store_ext() {
+  local backup_dir="$1" store_name="$2" config_file="${3:-}"
+  local old_sec="${backup_dir}/etc/harmony-ap"
+
+  local config_ext
+  config_ext="$(_m270__ext_from_config "$store_name" "$config_file")"
+  if [[ -n "$config_ext" && -f "${old_sec}/${store_name}.${config_ext}" ]]; then
+    echo "$config_ext"
+    return
+  fi
+
+  local ext
+  for ext in p12 pfx jks; do
+    if [[ -f "${old_sec}/${store_name}.${ext}" ]]; then
+      echo "$ext"
+      return
+    fi
+  done
+
+  _m270__log "Could not detect existing store file for ${store_name} in backup. Defaulting to .p12 extension for new store."
+  echo "p12"
+}
+
+# Warn if the old JDBC URL contains non-standard query parameters that
+# will not be carried over (the new system rebuilds the URL from components)
+_m270__check_custom_jdbc_params() {
+  local old_props="$1"
+
+  local url
+  url="$(_m270__read_old_prop "$old_props" "domibus.datasource.url")"
+  [[ -n "$url" ]] || return 0
+
+  local query_string="${url#*\?}"
+  [[ "$query_string" != "$url" ]] || return 0  # no '?' found
+
+  local -A standard=(
+    [useSSL]=1 [sslMode]=1 [allowPublicKeyRetrieval]=1
+    [useLegacyDatetimeCode]=1 [serverTimezone]=1
+  )
+
+  local extra=()
+  local param key
+  IFS='&' read -ra params <<< "$query_string"
+  for param in "${params[@]}"; do
+    key="${param%%=*}"
+    [[ -n "${standard[$key]+x}" ]] || extra+=("$param")
+  done
+
+  if (( ${#extra[@]} > 0 )); then
+    _m270__log "Custom JDBC URL parameters detected that will not be migrated automatically:"
+    local entry
+    for entry in "${extra[@]}"; do
+      _m270__log "  $entry"
+    done
+    _m270__log "Re-apply these to DOMIBUS_DATASOURCE_URL in ${_M270__DROPIN_OVERRIDE_FILE} after migration."
+  fi
+}
+
+# =============================================================================
+# Migration steps
+# =============================================================================
+
+_m270__load_backup() {
+  [[ -f "$_M270__MIGRATION_MARKER" ]] || die "Migration marker not found. Was preinst run?"
+
+  _M270__BACKUP_DIR="$(cat "$_M270__MIGRATION_MARKER")"
+  [[ -d "$_M270__BACKUP_DIR" ]] || die "Backup directory not found: $_M270__BACKUP_DIR"
+
+  _m270__log "Using backup: ${_M270__BACKUP_DIR}"
+
+  _M270__OLD_PROPS="${_M270__BACKUP_DIR}/etc/harmony-ap/domibus.properties"
+  _M270__OLD_TEMPLATE="${_M270__BACKUP_DIR}/opt/harmony-ap/setup/domibus.properties.template"
+  _M270__OLD_SERVER_XML="${_M270__BACKUP_DIR}/etc/harmony-ap/tomcat-conf/server.xml"
+}
+
+# =============================================================================
+# Extract managed properties to dropin and secrets
+# =============================================================================
+
+_m270__migrate_managed_props() {
+  [[ -f "$_M270__OLD_PROPS" ]] || {
+    _m270__log "Old domibus.properties not found in backup. Skipping managed property extraction."
+    return 0
+  }
+
+  # TLS secrets from server.xml
+  if [[ -f "$_M270__OLD_SERVER_XML" ]]; then
+    _m270__transfer_attr "$_M270__OLD_SERVER_XML" keystorePass   set_secret TLS_KEYSTORE_PASSWORD
+    _m270__transfer_attr "$_M270__OLD_SERVER_XML" truststorePass set_secret TLS_TRUSTSTORE_PASSWORD
+  fi
+
+  # AP security secrets from domibus.properties
+  _m270__transfer_prop "$_M270__OLD_PROPS" "domibus.security.keystore.password"   set_secret DOMIBUS_SECURITY_KEYSTORE_PASSWORD
+  _m270__transfer_prop "$_M270__OLD_PROPS" "domibus.security.truststore.password" set_secret DOMIBUS_SECURITY_TRUSTSTORE_PASSWORD
+
+  # Migrate key.private.password only if it differs from keystore.password
+  local ks_pass key_pass
+  ks_pass="$(get_secret DOMIBUS_SECURITY_KEYSTORE_PASSWORD)"
+  key_pass="$(_m270__read_old_prop "$_M270__OLD_PROPS" "domibus.security.key.private.password")"
+
+  # shellcheck disable=SC2016 # ${domibus.security.keystore.password} is a literal reference, not expansion
+  if [[ -n "$key_pass" && "$key_pass" != "$ks_pass" && "$key_pass" != '${domibus.security.keystore.password}' ]]; then
+    set_secret DOMIBUS_SECURITY_KEY_PRIVATE_PASSWORD "$key_pass"
+    _m270__log "domibus.security.key.private.password differs from keystore password. Migrated separately."
+  fi
+
+  _m270__check_custom_jdbc_params "$_M270__OLD_PROPS"
+
+  _m270__log "Migrated secrets from old configuration."
+}
+
+# =============================================================================
+# Update debconf values from actual config
+# =============================================================================
+
+_m270__update_debconf_from_config() {
+  [[ -f "$_M270__OLD_PROPS" ]] || return 0
+
+  _m270__transfer_prop "$_M270__OLD_PROPS" "domibus.database.serverName"                  db_set harmony-ap/database-host
+  _m270__transfer_prop "$_M270__OLD_PROPS" "domibus.database.port"                        db_set harmony-ap/database-port
+  _m270__transfer_prop "$_M270__OLD_PROPS" "domibus.database.schema"                      db_set harmony-ap/database-schema
+  _m270__transfer_prop "$_M270__OLD_PROPS" "domibus.datasource.user"                      db_set harmony-ap/database-user
+  _m270__transfer_prop "$_M270__OLD_PROPS" "domibus.datasource.password"                  db_set harmony-ap/database-password
+  _m270__transfer_prop "$_M270__OLD_PROPS" "domibus.security.key.private.alias"           db_set harmony-ap/partyname
+  _m270__transfer_prop "$_M270__OLD_PROPS" "domibus.dynamicdiscovery.useDynamicDiscovery" db_set harmony-ap/usedynamicdiscovery
+  _m270__transfer_prop "$_M270__OLD_PROPS" "domibus.smlzone"                              db_set harmony-ap/smlzone
+
+  if [[ -f "$_M270__OLD_SERVER_XML" ]]; then
+    _m270__transfer_attr "$_M270__OLD_SERVER_XML" port db_set harmony-ap/tomcatport
+  fi
+
+  # Old system only supported MySQL
+  db_set harmony-ap/database-type mysql
+
+  _m270__log "Database configuration loaded from old config (type: mysql)."
+}
+
+# =============================================================================
+# Seed certificate DN defaults
+# =============================================================================
+
+# Seed debconf with certificate DN defaults (CN=alias / CN=fqdn).
+# Only sets values if not already set (e.g. from a previous installation).
+# These defaults have no effect on the current setup. They only pre-fill the
+# debconf prompts shown during dpkg-reconfigure or certificate rotation.
+_m270__set_certificate_dn_defaults() {
+  local party_alias="$1" fqdn="$2"
+
+  db_get harmony-ap/securitydn
+  [[ -n "$RET" ]] || db_set harmony-ap/securitydn "CN=${party_alias}"
+
+  db_get harmony-ap/serverdn
+  [[ -n "$RET" ]] || db_set harmony-ap/serverdn "CN=${fqdn}"
+
+  db_get harmony-ap/serversan
+  [[ -n "$RET" ]] || db_set harmony-ap/serversan "DNS:${fqdn}"
+}
+
+_m270__seed_certificate_defaults() {
+  [[ -f "$_M270__OLD_PROPS" ]] || return 0
+
+  local party_alias
+  party_alias="$(_m270__read_old_prop "$_M270__OLD_PROPS" "domibus.security.key.private.alias")"
+  party_alias="${party_alias:-selfsigned}"
+  _m270__log "Detected party alias: ${party_alias}"
+
+  local fqdn
+  fqdn="$(hostname -f 2>/dev/null || hostname)"
+
+  _m270__set_certificate_dn_defaults "$party_alias" "$fqdn"
+}
+
+# =============================================================================
+# Migrate marker files
+# =============================================================================
+
+_m270__migrate_markers() {
+  if [[ -f "${_M270__BACKUP_DIR}/etc/harmony-ap/.mysql_tzinfo" ]]; then
+    touch "${MARKER_DIR}/.mysql_tzinfo_loaded"
+    _m270__log "Migrated MySQL timezone marker"
+  fi
+}
+
+# =============================================================================
+# Migrate custom plugins (JARs and configs) from old location
+# =============================================================================
+
+_m270__migrate_plugins() {
+  local src_dir="/etc/harmony-ap/plugins/lib"
+  local dst_dir="/usr/local/lib/harmony-ap/plugins/lib"
+
+  [[ -d "$src_dir" ]] || return 0
+
+  local count=0 file fname
+  for file in "$src_dir"/*; do
+    [[ -f "$file" ]] || continue
+    fname="${file##*/}"
+    [[ "$fname" != *ws-plugin* ]] || continue
+
+    if [[ ! -e "${dst_dir}/${fname}" ]]; then
+      mkdir -p "$dst_dir"
+      _m270__move_file "$file" "${dst_dir}/${fname}"
+      chown harmony-ap:harmony-ap "${dst_dir}/${fname}"
+      chmod 0640 "${dst_dir}/${fname}"
+      (( ++count ))
+      _m270__log "  Migrated custom plugin: ${fname}"
+    fi
+  done
+
+  if (( count > 0 )); then
+    _m270__log "Plugins: ${count} custom plugin(s) migrated."
+  fi
+}
+
+# =============================================================================
+# Restore policy files from backup
+# =============================================================================
+
+_m270__migrate_policies() {
+  local old_policies="${_M270__BACKUP_DIR}/etc/harmony-ap/policies"
+  local new_policies="/etc/harmony-ap/policies"
+  local default_policies="/usr/share/harmony-ap/policies"
+
+  [[ -d "$old_policies" ]] || return 0
+
+  mkdir -p "$new_policies"
+  local policy_file fname old_hash default_hash
+  local copied=0 skipped=0
+  for policy_file in "$old_policies"/*; do
+    [[ -f "$policy_file" ]] || continue  # skip directories
+
+    fname="${policy_file##*/}"
+
+    # If the user's copy is identical to the shipped default, remove the on-disk
+    # copy so link_default_policies() creates a symlink instead. The old postinst
+    # placed these as regular files; dpkg does not clean them.
+    if [[ -f "${default_policies}/${fname}" ]]; then
+      old_hash="$(sha256sum "$policy_file" | cut -d' ' -f1)"
+      default_hash="$(sha256sum "${default_policies}/${fname}" | cut -d' ' -f1)"
+      if [[ "$old_hash" == "$default_hash" ]]; then
+        rm -f "${new_policies}/${fname}"
+        (( ++skipped ))
+        continue
+      fi
+    fi
+
+    _m270__copy_file "$policy_file" "${new_policies}/${fname}"
+    (( ++copied ))
+  done
+
+  if (( copied > 0 )); then
+    chown -R root:harmony-ap "$new_policies"
+    chmod 0750 "$new_policies"
+    find "$new_policies" -type f -exec chmod 0640 {} +
+  fi
+
+  _m270__log "Policies: ${copied} customized file(s) migrated, ${skipped} default(s) skipped (will be symlinked)."
+}
+
+# =============================================================================
+# Move keystores and certificates + set dropin paths
+# =============================================================================
+
+_m270__migrate_keystores() {
+  local live_sec="/etc/harmony-ap"
+  local new_sec="$SECURITY_DIR"
+
+  local -A store_ext=(
+    [ap-keystore]="$(_m270__detect_store_ext "$_M270__BACKUP_DIR" ap-keystore "$_M270__OLD_PROPS")"
+    [ap-truststore]="$(_m270__detect_store_ext "$_M270__BACKUP_DIR" ap-truststore "$_M270__OLD_PROPS")"
+    [tls-keystore]="$(_m270__detect_store_ext "$_M270__BACKUP_DIR" tls-keystore "$_M270__OLD_SERVER_XML")"
+    [tls-truststore]="$(_m270__detect_store_ext "$_M270__BACKUP_DIR" tls-truststore "$_M270__OLD_SERVER_XML")"
+  )
+
+  # Move stores from live location to new security directory
+  local migrated=()
+  local store_base ext store
+  for store_base in ap-keystore ap-truststore tls-keystore tls-truststore; do
+    ext="${store_ext[$store_base]}"
+    store="${store_base}.${ext}"
+    if [[ -f "${live_sec}/${store}" && ! -e "${new_sec}/${store}" ]]; then
+      _m270__move_file "${live_sec}/${store}" "${new_sec}/${store}"
+      chown root:harmony-ap "${new_sec}/${store}"
+      chmod 0640 "${new_sec}/${store}"
+      migrated+=("$store")
+    fi
+  done
+
+  # Certificates
+  if [[ -d "${live_sec}/certs" ]]; then
+    _m270__move_dir "${live_sec}/certs" "${new_sec}/certs"
+    chown -R root:harmony-ap "${new_sec}/certs/"
+    chmod 0750 "${new_sec}/certs/"
+    find "${new_sec}/certs/" -type f -exec chmod 0640 {} +
+    migrated+=("certs/")
+  fi
+
+  if (( ${#migrated[@]} > 0 )); then
+    _m270__log "Keystores migrated to ${new_sec}/:"
+    local item
+    for item in "${migrated[@]}"; do
+      _m270__log "  ${item}"
+    done
+  else
+    _m270__log "No existing keystores found. New stores will be created during configuration."
+  fi
+
+  # Set dropin paths and types
+  set_dropin DOMIBUS_SECURITY_KEYSTORE_LOCATION  "${SECURITY_DIR}/ap-keystore.${store_ext[ap-keystore]}"
+  set_dropin DOMIBUS_SECURITY_TRUSTSTORE_LOCATION "${SECURITY_DIR}/ap-truststore.${store_ext[ap-truststore]}"
+  set_dropin TLS_KEYSTORE_PATH  "${SECURITY_DIR}/tls-keystore.${store_ext[tls-keystore]}"
+  set_dropin TLS_TRUSTSTORE_PATH "${SECURITY_DIR}/tls-truststore.${store_ext[tls-truststore]}"
+
+  set_dropin DOMIBUS_SECURITY_KEYSTORE_TYPE "$(_m270__ext_to_type "${store_ext[ap-keystore]}")"
+  set_dropin DOMIBUS_SECURITY_TRUSTSTORE_TYPE "$(_m270__ext_to_type "${store_ext[ap-truststore]}")"
+  set_dropin TLS_KEYSTORE_TYPE "$(_m270__ext_to_type "${store_ext[tls-keystore]}")"
+  set_dropin TLS_TRUSTSTORE_TYPE "$(_m270__ext_to_type "${store_ext[tls-truststore]}")"
+
+  if [[ "${store_ext[ap-keystore]}" == "jks" || "${store_ext[ap-truststore]}" == "jks" || \
+        "${store_ext[tls-keystore]}" == "jks" || "${store_ext[tls-truststore]}" == "jks" ]]; then
+    _m270__log "JKS store format detected. Per-store type overrides configured."
+  fi
+}
+
+# =============================================================================
+# Move ActiveMQ broker data
+# =============================================================================
+
+_m270__migrate_broker_data() {
+  local new_broker="/var/lib/harmony-ap/broker"
+  local old_work=""
+
+  if [[ -d "/var/opt/harmony-ap/work" ]]; then
+    old_work="/var/opt/harmony-ap/work"   # 2.1.0-2.6.0
+  elif [[ -d "/opt/harmony-ap/work" ]]; then
+    old_work="/opt/harmony-ap/work"       # 2.0.0-2.1.0
+  fi
+
+  [[ -n "$old_work" ]] || return 0
+
+  # Empty source directory. Just clean up
+  if ! find "$old_work" -mindepth 1 -maxdepth 1 -print -quit | grep -q .; then
+    rm -rf "$old_work"
+    return 0
+  fi
+
+  if find "$new_broker" -mindepth 1 -maxdepth 1 -print -quit 2>/dev/null | grep -q .; then
+    _m270__log "WARNING: ${new_broker} already contains data. Merging ActiveMQ data."
+  fi
+  _m270__move_dir "$old_work" "$new_broker"
+
+  chown -R harmony-ap:harmony-ap "$new_broker"
+  _m270__log "Migrated ActiveMQ data from ${old_work} to ${new_broker}"
+}
+
+# =============================================================================
+# Detect and apply user customizations to domibus.properties
+# =============================================================================
+
+_m270__migrate_domibus_customizations() {
+  [[ -f "$_M270__OLD_PROPS" ]] || return 0
+
+  # Load template defaults if available
+  local -A template_defaults=()
+  [[ ! -f "$_M270__OLD_TEMPLATE" ]] || _m270__read_properties "$_M270__OLD_TEMPLATE" template_defaults
+
+  # Load old properties and collect customizations
+  local -A old_props=()
+  _m270__read_properties "$_M270__OLD_PROPS" old_props
+
+  local customizations=()
+  local key value
+  for key in "${!old_props[@]}"; do
+    _m270__is_managed "$key" && continue
+    value="${old_props[$key]}"
+
+    # Skip if unchanged from template default
+    if [[ -n "${template_defaults[$key]+x}" && "${template_defaults[$key]}" == "$value" ]]; then
+      continue
+    fi
+
+    customizations+=("${key}=$(_m270__unescape_old_prop "$value")")
+  done
+
+  if (( ${#customizations[@]} == 0 )); then
+    _m270__log "  domibus.properties: no customizations detected."
+    return 0
+  fi
+
+  _m270__apply_overrides "domibus.properties" "${customizations[@]}"
+  _m270__log "    Old: ${_M270__OLD_PROPS}"
+  _m270__log "    New: ${_M270__DROPIN_OVERRIDE_FILE}"
+}
+
+# =============================================================================
+# Detect and apply user customizations to ws-plugin.properties
+# =============================================================================
+
+_m270__migrate_ws_plugin() {
+  local old_wsplugin="${_M270__BACKUP_DIR}/etc/harmony-ap/plugins/config/ws-plugin.properties"
+  [[ -f "$old_wsplugin" ]] || return 0
+
+  local -A ws_props=()
+  _m270__read_properties "$old_wsplugin" ws_props
+
+  if (( ${#ws_props[@]} == 0 )); then
+    _m270__log "  ws-plugin.properties: no customizations detected."
+    return 0
+  fi
+
+  local ws_customizations=()
+  local key
+  for key in "${!ws_props[@]}"; do
+    ws_customizations+=("${key}=${ws_props[$key]}")
+  done
+
+  _m270__apply_overrides "ws-plugin.properties" "${ws_customizations[@]}"
+  _m270__log "    Old: ${old_wsplugin}"
+  _m270__log "    New: ${_M270__DROPIN_OVERRIDE_FILE}"
+}
+
+# =============================================================================
+# Detect setenv.sh customizations
+# =============================================================================
+
+# Normalize a setenv.sh for comparison: strip setjavahome.sh sourcing,
+# mask truststore path and password so envsubst differences don't matter
+_m270__normalize_setenv() {
+  # shellcheck disable=SC2016 # ${tls_truststore_password} should be masked, not expanded
+  sed -e '/setjavahome\.sh/d' \
+    -e 's|/etc/harmony-ap/tls-truststore\.\(p12\|jks\)|TRUSTSTORE_PATH|g' \
+    -e 's|\${tls_truststore_password}|MASKED|g' \
+    -e 's|trustStorePassword=[^"]*|trustStorePassword=MASKED|' \
+    "$1"
+}
+
+_m270__detect_setenv() {
+  local old_setenv="${_M270__BACKUP_DIR}/opt/harmony-ap/bin/setenv.sh"
+  [[ -f "$old_setenv" ]] || return 0
+
+  local old_setenv_template="${_M270__BACKUP_DIR}/opt/harmony-ap/setup/setenv.sh.template"
+  local is_custom="unknown"
+
+  if [[ -f "$old_setenv_template" ]]; then
+    local norm_old norm_ref
+    norm_old="$(_m270__normalize_setenv "$old_setenv")"
+    norm_ref="$(_m270__normalize_setenv "$old_setenv_template")"
+    [[ "$norm_old" != "$norm_ref" ]] && is_custom="yes" || is_custom="no"
+  fi
+
+  if [[ "$is_custom" == "no" ]]; then
+    _m270__log "  setenv.sh: no customizations detected."
+    return 0
+  fi
+
+  if [[ "$is_custom" == "yes" ]]; then
+    _m270__log "  setenv.sh: customizations detected, might require manual migration."
+  else
+    _m270__log "  setenv.sh: could not determine customization (no template in old package), might require manual migration."
+  fi
+  _m270__log "    JVM options now managed via systemd drop-ins and /usr/lib/harmony-ap/tomcat/bin/setenv.sh"
+  _m270__log "    Old: ${old_setenv}"
+  _m270__log "    New: ${DROPIN_DEFAULTS_DIR}/10-defaults.conf"
+}
+
+# =============================================================================
+# Detect web.xml & catalina.properties (informational)
+# =============================================================================
+
+_m270__detect_tomcat_conf() {
+  local old_webxml="${_M270__BACKUP_DIR}/etc/harmony-ap/tomcat-conf/web.xml"
+  local old_catprops="${_M270__BACKUP_DIR}/etc/harmony-ap/tomcat-conf/catalina.properties"
+
+  [[ -f "$old_webxml" || -f "$old_catprops" ]] || return 0
+
+  local backed=()
+  [[ ! -f "$old_webxml" ]]   || backed+=("web.xml")
+  [[ ! -f "$old_catprops" ]] || backed+=("catalina.properties")
+  _m270__log "  ${backed[*]}: Package uses defaults from Tomcat"
+  _m270__log "    Defaults can be found in /usr/lib/harmony-ap/tomcat/conf/"
+  _m270__log "    To customize, place your version in /etc/harmony-ap/tomcat/"
+}
+
+# =============================================================================
+# Detect disabled embedded ActiveMQ broker (external broker)
+# =============================================================================
+
+_m270__detect_embedded_activemq_disabled() {
+  [[ -f "$_M270__OLD_PROPS" ]] || return 0
+
+  # If the property is active (uncommented) with a non-empty value, the user was using
+  # the embedded broker. Nothing to do (10-defaults.conf already sets the default).
+  if grep -qP '^\s*activeMQ\.embedded\.configurationFile\s*=\s*\S' "$_M270__OLD_PROPS" 2>/dev/null; then
+    return 0
+  fi
+
+  # In all other cases (commented out, absent, or empty value), the user was using an
+  # external broker. Write an empty-value override to 50-harmony.conf so that the default
+  # from 10-defaults.conf (file:///etc/harmony-ap/activemq.xml) is suppressed. The
+  # application interprets an empty value as "no embedded broker". Bypass upsert_keyvalue
+  # because it rejects empty values.
+  sed -i '/^Environment="\?ACTIVEMQ_EMBEDDED_CONFIGURATIONFILE=/d' "$DROPIN_HARMONY_FILE"
+  printf '%s\n' 'Environment="ACTIVEMQ_EMBEDDED_CONFIGURATIONFILE="' >> "$DROPIN_HARMONY_FILE"
+  _m270__log "  activeMQ.embedded.configurationFile: disabled (external broker detected)."
+  _m270__log "    External ActiveMQ broker configuration preserved."
+  _m270__log "    To re-enable the embedded broker, remove ACTIVEMQ_EMBEDDED_CONFIGURATIONFILE from"
+  _m270__log "    ${DROPIN_HARMONY_FILE} and run: systemctl daemon-reload"
+}
+
+# =============================================================================
+# Detect server.xml relocation (informational only)
+# =============================================================================
+
+_m270__detect_server_xml() {
+  [[ -f "${_M270__BACKUP_DIR}/etc/harmony-ap/tomcat-conf/server.xml" ]] || return 0
+
+  _m270__log "  server.xml: the new file uses environment variables for all settings."
+  _m270__log "    Old: ${_M270__BACKUP_DIR}/etc/harmony-ap/tomcat-conf/server.xml"
+  _m270__log "    New: /etc/harmony-ap/tomcat/server.xml"
+}
+
+# =============================================================================
+# Detect clientauthentication.xml password mismatch
+# =============================================================================
+
+_m270__detect_clientauth() {
+  local old_clientauth="${_M270__BACKUP_DIR}/etc/harmony-ap/clientauthentication.xml"
+  [[ -f "$old_clientauth" ]] || return 0
+
+  local ca_ts_pass
+  ca_ts_pass="$(grep -oP 'password="\K[^"]*' "$old_clientauth" 2>/dev/null | head -1 || true)"
+  [[ -n "$ca_ts_pass" ]] || return 0
+
+  local current_ts_pass
+  current_ts_pass="$(get_secret TLS_TRUSTSTORE_PASSWORD)"
+  if [[ -n "$current_ts_pass" && "$ca_ts_pass" != "$current_ts_pass" ]]; then
+    _m270__log "  clientauthentication.xml: truststore password differs from server.xml."
+    _m270__log "    Using the server.xml value. Verify TLS settings after startup."
+    _m270__log "    If this causes TLS issues, update the password in ${SECRETS_FILE}."
+  fi
+}
+
+# =============================================================================
+# Detect and migrate all configuration customizations
+# =============================================================================
+
+_m270__detect_and_migrate_customizations() {
+  _m270__log "Configuration files:"
+
+  _m270__migrate_domibus_customizations
+  _m270__migrate_ws_plugin
+  _m270__detect_setenv
+  _m270__detect_tomcat_conf
+
+  local -a logging_hashes=(
+    "8607627c45e334322203e7ea381c7c11b3d94910cd9564f0f28778f227870960"  # 1.0.0-2.6.0
+  )
+  _m270__detect_config_changes "logging.properties" \
+    "${_M270__BACKUP_DIR}/etc/harmony-ap/tomcat-conf/logging.properties" \
+    "/etc/harmony-ap/tomcat/logging.properties" \
+    "" \
+    "${logging_hashes[@]}"
+
+  local -a activemq_hashes=(
+    "5e2f12cc3e3e49eaf915bf289af1919e31366f3f28c16a441a46d621650d8903"  # 1.0.0-1.4.0
+    "48454a3b7424b0f22c0d4ee886f5a4c59b9bd30463c5b7b9aca109413da6cc61"  # 2.0.0-2.2.2
+    "009b5f9b806ff987b93675cdba60fd58c05951f5ae1aef6a58db247bbc769484"  # 2.3.0-2.5.0
+    "d54e47db57ea2467317b5d317e12a695323570b04ce76cdb74ac66244df2a8ae"  # 2.6.0
+  )
+  _m270__detect_config_changes "activemq.xml" \
+    "${_M270__BACKUP_DIR}/etc/harmony-ap/internal/activemq.xml" \
+    "/etc/harmony-ap/activemq.xml" \
+    "File relocated from /etc/harmony-ap/internal/ to /etc/harmony-ap/." \
+    "${activemq_hashes[@]}"
+
+  _m270__detect_embedded_activemq_disabled
+
+  local -a logback_hashes=(
+    "5bbf2c4fd93449d7dc3f8bfd04b13ffaf1fd0a20e71d4148b5ceaeb9dd2739bd"  # 1.0.0-1.4.0
+    "f9c36b7c0988a612ecab137e9f2986f9c178fe9e43f7c1d746ae05d0ad7f68f1"  # 2.0.0
+    "b4666a19d8ddb4273a29236313edcd1f93bac680e399de97f772e69329cc750b"  # 2.1.0-2.4.0
+    "4e551fa12a3bf700d518deb34df884fb959d47f76cb38a54995d509956f8a2ad"  # 2.5.0
+    "f9efeeb08c1e8d4bda669ad71ee4cf59cefb21532c111e7eccee2b884d854e6c"  # 2.6.0
+  )
+  _m270__detect_config_changes "logback.xml" \
+    "${_M270__BACKUP_DIR}/etc/harmony-ap/logback.xml" \
+    "/etc/harmony-ap/logback.xml" \
+    "" \
+    "${logback_hashes[@]}"
+
+  _m270__detect_server_xml
+  _m270__detect_clientauth
+}
+
+# =============================================================================
+# Fix Liquibase changelog paths in DATABASECHANGELOG
+# =============================================================================
+
+_m270__fix_changelog_paths() {
+  local db_type db_host db_port db_schema db_user db_password
+  db_get harmony-ap/database-type;     db_type="${RET:-mysql}"
+  db_get harmony-ap/database-host;     db_host="${RET:-}"
+  db_get harmony-ap/database-port;     db_port="${RET:-}"
+  db_get harmony-ap/database-schema;   db_schema="${RET:-}"
+  db_get harmony-ap/database-user;     db_user="${RET:-}"
+  db_get harmony-ap/database-password; db_password="${RET:-}"
+
+  if [[ -z "$db_host" || -z "$db_user" || -z "$db_password" ]]; then
+    _m270__log "Cannot determine DB credentials. Skipping changelog path fix."
+    _m270__log "  If Liquibase fails during upgrade, manually run:"
+    _m270__log "  UPDATE DATABASECHANGELOG SET FILENAME='db.changelog.xml' WHERE FILENAME IN ('/opt/harmony-ap/db/db.changelog.xml', 'opt/harmony-ap/db/db.changelog.xml');"
+    return 0
+  fi
+
+  local db_url db_driver
+  read -r db_url db_driver _ < <(get_database_connection "$db_type" "$db_host" "$db_port" "$db_schema")
+
+  _m270__log "Updating Liquibase changelog paths in database..."
+
+  if DB_PASSWORD="$db_password" \
+    harmony-database \
+      --mode liquibase \
+      --stage "$STAGE" \
+      --indent-output \
+      --db-url "$db_url" \
+      --db-driver-class "$db_driver" \
+      --db-user "$db_user" \
+      -- execute-sql \
+      --sql="UPDATE DATABASECHANGELOG SET FILENAME = 'db.changelog.xml' WHERE FILENAME IN ('/opt/harmony-ap/db/db.changelog.xml', 'opt/harmony-ap/db/db.changelog.xml')" \
+      >&2; then
+    _m270__log "Changelog paths updated successfully."
+  else
+    _m270__log "WARNING: Could not update changelog paths. If Liquibase fails, manually run:"
+    _m270__log "  UPDATE DATABASECHANGELOG SET FILENAME='db.changelog.xml' WHERE FILENAME IN ('/opt/harmony-ap/db/db.changelog.xml', 'opt/harmony-ap/db/db.changelog.xml');"
+  fi
+}
+
+# =============================================================================
+# Clean up orphan files and directories
+# =============================================================================
+
+_m270__cleanup_orphans() {
+  # Old tracked config files automatically during the upgrade. The rm -f calls below act as a fallback
+  local orphan
+  for orphan in \
+    /etc/harmony-ap/tomcat-conf/server.xml \
+    /etc/harmony-ap/tomcat-conf/web.xml \
+    /etc/harmony-ap/tomcat-conf/catalina.properties \
+    /etc/harmony-ap/tomcat-conf/logging.properties \
+    /etc/harmony-ap/tomcat-conf/catalina.policy \
+    /etc/harmony-ap/tomcat-conf/context.xml \
+    /etc/harmony-ap/tomcat-conf/jaspic-providers.xml \
+    /etc/harmony-ap/tomcat-conf/jaspic-providers.xsd \
+    /etc/harmony-ap/tomcat-conf/tomcat-users.xml \
+    /etc/harmony-ap/tomcat-conf/tomcat-users.xsd; do
+    rm -f "$orphan"
+  done
+
+  # Clean leftover backup files (.dpkg-bak/.dpkg-old) from config file transitions
+  while IFS= read -r -d '' dpkg_remnant; do
+    _m270__log "  Removing obsolete conffile backup: ${dpkg_remnant}"
+    rm -f "$dpkg_remnant"
+  done < <(find /etc/harmony-ap/tomcat-conf -maxdepth 1 \( -name '*.dpkg-bak' -o -name '*.dpkg-old' \) -type f -print0 2>/dev/null)
+
+  rmdir /etc/harmony-ap/tomcat-conf 2>/dev/null \
+    || _m270__log "  /etc/harmony-ap/tomcat-conf/ not empty. Review remaining files."
+
+  # Old activemq.xml location (relocated to /etc/harmony-ap/activemq.xml)
+  rm -f /etc/harmony-ap/internal/activemq.xml
+
+  while IFS= read -r -d '' dpkg_remnant; do
+    _m270__log "  Removing obsolete conffile backup: ${dpkg_remnant}"
+    rm -f "$dpkg_remnant"
+  done < <(find /etc/harmony-ap/internal -maxdepth 1 \( -name '*.dpkg-bak' -o -name '*.dpkg-old' \) -type f -print0 2>/dev/null)
+
+  rmdir /etc/harmony-ap/internal 2>/dev/null \
+    || _m270__log "  /etc/harmony-ap/internal/ not empty. Review remaining files."
+
+  # Old setenv.sh (generated by old postinst via envsubst, not tracked by dpkg)
+  rm -f /opt/harmony-ap/bin/setenv.sh
+  rmdir /opt/harmony-ap/bin 2>/dev/null \
+    || _m270__log "  /opt/harmony-ap/bin/ not empty. Review remaining files."
+
+  # Old mysql_tzinfo marker
+  rm -f /etc/harmony-ap/.mysql_tzinfo
+
+  # Old plugins/lib already moved by migration; remove all remnants (backup has originals)
+  rm -rf /etc/harmony-ap/plugins/lib
+
+  # Old conf symlink from 2.0.0-2.1.0 (points to /etc/harmony-ap)
+  rm -f /opt/harmony-ap/conf
+
+  # Old runtime directories no longer used (PrivateTmp=yes in new service)
+  rm -rf /opt/harmony-ap/temp
+  if [[ -d /opt/harmony-ap/logs ]]; then
+    rmdir /opt/harmony-ap/logs 2>/dev/null \
+      || _m270__log "Old log files at /opt/harmony-ap/logs/. Review and remove manually if not needed."
+  fi
+
+  # Old CATALINA_TMPDIR (new service uses PrivateTmp=yes)
+  rm -rf /var/tmp/harmony-ap
+
+  # Old /var/opt/harmony-ap/ tree (broker data already migrated above)
+  if [[ -d /var/opt/harmony-ap ]]; then
+    rm -rf /var/opt/harmony-ap/work /var/opt/harmony-ap/tomcat
+    rmdir /var/opt/harmony-ap 2>/dev/null \
+      || _m270__log "  /var/opt/harmony-ap/ not empty. Review remaining files."
+  fi
+
+  # Remove /opt/harmony-ap if completely empty after all cleanup
+  rmdir /opt/harmony-ap 2>/dev/null \
+    || _m270__log "  /opt/harmony-ap/ not empty. Review remaining files."
+
+  # Warn about .dpkg-old/.dpkg-bak backup files left behind after config file transitions
+  local dpkg_old
+  while IFS= read -r -d '' dpkg_old; do
+    _m270__log "  Leftover conffile backup: ${dpkg_old} Review and remove if not needed."
+  done < <(find /etc/harmony-ap/ \( -name '*.dpkg-old' -o -name '*.dpkg-bak' \) -print0 2>/dev/null)
+
+  _m270__log "Cleanup complete. All original files preserved in backup: ${_M270__BACKUP_DIR}"
+
+  # Remove migration marker
+  rm -f "$_M270__MIGRATION_MARKER"
+}
+
+# =============================================================================
+# Log migration summary
+# =============================================================================
+
+_m270__log_summary() {
+  _m270__log ""
+  _m270__log "Migration to 2.7.0 complete."
+  _m270__log "  Backup preserved at: ${_M270__BACKUP_DIR}"
+  _m270__log "  Configuration drop-ins:"
+  _m270__log "    Defaults: ${DROPIN_DEFAULTS_DIR}/10-defaults.conf"
+  _m270__log "    Managed by package: ${DROPIN_HARMONY_FILE}"
+  if [[ -f "${_M270__DROPIN_OVERRIDE_FILE}" ]]; then
+    _m270__log "    Customizations: ${_M270__DROPIN_OVERRIDE_FILE}"
+  fi
+}
+
+# =============================================================================
+# Namespace cleanup
+# =============================================================================
+
+_m270__cleanup_namespace() {
+  local fn var
+
+  while IFS= read -r fn; do
+    unset -f "$fn"
+  done < <(compgen -A function | grep '^_m270__')
+
+  while IFS= read -r var; do
+    unset "$var"
+  done < <(compgen -A variable | grep '^_M270__')
+
+  unset -f migrate_to_270
+}
+
+# =============================================================================
+# Main migration function
+# =============================================================================
+
+migrate_to_270() {
+  local old_version="$1"
+
+  _m270__load_backup
+  _m270__log "Starting migration from ${old_version} to 2.7.0"
+
+  ensure_file "$DROPIN_HARMONY_FILE" root:root       0644 true 022 "$DROPIN_HARMONY_HEADER"
+  ensure_file "$SECRETS_FILE"        root:harmony-ap 0640 true 027 "$SECRETS_HEADER"
+
+  _m270__migrate_managed_props
+  _m270__update_debconf_from_config
+  _m270__seed_certificate_defaults
+  _m270__migrate_markers
+  _m270__migrate_plugins
+  _m270__migrate_policies
+  _m270__migrate_keystores
+  _m270__migrate_broker_data
+  _m270__detect_and_migrate_customizations
+  _m270__fix_changelog_paths
+  _m270__cleanup_orphans
+
+  require_manual_start
+  _m270__log_summary
+  _m270__cleanup_namespace
+}

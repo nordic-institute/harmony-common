@@ -59,9 +59,13 @@ abstract class ManifestFingerprintValueSource : ValueSource<String, ManifestFing
       return sha256("NO_MATCHING_STEPS/$scope/$effectiveDistro")
     }
 
+    val varsNode = rootNode.get("vars")
     val payload = buildString {
       appendLine("--SCOPE=${scope.name}")
       appendLine("--DISTRO=$effectiveDistro")
+      if (varsNode != null && varsNode.isObject && !varsNode.isEmpty) {
+        appendLine("--VARS=${jsonMapper.writeValueAsString(canonicalizeNode(varsNode))}")
+      }
       append(jsonMapper.writeValueAsString(applicableSteps))
     }
     return sha256(payload)

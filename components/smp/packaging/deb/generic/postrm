@@ -1,19 +1,43 @@
 #!/bin/bash
 
-set -e
+set -eo pipefail
+trap 'db_stop 2>/dev/null || true' EXIT
 
+# Source confmodule before `set -u`. debconf in Jammy is not nounset-safe
+# https://salsa.debian.org/pkg-debconf/debconf/-/merge_requests/12
 . /usr/share/debconf/confmodule
 
-if [[ "$1" == "remove" ]]; then
-  rm -rf /opt/harmony-smp
-elif [[ "$1" == "purge" ]]; then
-  db_purge
-  rm -rf /etc/harmony-smp
-elif [[ "$1" == "abort-install" ]]; then
-  rm -rf /etc/harmony-smp
-  rm -rf /opt/harmony-smp
-fi
+set -u
 
-db_stop
+#DEBHELPER#
 
-exit 0
+case "${1:-}" in
+  purge)
+    db_purge
+    rm -rf /etc/harmony-smp /etc/systemd/system/harmony-smp.service.d
+    rm -rf /var/lib/harmony-smp /var/log/harmony-smp
+    rm -rf /usr/local/lib/harmony-smp
+    systemctl daemon-reload 2>/dev/null || true
+    ;;
+
+  remove)
+    systemctl daemon-reload 2>/dev/null || true
+    ;;
+
+  abort-install)
+    systemctl stop harmony-smp 2>/dev/null || true
+    systemctl disable harmony-smp 2>/dev/null || true
+    rm -rf /etc/systemd/system/harmony-smp.service.d
+    rm -rf /var/lib/harmony-smp
+    rm -rf /usr/local/lib/harmony-smp
+    systemctl daemon-reload 2>/dev/null || true
+    ;;
+
+  upgrade|failed-upgrade|abort-upgrade|disappear)
+    ;;
+
+  *)
+    echo "harmony-smp postrm: called with unknown argument '${1:-}'" >&2
+    exit 1
+    ;;
+esac

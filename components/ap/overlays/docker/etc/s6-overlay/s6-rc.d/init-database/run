@@ -3,56 +3,33 @@ set -euo pipefail
 
 readonly STAGE="init-database"
 
-source /usr/lib/harmony-common
-source /usr/lib/harmony-cluster
+source /usr/lib/harmony-ap/lib/harmony-common
+source /usr/lib/harmony-ap/lib/harmony-cluster
 
-readonly DEFAULT_ADMIN_USER="harmony"
+: "${ADMIN_USER:=harmony}"
 
-define_liquibase_parameters() {
-  liquibase_home="${HARMONY_HOME}/liquibase"
-  search_path="${HARMONY_HOME}/db"
-  changelog_file="db.changelog.xml"
-
-  classpath="$liquibase_home"
-
-  drivers=(
-    "${HARMONY_HOME}/lib/mysql-connector-j.jar"
-    "${HARMONY_HOME}/lib/mariadb-java-client.jar"
+run_liquibase() {
+  local args=(
+    --mode liquibase
+    --stage "$STAGE"
+    --db-url "$DB_URL"
+    --db-driver-class "$DB_DRIVER_CLASS"
+    --db-user "$DB_USER"
+    --indent-output
   )
 
-  for driver in "${drivers[@]}"; do
-    if [[ -f "$driver" ]]; then
-      classpath="$classpath:$driver"
-    fi
-  done
+  [[ "${LOG_LEVEL:-}" != "DEBUG" ]] || args+=(--sql-show-sql-warnings)
 
-  if [[ "$LOG_LEVEL" == "DEBUG" ]]; then
-    sql_warnings=true
-  else
-    sql_warnings=false
-  fi
-
-  liquibase_common_args=(
-    --driver="$DB_DRIVER_CLASS"
-    --classpath="$classpath"
-    --search-path="$search_path"
-    --changelog-file="$changelog_file"
-    --url="$DB_URL"
-    --username="$DB_USER"
-    --password="$DB_PASSWORD"
-    --show-banner=false
-    --analytics-enabled=false
-    --sql-show-sql-warnings="$sql_warnings"
-  )
+  DB_PASSWORD="$DB_PASSWORD" harmony-database "${args[@]}" -- "$@"
 }
 
 run_migrations() {
   local _admin_user _admin_password _admin_password_hash history_output
 
-  _admin_user="${ADMIN_USER:-$DEFAULT_ADMIN_USER}"
+  _admin_user="$ADMIN_USER"
   _admin_password="${ADMIN_PASSWORD:-}"
 
-  if ! history_output=$("$liquibase_home/liquibase" "${liquibase_common_args[@]}" history 2>&1); then
+  if ! history_output=$(run_liquibase history 2>&1); then
     log ERROR "Failed to execute 'liquibase history'. Database may be unreachable or misconfigured."
 
     printf "\n\n%s\n" "$history_output" >&2
@@ -65,13 +42,13 @@ run_migrations() {
     log DEBUG "Defining admin user credentials"
 
     if [[ -z "$_admin_password" ]]; then
-      _admin_password=$(harmony-password --stage "$STAGE")
+      _admin_password=$(harmony-password --stage "$STAGE" --label "admin")
     fi
 
     if [[ -z "${ADMIN_PASSWORD:-}" ]]; then
       log INFO "Harmony AP admin credentials:"
-      log INFO "    Username: $_admin_user"
-      log INFO "    Password: $_admin_password"
+      log INFO "  Username: $_admin_user"
+      log INFO "  Password: $_admin_password"
     fi
 
     log DEBUG "Hashing admin password"
@@ -79,30 +56,18 @@ run_migrations() {
       eu.domibus.api.util.BCryptPasswordHash "$_admin_password")
 
     log DEBUG "Applying database migrations"
-    "$liquibase_home/liquibase" "${liquibase_common_args[@]}" update \
+    run_liquibase update \
       -DADMIN_USERNAME="$_admin_user" \
-      -DADMIN_PASSWORD_HASH="$_admin_password_hash" \
-      2>&1 | sed 's/^/    /'
+      -DADMIN_PASSWORD_HASH="$_admin_password_hash"
   else
     log INFO "Database already initialized. Applying pending database migrations"
-    "$liquibase_home/liquibase" "${liquibase_common_args[@]}" update \
-      2>&1 | sed 's/^/    /'
+    run_liquibase update
   fi
 
   ADMIN_USER="$_admin_user"
   ADMIN_PASSWORD="$_admin_password"
 
   log INFO "Database migrations applied"
-}
-
-persist_database_connection_details() {
-  set_property 'domibus.datasource.url' "$DB_URL"
-  set_property "domibus.datasource.driverClassName" "$DB_DRIVER_CLASS"
-  set_property 'domibus.database.schema' "$DB_SCHEMA"
-  set_property 'domibus.database.serverName' "$DB_HOST"
-  set_property 'domibus.database.port' "$DB_PORT"
-  set_property 'domibus.datasource.user' "$DB_USER"
-  set_property 'domibus.datasource.password' "$DB_PASSWORD" --quiet
 }
 
 sync_database_user() {
@@ -115,28 +80,25 @@ sync_database_user() {
     fi
   fi
 
-  ADMIN_USER="${ADMIN_USER:-$DEFAULT_ADMIN_USER}"
   ADMIN_PASSWORD=${ADMIN_PASSWORD:-$(read_secret "ADMIN-PASSWORD")}
 }
 
-publish_environment_variables() {
-  printf "%s" "$ADMIN_USER" > /var/run/s6/container_environment/ADMIN_USER
-  printf "%s" "$ADMIN_PASSWORD" > /var/run/s6/container_environment/ADMIN_PASSWORD
+publish_admin_env() {
+  publish_env ADMIN_USER "$ADMIN_USER"
+  publish_env ADMIN_PASSWORD "$ADMIN_PASSWORD"
 }
 
 init_database() {
   log DEBUG "Started"
 
   if is_primary; then
-    define_liquibase_parameters
     run_migrations
   else
     log DEBUG "Not a primary node; skipping database initialization"
   fi
 
   sync_database_user
-  persist_database_connection_details
-  publish_environment_variables
+  publish_admin_env
 
   log DEBUG "Done"
 }

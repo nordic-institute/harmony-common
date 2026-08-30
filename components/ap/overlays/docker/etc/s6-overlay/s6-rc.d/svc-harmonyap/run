@@ -11,6 +11,7 @@ fi
 
 exec java \
   $JAVA_OPTS \
+  -Dorg.apache.tomcat.util.digester.PROPERTY_SOURCE=org.apache.tomcat.util.digester.EnvironmentPropertySource,org.apache.tomcat.util.digester.SystemPropertySource \
   --add-opens=java.base/java.lang=ALL-UNNAMED \
   --add-opens=java.base/java.io=ALL-UNNAMED \
   --add-opens=java.base/java.util=ALL-UNNAMED \
@@ -22,20 +23,20 @@ exec java \
   --add-opens=jdk.management/com.sun.management.internal=ALL-UNNAMED \
   --add-exports=java.base/jdk.internal.ref=ALL-UNNAMED \
   -Djava.awt.headless=true \
-  -Djava.io.tmpdir="${CATALINA_TEMP_DIR}" \
+  -Djava.io.tmpdir="${TOMCAT_TEMP_DIR}" \
   -Djava.rmi.server.hostname=127.0.0.1 \
   -Djava.security.egd=file:/dev/urandom \
-  -Djava.util.logging.config.file="${HARMONY_BASE}/conf/logging.properties" \
+  -Djava.util.logging.config.file="${HARMONY_CONFIG}/tomcat/logging.properties" \
   -Djava.util.logging.manager=org.apache.juli.ClassLoaderLogManager \
   -Djavax.net.ssl.trustStore="${TLS_TRUSTSTORE_PATH}" \
   -Djavax.net.ssl.trustStorePassword="${TLS_TRUSTSTORE_PASSWORD}" \
   -Dlogback.configurationFile="${LOGBACK_CONFIG_FILE}" \
-  -Dcatalina.base="${HARMONY_BASE}" \
-  -Dcatalina.home="${HARMONY_HOME}" \
-  -Ddomibus.config.location="${HARMONY_BASE}/etc" \
-  -Ddomibus.work.location="${ACTIVEMQ_WORK_LOCATION}" \
-  -Ddomibus.extensions.location="${HARMONY_HOME}" \
+  -Dcatalina.base="${HARMONY_BASE}/tomcat" \
+  -Dcatalina.home="${HARMONY_HOME}/tomcat" \
+  -Ddomibus.config.location="${HARMONY_CONFIG}" \
+  -Ddomibus.work.location="${ACTIVEMQ_WORK_DIR}" \
+  -Ddomibus.extensions.location="${HARMONY_ADDONS},/usr/share/harmony-ap" \
   -Ddomibus.node.id="${NODE_ID}" \
-  -Ddomibus.backup.preserveFileDate="${PRESERVE_BACKUP_FILE_DATE}" \
-  -classpath "${HARMONY_HOME}/bin/bootstrap.jar:${HARMONY_HOME}/bin/tomcat-juli.jar" \
+  -Ddomibus.backup.preserveFileDate="${DOMIBUS_BACKUP_PRESERVEFILEDATE}" \
+  -classpath "${HARMONY_HOME}/tomcat/bin/bootstrap.jar:${HARMONY_HOME}/tomcat/bin/tomcat-juli.jar" \
   org.apache.catalina.startup.Bootstrap

@@ -183,6 +183,7 @@ abstract class BuildDebTask @Inject constructor(
     }
 
     validateInstallFile(workspace, stagingRoot)
+    validateConffilesInStaging(workspace, stagingRoot)
   }
 
   private fun validateInstallFile(workspace: Workspace, stagingRoot: File) {
@@ -235,6 +236,35 @@ abstract class BuildDebTask @Inject constructor(
 
     logger.info(
       "Validated debian/install for component='${component.get()}': ${declaredPaths.size} paths declared, ${missingPaths.size} missing, ${undeclaredPaths.size} undeclared"
+    )
+  }
+
+  private fun validateConffilesInStaging(workspace: Workspace, stagingRoot: File) {
+    val conffilesFile = workspace.debianDir.resolve("conffiles")
+    if (!conffilesFile.isFile) {
+      return
+    }
+
+    val declaredConffiles = conffilesFile.readLines()
+      .map { it.trim() }
+      .filter { it.isNotBlank() && !it.startsWith("#") }
+      .map { line -> line.split(Regex("\\s+")).first().removePrefix("/") }
+      .filter { it.isNotBlank() }
+
+    val missingConffiles = declaredConffiles.filter { relPath ->
+      !stagingRoot.resolve(relPath).exists()
+    }
+
+    check(missingConffiles.isEmpty()) {
+      """
+      debian/conffiles references paths missing from staging for component='${component.get()}', distro='${distro.get()}':
+      ${missingConffiles.joinToString("\n") { "  - /$it" }}
+      Ensure manifest.yml materializes every declared conffile into staging.
+      """.trimIndent()
+    }
+
+    logger.info(
+      "Validated debian/conffiles for component='${component.get()}': ${declaredConffiles.size} entries."
     )
   }
 

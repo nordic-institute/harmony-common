@@ -1,0 +1,194 @@
+#!/bin/bash
+set -euo pipefail
+
+if ! declare -f log >/dev/null; then
+  SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+  source "$SCRIPT_DIR/harmony-store-common"
+fi
+
+import_certificate_to_truststore() {
+  local -n import_certificate_config="$1"
+  validate_required_keys import_certificate_config alias public_cert_path store_path store_password store_type
+
+  local cert_alias="${import_certificate_config[alias]}"
+  local public_cert_path="${import_certificate_config[public_cert_path]}"
+  local store_path="${import_certificate_config[store_path]}"
+  local store_password="${import_certificate_config[store_password]}"
+  local store_type="${import_certificate_config[store_type]}"
+
+  local output
+  output=$(KEYTOOL_STOREPASS="$store_password" \
+    keytool \
+    -storetype "$store_type" \
+    -import \
+    -noprompt \
+    -alias "$cert_alias" \
+    -keystore "$store_path" \
+    -storepass:env KEYTOOL_STOREPASS \
+    -file "$public_cert_path" \
+    2>&1)
+  local exit_code=$?
+
+  if [[ $exit_code -ne 0 ]]; then
+    log ERROR "Failed to import certificate into truststore '$store_path': $output"
+  else
+    log DEBUG "Certificate imported into truststore. [store=$store_path]"
+  fi
+
+  return $exit_code
+}
+
+delete_certificate_from_truststore() {
+  local -n delete_certificate_config="$1"
+  validate_required_keys delete_certificate_config alias store_path store_password store_type
+
+  local cert_alias="${delete_certificate_config[alias]}"
+  local store_path="${delete_certificate_config[store_path]}"
+  local store_password="${delete_certificate_config[store_password]}"
+  local store_type="${delete_certificate_config[store_type]}"
+
+  local output
+  output=$(KEYTOOL_STOREPASS="$store_password" \
+    keytool \
+    -storetype "$store_type" \
+    -delete \
+    -alias "$cert_alias" \
+    -keystore "$store_path" \
+    -storepass:env KEYTOOL_STOREPASS 2>&1)
+  local exit_code=$?
+
+  if [[ $exit_code -ne 0 ]]; then
+    log ERROR "Failed to delete alias '$cert_alias' in truststore '$store_path': $output"
+  else
+    log DEBUG "Alias '$cert_alias' deleted from truststore. [store=$store_path]"
+  fi
+
+  return $exit_code
+}
+
+create_new_truststore() {
+  local -n new_truststore_config="$1"
+  validate_required_keys new_truststore_config stage alias store_path public_cert_path should_add_certificate_to_truststore
+
+  local label="${new_truststore_config[label]:-}"
+
+  if [[ -z "${new_truststore_config[store_password]:-}" ]]; then
+    log DEBUG "No truststore password provided. [store=$store_path]"
+
+    local password_generated
+    password_generated="$(harmony-password -s "${new_truststore_config[stage]}" -l "${label:+$label }truststore")"
+    new_truststore_config[store_password]="$password_generated"
+  fi
+
+  local cert_alias="${new_truststore_config[alias]}"
+  local store_path="${new_truststore_config[store_path]}"
+  local public_cert_path="${new_truststore_config[public_cert_path]}"
+  local should_add_certificate_to_truststore="${new_truststore_config[should_add_certificate_to_truststore]}"
+
+  if [[ "$should_add_certificate_to_truststore" == "true" ]]; then
+    import_certificate_to_truststore new_truststore_config
+    log INFO "${label:+${label} }truststore created."
+  else
+    local temp_cert dummy_alias="dummy"
+    temp_cert="$(mktemp)"
+
+    if openssl req -x509 -newkey rsa:2048 -keyout /dev/null -nodes \
+      -out "$temp_cert" -days 1 -subj "/CN=$dummy_alias" >/dev/null 2>&1; then
+
+      local orig_alias="${new_truststore_config[alias]}"
+      local orig_cert_path="${new_truststore_config[public_cert_path]}"
+
+      new_truststore_config[alias]="$dummy_alias"
+      new_truststore_config[public_cert_path]="$temp_cert"
+
+      import_certificate_to_truststore new_truststore_config
+      delete_certificate_from_truststore new_truststore_config
+      rm -f "$temp_cert"
+
+      new_truststore_config[alias]="$orig_alias"
+      new_truststore_config[public_cert_path]="$orig_cert_path"
+
+      log INFO "Empty ${label:+$label }truststore created."
+    else
+      rm -f "$temp_cert"
+      die "Failed to create empty truststore. [store=$store_path]"
+    fi
+  fi
+}
+
+import_public_certificate_if_needed() {
+  local -n import_certificate_if_needed_config="$1"
+  validate_required_keys import_certificate_if_needed_config alias store_path should_add_certificate_to_truststore
+
+  local cert_alias="${import_certificate_if_needed_config[alias]}"
+  local store_path="${import_certificate_if_needed_config[store_path]}"
+  local should_add_certificate_to_truststore="${import_certificate_if_needed_config[should_add_certificate_to_truststore]}"
+  local label="${import_certificate_if_needed_config[label]:-}"
+
+  if [[ "$should_add_certificate_to_truststore" == "true" ]]; then
+    local public_cert_path="${import_certificate_if_needed_config[public_cert_path]:-}"
+    if [[ -n "$public_cert_path" && ! -f "$public_cert_path" ]]; then
+      log WARN "Public certificate not found at '$public_cert_path'. Truststore import skipped. [store=$store_path]"
+      return 0
+    fi
+
+    if alias_exists_in_store import_certificate_if_needed_config; then
+      if validate_certificate_in_store import_certificate_if_needed_config; then
+        log DEBUG "Certificate for alias '$cert_alias' already exists and is valid. Import skipped. [store=$store_path]"
+      else
+        log WARN "Certificate for alias '$cert_alias' is invalid or mismatched. It will be reimported. [store=$store_path]"
+        delete_certificate_from_truststore import_certificate_if_needed_config
+        import_certificate_to_truststore import_certificate_if_needed_config
+      fi
+    else
+      log INFO "Alias '$cert_alias' not found in ${label:+$label }truststore. Importing certificate."
+      import_certificate_to_truststore import_certificate_if_needed_config
+    fi
+  fi
+}
+
+process_truststore() {
+  local -n truststore_config="$1"
+  validate_required_keys truststore_config store_path store_password store_base64
+
+  local store_path="${truststore_config[store_path]}"
+  local store_password="${truststore_config[store_password]}"
+  local store_base64="${truststore_config[store_base64]}"
+  local label="${truststore_config[label]:-}"
+
+  local store_generated=false
+  local password_generated=false
+
+  if [[ -n "$store_base64" ]]; then
+    log INFO "Loading ${label:+$label }truststore from base64."
+    if ! load_store_from_base64 truststore_config; then
+      die "Failed to load truststore from base64. Aborting. [store=$store_path]"
+    fi
+  elif [[ -f "$store_path" ]]; then
+    log DEBUG "${label:+$label }truststore already exists. [store=$store_path]"
+  else
+    log DEBUG "No truststore found and no base64 provided. [store=$store_path]"
+    log INFO "Creating new ${label:+$label }truststore."
+    if ! create_new_truststore truststore_config; then
+      die "Failed to create new truststore. Aborting. [store=$store_path]"
+    fi
+    store_generated=true
+
+    if [[ "$store_password" != "${truststore_config[store_password]}" ]]; then
+      password_generated=true
+      store_password=${truststore_config[store_password]}
+    fi
+  fi
+
+  # After existence or creation, validate the truststore
+  if ! validate_store_file_and_password truststore_config; then
+    die "Truststore validation failed. Please verify file path and password. [store=$store_path]"
+  fi
+
+  # Load the public certificate into the truststore
+  if ! import_public_certificate_if_needed truststore_config; then
+    die "Failed to import public certificate. Aborting process. [store=$store_path]"
+  fi
+
+  printf '%s\n%s\n%s\n' "$store_password" "$store_generated" "$password_generated"
+}

@@ -31,6 +31,7 @@ internal data class ContentProviders(
 )
 
 private data class ManifestInputs(
+  val vars: Provider<Map<String, String>>,
   val docker: ContentProviders,
   val debByDistro: Map<String, ContentProviders>
 )
@@ -51,6 +52,7 @@ internal fun Project.registerStagingWorkflows(
     component = component,
     scope = Scope.DOCKER,
     contentProviders = allInputs.docker,
+    vars = allInputs.vars,
     taskNameSuffix = "Docker",
     outputDir = BuildOutputPaths.dockerStagingDir(project, component.name),
     fingerprintFile = BuildOutputPaths.stagingFingerprint(project, component.name, Scope.DOCKER),
@@ -63,6 +65,7 @@ internal fun Project.registerStagingWorkflows(
       scope = Scope.DEB,
       distro = distro,
       contentProviders = allInputs.debByDistro.getValue(distro),
+      vars = allInputs.vars,
       taskNameSuffix = "Deb${distro.toTaskName()}",
       outputDir = BuildOutputPaths.debStagingDir(project, component.name, distro),
       fingerprintFile = BuildOutputPaths.stagingFingerprint(project, component.name, Scope.DEB, distro),
@@ -81,6 +84,11 @@ private fun resolveManifestInputs(
   val manifestText: Provider<String> = root.providers
     .fileContents(root.layout.file(root.provider { component.staging.manifestFile }))
     .asText
+
+  val varsProvider: Provider<Map<String, String>> = manifestText.map { text ->
+    val manifest = Mappers.yaml.readValue(text, Manifest::class.java)
+    manifest.vars
+  }
 
   fun applicableRefs(scope: Scope, distro: String?): Provider<List<ManifestReference>> =
     manifestText.map { text ->
@@ -102,7 +110,7 @@ private fun resolveManifestInputs(
     buildContentProviders(applicableRefs(Scope.DEB, distro))
   }
 
-  return ManifestInputs(docker = dockerContent, debByDistro = debContentByDistro)
+  return ManifestInputs(vars = varsProvider, docker = dockerContent, debByDistro = debContentByDistro)
 }
 
 private fun resolveArtifactInputs(
@@ -117,7 +125,7 @@ private fun resolveArtifactInputs(
       file.set(
         available[ref.alias]
           ?: throw GradleException("Unknown artifact alias '${ref.alias}' in manifest for component '${component.name}'. " +
-                   "Available: ${available.keys.sorted().joinToString(", ")}")
+                  "Available: ${available.keys.sorted().joinToString(", ")}")
       )
     }
   }
@@ -168,6 +176,7 @@ private fun Project.registerAssembleStagingTask(
   scope: Scope,
   distro: String? = null,
   contentProviders: ContentProviders,
+  vars: Provider<Map<String, String>>,
   taskNameSuffix: String,
   outputDir: Provider<Directory>,
   fingerprintFile: Provider<RegularFile>,
@@ -190,6 +199,7 @@ private fun Project.registerAssembleStagingTask(
       parameters.distro.set(distro ?: "")
     })
 
+    this.vars.set(vars)
     this.artifactClasspath.set(contentProviders.artifacts)
     this.vendorFiles.set(contentProviders.vendors)
     this.projectPaths.set(contentProviders.projectPaths)

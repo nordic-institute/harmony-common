@@ -1,0 +1,261 @@
+#!/bin/bash
+set -euo pipefail
+
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")/../lib" && pwd)/harmony-common"
+
+readonly DEFAULT_DB_PORT="3306"
+
+parse_cli_args() {
+  # shellcheck disable=SC2034 # Used in sourced scripts
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      --mode)            MODE="$2";            shift 2 ;;
+      --stage)           STAGE="${2:+$2-}dbcli"; shift 2 ;;
+      --node-id)         NODE_ID="$2";         shift 2 ;;
+      --db-type)         DB_TYPE="$2";         shift 2 ;;
+      --db-url)          DB_URL="$2";          shift 2 ;;
+      --db-driver-class) DB_DRIVER_CLASS="$2"; shift 2 ;;
+      --db-host)         DB_HOST="$2";         shift 2 ;;
+      --db-port)         DB_PORT="$2";         shift 2 ;;
+      --db-schema)       DB_SCHEMA="$2";       shift 2 ;;
+      --db-user)         DB_USER="$2";         shift 2 ;;
+      --liquibase-home)  LIQUIBASE_HOME="$2";  shift 2 ;;
+      --driver-dir)      DRIVER_DIR="$2";      shift 2 ;;
+      --search-path)     SEARCH_PATH="$2";     shift 2 ;;
+      --changelog-file)  CHANGELOG_FILE="$2";  shift 2 ;;
+      --indent-output)   INDENT_OUTPUT=true;   shift ;;
+      --sql-show-sql-warnings) SQL_SHOW_SQL_WARNINGS=true; shift ;;
+      --) shift; LIQUIBASE_PASSTHROUGH_ARGS=("$@"); break ;;
+      *) die "Unknown option: $1" ;;
+    esac
+  done
+}
+
+parse_db_url() {
+  local url="$1"
+  local no_scheme no_params hostport path host port ipv6_pattern
+
+  no_scheme="${url#*://}"                           # strip 'jdbc:<vendor>://' prefix
+  no_params="${no_scheme%%\?*}"                     # remove query string (e.g. "?param")
+  if [[ "$no_params" == */* ]]; then
+    hostport="${no_params%%/*}"                     # split at first "/" for host:port
+    path="${no_params#*/}"                          # remainder is schema/path
+  else
+    die "DB_URL parsing error: schema is required in URL"
+  fi
+
+  ipv6_pattern='^\[[0-9A-Fa-f:]+\](:[0-9]+)?$'      # IPv6 literal with optional port
+  if [[ "$hostport" =~ $ipv6_pattern ]]; then
+    host="${hostport%]*}"                           # strip from last "]" onwards
+    host="${host#[}"                                # drop leading "["
+    if [[ "$hostport" == *]:* ]]; then              # port present only when "]:" exists
+      port="${hostport##*:}"
+    else
+      port=""
+    fi
+  elif [[ "$hostport" == *:* ]]; then
+    host="${hostport%%:*}"                          # part before ":" for host
+    port="${hostport##*:}"                          # part after last ":" for port
+  else
+    host="$hostport"                                # no port present
+    port=""                                         # empty port
+  fi
+
+  DB_HOST="${DB_HOST:-$host}"
+  DB_PORT="${DB_PORT:-$port}"
+  DB_SCHEMA="${DB_SCHEMA:-$path}"
+}
+
+build_db_url() {
+  if [ -z "${DB_HOST:-}" ]; then
+    die "Missing required database host (DB_HOST); cannot construct database URL"
+  fi
+
+  DB_PORT="${DB_PORT:-$DEFAULT_DB_PORT}"
+  if [[ -z "${DB_SCHEMA:-}" ]]; then
+    die "Missing required database schema (DB_SCHEMA); cannot construct database URL"
+  fi
+
+  local url_prefix url_params
+  case "${DB_TYPE:-mysql}" in
+    mysql)
+      url_prefix="jdbc:mysql://"
+      url_params="?sslMode=preferred&allowPublicKeyRetrieval=true&useLegacyDatetimeCode=false&serverTimezone=UTC"
+      ;;
+    mariadb)
+      url_prefix="jdbc:mariadb://"
+      url_params="?sslMode=preferred&useLegacyDatetimeCode=false&serverTimezone=UTC"
+      ;;
+    *)
+      die "Unsupported database type: '${DB_TYPE}'. Supported types: mysql, mariadb."
+      ;;
+  esac
+
+  local host_part="$DB_HOST"
+  [[ "$DB_HOST" == *:* ]] && host_part="[$DB_HOST]"  # bracket IPv6 addresses
+  DB_URL="${url_prefix}${host_part}:${DB_PORT}/${DB_SCHEMA}${url_params}"
+}
+
+resolve_db_connection_details() {
+  if [[ -n "${DB_URL:-}" ]]; then
+    parse_db_url "$DB_URL"
+    log DEBUG "Using provided database URL: $DB_URL"
+  elif [[ -n "${DB_HOST:-}" ]]; then
+    build_db_url
+    log DEBUG "Constructed database URL from host, port and schema: $DB_URL"
+  else
+    die "Missing required database configuration: set DB_URL or DB_HOST"
+  fi
+
+  if [[ -z "${DB_DRIVER_CLASS:-}" ]]; then
+    case "${DB_URL:-}" in
+      jdbc:mysql:*)   DB_DRIVER_CLASS="com.mysql.cj.jdbc.Driver" ;;
+      jdbc:mariadb:*) DB_DRIVER_CLASS="org.mariadb.jdbc.Driver" ;;
+      *)              die "Cannot determine JDBC driver for URL: ${DB_URL}" ;;
+    esac
+  fi
+
+  DB_SCHEMA="${DB_SCHEMA:-}"
+  DB_PORT="${DB_PORT:-$DEFAULT_DB_PORT}"
+}
+
+resolve_db_hibernate_dialect() {
+  if [[ -n "${DB_HIBERNATE_DIALECT:-}" ]]; then
+    return 0
+  fi
+
+  case "${DB_DRIVER_CLASS:-}" in
+    com.mysql.cj.jdbc.Driver) DB_HIBERNATE_DIALECT="org.hibernate.dialect.MySQL8Dialect" ;;
+    org.mariadb.jdbc.Driver)  DB_HIBERNATE_DIALECT="org.hibernate.dialect.MariaDB106Dialect" ;;
+  esac
+}
+
+validate_db_connection_details() {
+  if [[ -z "${DB_URL:-}" || -z "${DB_HOST:-}" || -z "${DB_PORT:-}" || -z "${DB_SCHEMA:-}" ]]; then
+    die "Database parameter validation failed: DB_URL, DB_HOST, DB_PORT, and DB_SCHEMA must not be empty"
+  fi
+}
+
+print_connection_info() {
+  log DEBUG "Database connection information:"
+  log DEBUG "  URL: $DB_URL"
+  log DEBUG "  Driver class: $DB_DRIVER_CLASS"
+  log DEBUG "  Hibernate dialect: $DB_HIBERNATE_DIALECT"
+  log DEBUG "  Host: $DB_HOST"
+  log DEBUG "  Port: $DB_PORT"
+  log DEBUG "  Schema: $DB_SCHEMA"
+
+  printf '%s %s %s %s %s %s\n' "$DB_URL" "$DB_DRIVER_CLASS" "$DB_HIBERNATE_DIALECT" "$DB_HOST" "$DB_PORT" "$DB_SCHEMA"
+}
+
+wait_for_db() {
+  if [[ -z "${DB_USER:-}" || -z "${DB_PASSWORD:-}" ]]; then
+    die "Database user and password must be set"
+  fi
+
+  log INFO "Waiting for database ${DB_HOST}:${DB_PORT} to become available..."
+
+  # shellcheck disable=SC2016 # Single quotes intentional: $1/$2/$3 are positional args inside bash -c
+  if ! MYSQL_PWD="$DB_PASSWORD" timeout 60 bash -c \
+      'until mysqladmin ping -h "$1" -P "$2" -u "$3" >/dev/null 2>&1; do sleep 3; done' \
+      -- "$DB_HOST" "$DB_PORT" "$DB_USER"; then
+    die "Unable to connect to the database at ${DB_HOST}:${DB_PORT}. Exiting."
+  fi
+
+  log INFO "Database is available"
+}
+
+build_liquibase_classpath() {
+  local cp="$LIQUIBASE_HOME"
+  local jar
+  for jar in \
+    "$DRIVER_DIR/mysql-connector-j.jar" \
+    "$DRIVER_DIR/mariadb-java-client.jar"; do
+    [[ -f "$jar" ]] || continue
+    cp="$cp:$jar"
+  done
+  printf '%s' "$cp"
+}
+
+resolve_liquibase_defaults() {
+  : "${LIQUIBASE_HOME:=$_HARMONY_PKG_DIR/liquibase}"
+  : "${DRIVER_DIR:=$_HARMONY_PKG_DIR/tomcat/lib}"
+  : "${SEARCH_PATH:=$_HARMONY_PKG_DIR/db}"
+  : "${CHANGELOG_FILE:=db.changelog.xml}"
+  : "${SQL_SHOW_SQL_WARNINGS:=false}"
+}
+
+validate_liquibase_prerequisites() {
+  [[ -n "${DB_PASSWORD:-}" ]] || die "DB_PASSWORD must be set"
+  [[ -n "${DB_USER:-}" ]] || die "--db-user is required"
+  [[ ${#LIQUIBASE_PASSTHROUGH_ARGS[@]} -gt 0 ]] || die "No liquibase command specified after '--'"
+  [[ -x "$LIQUIBASE_HOME/liquibase" ]] || die "Liquibase binary not found or not executable: $LIQUIBASE_HOME/liquibase"
+}
+
+exec_liquibase() {
+  local classpath
+  classpath="$(build_liquibase_classpath)"
+
+  local args=(
+    --driver="$DB_DRIVER_CLASS"
+    --classpath="$classpath"
+    --search-path="$SEARCH_PATH"
+    --changelog-file="$CHANGELOG_FILE"
+    --url="$DB_URL"
+    --username="$DB_USER"
+    --show-banner=false
+    --analytics-enabled=false
+  )
+
+  if [[ "$SQL_SHOW_SQL_WARNINGS" == true ]]; then
+    args+=(--sql-show-sql-warnings=true)
+  else
+    args+=(--sql-show-sql-warnings=false)
+  fi
+
+  local env_args=(
+    env -i
+    PATH="$PATH"
+    LIQUIBASE_COMMAND_PASSWORD="$DB_PASSWORD"
+  )
+  [[ -z "${JAVA_HOME:-}" ]] || env_args+=(JAVA_HOME="$JAVA_HOME")
+
+  if [[ "${INDENT_OUTPUT:-}" == true ]]; then
+    "${env_args[@]}" "$LIQUIBASE_HOME/liquibase" "${args[@]}" \
+      "${LIQUIBASE_PASSTHROUGH_ARGS[@]}" 2>&1 | sed 's/^/    /'
+  else
+    "${env_args[@]}" "$LIQUIBASE_HOME/liquibase" "${args[@]}" \
+      "${LIQUIBASE_PASSTHROUGH_ARGS[@]}"
+  fi
+}
+
+main() {
+  LIQUIBASE_PASSTHROUGH_ARGS=()
+
+  parse_cli_args "$@"
+
+  case "$MODE" in
+    get-connection-details)
+      resolve_db_connection_details
+      resolve_db_hibernate_dialect
+      validate_db_connection_details
+      print_connection_info
+      ;;
+    wait-for-db)
+      wait_for_db
+      ;;
+    liquibase)
+      resolve_liquibase_defaults
+      validate_liquibase_prerequisites
+      resolve_db_connection_details
+      exec_liquibase
+      ;;
+    *)
+      die "Unsupported mode: $MODE. Available modes: get-connection-details, wait-for-db, liquibase."
+      ;;
+  esac
+}
+
+if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
+  main "$@"
+fi

@@ -1,0 +1,226 @@
+#!/bin/bash
+# Shared library for Harmony Debian package maintainer scripts.
+#
+# The config script carries standalone copies of get_dropin / get_secret
+# because it runs before package files are unpacked on fresh install.
+
+[[ -n "${__HARMONY_DEB_INCLUDED:-}" ]] && return
+readonly __HARMONY_DEB_INCLUDED=1
+
+[[ -n "${PACKAGE:-}" ]] || { echo "harmony-deb: PACKAGE must be set before sourcing" >&2; exit 1; }
+
+source "$(dirname "${BASH_SOURCE[0]}")/harmony-common"
+shopt -s nullglob
+
+# =============================================================================
+# Constants
+# =============================================================================
+
+# shellcheck disable=SC2034 # Constants consumed by sourcing scripts
+readonly MIGRATIONS_DIR="/usr/lib/${PACKAGE}/migrations"
+# shellcheck disable=SC2034
+readonly MARKER_DIR="/var/lib/${PACKAGE}"
+readonly SECURITY_DIR="/var/lib/${PACKAGE}/security"
+readonly SECRETS_FILE="${SECURITY_DIR}/secrets.env"
+# shellcheck disable=SC2034
+readonly SECRETS_HEADER="# Managed by the ${PACKAGE} package, may be overwritten on upgrade."$'\n'
+
+readonly DROPIN_DEFAULTS_DIR="/usr/lib/systemd/system/${PACKAGE}.service.d"
+readonly DROPIN_CONFIGS_DIR="/etc/systemd/system/${PACKAGE}.service.d"
+readonly DROPIN_HARMONY_FILE="${DROPIN_CONFIGS_DIR}/50-harmony.conf"
+# shellcheck disable=SC2034
+readonly DROPIN_HARMONY_HEADER="[Service]
+# Harmony installation values.
+# Managed by the ${PACKAGE} package, may be overwritten on upgrade.
+# For custom overrides use /etc/systemd/system/${PACKAGE}.service.d/90-override.conf
+# then run: systemctl daemon-reload
+"
+
+# =============================================================================
+# Key-value file helpers
+# =============================================================================
+
+ensure_file() {
+  local file="$1" owner="$2" mode="$3"
+  local can_create="${4:-true}"
+  local umask_val="${5:-022}"
+  local initial_content="${6:-}"
+
+  if [[ ! -f "$file" ]]; then
+    [[ "$can_create" == true ]] || die "Required file not found: ${file}"
+    mkdir -p "$(dirname "$file")"
+    (umask "$umask_val"; printf '%s' "$initial_content" >"$file")
+    log INFO "Created ${file}"
+  fi
+
+  chown "$owner" "$file"
+  chmod "$mode" "$file"
+}
+
+upsert_keyvalue() {
+  local file="$1" format="$2" key="$3" value="${4:-}"
+
+  [[ "$key" =~ ^[A-Za-z_][A-Za-z0-9_]*$ ]] || die "Invalid key name: '$key'"
+  [[ "$value" != *$'\n'* ]] || die "Value for key '$key' contains newlines"
+  if [[ -z "$value" ]]; then
+    log WARN "Empty value for '$key'. Skipping"
+    return 0
+  fi
+
+  local line
+  case "$format" in
+    dropin)
+      line="Environment=\"${key}=${value}\""
+      ;;
+    env)
+      # C-style escaping for systemd double-quoted EnvironmentFile values.
+      # Order matters: backslash first to avoid double-escaping.
+      local escaped="$value"
+      escaped="${escaped//\\/\\\\}"    # \ → \\
+      escaped="${escaped//\"/\\\"}"    # " → \"
+      escaped="${escaped//\$/\\\$}"    # $ → \$
+      line="${key}=\"${escaped}\""
+      ;;
+    *)
+      line="${key}=${value}"
+      ;;
+  esac
+
+  local match_prefix="${key}="
+  [[ "$format" != dropin ]] || match_prefix="Environment=\"${key}="
+
+  sed -i "/^${match_prefix}/d" "$file"
+  printf '%s\n' "$line" >> "$file"
+}
+
+delete_keyvalue() {
+  local file="$1" format="$2" key="$3"
+
+  local prefix="${key}="
+  [[ "$format" != dropin ]] || prefix="Environment=\"\?${key}="
+
+  sed -i "/^${prefix}/d" "$file"
+}
+
+# =============================================================================
+# Drop-in configuration
+# =============================================================================
+
+_read_dropin_value() {
+  local file="$1" key="$2"
+  [[ -f "$file" ]] || return 0
+  grep -Po "^Environment=\"?${key}=\K[^\"]*" "$file" 2>/dev/null | tail -1 || true
+}
+
+# Resolve the effective value of a drop-in variable by reading all drop-in
+# .conf files in the order systemd merges them. For identical basenames,
+# /etc/ wins over /usr/lib/; files are then sorted by basename and the last
+# Environment= assignment for the requested variable wins.
+get_dropin() {
+  local key="$1"
+
+  local -A by_name=()
+  local dir file name
+  for dir in "$DROPIN_DEFAULTS_DIR" "$DROPIN_CONFIGS_DIR"; do
+    [[ -d "$dir" ]] || continue
+    for file in "$dir"/*.conf; do
+      name="${file##*/}"
+      by_name["$name"]="$file"
+    done
+  done
+
+  (( ${#by_name[@]} > 0 )) || return 0
+
+  local value="" sorted_key v
+  while IFS= read -r sorted_key; do
+    v="$(_read_dropin_value "${by_name[$sorted_key]}" "$key")"
+    [[ -z "$v" ]] || value="$v"
+  done < <(printf '%s\n' "${!by_name[@]}" | sort)
+
+  printf '%s' "$value"
+}
+
+set_dropin() {
+  local key="$1" value="${2:-}"
+
+  [[ -n "$value" ]] || return 0
+
+  # Read current value from 50-harmony and effective default from earlier drop-ins
+  local harmony_value="" default_value=""
+  harmony_value="$(_read_dropin_value "$DROPIN_HARMONY_FILE" "$key")"
+
+  local file v
+  for file in "$DROPIN_DEFAULTS_DIR"/*.conf; do
+    v="$(_read_dropin_value "$file" "$key")"
+    [[ -n "$v" ]] && default_value="$v"
+  done
+
+  local old_effective="${harmony_value:-$default_value}"
+
+  # Write, delete, or skip based on whether new value matches default
+  if [[ "$value" == "$default_value" ]]; then
+    # Matches default -> remove from 50-harmony (let default take effect)
+    [[ -z "$harmony_value" ]] || delete_keyvalue "$DROPIN_HARMONY_FILE" dropin "$key"
+  else
+    # Differs from default (or no default) -> write to 50-harmony
+    upsert_keyvalue "$DROPIN_HARMONY_FILE" dropin "$key" "$value"
+  fi
+
+  # Warn if a later drop-in shadows the intended value (only on actual change)
+  if [[ "$old_effective" != "$value" ]]; then
+    local override_val
+    for file in "$DROPIN_CONFIGS_DIR"/*.conf; do
+      [[ "${file##*/}" > "50-harmony.conf" ]] || continue
+      override_val="$(_read_dropin_value "$file" "$key")"
+      if [[ -n "$override_val" && "$override_val" != "$value" ]]; then
+        log WARN "${key}: value '${value}' will be overridden by '${override_val}' from ${file##*/}"
+        log WARN "    Remove ${key} from ${file##*/} and run 'systemctl daemon-reload' for the change to take effect."
+        break
+      fi
+    done
+  fi
+}
+
+clear_dropin() {
+  delete_keyvalue "$DROPIN_HARMONY_FILE" dropin "$1"
+}
+
+# =============================================================================
+# Secrets
+# =============================================================================
+
+get_secret() {
+  local key="$1"
+
+  local value
+  value="$(grep -m1 -Po "^${key}=\K.*$" "$SECRETS_FILE" 2>/dev/null || true)"
+
+  if [[ "$value" == \"*\" ]]; then
+    value="${value#\"}"
+    value="${value%\"}"
+    # Unescape in reverse order ($ and " first, backslash last)
+    value="${value//\\\$/\$}"     # \$ → $
+    value="${value//\\\"/\"}"     # \" → "
+    value="${value//\\\\/\\}"     # \\ → \
+  fi
+
+  printf '%s' "$value"
+}
+
+set_secret() {
+  upsert_keyvalue "$SECRETS_FILE" env "$1" "${2:-}"
+}
+
+clear_secret() {
+  delete_keyvalue "$SECRETS_FILE" env "$1"
+}
+
+ensure_secret() {
+  local key="$1" label="$2"
+
+  [[ -z "$(get_secret "$key")" ]] || return 0
+
+  local value
+  value="$(harmony-password --stage "$STAGE" --label "$label")"
+  set_secret "$key" "$value"
+}

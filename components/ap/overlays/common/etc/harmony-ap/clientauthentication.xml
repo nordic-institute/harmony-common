@@ -1,0 +1,20 @@
+<http-conf:tlsClientParameters disableCNCheck="false"
+                               secureSocketProtocol="${TLS_SOCKET_PROTOCOL}"
+                               xmlns:http-conf="http://cxf.apache.org/transports/http/configuration"
+                               xmlns:security="http://cxf.apache.org/configuration/security">
+    <security:trustManagers>
+        <security:keyStore type="${TLS_TRUSTSTORE_TYPE}"
+                           password="${TLS_TRUSTSTORE_PASSWORD}"
+                           file="${TLS_TRUSTSTORE_PATH}"/>
+    </security:trustManagers>
+
+    <security:keyManagers keyPassword="${TLS_KEYSTORE_PASSWORD}">
+        <security:keyStore type="${TLS_KEYSTORE_TYPE}"
+                           password="${TLS_KEYSTORE_PASSWORD}"
+                           file="${TLS_KEYSTORE_PATH}"/>
+    </security:keyManagers>
+
+    <security:cipherSuitesFilter>
+        <security:exclude>.*_RSA_.*</security:exclude>
+    </security:cipherSuitesFilter>
+</http-conf:tlsClientParameters>

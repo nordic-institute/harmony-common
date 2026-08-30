@@ -1,3 +1,6 @@
+vars:
+  component: harmony-smp
+
 inputs:
   # Tomcat
   - from: vendor:tomcat
@@ -13,17 +16,14 @@ inputs:
       - include:
           - "bin/*.sh"
           - "bin/*.jar"
-        into: /opt/harmony-smp/bin
+        into: /usr/lib/harmony-smp/tomcat/bin
       - include:
           - "lib/**"
-        into: /opt/harmony-smp/lib
+        into: /usr/lib/harmony-smp/tomcat/lib
       - include:
-          - "conf/**"
-        exclude:
-          - "conf/logging.properties"
-          - "conf/server.xml"
-          - "conf/context.xml"
-        into: /opt/harmony-smp/setup/tomcat-defaults
+          - "conf/web.xml"
+          - "conf/catalina.properties"
+        into: /usr/lib/harmony-smp/tomcat/conf
 
   # Liquibase
   - from: vendor:liquibase
@@ -39,21 +39,30 @@ inputs:
       - "internal/lib/opencsv.jar"
       - "internal/lib/picocli.jar"
       - "internal/lib/snakeyaml.jar"
-    into: /opt/harmony-smp/liquibase
+    into: /usr/lib/harmony-smp/liquibase
 
-  # JDBC drivers
+  # JDBC drivers (into tomcat/lib for JNDI classpath)
   - from: vendor:mysqlj
     do: copy
-    into: /opt/harmony-smp/lib/mysql-connector-j.jar
+    into: /usr/lib/harmony-smp/tomcat/lib/mysql-connector-j.jar
   - from: vendor:mariadbj
     do: copy
-    into: /opt/harmony-smp/lib/mariadb-java-client.jar
+    into: /usr/lib/harmony-smp/tomcat/lib/mariadb-java-client.jar
 
   # Application
   - from: artifact:war
     do: unpack
     strip: 0
-    into: /opt/harmony-smp/webapps/ROOT/
+    into: /usr/lib/harmony-smp/webapps/ROOT/
+
+  # Shared libraries
+  - from: project:components/shared/overlays/common
+    do: copy
+    into: /
+  - from: project:components/shared/overlays/deb
+    do: copy
+    into: /
+    when: { scopes: [deb] }
 
   # Overlays
   - from: project:components/smp/overlays/common

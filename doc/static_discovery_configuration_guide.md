@@ -26,7 +26,7 @@ Doc. ID: UG-SDCG
 
 This document is licensed under the Creative Commons Attribution-ShareAlike 4.0 International License.
 To view a copy of this license, visit <https://creativecommons.org/licenses/by-sa/4.0/>
- 
+
 ## Table of Contents <!-- omit in toc -->
 
 <!-- vim-markdown-toc GFM -->
@@ -116,11 +116,6 @@ The table below gives an overview of different keystore and truststore files tha
 | `/etc/harmony-ap/tls-keystore.p12`   | `/etc/harmony-ap/tomcat-conf/server.xml` | `keystorePass` | Keystore for TLS key and certificate. |
 | `/etc/harmony-ap/tls-truststore.p12` | `/etc/harmony-ap/tomcat-conf/server.xml` | `truststorePass` | Truststore for trusted public TLS certificates. |
 
-
-#### Note about Using Harmony Access Point Container Version
-
-Harmony Access Point configuration is located at `/var/opt/harmony-ap/etc` instead of `/etc/harmony-ap` (for convinience, `/etc/harmony-ap` is a symbolic link to that directory).
-
 The commands in the guide need to be executed inside the container. For example:
 
 ```bash
@@ -137,19 +132,19 @@ If editing configuration files manually is needed, files can be copied to/from a
 
 ### 2.2 Change the Sign Key Alias
 
-Sign and TLS keys are automatically created during the Access Point installation process. The installation process 
+Sign and TLS keys are automatically created during the Access Point installation process. The installation process
 prompts for the Access Point owner Party Name that is used as an alias for the keys. Sometimes, the Party Name of the
 owner may not be known during the installation. In that case, `selfsigned` is used as the default value. In that case,
-the sign key alias must be manually updated later, because it must match the party name of the Access Point owner. Instead, if 
+the sign key alias must be manually updated later, because it must match the party name of the Access Point owner. Instead, if
 the correct Party Name is set during the installation process, no manual configuration steps regarding the sign key alias
 are required later.
 
-The party name is defined in the `PMode` configuration file. See the Domibus Administration Guide 
+The party name is defined in the `PMode` configuration file. See the Domibus Administration Guide
 \[[DOMIBUS_ADMIN_GUIDE](#Ref_DOMIBUS_ADMIN_GUIDE)\] for more details.
 
-For example, this block from a `PMode` file is taken from an Access Point owned by a party whose party name is 
+For example, this block from a `PMode` file is taken from an Access Point owned by a party whose party name is
 `org1_gw`. In this case, the alias of the sign key must be should `org1_gw`. If the Party Name wasn't set to `org1_gw`
- during the installation process, it must manually changed from `selfsigned` to `org1_gw`.
+during the installation process, it must manually changed from `selfsigned` to `org1_gw`.
 
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
@@ -183,7 +178,7 @@ Using the UI, reload the keystore to apply the changes:
 1. Click Certificates/Keystores
 2. Click "Reload KeyStore"
 
-Also, the `domibus.security.key.private.alias` property must be updated with the new alias. The property value can 
+Also, the `domibus.security.key.private.alias` property must be updated with the new alias. The property value can
 be updated following the steps below:
 
 1. Click Properties.
@@ -193,26 +188,26 @@ be updated following the steps below:
 
 ### 2.3 TLS Configuration
 
-Harmony Access Points supports two possible configurations, One-Way SSL (default) and Two-Way SSL. See the Domibus 
+Harmony Access Points supports two possible configurations, One-Way SSL (default) and Two-Way SSL. See the Domibus
 Administration Guide \[[DOMIBUS_ADMIN_GUIDE](#Ref_DOMIBUS_ADMIN_GUIDE)\] for more details.
 
 The TLS configuration is read from the `/etc/harmony-ap/clientauthentication.xml` file. The content of the file depends
 on the configuration that's used.
 
-**Note:** In the `/etc/harmony-ap/clientauthentication.xml` configuration examples, the `disableCNCheck` attribute specifies 
+**Note:** In the `/etc/harmony-ap/clientauthentication.xml` configuration examples, the `disableCNCheck` attribute specifies
 whether it is checked if the host name specified in the URL matches the host name specified in the Common Name (CN) of
-the server's TLS certificate. In the examples the value is `true` which means that the check is disabled. However, in 
-production environment the value should be set to `false`. In the default configuration the value of the `disableCNCheck` 
+the server's TLS certificate. In the examples the value is `true` which means that the check is disabled. However, in
+production environment the value should be set to `false`. In the default configuration the value of the `disableCNCheck`
 attribute is `false`.
 
 #### 2.3.1 One-Way SSL
 
-When One-Way SSL is used (default), the sender validates the signature of the receiver using the public certificate of 
-the receiver. The public certificate of the receiver is expected to be present in the `/etc/harmony-ap/tls-truststore.p12` 
-file. 
+When One-Way SSL is used (default), the sender validates the signature of the receiver using the public certificate of
+the receiver. The public certificate of the receiver is expected to be present in the `/etc/harmony-ap/tls-truststore.p12`
+file.
 
-In the default configuration the value of the `disableCNCheck` attribute is `false`. However, if self-signed certificates 
-are used, the value of the `disableCNCheck` attribute might need to be set to `true`. In that case, the 
+In the default configuration the value of the `disableCNCheck` attribute is `false`. However, if self-signed certificates
+are used, the value of the `disableCNCheck` attribute might need to be set to `true`. In that case, the
 `/etc/harmony-ap/clientauthentication.xml` file should look like this:
 
 ```xml
@@ -243,7 +238,7 @@ docker restart <container name>
 In Two-Way SSL, both the sender and the receiver sign the request and validate the trust of the other party.
 The public certificate of the receiver is expected to be present in the `/etc/harmony-ap/tls-truststore.p12` file. Also,
 the private key of the sender that's stored in the `/etc/harmony-ap/tls-keystore.p12` file is configured. In the example
-below, the use of self-signed certificates is enabled (`disableCNCheck="true"`). The 
+below, the use of self-signed certificates is enabled (`disableCNCheck="true"`). The
 `/etc/harmony-ap/clientauthentication.xml` file should look like this:
 
 ```xml
@@ -261,10 +256,10 @@ below, the use of self-signed certificates is enabled (`disableCNCheck="true"`).
 </http-conf:tlsClientParameters>
 ```
 
-Also, the Tomcat connector defined in the `/etc/harmony-ap/tomcat-conf/server.xml` must be updated. The `clientAuth` 
+Also, the Tomcat connector defined in the `/etc/harmony-ap/tomcat-conf/server.xml` must be updated. The `clientAuth`
 property must be set to `true`.
 
-**Note:** Setting `clientAuth` to `true` affects all the Access Point's HTTP interfaces - including the admin UI and 
+**Note:** Setting `clientAuth` to `true` affects all the Access Point's HTTP interfaces - including the admin UI and
 backend interface. In practise, after the change Two-Way SSL is required for the admin UI and backend interface too.
 
 ```xml
@@ -298,7 +293,7 @@ docker restart <container name>
 
 ### 2.4 Import Trusted Certificates to Truststores
 
-Public certificates of trusted data exhange parties must be imported to sign and TLS truststores. The certificates 
+Public certificates of trusted data exhange parties must be imported to sign and TLS truststores. The certificates
 may be self-signed or issued by a trusted certification authority. Self-signed certificates must be
 imported to the truststore directly. Instead, certificates issued by a trusted certificate authority may be imported
 directly or alternatively, the root certificate of the certificate authority may be imported. Please note that it's not
@@ -318,14 +313,14 @@ See the Domibus Administration Guide \[[DOMIBUS_ADMIN_GUIDE](#Ref_DOMIBUS_ADMIN_
 
 #### 2.4.1 Import Trusted Sign Certificates
 
-The channel where trusted sign certificates of data exchange parties are distributed or published varies between 
-different eDelivery policy domains. If you don't know where to get them, please contact the domain authority of 
+The channel where trusted sign certificates of data exchange parties are distributed or published varies between
+different eDelivery policy domains. If you don't know where to get them, please contact the domain authority of
 the policy domain where the Access Point is registered.
 
-Trusted sign certificates can be imported using the admin UI. The certificates can be imported as a PKCS12 bundle containing 
+Trusted sign certificates can be imported using the admin UI. The certificates can be imported as a PKCS12 bundle containing
 multiple certificates or separately for each party.
 
-In the admin UI, a PKCS12 bundle can be imported by selecting Truststore and then Upload. Instead, a single sign certificate 
+In the admin UI, a PKCS12 bundle can be imported by selecting Truststore and then Upload. Instead, a single sign certificate
 for a specific party can be imported following the steps below:
 
 1. Click PMode and then Parties.
@@ -336,8 +331,8 @@ for a specific party can be imported following the steps below:
 
 #### 2.4.2 Import Trusted TLS Certificates
 
-The channel where trusted TLS certificates of data exchange parties are distributed or published varies between 
-different eDelivery policy domains. If you don't know where to get them, please contact the domain authority of 
+The channel where trusted TLS certificates of data exchange parties are distributed or published varies between
+different eDelivery policy domains. If you don't know where to get them, please contact the domain authority of
 the policy domain where the Access Point is registered.
 
 By default, the TLS truststore contains one trusted TLS certificate which is the Access Point's own public TLS certificate.
@@ -364,8 +359,8 @@ multiple certificates or separately for each party. Trusted TLS certificates can
 
 ### 2.5 Export Certificates from Keystores
 
-The channel where sign and TLS certificates of data exchange parties are distributed or published varies between 
-different eDelivery policy domains. If you're not sure where to publish them, please contact the domain authority of 
+The channel where sign and TLS certificates of data exchange parties are distributed or published varies between
+different eDelivery policy domains. If you're not sure where to publish them, please contact the domain authority of
 the policy domain where the Access Point is registered. Whatever the channel is, the first step is to export the certificates
 from sign and TLS keystores.
 
@@ -416,14 +411,14 @@ is required in order to be able to send or receive messages using the Harmony Ac
 the plugin security is activated and every request needs to be authenticated. The plugin security can be disabled by
 setting the `domibus.auth.unsecureLoginAllowed` to `true` in the `/etc/harmony-ap/domibus.properties` configuration file.
 
-A plugin must use a configured plugin user that represents an original user that is either `originalSender` or 
-`finalRecipient`. `originalSender` sender is `C1` and `finalRecipient` is `C4` in the four corner model. In practice, 
-the plugin user is used by the backend system connected to the Access Point. The backend system can be a message sender 
-(`originalSender`) or a message receiver (`finalRecipient`). 
+A plugin must use a configured plugin user that represents an original user that is either `originalSender` or
+`finalRecipient`. `originalSender` sender is `C1` and `finalRecipient` is `C4` in the four corner model. In practice,
+the plugin user is used by the backend system connected to the Access Point. The backend system can be a message sender
+(`originalSender`) or a message receiver (`finalRecipient`).
 
 The management of the plugin users is implemented in the Plugin Users page in the admin UI. The value of the `Original User`
 field must be the same that is used in the `originalSender` or `finalRecipient` field in an actual message. If the backend
-system is in the sender role, the value of the `originalSender` field must be used. Instead, if the backend system is in 
+system is in the sender role, the value of the `originalSender` field must be used. Instead, if the backend system is in
 the receiver role, the value of the `finalRecipient` field must be used.
 
 For example, a backend system in the sender role would use `urn:oasis:names:tc:ebcore:partyid-type:unregistered:C1` in the
@@ -440,24 +435,24 @@ For example, a backend system in the sender role would use `urn:oasis:names:tc:e
 .
 ```
 
-The default WS Plugin supports basic authentication and TLS certificate based authentication. See the WS Plugin 
+The default WS Plugin supports basic authentication and TLS certificate based authentication. See the WS Plugin
 documentation \[[WS_PLUGIN](#Ref_WS_PLUGIN)\] for more details.
 
 ## 3. Example Configuration
 
 This chapter includes a sample configuration that consists of two Harmony Access Points. After completing the configuration
-steps described in this chapter, you should have two working Access Points that are able to exchange messages with 
+steps described in this chapter, you should have two working Access Points that are able to exchange messages with
 each other. This configuration example uses self-signed certificates and One-Way SSL configuration.
 
 ![static discovery example configuration](img/static_discovery_configuration_example.svg)
- 
-The Access Points are owned by Organisation 1 and Organisation 2. The party name of the Access Point owned by Organisation 1 
-is `org1_gw` and the party name of the Access Point owned by Organisation 2 is `org2_gw`. Organisation 1 acts as a 
+
+The Access Points are owned by Organisation 1 and Organisation 2. The party name of the Access Point owned by Organisation 1
+is `org1_gw` and the party name of the Access Point owned by Organisation 2 is `org2_gw`. Organisation 1 acts as a
 sender (`originalSender`) and Organisation 2 acts as a recipient (`finalRecipient`). In the end, Organisation 1 will send
 a push message to Organisation 2.
 
 ### 3.1 Prerequisites
-    
+
 Before starting the static discovery configuration process, please complete the Access Point installation according to the installation guide:
 
 - Harmony eDelivery Access - Access Point Installation Guide \[[IG-AS](harmony-ap_installation_guide.md)\].
@@ -475,7 +470,7 @@ The PMode configuration files for the Access Points can be downloaded here:
 - [Access Point 1 (org1_gw)](configuration_examples/static_discovery/pmode_org1.xml?raw=1);
 - [Access Point 2 (org2_gw)](configuration_examples/static_discovery/pmode_org2.xml?raw=1).
 
-Upload the PMode files to the Access Points using the admin UI. Then, replace `AP2_IP_OR_FQDN` in row 24 and 
+Upload the PMode files to the Access Points using the admin UI. Then, replace `AP2_IP_OR_FQDN` in row 24 and
 `AP1_IP_OR_FQDN` in row 28 with the correct host names or IP addresses of the Access Points:
 
 ```xml
@@ -521,10 +516,10 @@ Click OK and then Save.
 
 The sign certificate is stored in `/etc/harmony-ap/ap-keystore.p12`. The password of the keystore can be found in the
 `/etc/harmony-ap/domibus.properties` file in the `domibus.security.keystore.password` property or in the Properties
-section of the Harmony Access Point UI. 
+section of the Harmony Access Point UI.
 
 The TLS certificate is stored in `/etc/harmony-ap/tls-keystore.p12`. The password of the keystore can be found in the
-`/etc/harmony-ap/tomcat-conf/server.xml` file in the `keystorePass` property. 
+`/etc/harmony-ap/tomcat-conf/server.xml` file in the `keystorePass` property.
 
 This step requires shell access to the host.
 
@@ -558,8 +553,8 @@ sudo keytool -export -keystore /etc/harmony-ap/tls-keystore.p12 -alias org2_gw -
 
 ### 3.5 Import Certificates
 
-In order to establish a trusted relationship between the Access Points, they must import each others certificates. 
-Therefore, the certificates exported in section 3.6 must be copied from Access Point 1 (`org1_gw`) to Access Point 2 
+In order to establish a trusted relationship between the Access Points, they must import each others certificates.
+Therefore, the certificates exported in section 3.6 must be copied from Access Point 1 (`org1_gw`) to Access Point 2
 (`org2_gw`) and vice versa.
 
 #### 3.5.1 Access Point 1
@@ -604,7 +599,7 @@ This step requires shell access to the host.
 
 One-Way SSL is configured by default. However, the configuration should be updated to disable the host name verification
 of the TLS certificate. On Access Points 1 (`org1_gw`) and Access Point 2 (`org2_gw`), set the value of the `disableCNCheck`
- attribute to `true` in the `/etc/harmony-ap/clientauthentication.xml` configuration file:
+attribute to `true` in the `/etc/harmony-ap/clientauthentication.xml` configuration file:
 
 ```xml
 <http-conf:tlsClientParameters disableCNCheck="true" secureSocketProtocol="TLSv1.2"
@@ -621,7 +616,7 @@ of the TLS certificate. On Access Points 1 (`org1_gw`) and Access Point 2 (`org2
 
 This step requires shell access to the host.
 
-On Access Points 1 (`org1_gw`) and Access Point 2 (`org2_gw`), restart the `harmony-ap` service to apply the 
+On Access Points 1 (`org1_gw`) and Access Point 2 (`org2_gw`), restart the `harmony-ap` service to apply the
 configuration changes:
 
 ```bash

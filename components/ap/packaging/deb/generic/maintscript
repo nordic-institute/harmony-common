@@ -1,0 +1,19 @@
+# Command       Path                                                        Version     Package
+rm_conffile     /etc/harmony-ap/tomcat-conf/catalina.policy                 2.2.0~      harmony-ap
+rm_conffile     /etc/harmony-ap/tomcat-conf/context.xml                     2.2.0~      harmony-ap
+rm_conffile     /etc/harmony-ap/tomcat-conf/jaspic-providers.xml            2.2.0~      harmony-ap
+rm_conffile     /etc/harmony-ap/tomcat-conf/jaspic-providers.xsd            2.2.0~      harmony-ap
+rm_conffile     /etc/harmony-ap/tomcat-conf/tomcat-users.xml                2.2.0~      harmony-ap
+rm_conffile     /etc/harmony-ap/tomcat-conf/tomcat-users.xsd                2.2.0~      harmony-ap
+
+rm_conffile     /etc/harmony-ap/internal/activemq.xml                       2.7.0~      harmony-ap
+rm_conffile     /etc/harmony-ap/plugins/lib/ws-plugin.jar                   2.7.0~      harmony-ap
+rm_conffile     /etc/harmony-ap/policies/doNothingPolicy.xml                2.7.0~      harmony-ap
+rm_conffile     /etc/harmony-ap/policies/eDeliveryAS4Policy.xml             2.7.0~      harmony-ap
+rm_conffile     /etc/harmony-ap/policies/eDeliveryAS4Policy_BST.xml         2.7.0~      harmony-ap
+rm_conffile     /etc/harmony-ap/policies/eDeliveryAS4Policy_BST_PKIP.xml    2.7.0~      harmony-ap
+rm_conffile     /etc/harmony-ap/policies/eDeliveryAS4Policy_IS.xml          2.7.0~      harmony-ap
+rm_conffile     /etc/harmony-ap/policies/signOnly.xml                       2.7.0~      harmony-ap
+rm_conffile     /etc/harmony-ap/tomcat-conf/catalina.properties             2.7.0~      harmony-ap
+rm_conffile     /etc/harmony-ap/tomcat-conf/logging.properties              2.7.0~      harmony-ap
+rm_conffile     /etc/harmony-ap/tomcat-conf/web.xml                         2.7.0~      harmony-ap

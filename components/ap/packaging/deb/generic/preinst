@@ -1,27 +1,114 @@
 #!/bin/bash
-MIN_VERSION="1.4.0"
 
-if [[ "$1" = "upgrade" ]]; then
-  if dpkg --compare-versions "$MIN_VERSION" gt "$2"; then
-    echo -e "\nharmony-ap: ERROR: Upgrade from version $2 not supported.\n    Upgrade first to version $MIN_VERSION or later.\n" >&2
-    exit 1
+set -euo pipefail
+
+readonly PACKAGE="harmony-ap"
+readonly UPGRADE_MIN_VERSION="2.0.0"
+
+log()  { echo "$PACKAGE: $*" >&2; }
+warn() { echo "$PACKAGE: WARNING: $*" >&2; }
+die()  { echo "$PACKAGE: ERROR: $*" >&2; exit 1; }
+
+validate_upgrade_version() {
+  local old_version="$1"
+
+  if dpkg --compare-versions "$old_version" lt "$UPGRADE_MIN_VERSION"; then
+    die "Upgrade from version $old_version is not supported. Upgrade first to $UPGRADE_MIN_VERSION or later."
   fi
-fi
+}
 
-if [ "$1" = "upgrade" ]; then
+ensure_service_user() {
+  if ! getent passwd harmony-ap >/dev/null; then
+    adduser --system --quiet --no-create-home --shell /usr/sbin/nologin --group --gecos "Harmony user" harmony-ap
+  fi
+
+  if [[ "$(id -u harmony-ap)" -eq 0 ]]; then
+    die "The Harmony AP system user must not have uid 0 (root). Please fix it and reinstall the package."
+  fi
+
+  if [[ "$(id -g harmony-ap)" -eq 0 ]]; then
+    die "The Harmony AP system user must not have root as primary group. Please fix it and reinstall the package."
+  fi
+}
+
+prepare_migration_to_270() {
   systemctl stop harmony-ap 2>/dev/null || true
-fi
 
-# Make sure the administrative user exists
-if ! getent passwd harmony-ap > /dev/null; then
-  adduser --system --quiet --no-create-home --shell /usr/sbin/nologin --group --gecos "Harmony user" harmony-ap
-fi
-# Check validity of user and group
-if [ "$(id -u harmony-ap)" -eq 0 ]; then
-    echo "The Harmony AP system user must not have uid 0 (root). Please fix this and reinstall this package." >&2
-    exit 1
-fi
-if [ "$(id -g harmony-ap)" -eq 0 ]; then
-    echo "The Harmony AP system user must not have root as primary group. Please fix this and reinstall this package." >&2
-    exit 1
-fi
+  # Create a full backup of old configuration
+  local backup_dir="/var/backups/harmony-ap/2.7.0"
+  if [[ -d "$backup_dir" ]]; then
+    local suffix=1
+    while [[ -d "${backup_dir}.${suffix}" ]]; do
+      (( suffix++ ))
+    done
+    backup_dir="${backup_dir}.${suffix}"
+  fi
+  install -d -m 0700 /var/backups/harmony-ap
+  install -d -m 0700 "$backup_dir"
+
+  # Back up config and templates directories
+  local src
+  for src in /etc/harmony-ap /opt/harmony-ap/setup; do
+    [[ -d "$src" ]] || continue
+    mkdir -p "${backup_dir}${src}"
+    cp -rp "$src/." "${backup_dir}${src}/"
+  done
+
+  # Backup setenv.sh if it exists (it is not a conffile and may contain custom settings)
+  if [[ -f /opt/harmony-ap/bin/setenv.sh ]]; then
+    mkdir -p "${backup_dir}/opt/harmony-ap/bin"
+    cp -p /opt/harmony-ap/bin/setenv.sh "${backup_dir}/opt/harmony-ap/bin/"
+  fi
+
+  # 2.0.0-2.1.0 ActiveMQ used /opt/harmony-ap/work
+  if [[ -d /opt/harmony-ap/work ]]; then
+    mkdir -p "${backup_dir}/opt/harmony-ap"
+    cp -rp /opt/harmony-ap/work "${backup_dir}/opt/harmony-ap/"
+  fi
+
+  # 2.1.0-2.6.0 ActiveMQ used /var/opt/harmony-ap/work
+  if [[ -d /var/opt/harmony-ap/work ]]; then
+    mkdir -p "${backup_dir}/var/opt/harmony-ap"
+    cp -rp /var/opt/harmony-ap/work "${backup_dir}/var/opt/harmony-ap/"
+  fi
+
+  log "Backup created at ${backup_dir}"
+
+  # Remove files that would cause dpkg conffile prompts.
+  # These were created by the old postinst (not tracked as conffiles) and now
+  # become conffiles in 2.7.0. Deleting prevents "new conffile replaces your file" prompts.
+  rm -f /etc/harmony-ap/domibus.properties \
+        /etc/harmony-ap/clientauthentication.xml \
+        /etc/harmony-ap/plugins/config/ws-plugin.properties
+
+  # Remove old symlink created by the old package's links file
+  rm -f /var/opt/harmony-ap/conf
+
+  # Save migration marker for postinst
+  install -d -m 0750 -o root -g harmony-ap /var/lib/harmony-ap
+  echo "$backup_dir" > /var/lib/harmony-ap/.migration-2.7.0-backup-path
+}
+
+#DEBHELPER#
+
+case "${1:-}" in
+  install)
+    ensure_service_user
+    ;;
+
+  upgrade)
+    validate_upgrade_version "$2"
+    ensure_service_user
+
+    if dpkg --compare-versions "$2" lt "2.7.0"; then
+      prepare_migration_to_270
+    fi
+    ;;
+
+  abort-upgrade)
+    ;;
+
+  *)
+    die "preinst called with unknown argument '${1:-}'"
+    ;;
+esac

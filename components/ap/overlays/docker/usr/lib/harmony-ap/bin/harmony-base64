@@ -1,0 +1,77 @@
+#!/bin/bash
+set -euo pipefail
+
+source /usr/lib/harmony-ap/lib/harmony-common
+
+parse_cli_args() {
+  FORCE="false"
+
+  # shellcheck disable=SC2034 # Used in sourced scripts
+  while [[ $# -gt 0 ]]; do
+    case "$1" in
+      --stage|-s)   STAGE="${2:+$2-}b64cli";  shift 2 ;;
+      --input|-i)   BASE64_INPUT="$2";  shift 2 ;;
+      --output|-o)  OUTPUT_PATH="$2";   shift 2 ;;
+      --force|-f)   FORCE="true";       shift ;;
+      *) die "Unknown option: $1" ;;
+    esac
+  done
+}
+
+validate_cli_args() {
+  local missing=()
+
+  if [[ -z "${BASE64_INPUT:-}" ]]; then missing+=(--input); fi
+  if [[ -z "${OUTPUT_PATH:-}" ]]; then missing+=(--output); fi
+
+  if (( ${#missing[@]} > 0 )); then
+    local missing_list
+    printf -v missing_list "%s, " "${missing[@]}"
+    missing_list="${missing_list%, }"
+    die "Missing required arguments: $missing_list"
+  fi
+
+  local output_dir
+  output_dir="$(dirname "$OUTPUT_PATH")"
+
+  if [[ ! -d "$output_dir" ]]; then
+    die "Destination directory does not exist: $output_dir"
+  fi
+
+  if [[ ! -w "$output_dir" ]]; then
+    die "Destination directory is not writable: $output_dir"
+  fi
+
+  if [[ -e "$OUTPUT_PATH" && "${FORCE:-false}" != "true" ]]; then
+    die "Destination file already exists: $OUTPUT_PATH"
+  fi
+}
+
+decode_and_write() {
+  if [[ -e "$OUTPUT_PATH" && "$FORCE" == "true" ]]; then
+    log WARN "Overwriting existing file: $OUTPUT_PATH"
+  fi
+
+  tmp_file="$(mktemp)"
+  if ! base64 -d <<< "$BASE64_INPUT" > "$tmp_file"; then
+    rm -f "$tmp_file"
+    die "Could not decode base64 content."
+  fi
+
+  if ! mv "$tmp_file" "$OUTPUT_PATH"; then
+    rm -f "$tmp_file"
+    die "Could not move temporary file to destination: $OUTPUT_PATH"
+  fi
+}
+
+main() {
+  parse_cli_args "$@"
+  validate_cli_args
+  decode_and_write
+  log DEBUG "File created successfully at: $OUTPUT_PATH"
+  exit 0
+}
+
+if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
+  main "$@"
+fi

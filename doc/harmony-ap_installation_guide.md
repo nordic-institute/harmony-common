@@ -1,6 +1,6 @@
 # Harmony eDelivery Access - Access Point Installation Guide <!-- omit in toc -->
 
-Version: 1.20  
+Version: 1.21  
 Doc. ID: IG-AP
 
 ---
@@ -30,12 +30,13 @@ Doc. ID: IG-AP
 | 17.01.2025 | 1.18    | Support for Ubuntu 24.04                                                                                                                                    | Diego Martin     |
 | 08.08.2025 | 1.19    | Update links to external documents                                                                                                                          | Diego Martin     |
 | 05.12.2025 | 1.20    | Removed Ubuntu 20.04 from supported platforms as it has reached end of life                                                                                 | Diego Martin     |
+| 10.03.2026 | 1.21    | Update for 2.7.0 packaging redesign                                                                                                                         | Diego Martin     |
 
 ## License <!-- omit in toc -->
 
 This document is licensed under the Creative Commons Attribution-ShareAlike 4.0 International License.
 To view a copy of this license, visit <https://creativecommons.org/licenses/by-sa/4.0/>
- 
+
 ## Table of Contents <!-- omit in toc -->
 
 - [1 Introduction](#1-introduction)
@@ -55,7 +56,7 @@ To view a copy of this license, visit <https://creativecommons.org/licenses/by-s
   - [2.10 Location of configuration and generated passwords](#210-location-of-configuration-and-generated-passwords)
   - [2.11 Log Files](#211-log-files)
 - [3 Version Upgrade](#3-version-upgrade)
- 
+
 ## 1 Introduction
 
 Harmony eDelivery Access Access Point is an AS4 Access Point for joining eDelivery policy domains. The Access Point is based on the Domibus open source project by the European Commission.
@@ -205,7 +206,7 @@ Upon the first installation of the Access Point, the system asks for the followi
 - Whether you want the Access Point installation to use dynamic discovery.
   - If yes: SML zone that you want to use.
   - If you're not sure about the correct value, please contact the domain authority of the policy domain where the Access Point is registered.
-  - The value can be edited later by changing the `domibus.smlzone` property in the `/etc/harmony-ap/domibus.properties` configuration file.
+  - The value can be changed later by running `sudo dpkg-reconfigure harmony-ap`.
 - Username of the administrative user - username to use to log in to administrative UI.
 - Initial password for the administrative user.
   - *Note:* the default password expiration policy is 90 days, and it applies to the administrative user too.
@@ -222,7 +223,7 @@ Upon the first installation of the Access Point, the system asks for the followi
     CN=ap.example.org, O=My Organization, C=FI
     SAN=DNS:ap.example.org
     ```
-- Port number that the Access Point listens to. 
+- Port number that the Access Point listens to.
   - The default is `8443`; Access Point admin UI, backend interface and AS4 interface all run on the defined port.
 - Access point database configuration. When using a local database, accept the defaults.
   - Database host. The default is `localhost`.
@@ -274,7 +275,7 @@ The Access Point comes with one default plugin - the Web Service (WS) Plugin. Se
 Custom plugins can be installed by following the steps below:
 
 1. stop the `harmony-ap` service (`sudo systemctl stop harmony-ap`);
-2. copy the custom plugin `jar` file to the plugins folder (`/etc/harmony-ap/plugins/lib`);
+2. copy the custom plugin `jar` file to the plugins folder (`/usr/local/lib/harmony-ap/plugins/lib`);
 3. copy the custom plugin configuration files to the config folder (`/etc/harmony-ap/plugins/config`);
 4. start the `harmony-ap` service (`sudo systemctl start harmony-ap`).
 
@@ -294,17 +295,33 @@ In addition to installing required dependencies, the installation process comple
 
 ### 2.10 Location of Configuration and Generated Passwords
 
-All Access Point configuration files are located in the `/etc/harmony-ap` directory. See the Domibus Administration Guide \[[DOMIBUS_ADMIN_GUIDE](#Ref_DOMIBUS_ADMIN_GUIDE)\] for more details.
+Access Point configuration files are located in the `/etc/harmony-ap` directory. Keystores and security material are located in `/var/lib/harmony-ap/security`. See the Domibus Administration Guide \[[DOMIBUS_ADMIN_GUIDE](#Ref_DOMIBUS_ADMIN_GUIDE)\] for more details.
 
-During the installation process, multiple random passwords are generated.
+During the installation process, multiple random passwords are generated. All generated passwords are stored in `/var/lib/harmony-ap/security/secrets.env`.
 
-| **Password purpose**                                                         | **Password location**                                                                                                                                                                                                                  |
-|------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Password for `harmony-ap` MySQL user                                         | Configuration file: `/etc/harmony-ap/domibus.properties`<br /><br />Properties: `domibus.datasource.xa.property.password` and `domibus.datasource.password`.                                                                           |
-| Content encryption keystore (`/etc/harmony-ap/ap-keystore.p12`) password     | Configuration file: `/etc/harmony-ap/domibus.properties`<br /><br />Properties: `domibus.security.keystore.password` and `domibus.security.key.private.password`. Content of this keystore can be changed using the administrative UI. |
-| Content encryption truststore (`/etc/harmony-ap/ap-truststore.p12`) password | Configuration file: `/etc/harmony-ap/domibus.properties`<br /><br />Properties: `domibus.security.truststore.password`. Content of this keystore can be changed using the administrative UI.                                           |
-| TLS keystore (`/etc/harmony-ap/tls-keystore.p12`) password                   | Configuration file: `/etc/harmony-ap/conf/server.xml`<br /><br />Property: `keystorePass`                                                                                                                                              |
-| TLS truststore (`/etc/harmony-ap/tls-truststore.p12`) password               | Configuration file: `/etc/harmony-ap/conf/server.xml`<br /><br />Property: `truststorePass`                                                                                                                                            |
+| **Password purpose**                                                                      | **Variable**                           |
+|-------------------------------------------------------------------------------------------|----------------------------------------|
+| Password for `harmony-ap` MySQL user                                                      | `DOMIBUS_DATASOURCE_PASSWORD`          |
+| Content encryption keystore (`/var/lib/harmony-ap/security/ap-keystore.p12`) password     | `DOMIBUS_SECURITY_KEYSTORE_PASSWORD`   |
+| Content encryption truststore (`/var/lib/harmony-ap/security/ap-truststore.p12`) password | `DOMIBUS_SECURITY_TRUSTSTORE_PASSWORD` |
+| TLS keystore (`/var/lib/harmony-ap/security/tls-keystore.p12`) password                   | `TLS_KEYSTORE_PASSWORD`                |
+| TLS truststore (`/var/lib/harmony-ap/security/tls-truststore.p12`) password               | `TLS_TRUSTSTORE_PASSWORD`              |
+
+#### Service configuration
+
+The `harmony-ap` systemd service is configured through environment variables using a layered drop-in mechanism. Drop-in files are loaded in alphabetical order; variables defined in later files override earlier ones:
+
+| **Drop-in file**                                                | **Purpose**                                                                                                                                |
+|-----------------------------------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------|
+| `/usr/lib/systemd/system/harmony-ap.service.d/10-defaults.conf` | Package defaults. Managed by the package, may be overwritten on upgrade.                                                                   |
+| `/etc/systemd/system/harmony-ap.service.d/50-harmony.conf`      | Instance configuration generated by the installer (e.g., database host, discovery settings). Regenerated by `dpkg-reconfigure harmony-ap`. |
+| `/etc/systemd/system/harmony-ap.service.d/90-override.conf`     | User overrides. Create or edit this file to customise any setting without risk of it being overwritten on upgrade.                         |
+
+After modifying a drop-in file, reload the service configuration and restart:
+```bash
+sudo systemctl daemon-reload
+sudo systemctl restart harmony-ap
+```
 
 ### 2.11 Log Files
 
@@ -344,7 +361,7 @@ Issue the following command to run the upgrade:
 ```bash
 sudo apt upgrade
 ```
-If the installer asks for database configuration, accept the existing configuration read from `/etc/harmony-ap/domibus.properties`. Leaving the database password blank uses the password from configuration.
+If the installer asks for database configuration, accept the existing values. Leaving the database password blank uses the existing password from the current configuration.
 
 If starting the service at system startup hasn't been enabled, the `harmony-ap` service must be started manually after
 the upgrade:

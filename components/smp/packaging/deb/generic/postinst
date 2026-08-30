@@ -1,375 +1,585 @@
 #!/bin/bash
+
+set -eo pipefail
+
+# Source confmodule before `set -u`. debconf in Jammy is not nounset-safe
+# https://salsa.debian.org/pkg-debconf/debconf/-/merge_requests/12
 . /usr/share/debconf/confmodule
 
-set -euo pipefail
+set -u
+trap 'db_stop 2>/dev/null || true' EXIT
 
-SUCCESS=false
-DROPDBONERROR=false
+# shellcheck disable=SC2034 # Used in sourced scripts
+readonly PACKAGE="harmony-smp"
+readonly STAGE="harmony-smp"
 
-HARMONY_HOME="/opt/harmony-smp"
-HARMONY_BASE="/etc/harmony-smp"
+source "/usr/lib/harmony-smp/lib/harmony-deb"
 
-SERVER_XML="${HARMONY_BASE}/tomcat-conf/server.xml"
-SET_ENV="${HARMONY_HOME}/bin/setenv.sh"
+manual_start_required=false
 
-log() { echo "harmony-smp: $*" >&2; }
-warn() { log "WARNING: $*"; }
-error() { log "ERROR: $*"; }
+# =============================================================================
+# Migrations
+# =============================================================================
 
-# shellcheck disable=SC2317
-cleanup() {
-  db_stop
-  if [ ! "$SUCCESS" = true ]; then
-    error "Installation failed"
-    if [[ "$DROPDBONERROR" = true && "$DB_HOST" = localhost ]]; then
-      mysql -e "DROP SCHEMA $DB_SCHEMA; DROP USER $DB_USER@localhost"
-    fi
+# shellcheck disable=SC2317 # Called from sourced migration scripts
+require_manual_start() {
+  manual_start_required=true
+}
+
+run_migrations() {
+  local old_version="${1:-}"
+
+  if [[ -n "$old_version" ]] && dpkg --compare-versions "$old_version" lt "2.3.0"; then
+    local script="${MIGRATIONS_DIR}/migration-to-2.3.0"
+
+    [[ -f "$script" ]] || die "Required migration script not found: $script"
+
+    # shellcheck source=/usr/lib/harmony-smp/migrations/migration-to-2.3.0
+    source "$script"
+    migrate_to_230 "$old_version"
   fi
 }
-trap cleanup EXIT
 
-case "$1" in
- configure)
+# =============================================================================
+# Debconf
+# =============================================================================
 
-  db_get harmony-smp/serverdn
-  SERVERDN="$RET"
+apply_debconf_answers() {
+  _apply_debconf() {
+    local writer="$1" template="$2" key="$3"
+    db_get "$template"
+    if [[ -n "${RET:-}" ]]; then
+      "$writer" "$key" "$RET"
+    fi
+  }
+
+  # Certificates
+  _apply_debconf set_dropin harmony-smp/serverdn  SERVER_DN
+  _apply_debconf set_dropin harmony-smp/serversan TLS_SERVER_SAN
+
+  # Database
+  _apply_debconf set_dropin harmony-smp/database-host     SMP_DATABASE_SERVERNAME
+  _apply_debconf set_dropin harmony-smp/database-port     SMP_DATABASE_PORT
+  _apply_debconf set_dropin harmony-smp/database-schema   SMP_DATABASE_SCHEMA
+  _apply_debconf set_dropin harmony-smp/database-user     SMP_JDBC_USER
+  _apply_debconf set_secret harmony-smp/database-password SMP_JDBC_PASSWORD
+
+  # Network
+  _apply_debconf set_dropin harmony-smp/tomcatport TOMCAT_PORT
+
+  # SML (fresh install only, DB is authoritative afterward)
+  _apply_debconf set_dropin harmony-smp/integratewithsml BDMSL_INTEGRATION_ENABLED
+
   db_get harmony-smp/integratewithsml
-  INTEGRATESML="$RET"
-  if [ ! "$INTEGRATESML" = true ]; then
-    INTEGRATESML=false
+  if [[ "${RET:-}" == true ]]; then
+    _apply_debconf set_dropin harmony-smp/smlurl  BDMSL_INTEGRATION_URL
+    _apply_debconf set_dropin harmony-smp/smpurl  BDMSL_INTEGRATION_LOGICAL_ADDRESS
+    _apply_debconf set_dropin harmony-smp/smpip   BDMSL_INTEGRATION_PHYSICAL_ADDRESS
   fi
-  db_get harmony-smp/smlurl
-  SMLURL="$RET"
-  db_get harmony-smp/smpurl
-  SMPURL="$RET"
-  db_get harmony-smp/smpip
-  SMPIP="$RET"
-  db_get harmony-smp/tomcatport
-  TOMCATPORT="$RET"
+}
 
-  db_get harmony-smp/jdbc-url || true
-  JDBC_URL="${RET:-jdbc:mysql://localhost:3306/harmony_smp}"
-  db_get harmony-smp/database-schema || true
-  DB_SCHEMA="${RET:-harmony_smp}"
-  db_get harmony-smp/database-user || true
-  DB_USER="${RET:-harmony_smp}"
-  db_get harmony-smp/database-password || true
-  DB_PASSWORD="${RET}"
-  db_get harmony-smp/database-host || true
-  DB_HOST="${RET:-localhost}"
+validate_required_config() {
+  local missing=() key
+  for key in SMP_DATABASE_SERVERNAME SMP_DATABASE_PORT SMP_DATABASE_SCHEMA \
+             SMP_JDBC_USER TOMCAT_PORT; do
+    [[ -n "$(get_dropin "$key")" ]] || missing+=("$key")
+  done
 
-  AUSER=""
-  HASHEDPASSWORD=""
-  HOST_FQDN="$(hostname -f 2>/dev/null || hostname)"
+  (( ${#missing[@]} == 0 )) || die "Missing configuration after loading ${DROPIN_HARMONY_FILE}: ${missing[*]}. Run 'dpkg --configure harmony-smp' to retry, or 'dpkg-reconfigure harmony-smp' to reconfigure from scratch."
+}
 
-  backup_file() {
-    local file="$1"
+# =============================================================================
+# System setup
+# =============================================================================
 
-    local timestamp
-    timestamp="$(date +%Y%m%d%H%M%S)"
+restrict_sensitive_conffiles() {
+  local -a files=(
+    /etc/harmony-smp/smp.config.properties
+    /etc/harmony-smp/tomcat/server.xml
+    /etc/harmony-smp/tomcat/context.xml
+  )
 
-    local backup="${file}.bak.${timestamp}"
-    cp -a "$file" "$backup"
+  chown root:harmony-smp "${files[@]}"
+  chmod 0640 "${files[@]}"
+}
 
-    echo "$backup"
-  }
+# =============================================================================
+# Keystores
+# =============================================================================
 
-  normalize_dname() {
-    local dname="$1"
+smp_wrap_secret() {
+  printf '{DEC}{%s}' "$1";
+}
 
-    if [[ -z "${dname// }" ]]; then
-      echo "CN=$HOST_FQDN"
+smp_unwrap_secret() {
+  local value="$1"
+
+  if [[ "$value" == '{DEC}{'*'}' ]]; then
+    value="${value#\{DEC\}\{}"
+    value="${value%\}}"
+  fi
+
+  printf '%s' "$value"
+}
+
+resolve_store_type() {
+  case "$1" in
+    *.p12)  echo "pkcs12" ;;
+    *.pfx)  echo "pkcs12" ;;
+    *.jks)  echo "jks" ;;
+    *)      die "Cannot determine store type from path: $1" ;;
+  esac
+}
+
+resolve_store_path() {
+  local base="${SECURITY_DIR}/${1}-${2}"
+  local ext
+  for ext in p12 pfx jks; do
+    if [[ -f "${base}.${ext}" ]]; then
+      echo "${base}.${ext}"
       return
     fi
+  done
+  echo "${base}.p12"
+}
 
-    if [[ "$dname" != *"="* ]]; then
-      echo "CN=$dname"
-      return
-    fi
+backup_store() {
+  local store_path="$1"
+  local backup_dir="${SECURITY_DIR}/backups"
+  local filename timestamp backup_path
+  filename="$(basename "$store_path")"
+  timestamp="$(date -u +%Y%m%dT%H%M%S)"
+  backup_path="${backup_dir}/${filename}.${timestamp}"
 
-    echo "$dname"
-  }
+  [[ ! -f "$backup_path" ]] || backup_path="${backup_path}.$$"
 
-  gen_keypair() {
-    local alias="$1"
-    local keystore="$2"
-    local storepass="$3"
-    local keypass="$4"
-    local dname="$5"
+  install -d -m 0750 -o harmony-smp -g harmony-smp "$backup_dir"
 
-    keypair_run_keytool() {
-      local dn="$1"
-      keytool -genkeypair -keyalg RSA -alias "$alias" \
-        -keystore "$keystore" -storetype PKCS12 -storepass "$storepass" \
-        -keypass "$keypass" -validity 333 -keysize 3072 -dname "$dn" 2>/dev/null
-    }
+  cp -p "$store_path" "$backup_path"
+  chmod 0640 "$backup_path"
+  chown harmony-smp:harmony-smp "$backup_path"
+  log INFO "Backed up ${store_path} -> ${backup_path}"
+}
 
-    if ! keypair_run_keytool "$dname"; then
-      warn "Invalid server DN '$dname'. Falling back to CN=$HOST_FQDN"
-      keypair_run_keytool "CN=$HOST_FQDN"
-    fi
-  }
+rotate_keystore() {
+  local secret_prefix="$1" store_prefix="$2" cert_name="$3"
 
-  if [[ "$DB_HOST" = localhost ]]; then
-    SCHEMA_EXISTS=$(mysql -s -N -e "SELECT SCHEMA_NAME FROM INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME='$DB_SCHEMA'");
+  local ks_path
+  ks_path="$(resolve_store_path "$store_prefix" keystore)"
 
-    if [ -z "$SCHEMA_EXISTS" ]; then
-      echo "Creating database schema $DB_SCHEMA" >&2
-
-      DB_PASSWORD=${DB_PASSWORD:-$(openssl rand -base64 12)}
-
-      mysql -e \
-        "create schema $DB_SCHEMA; \
-        alter schema $DB_SCHEMA charset=utf8mb4 collate=utf8mb4_bin; \
-        create user if not exists $DB_USER@localhost; \
-        alter user $DB_USER@localhost identified by '$DB_PASSWORD'; \
-        grant all on $DB_SCHEMA.* to $DB_USER@localhost;" 1>&2
-
-      DROPDBONERROR=true
-    fi
-  fi
-
-  echo "Apply Liquibase migrations"  >&2
-
-  if [[ -z $DB_USER || -z $DB_PASSWORD ]]; then
-    echo 'Existing database credentials not found' >&2
-    exit 1
-  fi
-
-  db_get harmony-smp/adminuser
-  AUSER="$RET"
-  db_get harmony-smp/adminpassword
-  APASSWORD="$RET"
-  HASHEDPASSWORD=$(java -cp "/opt/harmony-smp/webapps/ROOT/WEB-INF/lib/*" \
-    eu.europa.ec.edelivery.smp.utils.BCryptPasswordHash "$APASSWORD")
-
-  env -i \
-    LIQUIBASE_COMMAND_URL="$JDBC_URL" \
-    LIQUIBASE_COMMAND_USERNAME="$DB_USER" \
-    LIQUIBASE_COMMAND_PASSWORD="${DB_PASSWORD//\\/\\\\}" \
-    LIQUIBASE_COMMAND_DRIVER="com.mysql.cj.jdbc.Driver" \
-    LIQUIBASE_CLASSPATH="/opt/harmony-smp/lib/mysql-connector-j.jar" \
-    LIQUIBASE_ANALYTICS_ENABLED=false \
-    LIQUIBASE_SHOW_BANNER=false \
-    LIQUIBASE_SQL_SHOW_SQL_WARNINGS=false \
-    "/opt/harmony-smp/liquibase/liquibase" \
-      --changelog-file=/opt/harmony-smp/db/db.changelog.xml \
-      update \
-      -DadminUser="$AUSER" \
-      -DadminPassword="$HASHEDPASSWORD" \
-      2>&1 | sed 's/^/    /' >&2
-
-  mkdir -p /etc/harmony-smp/tomcat-conf
-  mkdir -p /var/opt/harmony-smp/work
-  mkdir -p /var/opt/harmony-smp/temp
-  mkdir -p /run/harmony-smp
-  mkdir -p /var/tmp/harmony-smp
-
-  if [ ! -f "$SERVER_XML" ]; then
-    cp /opt/harmony-smp/setup/context.xml.template /etc/harmony-smp/tomcat-conf/
-
-    for config_file in web.xml catalina.properties logging.properties; do
-      if [[ -f /opt/harmony-smp/setup/tomcat-defaults/$config_file ]]; then
-        cp /opt/harmony-smp/setup/tomcat-defaults/$config_file /etc/harmony-smp/tomcat-conf/$config_file
-        chmod 640 /etc/harmony-smp/tomcat-conf/$config_file
-      fi
-    done
-
-    rm -f /etc/harmony-smp/*.p12
-
-    SERVERDN="$(normalize_dname "$SERVERDN")"
-
-    KEYSTOREPASS=$(openssl rand -base64 12)
-    gen_keypair "selfsigned" "/etc/harmony-smp/smp-keystore.p12" "$KEYSTOREPASS" "$KEYSTOREPASS" "$SERVERDN"
-
-    TRUSTSTOREPASS=$(openssl rand -base64 12)
-    keytool -genkeypair -keyalg RSA -alias mock \
-      -keystore /etc/harmony-smp/smp-truststore.p12 -storetype PKCS12 -storepass "$TRUSTSTOREPASS" \
-      -keypass "$TRUSTSTOREPASS" -dname "CN=mock" 2>/dev/null
-    keytool -delete -alias mock \
-      -keystore /etc/harmony-smp/smp-truststore.p12 -storepass "$TRUSTSTOREPASS" 2>/dev/null
-
-    TLSKEYPASS=$(openssl rand -base64 12)
-    gen_keypair "selfsigned" "/etc/harmony-smp/tls-keystore.p12" "$TLSKEYPASS" "$TLSKEYPASS" "$SERVERDN"
-
-    TLSTRUSTSTOREPASS=$(openssl rand -base64 12)
-    keytool -export -alias selfsigned -file /etc/harmony-smp/selfsigned.cer \
-        -keystore /etc/harmony-smp/tls-keystore.p12 -storepass "$TLSKEYPASS" 2>/dev/null
-    keytool -import -noprompt -alias selfsigned -file /etc/harmony-smp/selfsigned.cer \
-        -keystore /etc/harmony-smp/tls-truststore.p12 -storepass "$TLSTRUSTSTOREPASS" 2>/dev/null
-    rm -f /etc/harmony-smp/selfsigned.cer
-
-    env -i \
-      tls_keystore_password="$TLSKEYPASS" \
-      tls_truststore_password="$TLSTRUSTSTOREPASS" \
-      tomcat_port="$TOMCATPORT" \
-      envsubst </opt/harmony-smp/setup/server.xml.template >$SERVER_XML
-
-    env -i dbuser="$DB_USER" dbpassword="$DB_PASSWORD" jdbcurl="$JDBC_URL" \
-      envsubst </opt/harmony-smp/setup/context.xml.template >/etc/harmony-smp/tomcat-conf/context.xml
-
-    env -i \
-      tls_truststore_password="$TLSTRUSTSTOREPASS" \
-      envsubst '$tls_truststore_password' </opt/harmony-smp/setup/setenv.sh.template >"$SET_ENV"
-
-    chmod +x "$SET_ENV"
-
-    cat >/etc/harmony-smp/smp.init.properties <<EOF
-# Initial configuration
-
-smp.keystore.filename=smp-keystore.p12
-smp.keystore.password={DEC}{$KEYSTOREPASS}
-smp.keystore.type=PKCS12
-
-smp.truststore.filename=smp-truststore.p12
-smp.truststore.password={DEC}{$TRUSTSTOREPASS}
-smp.truststore.type=PKCS12
-
-contextPath.output=true
-
-bdmsl.integration.enabled=$INTEGRATESML
-EOF
-
-    if [[ $INTEGRATESML = "true" ]]; then
-      cat >>/etc/harmony-smp/smp.init.properties <<EOF
-bdmsl.integration.url=$SMLURL
-bdmsl.integration.tls.disableCNCheck=false
-bdmsl.integration.logical.address=$SMPURL
-bdmsl.integration.physical.address=$SMPIP
-bdmsl.integration.tls.serverSubjectRegex=
-EOF
-    fi
+  if [[ -f "$ks_path" ]]; then
+    backup_store "$ks_path"
+    rm -f "$ks_path"
   else
-    if dpkg --compare-versions "$2" lt "2.3.0"; then
-      backup="$(backup_file "$SERVER_XML")"
-      tmp="$(mktemp)"
+    log WARN "Keystore not found for backup: ${ks_path}. A new one will be created."
+  fi
 
-      log "Migrating server.xml Tomcat 9 format to Tomcat 10 (backup: $backup)"
+  rm -f "${SECURITY_DIR}/certs/${cert_name}-"*.cer
+  clear_secret "${secret_prefix}_KEYSTORE_PASSWORD"
+}
 
-      fail_restore() {
-        warn "$1 Restoring backup."
-        cp -a "$backup" "$SERVER_XML" || true
-        rm -f "$tmp" || true
-        return 1
-      }
+create_or_validate_stores() {
+  local secret_prefix="$1" store_prefix="$2" cert_name="$3"
+  local alias="$4" dname="$5"
+  local can_create="$6" add_to_truststore="$7"
+  local san="${8:-}" label="${9:-}"
 
-      XSL_221_TO_230="/opt/harmony-smp/tomcat/migrations/221-to-230-sslhostconfig-and-host.xsl"
-      if ! xmlstarlet tr "$XSL_221_TO_230" "$SERVER_XML" >"$tmp"; then
-        fail_restore "XSLT transform failed."
-      else
-        xmlstarlet fo "$tmp" >"$tmp.fmt" && mv -f "$tmp.fmt" "$tmp" || true
-      fi
+  local ks_path ts_path
+  ks_path="$(resolve_store_path "$store_prefix" keystore)"
+  ts_path="$(resolve_store_path "$store_prefix" truststore)"
+  local cert_path="${SECURITY_DIR}/certs/${cert_name}-${alias}.cer"
 
-      if ! xmlstarlet val "$tmp" >/dev/null; then
-        fail_restore "XML validation failed after migration."
-      fi
+  # On upgrades, verify stores exist before proceeding
+  if [[ "$can_create" != true ]]; then
+    [[ -f "$ks_path" ]] || die "${secret_prefix} keystore not found: ${ks_path}"
+    [[ -f "$ts_path" ]] || die "${secret_prefix} truststore not found: ${ts_path}"
+  fi
 
-      if ! cp -f "$tmp" "$SERVER_XML"; then
-        fail_restore "Failed to write migrated $SERVER_XML."
-      fi
+  local ks_type ts_type
+  ks_type="$(resolve_store_type "$ks_path")"
+  ts_type="$(resolve_store_type "$ts_path")"
 
-      rm -f "$tmp" || true
-      log "Migration applied successfully"
+  local args=(
+    --stage "$STAGE"
+    --keystore-path "$ks_path"     --keystore-type "$ks_type"
+    --truststore-path "$ts_path"   --truststore-type "$ts_type"
+    --should-add-certificate-to-truststore "$add_to_truststore"
+    --alias "$alias"
+    --public-cert-path "$cert_path"
+    --dname "$dname"
+  )
+  [[ -n "$san" ]] && args+=(--san "$san")
+  [[ -n "$label" ]] && args+=(--label "$label")
+
+  local out
+  out="$(
+    KEYSTORE_PASSWORD="$(smp_unwrap_secret "$(get_secret "${secret_prefix}_KEYSTORE_PASSWORD")")" \
+    TRUSTSTORE_PASSWORD="$(smp_unwrap_secret "$(get_secret "${secret_prefix}_TRUSTSTORE_PASSWORD")")" \
+    harmony-store "${args[@]}"
+  )"
+
+  local ks_pw="" ts_pw="" key value
+  while IFS='=' read -r key value; do
+    case "$key" in
+      KEYSTORE_PASSWORD)  ks_pw="$value" ;;
+      TRUSTSTORE_PASSWORD) ts_pw="$value" ;;
+    esac
+  done <<< "$out"
+
+  local store
+  for store in "$ks_path" "$ts_path" "$cert_path"; do
+    [[ -f "$store" ]] || continue
+    chmod 0640 "$store"
+    chown harmony-smp:harmony-smp "$store"
+  done
+
+  if [[ "$secret_prefix" == "SMP" ]]; then
+    set_secret "${secret_prefix}_KEYSTORE_PASSWORD"   "$(smp_wrap_secret "$ks_pw")"
+    set_secret "${secret_prefix}_TRUSTSTORE_PASSWORD" "$(smp_wrap_secret "$ts_pw")"
+  else
+    set_secret "${secret_prefix}_KEYSTORE_PASSWORD"   "$ks_pw"
+    set_secret "${secret_prefix}_TRUSTSTORE_PASSWORD" "$ts_pw"
+  fi
+}
+
+apply_stores() {
+  local kind="$1" is_fresh="$2" is_reconf="$3"
+
+  local secret_prefix store_prefix cert_name debconf_rotate_key
+  local dname_key san_key add_to_truststore label
+  local ks_loc_key ts_loc_key ks_type_key ts_type_key
+
+  case "$kind" in
+    signing)
+      secret_prefix=SMP
+      store_prefix=smp
+      cert_name=signing
+      debconf_rotate_key=harmony-smp/rotate_signing_keystore
+      dname_key=SERVER_DN
+      add_to_truststore=false
+      label="SMP signing"
+      ks_loc_key=SMP_KEYSTORE_PATH
+      ts_loc_key=SMP_TRUSTSTORE_PATH
+      ks_type_key=SMP_KEYSTORE_TYPE
+      ts_type_key=SMP_TRUSTSTORE_TYPE
+      ;;
+    tls)
+      secret_prefix=TLS
+      store_prefix=tls
+      cert_name=tls
+      debconf_rotate_key=harmony-smp/rotate_tls_keystore
+      dname_key=SERVER_DN
+      san_key=TLS_SERVER_SAN
+      add_to_truststore=true
+      label="TLS"
+      ks_loc_key=TLS_KEYSTORE_PATH
+      ts_loc_key=TLS_TRUSTSTORE_PATH
+      ks_type_key=TLS_KEYSTORE_TYPE
+      ts_type_key=TLS_TRUSTSTORE_TYPE
+      ;;
+    *) die "Unknown store kind: $kind" ;;
+  esac
+
+  # Handle rotation on reconfiguration
+  local can_create="$is_fresh"
+  if [[ "$is_reconf" == true ]]; then
+    db_get "$debconf_rotate_key"
+    if [[ "${RET:-false}" == true ]]; then
+      rotate_keystore "$secret_prefix" "$store_prefix" "$cert_name"
+      can_create=true
+    fi
+    db_reset "$debconf_rotate_key"
+  fi
+
+  # Resolve identity
+  local alias="selfsigned" dname san=""
+  dname="$(get_dropin "$dname_key")"
+  [[ -z "${san_key:-}" ]] || san="$(get_dropin "$san_key")"
+
+  create_or_validate_stores "$secret_prefix" "$store_prefix" "$cert_name" \
+    "$alias" "$dname" "$can_create" "$add_to_truststore" "$san" "$label"
+
+  # Update drop-in values for store paths and types
+  local ks_path ts_path
+  ks_path="$(resolve_store_path "$store_prefix" keystore)"
+  ts_path="$(resolve_store_path "$store_prefix" truststore)"
+
+  set_dropin "$ks_loc_key"  "$ks_path"
+  set_dropin "$ts_loc_key"  "$ts_path"
+  set_dropin "$ks_type_key" "$(resolve_store_type "$ks_path")"
+  set_dropin "$ts_type_key" "$(resolve_store_type "$ts_path")"
+}
+
+# =============================================================================
+# Admin password
+# =============================================================================
+
+resolve_admin_password() {
+  local -n _out="$1"
+  local admin_user="$2"
+
+  db_get harmony-smp/adminpassword
+  _out="${RET:-}"
+
+  if [[ -n "$_out" ]]; then
+    log INFO "Using admin password from debconf."
+    return
+  fi
+
+  _out="$(harmony-password --stage "$STAGE" --label "admin")"
+
+  local cred_file="${MARKER_DIR}/.initial-credentials"
+  (
+    umask 077
+    printf 'Harmony SMP initial admin credentials\n\nUsername: %s\nPassword: %s\n' \
+      "$admin_user" "$_out" > "$cred_file"
+  )
+  chown root:root "$cred_file"
+  log INFO "Admin credentials saved to ${cred_file}"
+  log INFO "  Read the password from the file. You can retrieve it with: cat ${cred_file} (requires root permissions)"
+  log INFO "  After noting down the password, delete the file for security: rm ${cred_file}"
+}
+
+# =============================================================================
+# Local MySQL server
+# =============================================================================
+
+validate_mysql_identifier() {
+  [[ "$1" =~ ^[A-Za-z0-9_]+$ ]] || die "Invalid MySQL identifier: '$1' (allowed: [A-Za-z0-9_]+)"
+}
+
+# Escapes special characters for use in MySQL single-quoted string literals.
+# Reference: https://dev.mysql.com/doc/refman/8.0/en/string-literals.html
+escape_mysql_string() {
+  local escaped="$1"
+
+  escaped="${escaped//\\/\\\\}"
+  escaped="${escaped//\'/\'\'}"
+  escaped="${escaped//$'\0'/\\0}"
+  escaped="${escaped//$'\n'/\\n}"
+  escaped="${escaped//$'\r'/\\r}"
+  escaped="${escaped//$'\x1a'/\\Z}"
+
+  printf '%s' "$escaped"
+}
+
+assert_mysql_root_access() {
+  mysql -u root -e "SELECT 1" &>/dev/null \
+    || die "Cannot connect to local MySQL as root. Ensure the mysql root user uses auth_socket or configure access manually."
+}
+
+load_mysql_tzinfo() {
+  local marker_file="${MARKER_DIR}/.mysql_tzinfo_loaded"
+
+  [[ -f "$marker_file" ]] && return 0
+
+  mysql_tzinfo_to_sql /usr/share/zoneinfo 2>/dev/null | mysql -u root mysql >&2
+  systemctl restart mysql
+  mysqladmin -w -s -u root ping &>/dev/null
+  touch "$marker_file"
+}
+
+ensure_mysql_schema() {
+  local schema="$1"
+  validate_mysql_identifier "$schema"
+
+  local schema_exists
+  schema_exists="$(mysql -w -s -N -e "SELECT SCHEMA_NAME FROM INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME='${schema}'")" \
+    || die "Failed to query MySQL for schema '${schema}'"
+  if [[ -z "$schema_exists" ]]; then
+    log INFO "Creating database schema $schema"
+    mysql >&2 <<SQL
+CREATE SCHEMA \`${schema}\`;
+ALTER SCHEMA \`${schema}\` charset=utf8mb4 collate=utf8mb4_bin;
+SQL
+  fi
+}
+
+setup_mysql_local_user() {
+  local schema="$1" user="$2" password="$3"
+
+  validate_mysql_identifier "$schema"
+  validate_mysql_identifier "$user"
+
+  local password_escaped
+  password_escaped="$(escape_mysql_string "$password")"
+
+  mysql >&2 <<SQL
+CREATE USER IF NOT EXISTS '${user}'@'localhost';
+ALTER USER '${user}'@'localhost' IDENTIFIED BY '${password_escaped}';
+GRANT ALL ON \`${schema}\`.* TO '${user}'@'localhost';
+FLUSH PRIVILEGES;
+SQL
+}
+
+setup_mysql_local() {
+  local schema="$1" user="$2" password="$3"
+
+  assert_mysql_root_access
+  load_mysql_tzinfo
+  ensure_mysql_schema "$schema"
+  setup_mysql_local_user "$schema" "$user" "$password"
+}
+
+# =============================================================================
+# Database
+# =============================================================================
+
+hash_admin_password() {
+  java -cp "/usr/lib/harmony-smp/webapps/ROOT/WEB-INF/lib/*" \
+    eu.europa.ec.edelivery.smp.utils.BCryptPasswordHash "$1"
+}
+
+get_database_connection() {
+  local db_host="$1" db_port="$2" db_schema="$3"
+
+  local url driver dialect
+  read -r url driver dialect _ < <(
+    harmony-database \
+      --mode get-connection-details \
+      --stage "$STAGE" \
+      --db-host "$db_host" \
+      --db-port "$db_port" \
+      --db-schema "$db_schema"
+  )
+
+  [[ -n "$url" && -n "$driver" && -n "$dialect" ]] \
+    || die "Failed to resolve database connection defaults from harmony-database"
+
+  printf '%s %s %s\n' "$url" "$driver" "$dialect"
+}
+
+wait_for_database() {
+  local db_host="$1" db_port="$2" db_user="$3" db_password="$4"
+
+  DB_PASSWORD="$db_password" \
+  harmony-database \
+    --mode wait-for-db \
+    --stage "$STAGE" \
+    --db-host "$db_host" \
+    --db-port "$db_port" \
+    --db-user "$db_user"
+}
+
+apply_database() {
+  local is_fresh="$1" is_reconf="${2:-false}"
+
+  local db_host db_port db_schema db_user
+  db_host="$(get_dropin SMP_DATABASE_SERVERNAME)"
+  db_port="$(get_dropin SMP_DATABASE_PORT)"
+  db_schema="$(get_dropin SMP_DATABASE_SCHEMA)"
+  db_user="$(get_dropin SMP_JDBC_USER)"
+
+  local admin_user="" admin_password=""
+  if [[ "$is_fresh" == true ]]; then
+    ensure_secret SMP_JDBC_PASSWORD "database"
+    db_get harmony-smp/adminuser
+    admin_user="${RET:-}"
+    resolve_admin_password admin_password "$admin_user"
+  fi
+
+  local db_password
+  db_password="$(get_secret SMP_JDBC_PASSWORD)"
+  [[ -n "$db_password" ]] || die "SMP_JDBC_PASSWORD is empty. Cannot run Liquibase. Populate ${SECRETS_FILE}"
+
+  local db_url db_driver
+  read -r db_url db_driver _ < <(get_database_connection "$db_host" "$db_port" "$db_schema")
+
+  set_dropin SMP_JDBC_URL "$db_url"
+  set_dropin SMP_JDBC_DRIVER "$db_driver"
+
+  if [[ "$is_reconf" != true ]]; then
+    if [[ "$is_fresh" == true && "$db_host" == "localhost" ]]; then
+      setup_mysql_local "$db_schema" "$db_user" "$db_password"
     fi
 
-    xmlstarlet edit --pf --inplace \
-      --update "/Context/Resource/@username" --value "$DB_USER" \
-      --update "/Context/Resource/@password" --value "$DB_PASSWORD" \
-      --update "/Context/Resource/@url" --value "$JDBC_URL" \
-      /etc/harmony-smp/tomcat-conf/context.xml
+    wait_for_database "$db_host" "$db_port" "$db_user" "$db_password"
 
-    xmlstarlet edit --pf --inplace \
-      --update '(//Connector[@SSLEnabled="true"]/@port)[1]' --value "$TOMCATPORT" \
-      "$SERVER_XML"
-  fi
+    log INFO "Applying database migrations..."
 
-  HARMONY_HOME=${HARMONY_HOME:-/opt/harmony-smp}
-  if [[ ! -f /etc/harmony-smp/smp.config.properties ]]; then
-    if [[ -f ${HARMONY_HOME}/setup/smp.config.properties.template ]]; then
-      cp "${HARMONY_HOME}"/setup/smp.config.properties.template /etc/harmony-smp/smp.config.properties
-      chmod 640 /etc/harmony-smp/smp.config.properties
-      log "Created /etc/harmony-smp/smp.config.properties from template"
-    fi
-  fi
-
-  DROPDBONERROR=false
-  db_reset harmony-smp/adminpassword
-  db_reset harmony-smp/database-password
-  DB_PASSWORD=
-
-  if dpkg --compare-versions "$2" lt-nl "2.3.0"; then
-    sed -i -E '\|^export CLASSPATH=/etc/harmony-smp.*|d' "$SET_ENV" || true
-    JAVA_HOME_PATH=$(update-java-alternatives -l | grep -m1 java-1.21 | head -n 1 | tr -s " " | cut -d " " -f 3) || true
-
-    if [[ -z "${JAVA_HOME_PATH:-}" ]] && command -v java >/dev/null 2>&1; then
-      JAVA_HOME_PATH="$(dirname "$(dirname "$(readlink -f "$(command -v java)")")")"
+    local admin_params=()
+    if [[ -n "$admin_user" && -n "$admin_password" ]]; then
+      local password_hash
+      password_hash="$(hash_admin_password "$admin_password")"
+      admin_params+=(-DadminUser="$admin_user" -DadminPassword="$password_hash")
     fi
 
-    if [[ -n "${JAVA_HOME_PATH:-}" ]]; then
-      if grep -q '^export JAVA_HOME=' "$SET_ENV"; then
-        sed -i -E "s|^export JAVA_HOME=.*|export JAVA_HOME=\"$JAVA_HOME_PATH\"|" "$SET_ENV"
-      else
-        echo "export JAVA_HOME=\"$JAVA_HOME_PATH\"" >>"$SET_ENV"
-      fi
-    else
-      warn "Java 21 not found. JAVA_HOME not updated"
-    fi
+    DB_PASSWORD="$db_password" \
+    harmony-database \
+      --mode liquibase \
+      --stage "$STAGE" \
+      --indent-output \
+      --db-url "$db_url" \
+      --db-driver-class "$db_driver" \
+      --db-user "$db_user" \
+      -- update "${admin_params[@]}" >&2
+  fi
+}
+
+# =============================================================================
+# Main
+# =============================================================================
+
+configure_package() {
+  local old_version="${1:-}"
+
+  local is_fresh=false is_reconf=false
+  if [[ -z "$old_version" ]]; then
+    is_fresh=true
+    log INFO "Starting fresh installation."
+  elif [[ "$old_version" == "$(dpkg-query -W -f='${Version}' harmony-smp 2>/dev/null)" ]]; then
+    is_reconf=true
+    log INFO "Starting reconfiguration."
+  else
+    log INFO "Starting upgrade from version ${old_version}."
   fi
 
-  # Make sure the administrative user exists
-  if ! getent passwd harmony-smp > /dev/null; then
-    adduser --system --quiet --no-create-home --shell /usr/sbin/nologin --group --gecos "Harmony user" harmony-smp
+  run_migrations "$old_version"
+
+  ensure_file "$SECRETS_FILE"        root:harmony-smp 0640 "$is_fresh" 027 "$SECRETS_HEADER"
+  ensure_file "$DROPIN_HARMONY_FILE" root:root        0644 "$is_fresh" 022 "$DROPIN_HARMONY_HEADER"
+
+  apply_debconf_answers
+  validate_required_config
+  restrict_sensitive_conffiles
+
+  apply_stores signing "$is_fresh" "$is_reconf"
+  apply_stores tls "$is_fresh" "$is_reconf"
+
+  apply_database "$is_fresh" "$is_reconf"
+
+  db_stop || true
+  systemctl daemon-reload 2>/dev/null || true
+
+  if [[ "$is_fresh" == true ]]; then
+    systemctl enable harmony-smp 2>/dev/null || true
+    log INFO "Installation complete. Start the service with: systemctl start harmony-smp"
+  elif [[ "$manual_start_required" == true ]]; then
+    log WARN "Migration requires manual verification before starting the service."
+    log WARN "Review the migration output above, then start with: systemctl start harmony-smp"
+  elif systemctl is-enabled harmony-smp >/dev/null 2>&1; then
+    systemctl restart harmony-smp 2>/dev/null || true
+    log INFO "Service restarted."
   fi
+}
 
-  # check validity of user and group
-  if [ "$(id -u harmony-smp)" -eq 0 ]; then
-    echo "The Harmony SMP system user 'harmony-smp' must not have uid 0 (root).Please fix this and reinstall this package." >&2
-    exit 1
-  fi
-  if [ "$(id -g harmony-smp)" -eq 0 ]; then
-    echo "The Harmony SMP system user 'harmony-smp' must not have root as primary group. Please fix this and reinstall this package." >&2
-    exit 1
-  fi
+# =============================================================================
+# Entry point
+# =============================================================================
 
-  mkdir -p /opt/harmony-smp/temp
+#DEBHELPER#
 
-  chown -R harmony-smp:harmony-smp /opt/harmony-smp
-  chmod -R u=Xrw,g=Xr,o=X /opt/harmony-smp
+case "${1:-}" in
+  configure)
+    configure_package "${2:-}"
+    ;;
 
-  chown -R harmony-smp:harmony-smp /var/opt/harmony-smp
-  chmod -R u=Xrw,g=Xr,o=X /var/opt/harmony-smp
+  abort-upgrade|abort-remove|abort-deconfigure)
+    db_stop || true
+    systemctl daemon-reload 2>/dev/null || true
+    ;;
 
-  chown -R harmony-smp:harmony-smp /run/harmony-smp
-  chmod 0750 /run/harmony-smp
-
-  chown -R harmony-smp:harmony-smp /var/tmp/harmony-smp
-  chmod 0750 /var/tmp/harmony-smp
-
-  # nicer log directory permissions
-  mkdir -p /var/log/harmony-smp
-  chmod 1770 /var/log/harmony-smp
-  chown harmony-smp:adm /var/log/harmony-smp
-
-  # config folder permissions
-  chown -R harmony-smp:harmony-smp /etc/harmony-smp
-  chmod -R u=Xrw,g=Xr,o=X /etc/harmony-smp
-
-  systemctl daemon-reload || warn "systemctl daemon-reload failed"
-
-  if [ "$(systemctl is-enabled harmony-smp)" = "enabled" ]; then
-    systemctl start harmony-smp
-  fi
-
-  SUCCESS=true
- ;;
-
- abort-upgrade|abort-remove|abort-deconfigure)
- ;;
-
- *)
-    log "postinst called with unknown argument \`$1'" >&2
-    exit 1
- ;;
+  *)
+    die "postinst called with unknown argument '${1:-}'"
+    ;;
 esac
-
-exit 0

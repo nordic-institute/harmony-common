@@ -1,7 +1,39 @@
+Template: harmony-smp/reconfigure-notice
+Type: note
+Description: Reconfiguration notice
+  Reconfiguration updates connection parameters and service settings.
+  .
+  Database: if you change connection parameters, ensure the target
+  database is properly set up. The package will not create schemas
+  or run migrations during reconfiguration.
+  .
+  Certificates: you will be given the option to rotate the signing
+  and TLS certificates independently. Rotating a certificate backs
+  up the current keystore and generates a new key pair.
+
+Template: harmony-smp/rotate_signing_keystore
+Type: boolean
+Default: false
+Description: Rotate the SMP signing certificate?
+  The signing certificate is used to sign SMP service metadata
+  responses.
+  This will back up the current signing keystore and generate
+  a new key pair. The truststore (partner certificates) is preserved.
+
+Template: harmony-smp/rotate_tls_keystore
+Type: boolean
+Default: false
+Description: Rotate the TLS certificate?
+  This will back up the current TLS keystore and generate
+  a new key pair and server certificate.
+
 Template: harmony-smp/integratewithsml
 Type: boolean
-Default: true
+Default: false
 Description: Integrate with SML zone?
+  Enables SML/BDMSL integration for dynamic discovery.
+  SML settings are stored in the database on first startup;
+  the database is authoritative afterward.
 
 Template: harmony-smp/smlurl
 Type: string
@@ -18,29 +50,37 @@ Description: IP address of this SMP server
 Template: harmony-smp/adminuser
 Type: string
 Default: harmony
-Description: Administator username of this SMP server
+Description: Administrator username
 
 Template: harmony-smp/adminpassword
 Type: password
-Description: Initial administator password of this SMP server
+Description: Administrator initial password
+  Leave blank to generate a random password.
 
 Template: harmony-smp/serverdn
 Type: string
-Description: Distinguished name of generated self-signed server certificate
-  Example: CN=smp.example.com, O=Example Org, C=FI
-  If left blank, CN=<hostname> will be used.
+Description: Server certificate distinguished name
+  Used for both the TLS server certificate and the SMP signing
+  certificate.
+  Format: CN=hostname (e.g. CN=smp.example.com)
+
+Template: harmony-smp/serversan
+Type: string
+Description: Server TLS certificate subject alternative name
+  Additional hostnames or IPs that clients use to verify the
+  server identity.
+  Format: DNS:hostname (e.g. DNS:smp.example.com)
 
 Template: harmony-smp/tomcatport
 Type: string
 Default: 8443
-Description: Port number of this SMP server
+Description: Web server HTTPS port
 
 Template: harmony-smp/database-host
 Type: string
 Default: localhost
 Description: Database host
-  Use "localhost" to use local database installed
-  on the same host.
+  Use localhost for a database running on this machine.
 
 Template: harmony-smp/database-port
 Type: string
@@ -63,10 +103,6 @@ Description: Database user name
 
 Template: harmony-smp/database-password
 Type: password
-Description: Database user initial password
-  When initializing a local database, leave blank to generate
-  a random password.
-
-Template: harmony-smp/jdbc-url
-Type: string
-Description: Database JDBC URL
+Description: Database user password
+  Leave blank to keep the existing password or to generate
+  a random password during a fresh installation.
